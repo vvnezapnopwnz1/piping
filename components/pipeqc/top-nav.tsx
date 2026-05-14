@@ -1,8 +1,8 @@
-'use client'
+"use client";
 
-import * as React from 'react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import * as React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Search,
   Bell,
@@ -10,67 +10,82 @@ import {
   Settings,
   ChevronRight,
   ChevronDown,
-} from 'lucide-react'
+  RefreshCw,
+} from "lucide-react";
 
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Separator } from '@/components/ui/separator'
-import { SidebarTrigger } from '@/components/ui/sidebar'
-import { useRole, ROLES } from '@/contexts/role-context'
+} from "@/components/ui/dropdown-menu";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { useRole, ROLES } from "@/contexts/role-context";
+import { useDemoStore } from "@/store";
+import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 
 // Demo projects
 const projects = [
-  { id: 'proj-1', code: 'PROJ-LNG-2025', name: 'Qatar LNG Train 7' },
-  { id: 'proj-2', code: 'PROJ-REF-2024', name: 'Kuwait Refinery Upgrade' },
-  { id: 'proj-3', code: 'PROJ-PET-2025', name: 'Saudi Petrochemical Plant' },
-]
+  { id: "proj-1", code: "PROJ-LNG-2025", name: "Qatar LNG Train 7" },
+  { id: "proj-2", code: "PROJ-REF-2024", name: "Kuwait Refinery Upgrade" },
+  { id: "proj-3", code: "PROJ-PET-2025", name: "Saudi Petrochemical Plant" },
+];
 
 // Route labels for breadcrumb
 const routeLabels: Record<string, string> = {
-  admin: 'Admin Module',
-  spooling: 'Spooling Module',
-  fabrication: 'Fabrication',
-  'weld-progress': 'Weld Progress',
-  dashboard: 'Dashboard',
-  tracking: 'Tracking',
-  nde: 'NDE Module',
-  reports: 'Reports',
-  settings: 'Settings',
-  documentation: 'Documentation',
-}
+  admin: "Admin Module",
+  spooling: "Spooling Module",
+  fabrication: "Fabrication",
+  "weld-progress": "Weld Progress",
+  dashboard: "Dashboard",
+  tracking: "Tracking",
+  nde: "NDE Module",
+  reports: "Reports",
+  settings: "Settings",
+  documentation: "Documentation",
+};
 
 export function TopNav() {
-  const pathname = usePathname()
-  const { roleInfo, currentRole, setCurrentRole } = useRole()
-  const [selectedProject, setSelectedProject] = React.useState(projects[0])
+  const pathname = usePathname();
+  const { roleInfo, currentRole, setCurrentRole } = useRole();
+  const [selectedProject, setSelectedProject] = React.useState(projects[0]);
+  const resetAll = useDemoStore((s) => s.resetAll);
+  const demoMode = useDemoStore((s) => s.demoMode);
+
+  const handleReset = () => {
+    resetAll();
+    toast.success("Demo data reset", {
+      description: "All stores hydrated to initial state",
+    });
+  };
 
   // Generate breadcrumb from pathname
   const breadcrumbs = React.useMemo(() => {
-    const segments = pathname.split('/').filter(Boolean)
+    const segments = pathname.split("/").filter(Boolean);
     return segments.map((segment, index) => ({
       label: routeLabels[segment] || segment,
-      href: '/' + segments.slice(0, index + 1).join('/'),
+      href: "/" + segments.slice(0, index + 1).join("/"),
       isLast: index === segments.length - 1,
-    }))
-  }, [pathname])
+    }));
+  }, [pathname]);
 
   return (
     <header className="flex h-12 shrink-0 items-center border-b border-border bg-background px-4">
       {/* Left Side */}
       <div className="flex items-center gap-2">
         <SidebarTrigger className="-ml-1" />
-        
+
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <div className="flex size-7 items-center justify-center rounded bg-primary">
-            <span className="text-xs font-bold text-primary-foreground">PQ</span>
+            <span className="text-xs font-bold text-primary-foreground">
+              PQ
+            </span>
           </div>
           <span className="text-sm font-semibold text-foreground">PipeQC</span>
         </Link>
@@ -80,8 +95,14 @@ export function TopNav() {
         {/* Project Selector */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs">
-              <span className="font-medium text-foreground">{selectedProject.code}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1 px-2 text-xs"
+            >
+              <span className="font-medium text-foreground">
+                {selectedProject.code}
+              </span>
               <span className="text-muted-foreground">·</span>
               <span className="max-w-[140px] truncate text-muted-foreground">
                 {selectedProject.name}
@@ -95,12 +116,14 @@ export function TopNav() {
                 key={project.id}
                 onClick={() => setSelectedProject(project)}
                 className={cn(
-                  'flex flex-col items-start gap-0.5',
-                  selectedProject.id === project.id && 'bg-accent'
+                  "flex flex-col items-start gap-0.5",
+                  selectedProject.id === project.id && "bg-accent",
                 )}
               >
                 <span className="text-sm font-medium">{project.code}</span>
-                <span className="text-xs text-muted-foreground">{project.name}</span>
+                <span className="text-xs text-muted-foreground">
+                  {project.name}
+                </span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -117,7 +140,9 @@ export function TopNav() {
                     <ChevronRight className="size-3 text-muted-foreground" />
                   )}
                   {crumb.isLast ? (
-                    <span className="font-medium text-foreground">{crumb.label}</span>
+                    <span className="font-medium text-foreground">
+                      {crumb.label}
+                    </span>
                   ) : (
                     <Link
                       href={crumb.href}
@@ -161,6 +186,24 @@ export function TopNav() {
           <span className="sr-only">Settings</span>
         </Button>
 
+        {demoMode && (
+          <Badge
+            variant="outline"
+            className="ml-2 border-amber-300 bg-amber-50 text-amber-800"
+          >
+            DEMO MODE
+          </Badge>
+        )}
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleReset}
+          title="Reset demo data"
+        >
+          <RefreshCw className="size-4" />
+        </Button>
+
         <Separator orientation="vertical" className="mx-2 h-5" />
 
         {/* User Block with Role Switcher */}
@@ -172,7 +215,9 @@ export function TopNav() {
                 <AvatarFallback className="text-[10px]">AR</AvatarFallback>
               </Avatar>
               <div className="flex flex-col items-start">
-                <span className="text-xs font-medium leading-none">A. Rahman</span>
+                <span className="text-xs font-medium leading-none">
+                  A. Rahman
+                </span>
                 <span className="text-[10px] leading-none text-muted-foreground">
                   {roleInfo.label}
                 </span>
@@ -186,17 +231,19 @@ export function TopNav() {
                 key={role.id}
                 onClick={() => setCurrentRole(role.id)}
                 className={cn(
-                  'flex flex-col items-start gap-0.5',
-                  currentRole === role.id && 'bg-accent'
+                  "flex flex-col items-start gap-0.5",
+                  currentRole === role.id && "bg-accent",
                 )}
               >
                 <span className="text-sm font-medium">{role.label}</span>
-                <span className="text-xs text-muted-foreground">{role.description}</span>
+                <span className="text-xs text-muted-foreground">
+                  {role.description}
+                </span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
     </header>
-  )
+  );
 }

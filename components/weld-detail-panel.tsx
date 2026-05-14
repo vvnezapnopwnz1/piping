@@ -2,7 +2,12 @@
 
 import { useEffect, useState } from "react";
 import type { ChangeEvent, ReactNode } from "react";
-import { AlertTriangle, CheckCircle2, Lock, Save, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Lock, Save, Scan, X } from "lucide-react";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+
+import { useBatchesStore } from "@/store";
+import { determineNDEMethods } from "@/lib/welder-qualifications";
 
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { WeldJoint, WeldStatus } from "@/lib/weld-data";
+import { validateWelder } from "@/lib/welder-qualifications";
 
 interface WeldDetailPanelProps {
   joint: WeldJoint | null;
@@ -42,6 +48,7 @@ const WELDERS = [
   "WLD-042",
   "WLD-054",
   "WLD-061",
+  "WLD-099",
 ];
 const INSPECTORS = [
   "ENG-01",
@@ -108,8 +115,11 @@ export function WeldDetailPanel({
   onClose,
   onSave,
 }: WeldDetailPanelProps) {
+  const router = useRouter();
+  const createBatch = useBatchesStore((s) => s.createBatch);
   const [form, setForm] = useState<WeldJoint | null>(null);
   const [saved, setSaved] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
     if (joint) {
@@ -120,7 +130,7 @@ export function WeldDetailPanel({
 
   if (!joint || !form) {
     return (
-      <aside className="w-[360px] flex-shrink-0 rounded-xl border border-slate-200 bg-white flex flex-col items-center justify-center">
+      <aside className="w-[360px] rounded-xl border bg-white flex flex-col items-center justify-center">
         <div className="text-center px-8">
           <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
             <svg
@@ -148,6 +158,13 @@ export function WeldDetailPanel({
   const isLocked = form.isLocked;
   const isRejected = form.status === "Rejected";
 
+  const validation = validateWelder(
+    form.welderCode,
+    form.wpsNo,
+    form.materialType,
+    form.diaInch,
+  );
+
   const update = (field: keyof WeldJoint, value: string | boolean) => {
     setForm((prev: WeldJoint | null) =>
       prev ? { ...prev, [field]: value } : prev,
@@ -160,6 +177,49 @@ export function WeldDetailPanel({
       onSave(form);
       setSaved(true);
     }
+  };
+
+  const handleSendToNDE = async () => {
+    if (!joint) return;
+
+    setIsSending(true);
+
+    await new Promise((r) => setTimeout(r, 800));
+
+    const { primary, additional } = determineNDEMethods(joint);
+
+    const batch = createBatch({
+      method: primary,
+      welds: [
+        {
+          weldId: joint.id,
+          jointNo: joint.jointNo,
+          spoolNo: joint.spoolNo,
+          isoNo: joint.isoNo,
+          diaInch: joint.diaInch,
+          welderCode: joint.welderCode,
+        },
+      ],
+      createdBy: "QC-ENG-01",
+      ndeMatrixRef: `NDE-M-${joint.materialType.replace(/\s/g, "")}`,
+      notes:
+        additional.length > 0
+          ? `Additional examinations required: ${additional.join(", ")}`
+          : undefined,
+    });
+
+    setIsSending(false);
+
+    toast.success(`Batch ${batch.id} created`, {
+      description: `${primary} examination · ${joint.jointNo} (${joint.diaInch} ${joint.materialType})`,
+      action: {
+        label: "View in NDE",
+        onClick: () => router.push(`/nde?batch=${batch.id}`),
+      },
+      duration: 5000,
+    });
+
+    onClose();
   };
 
   const handleDateChange =
@@ -282,6 +342,12 @@ export function WeldDetailPanel({
                     ))}
                   </SelectContent>
                 </Select>
+              )}
+              {!validation.isValid && form.welderCode && (
+                <div className="mt-2 flex items-start gap-2 rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-800">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span>{validation.message}</span>
+                </div>
               )}
             </FieldRow>
 
@@ -499,35 +565,49 @@ export function WeldDetailPanel({
       </div>
 
       {!isLocked && (
-        <div className="px-5 py-4 border-t border-slate-200 flex items-center gap-3 flex-shrink-0">
-          <Button
-            onClick={handleSave}
-            className={cn(
-              "flex-1 h-9 text-xs font-medium gap-2",
-              saved
-                ? "bg-emerald-600 hover:bg-emerald-500 text-white"
-                : "bg-sky-600 hover:bg-sky-500 text-white",
-            )}
-          >
-            {saved ? (
-              <>
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                Saved
-              </>
-            ) : (
-              <>
-                <Save className="w-3.5 h-3.5" />
-                Save Changes
-              </>
-            )}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="h-9 text-xs border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-          >
-            Cancel
-          </Button>
+        <div className="px-5 py-4 border-t border-slate-200 flex flex-col gap-3 flex-shrink-0">
+          {joint.status === "Completed" && !joint.rtNo && (
+            <Button
+              variant="outline"
+              onClick={handleSendToNDE}
+              disabled={isSending}
+              className="h-9 text-xs gap-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+            >
+              <Scan className="h-4 w-4" />
+              {isSending ? "Creating batch..." : "Send to NDE"}
+            </Button>
+          )}
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={handleSave}
+              disabled={!validation.isValid}
+              className={cn(
+                "flex-1 h-9 text-xs font-medium gap-2",
+                saved
+                  ? "bg-emerald-600 hover:bg-emerald-500 text-white"
+                  : "bg-sky-600 hover:bg-sky-500 text-white",
+              )}
+            >
+              {saved ? (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Saved
+                </>
+              ) : (
+                <>
+                  <Save className="w-3.5 h-3.5" />
+                  Save Changes
+                </>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="h-9 text-xs border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+            >
+              Cancel
+            </Button>
+          </div>
         </div>
       )}
     </aside>

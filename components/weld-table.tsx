@@ -146,7 +146,7 @@ export function WeldTable({
       </div>
 
       <div className="flex-1 overflow-auto">
-        <table className="w-full border-collapse text-sm min-w-[1100px]">
+        <table className="w-full border-collapse text-sm min-w-[750px]">
           <thead className="sticky top-0 z-10">
             <tr className="bg-slate-100 border-b border-slate-200">
               <ColHeader label="Joint No" col="jointNo" />

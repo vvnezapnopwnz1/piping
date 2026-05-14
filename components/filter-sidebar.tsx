@@ -48,7 +48,7 @@ export function FilterSidebar({
   };
 
   return (
-    <aside className="w-[260px] flex-shrink-0 rounded-xl border border-slate-200 bg-slate-50 flex flex-col h-full overflow-y-auto">
+    <aside className="w-[240px] flex-shrink-0 rounded-xl border border-slate-200 bg-slate-50 flex flex-col h-full overflow-y-auto">
       <div className="px-5 py-4 border-b border-slate-200">
         <div className="flex items-center gap-2">
           <SlidersHorizontal className="w-4 h-4 text-sky-600" />
@@ -58,7 +58,7 @@ export function FilterSidebar({
         </div>
       </div>
 
-      <div className="flex-1 px-5 py-5 flex flex-col gap-5">
+      <div className="flex-1 px-3 py-5 flex flex-col gap-5">
         <div className="flex flex-col gap-1.5">
           <Label className="text-xs font-medium text-slate-600 uppercase tracking-wider">
             PDS Area

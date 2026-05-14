@@ -5,7 +5,8 @@ import { useState } from "react";
 import { FilterSidebar } from "@/components/filter-sidebar";
 import { WeldDetailPanel } from "@/components/weld-detail-panel";
 import { WeldTable } from "@/components/weld-table";
-import { WELD_DATA, type WeldJoint } from "@/lib/weld-data";
+import { type WeldJoint } from "@/lib/weld-data";
+import { useWeldsStore } from "@/store";
 
 interface FilterState {
   pdsArea: string;
@@ -41,7 +42,8 @@ function parseDisplayDate(value: string) {
 }
 
 export default function WeldProgressPage() {
-  const [joints, setJoints] = useState<WeldJoint[]>(WELD_DATA);
+  const welds = useWeldsStore((s) => s.welds);
+  const updateWeld = useWeldsStore((s) => s.updateWeld);
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [appliedFilters, setAppliedFilters] =
     useState<FilterState>(DEFAULT_FILTERS);
@@ -51,7 +53,7 @@ export default function WeldProgressPage() {
     setAppliedFilters({ ...filters });
   };
 
-  const filteredJoints = joints.filter((joint) => {
+  const filteredJoints = welds.filter((joint) => {
     if (
       appliedFilters.pdsArea !== "all" &&
       !joint.spoolNo.includes(appliedFilters.pdsArea.replace("-", ""))
@@ -95,14 +97,12 @@ export default function WeldProgressPage() {
   });
 
   const handleSave = (updated: WeldJoint) => {
-    setJoints((previous) =>
-      previous.map((joint) => (joint.id === updated.id ? updated : joint)),
-    );
+    updateWeld(updated.id, updated);
     setSelectedJoint(updated);
   };
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] min-h-[720px] gap-4 overflow-hidden">
+    <div className="flex h-[calc(100vh-8rem)] min-h-[720px] gap-1 overflow-hidden">
       <FilterSidebar
         filters={filters}
         onFilterChange={setFilters}
