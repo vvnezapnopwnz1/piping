@@ -2,7 +2,14 @@
 
 import { useEffect, useState } from "react";
 import type { ChangeEvent, ReactNode } from "react";
-import { AlertTriangle, CheckCircle2, Lock, Save, Scan, X } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Lock,
+  Save,
+  Scan,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -10,6 +17,7 @@ import { useBatchesStore } from "@/store";
 import { determineNDEMethods } from "@/lib/welder-qualifications";
 
 import { StatusBadge } from "@/components/status-badge";
+import { ErectionStatusBadge } from "./erection-status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,13 +29,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import type { WeldJoint, WeldStatus } from "@/lib/weld-data";
 import { validateWelder } from "@/lib/welder-qualifications";
+import type { FieldWeldJoint, ErectionStatus } from "@/lib/erection-weld-data";
+import { ERECTION_STATUS_OPTIONS, FIELD_WELDERS } from "@/lib/erection-weld-data";
 
-interface WeldDetailPanelProps {
-  joint: WeldJoint | null;
+type WeldStatus = FieldWeldJoint["status"];
+
+interface FieldWeldDetailPanelProps {
+  joint: FieldWeldJoint | null;
   onClose: () => void;
-  onSave: (updated: WeldJoint) => void;
+  onSave: (updated: FieldWeldJoint) => void;
 }
 
 const WELD_STATUSES: WeldStatus[] = [
@@ -39,17 +50,6 @@ const WELD_STATUSES: WeldStatus[] = [
   "On Hold",
 ];
 
-const WELDERS = [
-  "WLD-007",
-  "WLD-015",
-  "WLD-019",
-  "WLD-028",
-  "WLD-033",
-  "WLD-042",
-  "WLD-054",
-  "WLD-061",
-  "WLD-099",
-];
 const INSPECTORS = [
   "ENG-01",
   "ENG-02",
@@ -62,20 +62,16 @@ const INSPECTORS = [
 
 function formatDate(value: string) {
   if (!value) return "";
-
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-
   return date.toISOString().split("T")[0];
 }
 
 function toDisplayDate(value: string) {
   const date = new Date(value);
-
   if (Number.isNaN(date.getTime())) {
     return value;
   }
-
   return date.toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "short",
@@ -110,14 +106,14 @@ function ReadOnlyField({ value }: { value: string }) {
   );
 }
 
-export function WeldDetailPanel({
+export function FieldWeldDetailPanel({
   joint,
   onClose,
   onSave,
-}: WeldDetailPanelProps) {
+}: FieldWeldDetailPanelProps) {
   const router = useRouter();
   const createBatch = useBatchesStore((s) => s.createBatch);
-  const [form, setForm] = useState<WeldJoint | null>(null);
+  const [form, setForm] = useState<FieldWeldJoint | null>(null);
   const [saved, setSaved] = useState(false);
   const [isSending, setIsSending] = useState(false);
 
@@ -165,8 +161,16 @@ export function WeldDetailPanel({
     form.diaInch,
   );
 
-  const update = (field: keyof WeldJoint, value: string | boolean) => {
-    setForm((prev: WeldJoint | null) =>
+  const rootCapSum = form.rootPercent + form.capPercent;
+  const rootCapValid = rootCapSum === 100;
+  const showRootCapError =
+    !rootCapValid && (form.rootPercent > 0 || form.capPercent > 0);
+
+  const update = (
+    field: keyof FieldWeldJoint,
+    value: string | boolean | number,
+  ) => {
+    setForm((prev: FieldWeldJoint | null) =>
       prev ? { ...prev, [field]: value } : prev,
     );
     setSaved(false);
@@ -181,13 +185,9 @@ export function WeldDetailPanel({
 
   const handleSendToNDE = async () => {
     if (!joint) return;
-
     setIsSending(true);
-
     await new Promise((r) => setTimeout(r, 800));
-
-    const { primary, additional } = determineNDEMethods(joint);
-
+    const { primary } = determineNDEMethods(joint);
     const batch = createBatch({
       method: primary,
       welds: [
@@ -206,9 +206,7 @@ export function WeldDetailPanel({
       createdBy: "QC-ENG-01",
       matrixRef: `NDE-M-${joint.materialType.replace(/\s/g, "")}`,
     });
-
     setIsSending(false);
-
     toast.success(`Batch ${batch.batchNo} created`, {
       description: `${primary} examination · ${joint.jointNo} (${joint.diaInch} ${joint.materialType})`,
       action: {
@@ -217,12 +215,12 @@ export function WeldDetailPanel({
       },
       duration: 5000,
     });
-
     onClose();
   };
 
   const handleDateChange =
-    (field: keyof WeldJoint) => (event: ChangeEvent<HTMLInputElement>) => {
+    (field: keyof FieldWeldJoint) =>
+    (event: ChangeEvent<HTMLInputElement>) => {
       update(field, toDisplayDate(event.target.value));
     };
 
@@ -310,6 +308,14 @@ export function WeldDetailPanel({
             <FieldRow label="DWIR No">
               <ReadOnlyField value={form.dwirNo} />
             </FieldRow>
+            <div className="grid grid-cols-2 gap-3">
+              <FieldRow label="Area Zone">
+                <ReadOnlyField value={form.areaZone} />
+              </FieldRow>
+              <FieldRow label="Joint Type">
+                <ReadOnlyField value={form.fieldJointType} />
+              </FieldRow>
+            </div>
           </div>
         </div>
 
@@ -330,7 +336,7 @@ export function WeldDetailPanel({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-white border-slate-300">
-                    {WELDERS.map((welder) => (
+                    {FIELD_WELDERS.map((welder) => (
                       <SelectItem
                         key={welder}
                         value={welder}
@@ -392,6 +398,117 @@ export function WeldDetailPanel({
                 </Select>
               )}
             </FieldRow>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-xs font-semibold text-slate-700 uppercase tracking-widest mb-3 pb-1.5 border-b border-slate-200">
+            Erection Progress
+          </p>
+          <div className="flex flex-col gap-3">
+            <FieldRow label="Erection Status">
+              {isLocked ? (
+                <div className="h-8 px-3 flex items-center">
+                  <ErectionStatusBadge status={form.erectionStatus} />
+                </div>
+              ) : (
+                <Select
+                  value={form.erectionStatus}
+                  onValueChange={(value: string) =>
+                    update("erectionStatus", value as ErectionStatus)
+                  }
+                >
+                  <SelectTrigger className="bg-white border-slate-300 text-slate-900 text-xs h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border-slate-300">
+                    {ERECTION_STATUS_OPTIONS.map((status) => (
+                      <SelectItem
+                        key={status}
+                        value={status}
+                        className="text-slate-900 focus:bg-slate-100 text-xs"
+                      >
+                        {status}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </FieldRow>
+
+            <div className="grid grid-cols-2 gap-3">
+              <FieldRow label="Root %">
+                {isLocked ? (
+                  <ReadOnlyField value={`${form.rootPercent}%`} />
+                ) : (
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={form.rootPercent}
+                    onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                      const val =
+                        event.target.value === ""
+                          ? 0
+                          : Number(event.target.value);
+                      update("rootPercent", val);
+                    }}
+                    className="h-8 bg-white border-slate-300 text-slate-900 text-xs font-mono"
+                  />
+                )}
+              </FieldRow>
+              <FieldRow label="Cap %">
+                {isLocked ? (
+                  <ReadOnlyField value={`${form.capPercent}%`} />
+                ) : (
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={form.capPercent}
+                    onChange={(event: ChangeEvent<HTMLInputElement>) => {
+                      const val =
+                        event.target.value === ""
+                          ? 0
+                          : Number(event.target.value);
+                      update("capPercent", val);
+                    }}
+                    className="h-8 bg-white border-slate-300 text-slate-900 text-xs font-mono"
+                  />
+                )}
+              </FieldRow>
+            </div>
+
+            {showRootCapError && (
+              <div className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-800">
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span>Root % + Cap % must equal 100</span>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2.5">
+              <input
+                type="checkbox"
+                id="foreman-confirmed"
+                checked={!!form.foremanConfirmed}
+                onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                  update("foremanConfirmed", event.target.checked)
+                }
+                disabled={isLocked}
+                className="w-4 h-4 rounded border-slate-300 bg-white accent-sky-600 cursor-pointer disabled:cursor-not-allowed"
+              />
+              <label
+                htmlFor="foreman-confirmed"
+                className={cn(
+                  "text-xs select-none",
+                  isLocked
+                    ? "text-slate-500 cursor-not-allowed"
+                    : "text-slate-700 cursor-pointer",
+                )}
+              >
+                Foreman confirmed
+              </label>
+            </div>
           </div>
         </div>
 
@@ -573,13 +690,13 @@ export function WeldDetailPanel({
               className="h-9 text-xs gap-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
             >
               <Scan className="h-4 w-4" />
-              {isSending ? "Creating batch..." : "Send to NDE"}
+              {isSending ? "Creating batch..." : "Send to Site NDE"}
             </Button>
           )}
           <div className="flex items-center gap-3">
             <Button
               onClick={handleSave}
-              disabled={!validation.isValid}
+              disabled={!validation.isValid || showRootCapError}
               className={cn(
                 "flex-1 h-9 text-xs font-medium gap-2",
                 saved

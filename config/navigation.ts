@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   Activity,
   type LucideIcon,
+  HardHat,
 } from 'lucide-react'
 import type { Role } from '@/contexts/role-context'
 
@@ -66,6 +67,22 @@ export const navigationConfig: NavSection[] = [
           {
             title: 'Weld Progress',
             href: '/fabrication/weld-progress',
+            icon: Activity,
+          },
+        ],
+      }, {
+        title: 'Erection',
+        href: '/erection',
+        icon: HardHat, // или Construction из lucide
+        children: [
+          {
+            title: 'Dashboard',
+            href: '/erection/dashboard',
+            icon: LayoutDashboard,
+          },
+          {
+            title: 'Site Weld Progress',
+            href: '/erection/weld-progress',
             icon: Activity,
           },
         ],

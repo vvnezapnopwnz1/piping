@@ -1,0 +1,250 @@
+
+<style>
+.mod{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);margin-bottom:8px;overflow:hidden}
+.mhdr{display:flex;justify-content:space-between;align-items:center;padding:11px 16px;cursor:pointer;user-select:none;transition:background .15s}
+.mhdr:hover{background:var(--color-background-secondary)}
+.mbody{display:none;padding:0 16px 14px;border-top:0.5px solid var(--color-border-tertiary)}
+.mbody.open{display:block}
+.sec{margin-top:12px}
+.sec-ttl{font-size:11px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;padding-left:4px}
+.scr{display:flex;justify-content:space-between;align-items:center;padding:4px 8px;border-radius:6px;font-size:13px;margin:2px 0;gap:8px}
+.scr:hover{background:var(--color-background-secondary)}
+.scr-name{color:var(--color-text-primary);flex-shrink:0}
+.rbs{display:flex;gap:3px;flex-wrap:wrap;justify-content:flex-end}
+.rb{font-size:10px;padding:1px 5px;border-radius:3px;font-weight:500;white-space:nowrap}
+.r0{background:var(--color-background-info);color:var(--color-text-info)}
+.r1{background:var(--color-background-warning);color:var(--color-text-warning)}
+.r2{background:var(--color-background-success);color:var(--color-text-success)}
+.r3{background:var(--color-background-secondary);color:var(--color-text-secondary)}
+.r4{background:var(--color-background-danger);color:var(--color-text-danger)}
+.cnt{font-size:11px;background:var(--color-background-secondary);color:var(--color-text-secondary);border-radius:10px;padding:2px 8px;white-space:nowrap}
+.ico{transition:transform .2s}
+.ico.open{transform:rotate(180deg)}
+.legend{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px;align-items:center}
+.leg-lbl{font-size:12px;color:var(--color-text-secondary)}
+.total-badge{font-size:12px;padding:3px 10px;border-radius:10px;font-weight:500}
+</style>
+
+<h2 class="sr-only">Information architecture for Easy Piping first five modules — interactive expandable tree showing all screens and role access</h2>
+
+<div style="padding:4px 0 8px">
+
+<div class="legend">
+  <span class="leg-lbl">Роли —</span>
+  <span class="rb r0">Sys / Prj Admin</span>
+  <span class="rb r1">QC Eng</span>
+  <span class="rb r2">NDE Insp</span>
+  <span class="rb r4">Spooling</span>
+  <span class="rb r3">Site Admin · Manager · PDA · Subcon</span>
+</div>
+
+<div class="mod" style="border-left:3px solid #534AB7">
+  <div class="mhdr" onclick="tog('m1','i1')">
+    <div style="display:flex;align-items:center;gap:10px">
+      <i class="ti ti-shield" style="color:#534AB7;font-size:17px" aria-hidden="true"></i>
+      <span style="font-size:14px;font-weight:500">Admin module</span>
+      <span class="cnt">Setup · 5 sections</span>
+    </div>
+    <i class="ti ti-chevron-down ico" id="i1" aria-hidden="true"></i>
+  </div>
+  <div id="m1" class="mbody open">
+    <div class="sec">
+      <div class="sec-ttl">Project definition</div>
+      <div class="scr"><span class="scr-name">Add new project</span><div class="rbs"><span class="rb r0">Sys Admin</span></div></div>
+      <div class="scr"><span class="scr-name">Custom columns setup</span><div class="rbs"><span class="rb r0">Sys Admin</span></div></div>
+      <div class="scr"><span class="scr-name">List of projects</span><div class="rbs"><span class="rb r0">Sys Admin</span><span class="rb r0">Prj Admin</span></div></div>
+    </div>
+    <div class="sec">
+      <div class="sec-ttl">System referential (global)</div>
+      <div class="scr"><span class="scr-name">Material type list</span><div class="rbs"><span class="rb r0">Sys Admin</span></div></div>
+      <div class="scr"><span class="scr-name">Film qty per diameter</span><div class="rbs"><span class="rb r0">Sys Admin</span></div></div>
+      <div class="scr"><span class="scr-name">UT calculation table</span><div class="rbs"><span class="rb r0">Sys Admin</span></div></div>
+      <div class="scr"><span class="scr-name">Torquing requirement</span><div class="rbs"><span class="rb r0">Sys Admin</span></div></div>
+    </div>
+    <div class="sec">
+      <div class="sec-ttl">Project referential (26 пунктов)</div>
+      <div class="scr"><span class="scr-name">Subcontractor list</span><div class="rbs"><span class="rb r0">Prj Admin</span></div></div>
+      <div class="scr"><span class="scr-name">Area classification</span><div class="rbs"><span class="rb r0">Prj Admin</span></div></div>
+      <div class="scr"><span class="scr-name">PDS Area / Subcontractor</span><div class="rbs"><span class="rb r0">Prj Admin</span></div></div>
+      <div class="scr"><span class="scr-name">WPS list</span><div class="rbs"><span class="rb r0">Prj Admin</span></div></div>
+      <div class="scr"><span class="scr-name">Welder qualification</span><div class="rbs"><span class="rb r0">Prj Admin</span></div></div>
+      <div class="scr"><span class="scr-name">Service class / material type</span><div class="rbs"><span class="rb r0">Prj Admin</span></div></div>
+      <div class="scr"><span class="scr-name">Weld type list</span><div class="rbs"><span class="rb r0">Prj Admin</span></div></div>
+      <div class="scr"><span class="scr-name">NDE matrix</span><div class="rbs"><span class="rb r0">Prj Admin</span></div></div>
+      <div class="scr"><span class="scr-name">Rework codes</span><div class="rbs"><span class="rb r0">Prj Admin</span></div></div>
+      <div class="scr"><span class="scr-name">Pipe thickness</span><div class="rbs"><span class="rb r0">Prj Admin</span></div></div>
+      <div class="scr"><span class="scr-name">Piping material class</span><div class="rbs"><span class="rb r0">Prj Admin</span></div></div>
+      <div class="scr"><span class="scr-name">Joint category definition</span><div class="rbs"><span class="rb r0">Prj Admin</span></div></div>
+      <div class="scr"><span class="scr-name">Teams: Blinding / Finishing / Reinstatement</span><div class="rbs"><span class="rb r0">Prj Admin</span></div></div>
+      <div class="scr"><span class="scr-name">System / Sub-system</span><div class="rbs"><span class="rb r0">Prj Admin</span></div></div>
+      <div class="scr"><span class="scr-name">Location / Location category</span><div class="rbs"><span class="rb r0">Prj Admin</span></div></div>
+      <div class="scr"><span class="scr-name" style="color:var(--color-text-secondary)">+ 11 more referentials</span><div class="rbs"><span class="rb r0">Prj Admin</span></div></div>
+    </div>
+    <div class="sec">
+      <div class="sec-ttl">Access rights</div>
+      <div class="scr"><span class="scr-name">Create / edit users</span><div class="rbs"><span class="rb r0">Sys Admin</span></div></div>
+      <div class="scr"><span class="scr-name">Assign project roles</span><div class="rbs"><span class="rb r0">Sys Admin</span></div></div>
+      <div class="scr"><span class="scr-name">Subcontractor visibility lock</span><div class="rbs"><span class="rb r0">Sys Admin</span></div></div>
+    </div>
+    <div class="sec">
+      <div class="sec-ttl">Import settings</div>
+      <div class="scr"><span class="scr-name">Import weld thickness / flange</span><div class="rbs"><span class="rb r0">Prj Admin</span></div></div>
+      <div class="scr"><span class="scr-name">Import NDE matrix</span><div class="rbs"><span class="rb r0">Prj Admin</span></div></div>
+      <div class="scr"><span class="scr-name">Import piping material list</span><div class="rbs"><span class="rb r0">Prj Admin</span></div></div>
+      <div class="scr"><span class="scr-name">Import spooling images / materials</span><div class="rbs"><span class="rb r0">Prj Admin</span></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="mod" style="border-left:3px solid #0F6E56">
+  <div class="mhdr" onclick="tog('m2','i2')">
+    <div style="display:flex;align-items:center;gap:10px">
+      <i class="ti ti-upload" style="color:#0F6E56;font-size:17px" aria-hidden="true"></i>
+      <span style="font-size:14px;font-weight:500">Preparation · Spooling</span>
+      <span class="cnt">Module 2 · 3 sections</span>
+    </div>
+    <i class="ti ti-chevron-down ico" id="i2" aria-hidden="true"></i>
+  </div>
+  <div id="m2" class="mbody">
+    <div class="sec">
+      <div class="sec-ttl">Data import</div>
+      <div class="scr"><span class="scr-name">Weld summary import (SPOOLGEN .txt/.csv)</span><div class="rbs"><span class="rb r4">Spooling</span></div></div>
+      <div class="scr"><span class="scr-name">Import validation & error report</span><div class="rbs"><span class="rb r4">Spooling</span></div></div>
+      <div class="scr"><span class="scr-name">Revision management wizard (R0→R1→R2)</span><div class="rbs"><span class="rb r4">Spooling</span><span class="rb r0">Prj Admin</span></div></div>
+      <div class="scr"><span class="scr-name">Ident code (material trace) import</span><div class="rbs"><span class="rb r4">Spooling</span></div></div>
+      <div class="scr"><span class="scr-name">Bolting report import</span><div class="rbs"><span class="rb r4">Spooling</span></div></div>
+      <div class="scr"><span class="scr-name">Marian (SP-MAT) material status import</span><div class="rbs"><span class="rb r4">Spooling</span></div></div>
+    </div>
+    <div class="sec">
+      <div class="sec-ttl">Browse</div>
+      <div class="scr"><span class="scr-name">Browse latest  (ISO → Spool → Weld)</span><div class="rbs"><span class="rb r3">All roles</span></div></div>
+      <div class="scr"><span class="scr-name">Browse history</span><div class="rbs"><span class="rb r4">Spooling</span><span class="rb r0">Prj Admin</span></div></div>
+      <div class="scr"><span class="scr-name">Manual revision management</span><div class="rbs"><span class="rb r4">Spooling</span><span class="rb r0">Prj Admin</span></div></div>
+    </div>
+    <div class="sec">
+      <div class="sec-ttl">Material availability</div>
+      <div class="scr"><span class="scr-name">Marian status view per spool</span><div class="rbs"><span class="rb r4">Spooling</span><span class="rb r1">QC Eng</span></div></div>
+      <div class="scr"><span class="scr-name">Material forecast dates dashboard</span><div class="rbs"><span class="rb r4">Spooling</span><span class="rb r3">Manager</span></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="mod" style="border-left:3px solid #BA7517">
+  <div class="mhdr" onclick="tog('m3','i3')">
+    <div style="display:flex;align-items:center;gap:10px">
+      <i class="ti ti-tool" style="color:#BA7517;font-size:17px" aria-hidden="true"></i>
+      <span style="font-size:14px;font-weight:500">Fabrication module</span>
+      <span class="cnt">Module 3 · 3 sections</span>
+    </div>
+    <i class="ti ti-chevron-down ico" id="i3" aria-hidden="true"></i>
+  </div>
+  <div id="m3" class="mbody">
+    <div class="sec">
+      <div class="sec-ttl">Spool fabrication progress (9 шагов)</div>
+      <div class="scr"><span class="scr-name">Start fab</span><div class="rbs"><span class="rb r1">QC Eng</span></div></div>
+      <div class="scr"><span class="scr-name">Material check — heat number traceability</span><div class="rbs"><span class="rb r1">QC Eng</span></div></div>
+      <div class="scr"><span class="scr-name">Weld progress — per joint / weld point</span><div class="rbs"><span class="rb r1">QC Eng</span></div></div>
+      <div class="scr"><span class="scr-name">Fabricated</span><div class="rbs"><span class="rb r1">QC Eng</span></div></div>
+      <div class="scr"><span class="scr-name">QC release</span><div class="rbs"><span class="rb r1">QC Eng</span></div></div>
+      <div class="scr"><span class="scr-name">Sent to paint</span><div class="rbs"><span class="rb r1">QC Eng</span></div></div>
+      <div class="scr"><span class="scr-name">Painted</span><div class="rbs"><span class="rb r1">QC Eng</span></div></div>
+      <div class="scr"><span class="scr-name">Final QC</span><div class="rbs"><span class="rb r1">QC Eng</span></div></div>
+      <div class="scr"><span class="scr-name">Laydown</span><div class="rbs"><span class="rb r1">QC Eng</span></div></div>
+    </div>
+    <div class="sec">
+      <div class="sec-ttl">Bulk import progress</div>
+      <div class="scr"><span class="scr-name">Import prefabrication process</span><div class="rbs"><span class="rb r0">Prj Admin</span><span class="rb r4">Spooling</span></div></div>
+      <div class="scr"><span class="scr-name">Import erection process</span><div class="rbs"><span class="rb r0">Prj Admin</span><span class="rb r4">Spooling</span></div></div>
+      <div class="scr"><span class="scr-name">Import weld progress</span><div class="rbs"><span class="rb r0">Prj Admin</span><span class="rb r4">Spooling</span></div></div>
+      <div class="scr"><span class="scr-name">Import spool definition category</span><div class="rbs"><span class="rb r0">Prj Admin</span></div></div>
+    </div>
+    <div class="sec">
+      <div class="sec-ttl">Reports & dashboard</div>
+      <div class="scr"><span class="scr-name">Fabrication dashboard (KPI + charts)</span><div class="rbs"><span class="rb r1">QC Eng</span><span class="rb r3">Manager</span></div></div>
+      <div class="scr"><span class="scr-name">Progress report (per ISO, per area)</span><div class="rbs"><span class="rb r1">QC Eng</span><span class="rb r3">Manager</span></div></div>
+      <div class="scr"><span class="scr-name">Weekly fabrication report</span><div class="rbs"><span class="rb r3">Manager</span></div></div>
+      <div class="scr"><span class="scr-name">Summary report (full lifecycle)</span><div class="rbs"><span class="rb r3">Manager</span></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="mod" style="border-left:3px solid #185FA5">
+  <div class="mhdr" onclick="tog('m4','i4')">
+    <div style="display:flex;align-items:center;gap:10px">
+      <i class="ti ti-map-pin" style="color:#185FA5;font-size:17px" aria-hidden="true"></i>
+      <span style="font-size:14px;font-weight:500">Spool tracking</span>
+      <span class="cnt">Module 4 · 3 sections</span>
+    </div>
+    <i class="ti ti-chevron-down ico" id="i4" aria-hidden="true"></i>
+  </div>
+  <div id="m4" class="mbody">
+    <div class="sec">
+      <div class="sec-ttl">Dashboard</div>
+      <div class="scr"><span class="scr-name">Overview dashboard</span><div class="rbs"><span class="rb r3">Manager</span><span class="rb r3">Site Admin</span></div></div>
+      <div class="scr"><span class="scr-name">Usage analysis</span><div class="rbs"><span class="rb r3">Site Admin</span></div></div>
+      <div class="scr"><span class="scr-name">Area capacity map</span><div class="rbs"><span class="rb r3">Site Admin</span></div></div>
+    </div>
+    <div class="sec">
+      <div class="sec-ttl">Data analysis</div>
+      <div class="scr"><span class="scr-name">Spool / ISO search</span><div class="rbs"><span class="rb r4">Spooling</span><span class="rb r3">All roles</span></div></div>
+      <div class="scr"><span class="scr-name">Location view (spools by area)</span><div class="rbs"><span class="rb r3">Site Admin</span><span class="rb r4">Spooling</span></div></div>
+      <div class="scr"><span class="scr-name">Design area view</span><div class="rbs"><span class="rb r3">Site Admin</span></div></div>
+      <div class="scr"><span class="scr-name">Inconsistency report</span><div class="rbs"><span class="rb r1">QC Eng</span><span class="rb r3">Site Admin</span></div></div>
+      <div class="scr"><span class="scr-name">Transit out report</span><div class="rbs"><span class="rb r3">Site Admin</span></div></div>
+    </div>
+    <div class="sec">
+      <div class="sec-ttl">Barcode & devices</div>
+      <div class="scr"><span class="scr-name">Barcode print list generator (→ Zebra)</span><div class="rbs"><span class="rb r4">Spooling</span><span class="rb r3">Site Admin</span></div></div>
+      <div class="scr"><span class="scr-name">PDA device management</span><div class="rbs"><span class="rb r3">Site Admin</span></div></div>
+      <div class="scr"><span class="scr-name">Offline sync (import PDA .txt)</span><div class="rbs"><span class="rb r3">PDA User</span><span class="rb r3">Site Admin</span></div></div>
+      <div class="scr"><span class="scr-name">Online sync (direct PDA → DB)</span><div class="rbs"><span class="rb r3">PDA User</span></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="mod" style="border-left:3px solid #3B6D11">
+  <div class="mhdr" onclick="tog('m5','i5')">
+    <div style="display:flex;align-items:center;gap:10px">
+      <i class="ti ti-activity" style="color:#3B6D11;font-size:17px" aria-hidden="true"></i>
+      <span style="font-size:14px;font-weight:500">NDE management</span>
+      <span class="cnt">Module 5 · 3 sections</span>
+    </div>
+    <i class="ti ti-chevron-down ico" id="i5" aria-hidden="true"></i>
+  </div>
+  <div id="m5" class="mbody">
+    <div class="sec">
+      <div class="sec-ttl">Batch management</div>
+      <div class="scr"><span class="scr-name">Batch status overview</span><div class="rbs"><span class="rb r2">NDE Insp</span><span class="rb r3">Manager</span></div></div>
+      <div class="scr"><span class="scr-name">Create batch & assign welds</span><div class="rbs"><span class="rb r2">NDE Insp</span></div></div>
+      <div class="scr"><span class="scr-name">Update batch status</span><div class="rbs"><span class="rb r2">NDE Insp</span></div></div>
+      <div class="scr"><span class="scr-name">Record examination results per weld</span><div class="rbs"><span class="rb r2">NDE Insp</span></div></div>
+      <div class="scr"><span class="scr-name">Rework & re-examination cycle</span><div class="rbs"><span class="rb r2">NDE Insp</span><span class="rb r1">QC Eng</span></div></div>
+    </div>
+    <div class="sec">
+      <div class="sec-ttl">Examination process</div>
+      <div class="scr"><span class="scr-name">NDE 100% override</span><div class="rbs"><span class="rb r2">NDE Insp</span><span class="rb r0">Prj Admin</span></div></div>
+      <div class="scr"><span class="scr-name">Issue examination process</span><div class="rbs"><span class="rb r2">NDE Insp</span></div></div>
+      <div class="scr"><span class="scr-name">Examination progress (internal)</span><div class="rbs"><span class="rb r2">NDE Insp</span><span class="rb r1">QC Eng</span></div></div>
+      <div class="scr"><span class="scr-name">Client examination progress</span><div class="rbs"><span class="rb r2">NDE Insp</span><span class="rb r1">QC Eng</span><span class="rb r3">Manager</span></div></div>
+    </div>
+    <div class="sec">
+      <div class="sec-ttl">Dashboard & reports</div>
+      <div class="scr"><span class="scr-name">Fabrication NDE dashboard</span><div class="rbs"><span class="rb r2">NDE Insp</span><span class="rb r3">Manager</span></div></div>
+      <div class="scr"><span class="scr-name">Batch reports</span><div class="rbs"><span class="rb r2">NDE Insp</span><span class="rb r1">QC Eng</span><span class="rb r3">Manager</span></div></div>
+      <div class="scr"><span class="scr-name">NDE examination history report</span><div class="rbs"><span class="rb r2">NDE Insp</span><span class="rb r1">QC Eng</span></div></div>
+      <div class="scr"><span class="scr-name">Acceptance rate report</span><div class="rbs"><span class="rb r2">NDE Insp</span><span class="rb r3">Manager</span></div></div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function tog(bId,iId){
+  var b=document.getElementById(bId);
+  var ic=document.getElementById(iId);
+  var open=b.classList.contains('open');
+  b.classList.toggle('open',!open);
+  ic.classList.toggle('open',!open);
+}
+</script>

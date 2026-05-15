@@ -53,20 +53,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   useBatchesStore,
   useWeldsStore,
-  type NDEBatch,
-  type BatchStatus,
-  type BatchWeld,
-  type BatchHistoryEntry,
+  type NdeBatch,
+  type NdeBatchHistoryEvent,
+  type NdeBatchStatus,
+  type NdeBatchWeld,
 } from "@/store";
 import { cn } from "@/lib/utils";
 
 interface BatchDetailPanelProps {
-  batch: NDEBatch | null;
+  batch: NdeBatch | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const statusClasses: Record<BatchStatus, string> = {
+const statusClasses: Record<NdeBatchStatus, string> = {
   Created: "border-slate-300 bg-slate-100 text-slate-700",
   Issued: "border-sky-300 bg-sky-100 text-sky-800",
   "In Progress": "border-amber-300 bg-amber-100 text-amber-800",
@@ -81,7 +81,7 @@ const resultClasses = {
   Rejected: "border-red-300 bg-red-100 text-red-800",
 } as const;
 
-function StatusPill({ status }: { status: BatchStatus }) {
+function StatusPill({ status }: { status: NdeBatchStatus }) {
   return (
     <span
       className={cn(
@@ -94,7 +94,7 @@ function StatusPill({ status }: { status: BatchStatus }) {
   );
 }
 
-function ResultBadge({ result }: { result: BatchWeld["result"] }) {
+function ResultBadge({ result }: { result: NdeBatchWeld["result"] }) {
   return (
     <span
       className={cn(
@@ -107,7 +107,7 @@ function ResultBadge({ result }: { result: BatchWeld["result"] }) {
   );
 }
 
-function HistoryItem({ event }: { event: BatchHistoryEntry }) {
+function HistoryItem({ event }: { event: NdeBatchHistoryEvent }) {
   const initials = event.actor
     .split(" ")
     .map((segment) => segment[0])
@@ -127,14 +127,10 @@ function HistoryItem({ event }: { event: BatchHistoryEntry }) {
       </div>
       <div className="flex-1 pb-5">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="text-sm font-medium text-slate-900">{event.action}</p>
-          {event.toStatus ? <StatusPill status={event.toStatus} /> : null}
+          <p className="text-sm font-medium text-slate-900">{event.title}</p>
+          <StatusPill status={event.status} />
         </div>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {event.fromStatus && event.toStatus
-            ? `Status moved from ${event.fromStatus} to ${event.toStatus}`
-            : "Batch state transition recorded."}
-        </p>
+        <p className="mt-1 text-sm text-muted-foreground">{event.detail}</p>
         <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
           <span>{event.actor}</span>
           <span>{format(new Date(event.timestamp), "dd MMM yyyy")}</span>
@@ -177,10 +173,10 @@ export function BatchDetailPanel({
   }, [batch, acceptedCount]);
 
   const daysSinceIssue = useMemo(() => {
-    if (!batch?.issuedAt) {
+    if (!batch?.issuedDate) {
       return "—";
     }
-    return `${differenceInCalendarDays(new Date(), new Date(batch.issuedAt))} days`;
+    return `${differenceInCalendarDays(new Date(), new Date(batch.issuedDate))} days`;
   }, [batch]);
 
   const closable = batch
@@ -200,7 +196,7 @@ export function BatchDetailPanel({
     if (!batch) return;
     await new Promise((r) => setTimeout(r, 600));
     issueBatch(batch.id, "Bureau Veritas", "NDE-INS-04");
-    toast.success(`Batch ${batch.id} issued to Bureau Veritas`);
+    toast.success(`Batch ${batch.batchNo} issued to Bureau Veritas`);
   };
 
   const handleReceiveResults = async () => {
@@ -209,7 +205,7 @@ export function BatchDetailPanel({
     receiveResultsAction(
       batch.id,
       batch.welds.map((w) => ({
-        weldId: w.weldId,
+        weldId: w.id,
         result: "Accepted" as const,
       })),
     );
@@ -226,20 +222,17 @@ export function BatchDetailPanel({
     batch.welds
       .filter((w) => w.result === "Rejected")
       .forEach((w) =>
-        updateWeld(
-          w.weldId,
-          w.inspectorRemarks || "Marked for rework from NDE batch",
-        ),
+        updateWeld(w.id, w.remarks || "Marked for rework from NDE batch"),
       );
 
-    toast.success(`${batch.id} dispatched for rework`);
+    toast.success(`${batch.batchNo} dispatched for rework`);
     setConfirmReworkOpen(false);
   };
 
   const handleCloseBatch = () => {
     if (!batch) return;
     closeBatchAction(batch.id);
-    toast.success(`Batch ${batch.id} closed`);
+    toast.success(`Batch ${batch.batchNo} closed`);
   };
 
   return (
@@ -255,7 +248,7 @@ export function BatchDetailPanel({
                 <div className="flex items-start justify-between gap-4 pr-10">
                   <div className="space-y-2">
                     <SheetTitle className="font-mono text-2xl tracking-tight text-slate-900">
-                      {batch.id}
+                      {batch.batchNo}
                     </SheetTitle>
                     <div className="flex flex-wrap items-center gap-2">
                       <StatusPill status={batch.status} />
@@ -306,7 +299,7 @@ export function BatchDetailPanel({
                                 NDE matrix
                               </dt>
                               <dd className="font-medium text-slate-900">
-                                {batch.ndeMatrixRef}
+                                {batch.matrixRef}
                               </dd>
                             </div>
                             <div className="flex items-center justify-between gap-4">
@@ -321,7 +314,7 @@ export function BatchDetailPanel({
                               <dt className="text-muted-foreground">Created</dt>
                               <dd className="font-medium text-slate-900">
                                 {format(
-                                  new Date(batch.createdAt),
+                                  new Date(batch.createdDate),
                                   "dd MMM yyyy",
                                 )}
                               </dd>
@@ -329,9 +322,9 @@ export function BatchDetailPanel({
                             <div className="flex items-center justify-between gap-4">
                               <dt className="text-muted-foreground">Issued</dt>
                               <dd className="font-medium text-slate-900">
-                                {batch.issuedAt
+                                {batch.issuedDate
                                   ? format(
-                                      new Date(batch.issuedAt),
+                                      new Date(batch.issuedDate),
                                       "dd MMM yyyy",
                                     )
                                   : "—"}
@@ -340,9 +333,9 @@ export function BatchDetailPanel({
                             <div className="flex items-center justify-between gap-4">
                               <dt className="text-muted-foreground">Closed</dt>
                               <dd className="font-medium text-slate-900">
-                                {batch.closedAt
+                                {batch.closedDate
                                   ? format(
-                                      new Date(batch.closedAt),
+                                      new Date(batch.closedDate),
                                       "dd MMM yyyy",
                                     )
                                   : "—"}
@@ -408,9 +401,9 @@ export function BatchDetailPanel({
                                 Results received
                               </dt>
                               <dd className="font-medium text-slate-900">
-                                {batch.resultsReceivedAt
+                                {batch.resultsReceivedDate
                                   ? format(
-                                      new Date(batch.resultsReceivedAt),
+                                      new Date(batch.resultsReceivedDate),
                                       "dd MMM yyyy",
                                     )
                                   : "Pending"}
@@ -508,16 +501,14 @@ export function BatchDetailPanel({
                           <TableBody>
                             {batch.welds.map((weld) => {
                               const isExpanded = expandedWelds.includes(
-                                weld.weldId,
+                                weld.id,
                               );
 
                               return (
-                                <Fragment key={weld.weldId}>
+                                <Fragment key={weld.id}>
                                   <TableRow
                                     className="cursor-pointer"
-                                    onClick={() =>
-                                      toggleWeldExpansion(weld.weldId)
-                                    }
+                                    onClick={() => toggleWeldExpansion(weld.id)}
                                   >
                                     <TableCell className="px-5 font-mono text-xs font-medium text-sky-700">
                                       {weld.jointNo}
@@ -529,7 +520,7 @@ export function BatchDetailPanel({
                                       {weld.isoNo}
                                     </TableCell>
                                     <TableCell className="text-sm text-slate-900">
-                                      {weld.welderCode}
+                                      {weld.welder}
                                     </TableCell>
                                     <TableCell>
                                       <ResultBadge result={weld.result} />
@@ -564,7 +555,7 @@ export function BatchDetailPanel({
                                                   Weld ID
                                                 </p>
                                                 <p className="mt-1 text-sm font-medium text-slate-900">
-                                                  {weld.weldId}
+                                                  {weld.id}
                                                 </p>
                                               </div>
                                             </div>
@@ -574,7 +565,7 @@ export function BatchDetailPanel({
                                                 Inspector remarks
                                               </p>
                                               <p className="mt-1 text-sm text-slate-700">
-                                                {weld.inspectorRemarks ??
+                                                {weld.remarks ??
                                                   "No remarks captured."}
                                               </p>
                                             </div>

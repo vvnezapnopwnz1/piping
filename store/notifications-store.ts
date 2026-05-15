@@ -203,8 +203,12 @@ export const useNotificationsStore = create<NotificationsState>()(
 // Convenience hooks
 // ---------------------------------------------------------------------------
 
-export const useUnreadNotifications = () =>
-  useNotificationsStore((s) => s.notifications.filter((n) => !n.read))
+export const useUnreadNotifications = () => {
+  const notifications = useNotificationsStore((s) => s.notifications)
+  return notifications.filter((n) => !n.read)
+}
 
-export const useNotificationsCount = () =>
-  useNotificationsStore((s) => s.notifications.filter((n) => !n.read).length)
+export const useNotificationsCount = () => {
+  const notifications = useNotificationsStore((s) => s.notifications)
+  return notifications.filter((n) => !n.read).length
+}

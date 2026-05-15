@@ -67,12 +67,13 @@ import {
 import {
   useBatchesStore,
   useBatchesKPIs,
-  type NDEBatch,
-  type BatchStatus,
+  useHydrateBatchesStore,
+  type NdeBatch,
+  type NdeBatchStatus,
 } from "@/store";
 import { cn } from "@/lib/utils";
 
-const statusFilters: Array<"All" | BatchStatus> = [
+const statusFilters: Array<"All" | NdeBatchStatus> = [
   "All",
   "Created",
   "Issued",
@@ -92,17 +93,17 @@ const subcontractorOptions = [
 
 // KPI cards rendered dynamically from store selectors below
 
-const latestCreatedDate = (batches: NDEBatch[]) =>
+const latestCreatedDate = (batches: NdeBatch[]) =>
   batches.reduce(
     (latest, batch) => {
-      return new Date(batch.createdAt) > latest
-        ? new Date(batch.createdAt)
+      return new Date(batch.createdDate) > latest
+        ? new Date(batch.createdDate)
         : latest;
     },
-    new Date(batches[0]?.createdAt ?? new Date().toISOString()),
+    new Date(batches[0]?.createdDate ?? new Date().toISOString()),
   );
 
-function getDefaultDateRange(batches: NDEBatch[]): DateRange {
+function getDefaultDateRange(batches: NdeBatch[]): DateRange {
   const latest = latestCreatedDate(batches);
   return {
     from: subDays(latest, 30),
@@ -119,7 +120,7 @@ const methodBadgeClasses = {
   HT: "border-red-300 bg-red-100 text-red-800",
 } as const;
 
-const statusBadgeClasses: Record<BatchStatus, string> = {
+const statusBadgeClasses: Record<NdeBatchStatus, string> = {
   Created: "border-slate-300 bg-slate-100 text-slate-700",
   Issued: "border-sky-300 bg-sky-100 text-sky-800",
   "In Progress": "border-amber-300 bg-amber-100 text-amber-800",
@@ -128,7 +129,7 @@ const statusBadgeClasses: Record<BatchStatus, string> = {
   Rework: "border-red-300 bg-red-100 text-red-800",
 };
 
-function MethodBadge({ method }: { method: NDEBatch["method"] }) {
+function MethodBadge({ method }: { method: NdeBatch["method"] }) {
   return (
     <span
       className={cn(
@@ -141,7 +142,7 @@ function MethodBadge({ method }: { method: NDEBatch["method"] }) {
   );
 }
 
-function StatusBadge({ status }: { status: BatchStatus }) {
+function StatusBadge({ status }: { status: NdeBatchStatus }) {
   return (
     <span
       className={cn(
@@ -175,6 +176,7 @@ function isWithinRange(date: string, range: DateRange | undefined) {
 }
 
 export function BatchManagementView() {
+  const hasHydrated = useHydrateBatchesStore();
   const batches = useBatchesStore((s) => s.batches);
   const kpis = useBatchesKPIs();
   const issueBatch = useBatchesStore((s) => s.issueBatch);
@@ -221,7 +223,7 @@ export function BatchManagementView() {
       const matchesSubcontractor =
         subcontractorFilter === "All" ||
         batch.subcontractor === subcontractorFilter;
-      const matchesDate = isWithinRange(batch.createdAt, dateRange);
+      const matchesDate = isWithinRange(batch.createdDate, dateRange);
 
       return (
         matchesQuery &&
@@ -239,6 +241,10 @@ export function BatchManagementView() {
     statusFilter,
     subcontractorFilter,
   ]);
+
+  if (!hasHydrated) {
+    return null;
+  }
 
   const pulseBatch = (batchId: string) => {
     setHighlightedBatchId(batchId);
@@ -513,8 +519,8 @@ export function BatchManagementView() {
                     : 0;
                 const overdueThreshold = Date.now() - 5 * 24 * 60 * 60 * 1000;
                 const isOverdue =
-                  batch.issuedAt !== undefined &&
-                  new Date(batch.issuedAt).getTime() < overdueThreshold &&
+                  batch.issuedDate !== undefined &&
+                  new Date(batch.issuedDate).getTime() < overdueThreshold &&
                   (batch.status === "Issued" || batch.status === "In Progress");
 
                 return (
@@ -529,7 +535,7 @@ export function BatchManagementView() {
                   >
                     <TableCell className="px-6">
                       <button className="font-mono text-xs font-medium text-sky-700 hover:text-sky-800">
-                        {batch.id}
+                        {batch.batchNo}
                       </button>
                     </TableCell>
                     <TableCell>
@@ -548,10 +554,10 @@ export function BatchManagementView() {
                       {batch.subcontractor}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {formatDateLabel(batch.createdAt)}
+                      {formatDateLabel(batch.createdDate)}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {formatDateLabel(batch.issuedAt)}
+                      {formatDateLabel(batch.issuedDate)}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -610,13 +616,15 @@ export function BatchManagementView() {
                           <DropdownMenuItem
                             disabled={batch.status !== "Created"}
                             onClick={() => {
+                              const inspector =
+                                batch.welds[0]?.inspector ?? "NDE-INS-04";
                               issueBatch(
                                 batch.id,
                                 batch.subcontractor,
-                                batch.inspector ?? "NDE-INS-04",
+                                inspector,
                               );
                               toast.success(
-                                `${batch.id} issued to ${batch.subcontractor}`,
+                                `${batch.batchNo} issued to ${batch.subcontractor}`,
                               );
                             }}
                           >
@@ -632,11 +640,13 @@ export function BatchManagementView() {
                               receiveResults(
                                 batch.id,
                                 batch.welds.map((w) => ({
-                                  weldId: w.weldId,
+                                  weldId: w.id,
                                   result: "Accepted" as const,
                                 })),
                               );
-                              toast.success(`Results received for ${batch.id}`);
+                              toast.success(
+                                `Results received for ${batch.batchNo}`,
+                              );
                             }}
                           >
                             <Scan className="h-4 w-4" />
@@ -653,7 +663,7 @@ export function BatchManagementView() {
                             }
                             onClick={() => {
                               closeBatchAction(batch.id);
-                              toast.success(`${batch.id} closed`);
+                              toast.success(`${batch.batchNo} closed`);
                             }}
                           >
                             <CheckCircle2 className="h-4 w-4" />
