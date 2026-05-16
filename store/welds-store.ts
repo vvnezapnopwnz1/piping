@@ -187,3 +187,72 @@ export const useWeldsKPIs = () => {
     }
   }, [welds])
 }
+
+// ---------------------------------------------------------------------------
+// Spool readiness — rolls weld-level status up to spool-level for F↔E handoff
+// ---------------------------------------------------------------------------
+
+export type SpoolReadinessStatus =
+  | "Ready for delivery"
+  | "Blocked"
+  | "In fabrication"
+  | "Not started"
+
+export interface SpoolReadiness {
+  spoolNo: string
+  total: number
+  completed: number
+  rejected: number
+  rework: number
+  inProgress: number
+  notStarted: number
+  status: SpoolReadinessStatus
+  isoNo: string
+}
+
+export const useSpoolReadiness = (): SpoolReadiness[] => {
+  const welds = useWeldsStore((s) => s.welds)
+  return useMemo(() => {
+    const map = new Map<string, WeldJoint[]>()
+    for (const w of welds) {
+      const list = map.get(w.spoolNo) ?? []
+      list.push(w)
+      map.set(w.spoolNo, list)
+    }
+
+    const rows: SpoolReadiness[] = []
+    for (const [spoolNo, group] of map) {
+      const c = group.filter((w) => w.status === "Completed").length
+      const r = group.filter((w) => w.status === "Rejected").length
+      const rw = group.filter((w) => w.status === "Rework").length
+      const ip = group.filter((w) => w.status === "In Progress" || w.status === "On Hold").length
+      const ns = group.filter((w) => w.status === "Not Started").length
+
+      let status: SpoolReadinessStatus
+      if (r > 0 || rw > 0) status = "Blocked"
+      else if (c === group.length) status = "Ready for delivery"
+      else if (ns === group.length) status = "Not started"
+      else status = "In fabrication"
+
+      rows.push({
+        spoolNo,
+        total: group.length,
+        completed: c,
+        rejected: r,
+        rework: rw,
+        inProgress: ip,
+        notStarted: ns,
+        status,
+        isoNo: group[0]?.isoNo ?? "",
+      })
+    }
+
+    const order: Record<SpoolReadinessStatus, number> = {
+      "Ready for delivery": 0,
+      "Blocked": 1,
+      "In fabrication": 2,
+      "Not started": 3,
+    }
+    return rows.sort((a, b) => order[a.status] - order[b.status] || a.spoolNo.localeCompare(b.spoolNo))
+  }, [welds])
+}

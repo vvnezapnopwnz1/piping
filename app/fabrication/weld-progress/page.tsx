@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
-import { FilterSidebar } from "@/components/filter-sidebar";
+import { FilterBar } from "@/components/filter-sidebar";
 import { WeldDetailPanel } from "@/components/weld-detail-panel";
 import { WeldTable } from "@/components/weld-table";
+import { X } from "lucide-react";
 import { type WeldJoint } from "@/lib/weld-data";
 import { useWeldsStore } from "@/store";
 
@@ -41,19 +43,37 @@ function parseDisplayDate(value: string) {
   return parsed;
 }
 
-export default function WeldProgressPage() {
+function WeldProgressInner() {
   const welds = useWeldsStore((s) => s.welds);
   const updateWeld = useWeldsStore((s) => s.updateWeld);
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [appliedFilters, setAppliedFilters] =
     useState<FilterState>(DEFAULT_FILTERS);
   const [selectedJoint, setSelectedJoint] = useState<WeldJoint | null>(null);
+  const searchParams = useSearchParams();
+  const [spoolFilter, setSpoolFilter] = useState<string | null>(null);
+
+  useEffect(() => {
+    const spool = searchParams.get("spool");
+    if (spool) {
+      setSpoolFilter(spool);
+    }
+  }, [searchParams]);
+
+  const clearSpoolFilter = () => {
+    setSpoolFilter(null);
+    window.history.replaceState({}, "", "/fabrication/weld-progress");
+  };
 
   const handleApplyFilters = () => {
     setAppliedFilters({ ...filters });
   };
 
   const filteredJoints = welds.filter((joint) => {
+    if (spoolFilter && joint.spoolNo !== spoolFilter) {
+      return false;
+    }
+
     if (
       appliedFilters.pdsArea !== "all" &&
       !joint.spoolNo.includes(appliedFilters.pdsArea.replace("-", ""))
@@ -102,26 +122,50 @@ export default function WeldProgressPage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] min-h-[720px] gap-1 overflow-hidden">
-      <FilterSidebar
+    <div className="flex flex-col h-[calc(100vh-8rem)] min-h-[720px] gap-1 overflow-hidden">
+      <FilterBar
         filters={filters}
         onFilterChange={setFilters}
         onApply={handleApplyFilters}
       />
 
-      <main className="flex min-w-0 flex-1 overflow-hidden">
-        <WeldTable
-          data={filteredJoints}
-          onSelectJoint={setSelectedJoint}
-          selectedJointId={selectedJoint?.id}
-        />
-      </main>
+      <div className="flex flex-1 min-h-0 overflow-hidden gap-1">
+        <main className="flex min-w-0 flex-1 overflow-hidden flex-col">
+          {spoolFilter && (
+            <div className="px-4 py-2 shrink-0">
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-50 text-sky-800 text-sm border border-sky-200">
+                Spool: {spoolFilter}
+                <button
+                  onClick={clearSpoolFilter}
+                  className="hover:text-sky-950"
+                  aria-label="Clear spool filter"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </span>
+            </div>
+          )}
+          <WeldTable
+            data={filteredJoints}
+            onSelectJoint={setSelectedJoint}
+            selectedJointId={selectedJoint?.id}
+          />
+        </main>
 
-      <WeldDetailPanel
-        joint={selectedJoint}
-        onClose={() => setSelectedJoint(null)}
-        onSave={handleSave}
-      />
+        <WeldDetailPanel
+          joint={selectedJoint}
+          onClose={() => setSelectedJoint(null)}
+          onSave={handleSave}
+        />
+      </div>
     </div>
+  );
+}
+
+export default function WeldProgressPage() {
+  return (
+    <Suspense fallback={null}>
+      <WeldProgressInner />
+    </Suspense>
   );
 }

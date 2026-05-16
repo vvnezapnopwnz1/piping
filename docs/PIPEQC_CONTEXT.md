@@ -60,7 +60,7 @@ Color tokens (Tailwind classes):
 
 ---
 
-## File structure — current state (verified 2026-05-15)
+## File structure — current state (verified 2026-05-16)
 
 ```
 app/
@@ -92,7 +92,8 @@ app/
     pressure-test/reinstatement/progress/page.tsx     # Reinstatement Progress (A6)
     explorer/page.tsx                   # ✅ Testpack Explorer (3 levels × 4 tabs)
   flange/page.tsx                       # ✅ Flange Browse + Detail Panel
-  admin/page.tsx                        # ⚠ placeholder (header only)
+  admin/page.tsx                        # ✅ Project Referential shell (B1+B2)
+  admin/admin-tabs.tsx                  # ✅ 7-tab admin shell with ?tab= URL sync
   spooling/page.tsx                     # ⚠ placeholder (header only)
   reports/page.tsx                      # ⚠ placeholder (header only)
   documentation/page.tsx                # ⚠ placeholder (header only)
@@ -110,9 +111,24 @@ components/
   nde/
     batch-management-view.tsx
     batch-detail-panel.tsx
+    create-batch-dialog.tsx             # ✅ N1 — 2-step Create Batch wizard
+    receive-results-panel.tsx           # ✅ N2 — per-weld Receive Results sheet
   erection/
-    erection-dashboard.tsx
+    erection-status-badge.tsx
+    field-filter-sidebar.tsx
     field-weld-table.tsx
+    field-weld-detail-panel.tsx         # ✅ store-backed after E2.1
+  erection-dashboard.tsx                # ⚠ still static — E2.2 will wire live data
+  admin/
+    teams-tab.tsx
+    subcontractors-tab.tsx
+    welder-qualifications-tab.tsx
+    wps-tab.tsx
+    nde-matrix-tab.tsx
+    rework-codes-tab.tsx
+    joint-categories-tab.tsx
+    add-team-dialog.tsx
+    add-subcontractor-dialog.tsx
   spool-tracking-dashboard.tsx
   testpack/
     pressure-test-homepage.tsx          # 480 LOC
@@ -138,25 +154,29 @@ components/
     flange-detail-panel.tsx             # 203 LOC
 
 store/                                  # Zustand stores
-  welds-store.ts
-  batches-store.ts
+  welds-store.ts                        # shop welds (15 seed)
+  batches-store.ts                      # NDE batches (6 seed)
   notifications-store.ts
-  demo-store.ts
-  testpack-store.ts                     # testpack readiness + line check + blinding + testing + reinstatement workflow
+  demo-store.ts                         # resetAll() cascades to every store
+  testpack-store.ts                     # testpack readiness + line check + item-clearance + blinding + testing + reinstatement (Track A)
+  admin-store.ts                        # teams + subcontractors (B1)
+  erection-store.ts                     # field welds (E2.1) — persisted, mirrors welds-store shape
   index.ts
-  # ⚠ MISSING: flange-store, pressure-test-store
-  # ⚠ Flange screens currently read straight from lib/*-data.ts;
-  # mutations (assign, mark progress) are not yet wired to a store.
+  # ⚠ MISSING: flange-store
+  # ⚠ Flange screens currently read straight from lib/flange-data.ts;
+  # mutations (assign jointer, mark torque progress) are not yet wired to a store.
+  # ⚠ Pressure-test activity tallies are derived from testpack-store — no separate store.
 
 lib/
   weld-data.ts                          # 15 seed weld joints
-  welder-qualifications.ts              # 9 welders + validateWelder()
-  erection-weld-data.ts                 # 520 LOC field welds
-  nde-data.ts                           # 314 LOC NDE seed
-  testpack-data.ts                      # 970 LOC — testpacks + ISOs + spools
-  testpack-seed.ts                      # 18 ISOs / 6 test packs seed for line-check store
-  pressure-test-data.ts                 # 136 LOC — activity tallies
-  flange-data.ts                        # 423 LOC — bolted-flange joints
+  welder-qualifications.ts              # 17 welders (9 shop + 8 field) + validateWelder()
+  erection-weld-data.ts                 # field welds (FieldWeldJoint extends WeldJoint)
+  nde-data.ts                           # NDE seed
+  testpack-data.ts                      # testpacks + ISOs + spools
+  testpack-seed.ts                      # 18 ISOs / 6 test packs seed for testpack-store
+  pressure-test-data.ts                 # activity tallies
+  flange-data.ts                        # bolted-flange joints
+  engineering-references.ts             # B2 read-only refs: WPS, NDE matrix, REWORK_CODES (RW-001..RW-010), Joint Categories
   utils.ts                              # cn() helper
 
 config/
@@ -210,7 +230,29 @@ with a unique localStorage key, exports a main hook and a KPI hook.
 - 6 seed batches across lifecycle stages
 - Actions: `createBatch`, `issueBatch`, `receiveResults`, `markForRework`, `closeBatch`
 - `markForRework` **cascades to welds-store** — the domino effect from the hero flow
+- After N2 merge: `receiveResults` is per-weld (Accepted / Rejected + RW-NNN code from `REWORK_CODES`); the panel that calls it also cascades to welds-store on Rejected
 - Persist key: `pipeqc-batches`
+
+### `admin-store.ts` (B1)
+
+- Teams + subcontractors with `addTeam`, `addSubcontractor`, `toggleSubcontractorActive`
+- Hooks: `useTeams()`, `useSubcontractors()`, plus filter helpers
+- Track A team-pickers (Line Check / Item Clearance / Blinding / Reinstatement) read from this store
+- N1 Create Batch wizard reads subcontractors from here
+- Persist key: `pipeqc-admin`
+
+### `erection-store.ts` (E2.1)
+
+- Field welds, persisted; mirrors welds-store shape
+- Actions: `updateFieldWeld`, `setErectionStatus`, `setRootPercent`, `setCapPercent`, `setForemanConfirmed`, `bulkUpdateErectionStatus`, `resetErection`
+- KPI hook: `useErectionKPIs()` (defined but not yet consumed — E2.2 will wire it into the dashboard)
+- Persist key: `pipeqc-erection`
+
+### `testpack-store.ts` (Track A)
+
+- 6 seed test packs (TP-201..TP-206), 18 ISOs, line-check / item-clearance / blinding / testing / reinstatement workflow state
+- Cascading status transitions match §18 Release Tracking gates
+- Persist key: `pipeqc-testpack`
 
 ### `notifications-store.ts`
 
@@ -222,13 +264,9 @@ with a unique localStorage key, exports a main hook and a KPI hook.
 - `demoMode: boolean` (shows DEMO MODE badge in top nav)
 - `resetAll()` — cascading reset across all stores (re-hydrates seed data)
 
-### ⚠ Missing stores (testpack/flange/pressure-test still read static seeds)
+### ⚠ Remaining missing stores
 
-When wiring real workflows in Tracks A and D below, plan to add:
-
-- `testpack-store` — testpack readiness gates, line check / item-clearance / blinding / testing / reinstatement statuses
-- `flange-store` — bolted joint torquing progress, jointer assignments
-- Either fold pressure-test activity tallies into `testpack-store` (recommended — they're derived) or split if it gets unwieldy
+- `flange-store` — bolted joint torquing progress, jointer assignments (Track §19; flange browse currently reads `lib/flange-data.ts` directly, no mutations)
 
 ---
 
@@ -268,11 +306,11 @@ Page numbers below refer to the Easy Piping User Manual PDF (156 pp).
 | §7            | Fabrication module (Start Fab → QC)   | partially — Weld Progress + Dash                                                                           |
 | §9            | Fabrication reports                   | not built                                                                                                  |
 | §10           | Spool Tracking + Dashboard            | ✅ /tracking                                                                                               |
-| §11           | NDE Management (batch lifecycle)      | ✅ /nde                                                                                                    |
-| §12           | Erection module                       | ✅ /erection                                                                                               |
+| §11           | NDE Management (batch lifecycle)      | ✅ /nde — N1 Create Batch wizard + N2 per-weld Receive Results merged                                      |
+| §12           | Erection module                       | ✅ /erection — field-weld page store-backed after E2.1 (persistence)                                       |
 | §13           | Erection reports                      | not built                                                                                                  |
-| §14–§15       | Testpack management + Preparation     | partially — Explorer only                                                                                  |
-| §16           | **Pressure Test (5 activities × 2)**  | only homepage; 9 sub-screens missing                                                                       |
+| §14–§15       | Testpack management + Preparation     | partially — Explorer + Pressure Test A1–A6 prep/progress screens merged                                    |
+| §16           | **Pressure Test (5 activities × 2)**  | ✅ homepage + 8 sub-screens merged (A1 line-check, A2 item-clearance, A4 blinding, A5 testing, A6 reinst.) |
 | §17           | Testpack homepage (bar graph)         | ✅ /testpack/pressure-test                                                                                 |
 | §18           | Testpack Explorer (3 levels × 4 tabs) | ✅ /testpack/explorer — Release Tracking tab now wired to live `useTestpackStore` data for TP-201..TP-206  |
 | §19           | Flange management (browse + progress) | ✅ browse; progress import missing                                                                         |
@@ -422,3 +460,9 @@ the manual's complete demo surface.
 - **E2.1** — Erection store (`store/erection-store.ts`) created and wired.
   Field weld edits now persist to localStorage (`pipeqc-erection` key).
   `resetAll()` re-seeds from `lib/erection-weld-data.ts`.
+- **N1 + N2** — Track N MVP merged together (per `track-upstream.md` §8 recommendation).
+  - N1: 2-step Create Batch wizard (`components/nde/create-batch-dialog.tsx`) replaces the `Coming soon` placeholder. Step 1 picks method / subcontractor (from admin-store) / matrix ref / inspector; Step 2 selects welds from `useWeldsStore` with Completed default + `Show Rework` toggle + exclusion of welds already in non-Closed batches.
+  - N2: per-weld Receive Results panel (`components/nde/receive-results-panel.tsx`) opens as a nested Sheet over the batch detail. Accept / Reject per weld; Reject requires a Rework Code from `REWORK_CODES`. On submit: 600–800 ms delay → `receiveResults` → `markForRework` cascade on welds-store for Rejected → home notification _"BTH-XXXX: N welds rejected — rework cascaded to fabrication"_.
+  - Type bridge **Option A** chosen: `ReworkCode` in `batches-store.ts` widened to `string`, `REWORK_CODE_LABELS` deleted, legacy 3-letter seed codes migrated (POR→RW-001, CRK→RW-002, SLG→RW-003, UNC→RW-004, LOF→RW-005). `engineering-references.ts:REWORK_CODES` is now the single source of truth for code labels.
+  - `nde-data.ts:rejectionLibrary` migrated to RW-NNN to stay consistent with the store.
+- **E2.3** — Spool readiness gate (F↔E handoff). New selector `useSpoolReadiness()` in `store/welds-store.ts` groups welds by `spoolNo` and derives per-spool status: Ready for delivery / Blocked / In fabrication / Not started. Erection dashboard (`components/erection-dashboard.tsx`) now shows a 5th KPI tile "Spools ready for delivery" and a "Spool delivery readiness" card with a sortable table. Clicking a spool row deep-links to `/fabrication/weld-progress?spool=<spoolNo>` where the page auto-filters and renders a clearable chip. No new state or dependencies — pure read-side derivation.

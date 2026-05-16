@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   BarChart,
   Bar,
@@ -49,7 +50,9 @@ import {
   AlertCircle,
   RefreshCw,
   Download,
+  Truck,
 } from "lucide-react";
+import { useSpoolReadiness } from "@/store";
 import { cn } from "@/lib/utils";
 
 // Mock data
@@ -139,7 +142,40 @@ const COMPLETION_BY_AREA_DATA = [
   { area: "Area D", scope: 558, completed: 428, inProgress: 87 },
 ];
 
+function SpoolReadinessPill({
+  status,
+}: {
+  status: import("@/store").SpoolReadinessStatus;
+}) {
+  const styles: Record<string, string> = {
+    "Ready for delivery": "bg-emerald-50 text-emerald-700 border-emerald-200",
+    Blocked: "bg-red-50 text-red-700 border-red-200",
+    "In fabrication": "bg-sky-50 text-sky-700 border-sky-200",
+    "Not started": "bg-slate-50 text-slate-600 border-slate-200",
+  };
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap border",
+        styles[status],
+      )}
+    >
+      {status}
+    </span>
+  );
+}
+
 export function ErectionDashboard() {
+  const router = useRouter();
+  const readiness = useSpoolReadiness();
+  const readyCount = readiness.filter(
+    (s) => s.status === "Ready for delivery",
+  ).length;
+  const blockedCount = readiness.filter((s) => s.status === "Blocked").length;
+  const inFabCount = readiness.filter(
+    (s) => s.status === "In fabrication",
+  ).length;
+
   const [timeScale, setTimeScale] = useState("7D");
   const [wbu, setWbu] = useState("all");
   const [area, setArea] = useState("all");
@@ -252,7 +288,27 @@ export function ErectionDashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription className="flex items-center gap-2">
+              <Truck className="h-4 w-4" />
+              Spools ready for delivery
+            </CardDescription>
+            <CardTitle className="text-3xl font-bold">{readyCount}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              {blockedCount} blocked · {inFabCount} in fab
+            </p>
+            <div className="flex items-center gap-1 mt-1 text-sm text-emerald-600">
+              <a href="#spool-readiness" className="hover:underline">
+                View details ↓
+              </a>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader className="pb-2">
             <CardDescription className="flex items-center gap-2">
@@ -329,6 +385,73 @@ export function ErectionDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Spool delivery readiness */}
+      <Card id="spool-readiness">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">
+            Spool delivery readiness
+          </CardTitle>
+          <CardDescription>
+            Every shop spool must have all its welds Accepted before site
+            delivery. Live view from fabrication QC.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Spool</TableHead>
+                <TableHead>ISO</TableHead>
+                <TableHead className="text-right">Welds</TableHead>
+                <TableHead className="text-right">Accepted</TableHead>
+                <TableHead className="text-right">Rejected</TableHead>
+                <TableHead className="text-right">Rework</TableHead>
+                <TableHead className="text-right">In progress</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {readiness.map((row) => (
+                <TableRow
+                  key={row.spoolNo}
+                  className="cursor-pointer hover:bg-slate-50"
+                  onClick={() =>
+                    router.push(
+                      `/fabrication/weld-progress?spool=${encodeURIComponent(row.spoolNo)}`,
+                    )
+                  }
+                >
+                  <TableCell className="font-mono">{row.spoolNo}</TableCell>
+                  <TableCell className="font-mono text-slate-600">
+                    {row.isoNo}
+                  </TableCell>
+                  <TableCell className="text-right">{row.total}</TableCell>
+                  <TableCell className="text-right text-emerald-700">
+                    {row.completed}
+                  </TableCell>
+                  <TableCell
+                    className={`text-right ${row.rejected > 0 ? "text-red-600 font-medium" : "text-slate-400"}`}
+                  >
+                    {row.rejected}
+                  </TableCell>
+                  <TableCell
+                    className={`text-right ${row.rework > 0 ? "text-amber-700 font-medium" : "text-slate-400"}`}
+                  >
+                    {row.rework}
+                  </TableCell>
+                  <TableCell className="text-right text-slate-600">
+                    {row.inProgress}
+                  </TableCell>
+                  <TableCell>
+                    <SpoolReadinessPill status={row.status} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       {/* Charts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

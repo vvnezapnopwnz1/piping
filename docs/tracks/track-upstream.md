@@ -338,7 +338,7 @@ store mutations. KPI хук `useErectionKPIs` | ✅ Merged | ⭐⭐⭐ блок�
   `welds-store` (group by spoolNo) — derive
   `spoolReadyForSite = все его welds Accepted`.
   Показать pill "Ready for delivery" на dashboard.
-  **Это бизнес-смысл связки F↔E** | связки нет | ⭐⭐⭐
+  **Это бизнес-смысл связки F↔E** | ✅ Merged | ⭐⭐⭐
   ключевой momentum шаг 7 |
   | E2.4 | "Send Field Weld to NDE" в
   field-weld-detail-panel — аналогично F2, но создаёт
