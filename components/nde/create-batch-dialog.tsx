@@ -37,6 +37,7 @@ import {
   useSubcontractors,
   type NdeBatch,
   type NdeMethod,
+  type NdeBatchSource,
 } from "@/store";
 import type { WeldJoint } from "@/lib/weld-data";
 import { cn } from "@/lib/utils";
@@ -45,6 +46,9 @@ interface CreateBatchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated: (batch: NdeBatch) => void;
+  source?: NdeBatchSource;
+  preselectedWeldIds?: string[];
+  defaultMethod?: NdeMethod;
 }
 
 const METHODS: NdeMethod[] = ["RT", "UT", "MT", "PT", "PMI", "HT"];
@@ -62,18 +66,28 @@ export function CreateBatchDialog({
   open,
   onOpenChange,
   onCreated,
+  source = "shop",
+  preselectedWeldIds = [],
+  defaultMethod,
 }: CreateBatchDialogProps) {
   const [step, setStep] = useState<1 | 2>(1);
 
-  const [method, setMethod] = useState<NdeMethod>("RT");
+  const [method, setMethod] = useState<NdeMethod>(defaultMethod ?? "RT");
   const [subcontractor, setSubcontractor] = useState<string>("");
-  const [matrixRef, setMatrixRef] = useState<string>(defaultMatrixByMethod.RT);
+  const [matrixRef, setMatrixRef] = useState<string>(
+    defaultMethod
+      ? defaultMatrixByMethod[defaultMethod]
+      : defaultMatrixByMethod.RT,
+  );
   const [inspector, setInspector] = useState<string>("NDE-INS-04");
   const [createdBy, setCreatedBy] = useState<string>("QC-ENG-01");
 
   const [showRework, setShowRework] = useState(false);
   const [search, setSearch] = useState("");
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(
+    new Set(preselectedWeldIds),
+  );
+  const [preselectWarning, setPreselectWarning] = useState<string>("");
 
   const allWelds = useWeldsStore((s) => s.welds);
   const batches = useBatchesStore((s) => s.batches);
@@ -90,6 +104,42 @@ export function CreateBatchDialog({
       setSubcontractor(activeNdeSubs[0].name);
     }
   }, [activeNdeSubs, subcontractor]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const initialMethod = defaultMethod ?? "RT";
+    setMethod(initialMethod);
+    setMatrixRef(defaultMatrixByMethod[initialMethod]);
+    setSubcontractor(activeNdeSubs.length > 0 ? activeNdeSubs[0].name : "");
+    setInspector("NDE-INS-04");
+    setCreatedBy("QC-ENG-01");
+    setShowRework(false);
+    setSearch("");
+    setPreselectWarning("");
+
+    const alreadyBatched = new Set<string>();
+    let blockedBatchNo = "";
+    for (const batch of batches) {
+      if (batch.status !== "Closed") {
+        for (const weld of batch.welds) {
+          alreadyBatched.add(weld.id);
+          blockedBatchNo = batch.batchNo;
+        }
+      }
+    }
+
+    const cleanIds = preselectedWeldIds.filter((id) => !alreadyBatched.has(id));
+    const droppedCount = preselectedWeldIds.length - cleanIds.length;
+    if (droppedCount > 0 && blockedBatchNo) {
+      setPreselectWarning(
+        `${droppedCount} of the preselected welds are already in batch ${blockedBatchNo} and were unselected.`,
+      );
+    }
+
+    setSelectedIds(new Set(cleanIds));
+    setStep(cleanIds.length > 0 ? 2 : 1);
+  }, [open, preselectedWeldIds, defaultMethod, activeNdeSubs, batches]);
 
   const weldsInNonClosedBatches = useMemo(() => {
     const ids = new Set<string>();
@@ -169,14 +219,19 @@ export function CreateBatchDialog({
 
   const handleReset = () => {
     setStep(1);
-    setMethod("RT");
-    setSubcontractor("");
-    setMatrixRef(defaultMatrixByMethod.RT);
+    setMethod(defaultMethod ?? "RT");
+    setSubcontractor(activeNdeSubs.length > 0 ? activeNdeSubs[0].name : "");
+    setMatrixRef(
+      defaultMethod
+        ? defaultMatrixByMethod[defaultMethod]
+        : defaultMatrixByMethod.RT,
+    );
     setInspector("NDE-INS-04");
     setCreatedBy("QC-ENG-01");
     setShowRework(false);
     setSearch("");
-    setSelectedIds(new Set());
+    setSelectedIds(new Set(preselectedWeldIds));
+    setPreselectWarning("");
   };
 
   const handleCreate = async () => {
@@ -189,6 +244,7 @@ export function CreateBatchDialog({
       subcontractor,
       matrixRef,
       createdBy: createdBy || undefined,
+      source,
       welds: selectedWelds.map((w) => ({
         id: w.id,
         jointNo: w.jointNo,
@@ -310,6 +366,11 @@ export function CreateBatchDialog({
           </div>
         ) : (
           <div className="px-6 py-5 space-y-4">
+            {preselectWarning && (
+              <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                {preselectWarning}
+              </div>
+            )}
             <div className="flex items-center gap-3">
               <Input
                 placeholder="Search joint, spool, ISO..."

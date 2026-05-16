@@ -32,6 +32,8 @@ export type NdeWeldResult = "Pending" | "Accepted" | "Rejected"
 
 export type ReworkCode = string
 
+export type NdeBatchSource = "shop" | "field"
+
 export interface NdeBatchWeld {
   id: string
   jointNo: string
@@ -71,6 +73,7 @@ export interface NdeBatch {
   resultsReceivedDate?: string
   closedDate?: string
   isOverdue?: boolean
+  source: NdeBatchSource
   welds: NdeBatchWeld[]
   history: NdeBatchHistoryEvent[]
 }
@@ -85,6 +88,7 @@ export interface CreateBatchInput {
   subcontractor?: string
   createdBy?: string
   matrixRef?: string
+  source?: NdeBatchSource
 }
 
 export interface WeldResultInput {
@@ -146,6 +150,7 @@ export const INITIAL_BATCHES: NdeBatch[] = [
     issuedDate: daysAgo(13),
     resultsReceivedDate: daysAgo(10),
     closedDate: daysAgo(10),
+    source: "shop",
     welds: [
       { id: "1", jointNo: "J-1024", spoolNo: "PL-TK100-001-A", isoNo: "ISO-TK100-P-001 R2", welder: "WLD-042", result: "Accepted", inspector: "NDE-INS-04", date: daysAgo(10), dwirNo: "DWIR-2025-0847", materialType: "CS A106B", diaInch: '6"', wpsNo: "GTAW-P1-1G", photos: [] },
       { id: "6", jointNo: "J-1029", spoolNo: "PL-TK100-002-A", isoNo: "ISO-TK100-P-002 R2", welder: "WLD-007", result: "Accepted", inspector: "NDE-INS-04", date: daysAgo(10), dwirNo: "DWIR-2025-0801", materialType: "CS A335 P91", diaInch: '8"', wpsNo: "GTAW-P91-1G", photos: [] },
@@ -169,6 +174,7 @@ export const INITIAL_BATCHES: NdeBatch[] = [
     issuedDate: daysAgo(10),
     resultsReceivedDate: daysAgo(8),
     closedDate: daysAgo(6),
+    source: "shop",
     welds: [
       { id: "2", jointNo: "J-1025", spoolNo: "PL-TK100-001-B", isoNo: "ISO-TK100-P-001 R2", welder: "WLD-042", result: "Rejected", reworkCode: "RW-001", inspector: "NDE-INS-07", date: daysAgo(8), remarks: "Porosity cluster at 3 o'clock position, root pass. Requires grinding and re-weld.", dwirNo: "DWIR-2025-0848", materialType: "CS A106B", diaInch: '6"', wpsNo: "GTAW-P1-1G", photos: [] },
       { id: "13", jointNo: "J-1036", spoolNo: "PL-TK100-004-A", isoNo: "ISO-TK100-P-004 R2", welder: "WLD-061", result: "Rejected", reworkCode: "RW-003", inspector: "NDE-INS-07", date: daysAgo(8), remarks: "Slag inclusion and incomplete fusion. Full cut-out required.", dwirNo: "DWIR-2025-0780", materialType: "CS A106B", diaInch: '16"', wpsNo: "SAW-P1-1G", photos: [] },
@@ -191,6 +197,7 @@ export const INITIAL_BATCHES: NdeBatch[] = [
     createdDate: daysAgo(5),
     issuedDate: daysAgo(4),
     resultsReceivedDate: daysAgo(1),
+    source: "shop",
     welds: [
       { id: "5", jointNo: "J-1028", spoolNo: "PL-FU300-007-A", isoNo: "ISO-FU300-P-007 R0", welder: "WLD-019", result: "Rejected", reworkCode: "RW-004", inspector: "NDE-INS-04", date: daysAgo(1), remarks: "Undercut on external bead, depth 1.2mm. Grinding and re-weld required.", dwirNo: "DWIR-2025-0820", materialType: "CS A106B", diaInch: '4"', wpsNo: "SMAW-P1-2G", photos: [] },
     ],
@@ -209,6 +216,7 @@ export const INITIAL_BATCHES: NdeBatch[] = [
     matrixRef: "NDE-M-SS-316L",
     createdDate: daysAgo(3),
     issuedDate: daysAgo(2),
+    source: "shop",
     welds: [
       { id: "11", jointNo: "J-1034", spoolNo: "PL-CW200-006-A", isoNo: "ISO-CW200-P-006 R1", welder: "WLD-033", result: "Pending", inspector: "NDE-INS-09", dwirNo: "DWIR-2025-0843", materialType: "SS 316L", diaInch: '6"', wpsNo: "GTAW-P8-1G", photos: [] },
       { id: "14", jointNo: "J-1037", spoolNo: "PL-CW200-008-A", isoNo: "ISO-CW200-P-008 R0", welder: "WLD-028", result: "Pending", inspector: "NDE-INS-09", dwirNo: "DWIR-2025-0852", materialType: "SS 316L", diaInch: '3"', wpsNo: "GTAW-P8-5G", photos: [] },
@@ -229,6 +237,7 @@ export const INITIAL_BATCHES: NdeBatch[] = [
     createdDate: daysAgo(8),
     issuedDate: daysAgo(7),
     isOverdue: true,
+    source: "shop",
     welds: [
       { id: "3", jointNo: "J-1026", spoolNo: "PL-CW200-003-A", isoNo: "ISO-CW200-P-003 R1", welder: "WLD-015", result: "Pending", inspector: "NDE-INS-11", dwirNo: "DWIR-2025-0831", materialType: "SS 316L", diaInch: '12"', wpsNo: "GTAW-P8-1G", photos: [] },
       { id: "7", jointNo: "J-1030", spoolNo: "PL-TK100-002-B", isoNo: "ISO-TK100-P-002 R2", welder: "WLD-007", result: "Pending", inspector: "NDE-INS-11", dwirNo: "DWIR-2025-0810", materialType: "CS A335 P91", diaInch: '8"', wpsNo: "GTAW-P91-1G", photos: [] },
@@ -247,6 +256,7 @@ export const INITIAL_BATCHES: NdeBatch[] = [
     subcontractor: "Bureau Veritas",
     matrixRef: "NDE-M-CS-A335-P91",
     createdDate: daysAgo(0),
+    source: "shop",
     welds: [
       { id: "15", jointNo: "J-1038", spoolNo: "PL-FU300-011-A", isoNo: "ISO-FU300-P-011 R1", welder: "WLD-007", result: "Pending", dwirNo: "DWIR-2025-0836", materialType: "CS A335 P91", diaInch: '8"', wpsNo: "GTAW-P91-5G", photos: [] },
     ],
@@ -320,6 +330,7 @@ export const useBatchesStore = create<BatchesState>()(
           subcontractor: input.subcontractor ?? "Bureau Veritas",
           matrixRef: input.matrixRef ?? "NDE-M-DEFAULT",
           createdDate: timestamp,
+          source: input.source ?? "shop",
           welds: input.welds.map((w) => ({
             ...w,
             result: "Pending" as NdeWeldResult,
@@ -484,7 +495,7 @@ export const useBatchesStore = create<BatchesState>()(
     {
       name: "pipeqc-batches",
       storage: createJSONStorage(() => localStorage),
-      version: 2,
+      version: 3,
       skipHydration: true,
     }
   )

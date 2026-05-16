@@ -6,7 +6,11 @@ import { AlertTriangle, CheckCircle2, Lock, Save, Scan, X } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-import { useBatchesStore, useErectionStore } from "@/store";
+import {
+  useBatchesStore,
+  useErectionStore,
+  useNotificationsStore,
+} from "@/store";
 import { determineNDEMethods } from "@/lib/welder-qualifications";
 
 import { StatusBadge } from "@/components/status-badge";
@@ -188,6 +192,7 @@ export function FieldWeldDetailPanel({
     const { primary } = determineNDEMethods(weld);
     const batch = createBatch({
       method: primary,
+      source: "field",
       welds: [
         {
           id: weld.id,
@@ -196,7 +201,7 @@ export function FieldWeldDetailPanel({
           isoNo: weld.isoNo,
           diaInch: weld.diaInch,
           welder: weld.welderCode,
-          dwirNo: weld.dwirNo,
+          dwirNo: weld.dwirNo || `DWIR-FW-${Date.now().toString().slice(-5)}`,
           materialType: weld.materialType,
           wpsNo: weld.wpsNo,
         },
@@ -205,13 +210,20 @@ export function FieldWeldDetailPanel({
       matrixRef: `NDE-M-${weld.materialType.replace(/\s/g, "")}`,
     });
     setIsSending(false);
-    toast.success(`Batch ${batch.batchNo} created`, {
+    toast.success(`Batch ${batch.batchNo} created (Site NDE)`, {
       description: `${primary} examination · ${weld.jointNo} (${weld.diaInch} ${weld.materialType})`,
       action: {
         label: "View in NDE",
         onClick: () => router.push(`/nde?batch=${batch.id}`),
       },
       duration: 5000,
+    });
+    useNotificationsStore.getState().pushNotification({
+      severity: "info",
+      category: "nde_overdue",
+      title: `${batch.batchNo}: Site NDE batch created`,
+      description: `${primary} examination · ${weld.jointNo} · ${weld.areaZone}`,
+      href: `/nde?batch=${batch.id}`,
     });
     onClose();
   };

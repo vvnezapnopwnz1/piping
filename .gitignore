@@ -17,3 +17,5 @@ node_modules
 .playwright-mcp
 docs/full_response.md
 .claude
+
+./docs/.obisidian

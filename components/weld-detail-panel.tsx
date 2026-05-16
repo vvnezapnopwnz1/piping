@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ChangeEvent, ReactNode } from "react";
 import { AlertTriangle, CheckCircle2, Lock, Save, Scan, X } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-import { useBatchesStore } from "@/store";
+import { useBatchesStore, useWeldsStore } from "@/store";
 import { determineNDEMethods } from "@/lib/welder-qualifications";
 
+import { CreateBatchDialog } from "@/components/nde/create-batch-dialog";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -116,10 +117,45 @@ export function WeldDetailPanel({
   onSave,
 }: WeldDetailPanelProps) {
   const router = useRouter();
-  const createBatch = useBatchesStore((s) => s.createBatch);
   const [form, setForm] = useState<WeldJoint | null>(null);
   const [saved, setSaved] = useState(false);
-  const [isSending, setIsSending] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [preselectedIds, setPreselectedIds] = useState<string[]>([]);
+
+  const allWelds = useWeldsStore((s) => s.welds);
+  const batches = useBatchesStore((s) => s.batches);
+
+  const weldsInNonClosedBatches = useMemo(() => {
+    const ids = new Set<string>();
+    for (const batch of batches) {
+      if (batch.status !== "Closed") {
+        for (const weld of batch.welds) {
+          ids.add(weld.id);
+        }
+      }
+    }
+    return ids;
+  }, [batches]);
+
+  const spoolPeerIds = useMemo(() => {
+    if (!joint) return [];
+    return allWelds
+      .filter(
+        (w) =>
+          w.spoolNo === joint.spoolNo &&
+          w.status === "Completed" &&
+          w.id !== joint.id &&
+          !weldsInNonClosedBatches.has(w.id),
+      )
+      .map((w) => w.id);
+  }, [allWelds, joint, weldsInNonClosedBatches]);
+
+  const peerCount = spoolPeerIds.length;
+
+  const openWizard = (ids: string[]) => {
+    setPreselectedIds(ids);
+    setWizardOpen(true);
+  };
 
   useEffect(() => {
     if (joint) {
@@ -177,48 +213,6 @@ export function WeldDetailPanel({
       onSave(form);
       setSaved(true);
     }
-  };
-
-  const handleSendToNDE = async () => {
-    if (!joint) return;
-
-    setIsSending(true);
-
-    await new Promise((r) => setTimeout(r, 800));
-
-    const { primary, additional } = determineNDEMethods(joint);
-
-    const batch = createBatch({
-      method: primary,
-      welds: [
-        {
-          id: joint.id,
-          jointNo: joint.jointNo,
-          spoolNo: joint.spoolNo,
-          isoNo: joint.isoNo,
-          diaInch: joint.diaInch,
-          welder: joint.welderCode,
-          dwirNo: joint.dwirNo,
-          materialType: joint.materialType,
-          wpsNo: joint.wpsNo,
-        },
-      ],
-      createdBy: "QC-ENG-01",
-      matrixRef: `NDE-M-${joint.materialType.replace(/\s/g, "")}`,
-    });
-
-    setIsSending(false);
-
-    toast.success(`Batch ${batch.batchNo} created`, {
-      description: `${primary} examination · ${joint.jointNo} (${joint.diaInch} ${joint.materialType})`,
-      action: {
-        label: "View in NDE",
-        onClick: () => router.push(`/nde?batch=${batch.id}`),
-      },
-      duration: 5000,
-    });
-
-    onClose();
   };
 
   const handleDateChange =
@@ -566,15 +560,25 @@ export function WeldDetailPanel({
       {!isLocked && (
         <div className="px-5 py-4 border-t border-slate-200 flex flex-col gap-3 flex-shrink-0">
           {joint.status === "Completed" && !joint.rtNo && (
-            <Button
-              variant="outline"
-              onClick={handleSendToNDE}
-              disabled={isSending}
-              className="h-9 text-xs gap-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-            >
-              <Scan className="h-4 w-4" />
-              {isSending ? "Creating batch..." : "Send to NDE"}
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="outline"
+                onClick={() => openWizard([joint.id])}
+                className="h-9 text-xs gap-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+              >
+                <Scan className="h-4 w-4" />
+                Send to NDE
+              </Button>
+              {peerCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => openWizard([joint.id, ...spoolPeerIds])}
+                  className="text-xs text-slate-500 hover:text-sky-600 underline-offset-2 hover:underline self-start"
+                >
+                  Send entire spool ({peerCount + 1} welds)
+                </button>
+              )}
+            </div>
           )}
           <div className="flex items-center gap-3">
             <Button
@@ -609,6 +613,24 @@ export function WeldDetailPanel({
           </div>
         </div>
       )}
+      <CreateBatchDialog
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        onCreated={(batch) => {
+          toast.success(`${batch.batchNo} created`, {
+            description: `${batch.method} examination · ${batch.welds.length} weld${batch.welds.length === 1 ? "" : "s"}`,
+            action: {
+              label: "View in NDE",
+              onClick: () => router.push(`/nde?batch=${batch.id}`),
+            },
+            duration: 5000,
+          });
+          onClose();
+        }}
+        source="shop"
+        preselectedWeldIds={preselectedIds}
+        defaultMethod={determineNDEMethods(joint).primary}
+      />
     </aside>
   );
 }

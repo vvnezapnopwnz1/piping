@@ -4,6 +4,7 @@ export type NdeMethod = "RT" | "UT" | "MT" | "PT" | "PMI" | "HT"
 export type NdeBatchStatus = "Created" | "Issued" | "In Progress" | "Results Received" | "Closed" | "Rework"
 export type NdeWeldResult = "Pending" | "Accepted" | "Rejected"
 export type ReworkCode = string
+export type NdeBatchSource = "shop" | "field"
 
 export interface NdeBatchWeld {
   id: string
@@ -44,6 +45,7 @@ export interface NdeBatch {
   resultsReceivedDate?: string
   closedDate?: string
   isOverdue?: boolean
+  source: NdeBatchSource
   welds: NdeBatchWeld[]
   history: NdeBatchHistoryEvent[]
 }
@@ -276,6 +278,7 @@ export const NDE_BATCHES: NdeBatch[] = blueprints.map((blueprint, batchIndex) =>
     resultsReceivedDate: blueprint.resultsReceivedDate,
     closedDate: blueprint.closedDate,
     isOverdue: blueprint.isOverdue,
+    source: "shop",
     welds,
     history: createHistory(blueprint, welds, batchIndex),
   }

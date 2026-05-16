@@ -452,6 +452,9 @@ export function BatchManagementView() {
                   Method
                 </TableHead>
                 <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  Source
+                </TableHead>
+                <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                   Welds
                 </TableHead>
                 <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -515,6 +518,18 @@ export function BatchManagementView() {
                     </TableCell>
                     <TableCell>
                       <MethodBadge method={batch.method} />
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={cn(
+                          "inline-flex items-center rounded border px-2 py-0.5 text-xs font-medium whitespace-nowrap",
+                          batch.source === "field"
+                            ? "border-sky-300 bg-sky-100 text-sky-700"
+                            : "border-slate-300 bg-slate-100 text-slate-700",
+                        )}
+                      >
+                        {batch.source === "field" ? "Site" : "Shop"}
+                      </span>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1.5 text-sm text-slate-900">
