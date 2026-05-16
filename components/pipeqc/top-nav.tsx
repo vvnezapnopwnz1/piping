@@ -48,6 +48,19 @@ const routeLabels: Record<string, string> = {
   reports: "Reports",
   settings: "Settings",
   documentation: "Documentation",
+  testpack: "Testpack",
+  "pressure-test": "Pressure Test",
+  "line-check": "Line Check",
+  "item-clearance": "Item Clearance",
+  blinding: "Blinding",
+  "testing-precomm": "Testing & Pre-comm",
+  reinstatement: "Reinstatement",
+  preparation: "Preparation",
+  progress: "Progress",
+  explorer: "Explorer",
+  flange: "Flange Management",
+  erection: "Erection",
+  "site-weld-progress": "Site Weld Progress",
 };
 
 export function TopNav() {

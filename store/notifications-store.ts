@@ -136,6 +136,17 @@ export const INITIAL_NOTIFICATIONS: Notification[] = [
     timestamp: daysAgo(2),
     read: true,
   },
+  {
+    id: "n-007",
+    severity: "info",
+    category: "system",
+    title: "TP-205: 5 ISOs ready for line check",
+    description:
+      "Test pack TP-205 (Cooling Tower CT-01) has 5 ISOs eligible for line check. Assign to a checker team.",
+    href: "/testpack/pressure-test",
+    timestamp: daysAgo(1),
+    read: false,
+  },
 ]
 
 let manualIdCounter = INITIAL_NOTIFICATIONS.length

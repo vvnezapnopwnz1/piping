@@ -6,6 +6,7 @@ import { persist, createJSONStorage } from "zustand/middleware"
 import { useWeldsStore } from "./welds-store"
 import { useBatchesStore } from "./batches-store"
 import { useNotificationsStore } from "./notifications-store"
+import { useTestpackStore } from "./testpack-store"
 
 /**
  * Demo store — global demo-mode toggle and master reset.
@@ -44,6 +45,7 @@ export const useDemoStore = create<DemoState>()(
         useWeldsStore.getState().resetDemo()
         useBatchesStore.getState().resetDemo()
         useNotificationsStore.getState().resetDemo()
+        useTestpackStore.getState().resetDemo()
         set({
           demoMode: true,
           lastResetAt: new Date().toISOString(),

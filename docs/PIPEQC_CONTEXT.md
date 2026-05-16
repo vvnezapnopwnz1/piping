@@ -1,0 +1,410 @@
+# PipeQC — Project Context for Claude Code
+
+> Read this file fully before starting work. It contains everything you need
+> to understand the project, the conventions, the current state, and the
+> immediate task.
+
+---
+
+## What we're building
+
+PipeQC is a demo-quality prototype of an industrial piping construction
+QC management system, modeled on TechnipFMC's **Easy Piping** (a system
+used on large EPC projects — LNG plants, refineries, petrochemical units).
+
+**Goal:** investor/client demo fidelity, presented in ~1 week.
+**Not goal:** production code, real backend, multi-user.
+
+The Easy Piping User Manual (TechnipFMC, 156 pages) is the source of truth
+for all domain logic. When in doubt about a workflow, terminology, or UI
+expectation, refer to the manual — not to your training data.
+
+---
+
+## Tech stack
+
+| Layer      | Choice                                | Notes                                |
+| ---------- | ------------------------------------- | ------------------------------------ |
+| Framework  | Next.js 14 App Router                 | All routes under `app/`              |
+| Language   | TypeScript (strict)                   |                                      |
+| Styling    | Tailwind CSS                          | No CSS modules, no styled-components |
+| Components | shadcn/ui (style: "new-york")         | Already installed                    |
+| Icons      | `lucide-react`                        |                                      |
+| Charts     | `recharts`                            |                                      |
+| State      | `zustand@5.0.13` + persist middleware | localStorage backed                  |
+| Toasts     | `sonner`                              | Already wired                        |
+
+Do **not** add new dependencies without confirming with the user first.
+
+---
+
+## Design system
+
+Color tokens (Tailwind classes):
+
+| Role                  | Color                                                         |
+| --------------------- | ------------------------------------------------------------- |
+| Primary               | `sky-600` / `#2563EB`                                         |
+| Success               | `emerald-500`, `emerald-600`, `emerald-50` (bg)               |
+| Warning               | `amber-500`, `amber-600`, `amber-50`                          |
+| Danger                | `red-500`, `red-600`, `red-50`                                |
+| Info / neutral accent | `sky-500`, `sky-50`                                           |
+| In-review / special   | `violet-500`, `violet-50`                                     |
+| Surface               | `slate-50` background, `slate-200` borders                    |
+| Text                  | `slate-900` primary, `slate-600` secondary, `slate-500` muted |
+
+**Status badge pattern:** use `components/status-badge.tsx`. Don't roll your own.
+**Table density:** match `components/weld-table.tsx`.
+**Dashboard density:** match `components/fabrication-dashboard.tsx`.
+**Side panel pattern:** match `components/weld-detail-panel.tsx`.
+
+---
+
+## File structure — current state (verified 2026-05-15)
+
+```
+app/
+  page.tsx                              # Home — notifications dashboard ✅
+  fabrication/
+    dashboard/page.tsx                  # Fabrication Dashboard ✅
+    weld-progress/page.tsx              # Weld Progress + CRUD ✅
+  nde/page.tsx                          # NDE Batch Management ✅
+  tracking/page.tsx                     # Spool Tracking ✅
+  erection/
+    dashboard/page.tsx                  # Erection Dashboard ✅
+    weld-progress/page.tsx              # Site Weld Progress ✅
+  testpack/
+    page.tsx                            # ⚠ shell only — needs overview/landing
+    pressure-test/page.tsx              # ✅ Pressure Test Homepage (sum view)
+    pressure-test/line-check/page.tsx   # redirect → /testpack/pressure-test
+    pressure-test/line-check/preparation/page.tsx  # Line Check Preparation (A1)
+    pressure-test/line-check/progress/page.tsx     # Line Check Progress (A1)
+    pressure-test/item-clearance/page.tsx # redirect → /testpack/pressure-test
+    pressure-test/item-clearance/preparation/page.tsx  # Item Clearance Preparation (A2)
+    pressure-test/item-clearance/progress/page.tsx     # Item Clearance Progress (A2)
+    pressure-test/blinding/page.tsx     # redirect → /testpack/pressure-test
+    pressure-test/blinding/preparation/page.tsx  # Blinding Preparation (A4)
+    pressure-test/blinding/progress/page.tsx     # Blinding Progress (A4)
+    pressure-test/testing-precomm/page.tsx # redirect → /testpack/pressure-test
+    pressure-test/testing-precomm/progress/page.tsx  # Testing & Pre-comm Progress (A5)
+    pressure-test/reinstatement/page.tsx # redirect → /testpack/pressure-test
+    pressure-test/reinstatement/preparation/page.tsx  # Reinstatement Preparation (A6)
+    pressure-test/reinstatement/progress/page.tsx     # Reinstatement Progress (A6)
+    explorer/page.tsx                   # ✅ Testpack Explorer (3 levels × 4 tabs)
+  flange/page.tsx                       # ✅ Flange Browse + Detail Panel
+  admin/page.tsx                        # ⚠ placeholder (header only)
+  spooling/page.tsx                     # ⚠ placeholder (header only)
+  reports/page.tsx                      # ⚠ placeholder (header only)
+  documentation/page.tsx                # ⚠ placeholder (header only)
+  settings/                             # ⚠ placeholder
+
+components/
+  pipeqc/
+    sidebar-nav.tsx                     # role-based nav
+    top-nav.tsx                         # role switcher, reset, demo badge
+  fabrication-dashboard.tsx             # ← reference dashboard pattern
+  weld-table.tsx                        # ← reference table pattern
+  weld-detail-panel.tsx                 # ← reference side panel pattern
+  filter-sidebar.tsx
+  status-badge.tsx                      # ← always use this
+  nde/
+    batch-management-view.tsx
+    batch-detail-panel.tsx
+  erection/
+    erection-dashboard.tsx
+    field-weld-table.tsx
+  spool-tracking-dashboard.tsx
+  testpack/
+    pressure-test-homepage.tsx          # 480 LOC
+    testpack-explorer.tsx               # 1455 LOC (largest screen)
+    iso-level-view.tsx                  # drill-down ISO panel
+    release-work-dialog.tsx             # work-release modal
+    line-check/
+      preparation-view.tsx              # Line Check Preparation UI (A1)
+      progress-view.tsx                 # Line Check Progress UI (A1)
+    item-clearance/
+      preparation-view.tsx              # Item Clearance Preparation UI (A2)
+      progress-view.tsx                 # Item Clearance Progress UI (A2)
+    blinding/
+      preparation-view.tsx              # Blinding Preparation UI (A4)
+      progress-view.tsx                 # Blinding Progress UI (A4)
+    testing-precomm/
+      progress-view.tsx                 # Testing & Pre-comm Progress UI (A5)
+    reinstatement/
+      preparation-view.tsx              # Reinstatement Preparation UI (A6)
+      progress-view.tsx                 # Reinstatement Progress UI (A6)
+  flange/
+    flange-browse.tsx                   # 435 LOC
+    flange-detail-panel.tsx             # 203 LOC
+
+store/                                  # Zustand stores
+  welds-store.ts
+  batches-store.ts
+  notifications-store.ts
+  demo-store.ts
+  testpack-store.ts                     # testpack readiness + line check + blinding + testing + reinstatement workflow
+  index.ts
+  # ⚠ MISSING: flange-store, pressure-test-store
+  # ⚠ Flange screens currently read straight from lib/*-data.ts;
+  # mutations (assign, mark progress) are not yet wired to a store.
+
+lib/
+  weld-data.ts                          # 15 seed weld joints
+  welder-qualifications.ts              # 9 welders + validateWelder()
+  erection-weld-data.ts                 # 520 LOC field welds
+  nde-data.ts                           # 314 LOC NDE seed
+  testpack-data.ts                      # 970 LOC — testpacks + ISOs + spools
+  testpack-seed.ts                      # 18 ISOs / 6 test packs seed for line-check store
+  pressure-test-data.ts                 # 136 LOC — activity tallies
+  flange-data.ts                        # 423 LOC — bolted-flange joints
+  utils.ts                              # cn() helper
+
+config/
+  navigation.ts                         # sidebar items + role visibility
+                                        # (Testpack/Flange already wired)
+
+contexts/
+  role-context.tsx                      # 6 roles
+```
+
+---
+
+## Hero demo flow (works end-to-end)
+
+1. **Home** → user sees notification about an NDE rejection
+2. **Weld Progress** → user clicks joint `J-1029`
+3. **Smart validation** → user tries welder `WLD-099`; system rejects
+   (expired qualification, restricted to CS A106B only)
+4. **Send to NDE** → user picks valid welder, hits Send to NDE; batch
+   created with 600–800ms artificial delay; toast shows action button
+5. **NDE module** → user opens the new batch
+6. **Mark for Rework** → on rejected welds → **DOMINO EFFECT**: weld
+   status flips to Rework in welds store automatically
+7. **Manager role** → switch role, see Fabrication Dashboard KPIs updated
+8. **Erection Dashboard** → "and here's what's happening on site"
+
+### Roles (`contexts/role-context.tsx`)
+
+`qc_engineer`, `nde_inspector`, `project_manager`, `spooling_team`,
+`subcontractor`, `system_admin`
+
+`config/navigation.ts` controls per-role visibility. Some screens are
+hidden from certain roles.
+
+---
+
+## State management — Zustand stores (current)
+
+All app state lives in `/store`. Each store uses `persist` middleware
+with a unique localStorage key, exports a main hook and a KPI hook.
+
+### `welds-store.ts`
+
+- 15 seed records from `lib/weld-data.ts`
+- Actions: `updateWeld`, `markForRework`, `markAccepted`, `markRejected`, `lockWeld`
+- KPI hook: `useWeldsKPIs()` → `{ acceptanceRate, reworkCount, rejectedCount, completedCount }`
+- Persist key: `pipeqc-welds`
+
+### `batches-store.ts`
+
+- 6 seed batches across lifecycle stages
+- Actions: `createBatch`, `issueBatch`, `receiveResults`, `markForRework`, `closeBatch`
+- `markForRework` **cascades to welds-store** — the domino effect from the hero flow
+- Persist key: `pipeqc-batches`
+
+### `notifications-store.ts`
+
+- 6 seed notifications driving home feed
+- Severity: `error | warning | success | info`
+
+### `demo-store.ts`
+
+- `demoMode: boolean` (shows DEMO MODE badge in top nav)
+- `resetAll()` — cascading reset across all stores (re-hydrates seed data)
+
+### ⚠ Missing stores (testpack/flange/pressure-test still read static seeds)
+
+When wiring real workflows in Tracks A and D below, plan to add:
+
+- `testpack-store` — testpack readiness gates, line check / item-clearance / blinding / testing / reinstatement statuses
+- `flange-store` — bolted joint torquing progress, jointer assignments
+- Either fold pressure-test activity tallies into `testpack-store` (recommended — they're derived) or split if it gets unwieldy
+
+---
+
+## Conventions — read this before writing code
+
+1. **Reuse existing patterns.** Before building a new table, look at
+   `weld-table.tsx`. Before a new dashboard, look at
+   `fabrication-dashboard.tsx`. Match density, spacing, colors exactly.
+2. **All components are `"use client"`.** No server components.
+3. **Hardcoded mock data.** Seed data lives at the top of `lib/*-data.ts`.
+4. **Static dashboards are OK** for pure visualizations.
+5. **Artificial delays for fidelity** on mutations:
+   ```ts
+   await new Promise((r) => setTimeout(r, 600 + Math.random() * 200));
+   ```
+   _before_ updating the store, then show a Sonner toast.
+6. **Validation feedback.** Inline red helper text; disable Save while invalid.
+   See `weld-detail-panel.tsx` for the WLD-099 pattern.
+7. **Status colors:** `sky`=info, `amber`=pending, `emerald`=done,
+   `red`=rejected, `violet`=in-review, `slate`=not started.
+8. **No real auth.** Role switching via top-nav dropdown.
+9. **Don't refactor unrelated files.** Smallest possible change.
+10. **Update `config/navigation.ts` when adding new top-level screens.**
+
+---
+
+## Manual cross-reference (for new work)
+
+Page numbers below refer to the Easy Piping User Manual PDF (156 pp).
+
+| Manual §      | Topic                                 | PipeQC status                                                                                             |
+| ------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| §1–§2         | Project definition + System ref       | not built                                                                                                 |
+| §3 (3.1–3.26) | **Project Referential** — 26 entities | not built (placeholder /admin)                                                                            |
+| §5            | Import settings (NDE matrix, PMC)     | not built                                                                                                 |
+| §6            | Spooling (Ident Code, Marian, Browse) | not built (placeholder /spooling)                                                                         |
+| §7            | Fabrication module (Start Fab → QC)   | partially — Weld Progress + Dash                                                                          |
+| §9            | Fabrication reports                   | not built                                                                                                 |
+| §10           | Spool Tracking + Dashboard            | ✅ /tracking                                                                                              |
+| §11           | NDE Management (batch lifecycle)      | ✅ /nde                                                                                                   |
+| §12           | Erection module                       | ✅ /erection                                                                                              |
+| §13           | Erection reports                      | not built                                                                                                 |
+| §14–§15       | Testpack management + Preparation     | partially — Explorer only                                                                                 |
+| §16           | **Pressure Test (5 activities × 2)**  | only homepage; 9 sub-screens missing                                                                      |
+| §17           | Testpack homepage (bar graph)         | ✅ /testpack/pressure-test                                                                                |
+| §18           | Testpack Explorer (3 levels × 4 tabs) | ✅ /testpack/explorer — Release Tracking tab now wired to live `useTestpackStore` data for TP-201..TP-206 |
+| §19           | Flange management (browse + progress) | ✅ browse; progress import missing                                                                        |
+| §20           | Testpack reports                      | not built                                                                                                 |
+
+### §16 Pressure Test — full sub-screen list (still to build)
+
+Each activity has two screens: **Preparation** (assign workload to a team)
+and **Progress** (record completion).
+
+| Activity                 | Preparation §16.x | Progress §16.x    | Team referential                        |
+| ------------------------ | ----------------- | ----------------- | --------------------------------------- |
+| Line Check               | 16.1              | 16.2              | Line Checker (§3.21)                    |
+| Item Clearance           | 16.3              | 16.4              | Finishing (§3.17)                       |
+| Blinding                 | 16.5              | 16.6              | Blinding (§3.16)                        |
+| Testing & Pre-commission | —                 | 16.7 (dates only) | —                                       |
+| Reinstatement            | 16.8              | 16.9              | Reinstatement (§3.18) + Jointer (§3.15) |
+
+Workflow gating (from §18.2 "Release Tracking"):
+`welded → bolted → NDE-tested → ISO complete → line-checked → item-X cleared → QC released → Ready For Test → blinded → tested → reinstated (Y after test, Z after pre-comm)`
+
+**Explorer live-gates wiring (Phase A3):**
+
+- Store testpacks (TP-201..TP-206) appear in the Explorer list with a **LIVE** pill.
+- The **Release Tracking** tab renders 11 live gates computed from `useTestpackStore` (ISO line-check status, open X punch items, blinding status, testing dates, reinstatement items).
+- Each clickable gate deep-links to the corresponding A1–A6 screen with `?testpack={id}`.
+- All 8 prep/progress screens accept `?testpack=` and auto-filter + show a clearable chip.
+- Static testpacks (TP-207+) keep hardcoded gate numbers; other tabs remain static.
+
+---
+
+## Work tracks — what to do next
+
+The remaining work splits naturally into 5 tracks. **Track A is the highest
+demo-value because it completes the hero pressure-test storyline.**
+
+### Track A — Pressure Test workflow (§16) ⭐ recommended next
+
+Goal: turn the existing static homepage into a clickable hero flow.
+
+1. Add `testpack-store` with: testpack[], readiness gates, line-check /
+   item-clearance / blinding / testing / reinstatement statuses, cascading
+   `markX` actions.
+2. Build 9 sub-screens under `/testpack/pressure-test/{activity}/{prep|progress}`
+   following `weld-table` density and `release-work-dialog` UI conventions.
+3. From homepage barchart, make the "ready" / "ongoing" numbers clickable —
+   navigate to the relevant Preparation or Progress screen with filter applied.
+4. Wire `iso-level-view` "Send for line check" → real store mutation +
+   toast + 600ms delay (matches WLD-099 pattern).
+5. Add 2 home-page notifications driving the storyline ("3 ISOs ready for
+   line check", "Test pack TP-205 ready for blinding").
+
+**Demo beat:** "...and here's what happens after fabrication and erection —
+test packs flow through line check, item clearance, blinding, hydrotest,
+reinstatement. Each gated by the previous activity."
+
+### Track B — Admin / Project Referential (§3)
+
+Single-screen tabbed UI covering 26 referentials (read-only is fine for demo).
+Reuse `weld-table` pattern; one tab per referential.
+**Demo value:** medium. Shows breadth + setup story. **Build time:** ~1 day.
+
+Recommended tab order (lump rarely-used ones in "Other"):
+
+1. Subcontractors (§3.1) — 4–6 seed rows
+2. Welder Qualifications (§3.6) — reuse `lib/welder-qualifications.ts`
+3. WPS List (§3.5)
+4. NDE Matrix (§3.9) — diameter × thickness × method
+5. Rework Codes (§3.10)
+6. Systems / Subsystems (§3.19–§3.20)
+7. Line Checker / Blinding / Finishing / Reinstatement / Jointer teams
+   (§3.15–§3.21) — needed for Track A team-pickers
+8. Project Piping Material Class (§3.12)
+9. Joint Categories X/Y/Z (§3.13)
+10. Other (Area, PDS Area, Location, Pressure unit, Line service, …)
+
+### Track C — Reports (§9, §13, §20)
+
+Replace `/reports` placeholder with a table of downloadable reports:
+
+- Fabrication progress (§9)
+- Erection progress (§13)
+- Testpack readiness (§20)
+- NDE summary, Welder performance, Joint history
+
+Each row: title, last generated date, file size, format pill (xlsx/pdf),
+"Download" button (toast "Generating…" → toast "Downloaded mock.xlsx").
+**Build time:** half a day. Pure shell screen — fakes a download.
+
+### Track D — Spooling (§6)
+
+Replace `/spooling` placeholder with:
+
+- Browse Latest / Browse History tabs (§6.5)
+- Manual revision management screen (§6.5.3)
+- Ident Code table (§6.2)
+- Bolting Report import button (§6.3) — fake import dialog
+
+**Build time:** 1 day. Lower demo priority unless audience cares about
+spool fabrication preparation.
+
+### Track E — Demo polish (non-code)
+
+- Pitch deck (problem → product → tech → ask)
+- Demo script + rehearsal (target: 8–10 min, hits hero flow + Track A)
+- Vercel deployment (verify localStorage persistence across page reloads)
+- Reset-to-seed sanity check before each rehearsal
+
+---
+
+## Recommended sequencing
+
+For a demo on day 7:
+
+| Day | Track                         | Why                                   |
+| --- | ----------------------------- | ------------------------------------- |
+| 1–3 | **Track A** Pressure Test     | Highest demo value, closes the loop   |
+| 4   | **Track B** Admin referential | Shows breadth, supports Track A teams |
+| 5   | **Track C** Reports           | Fast win, fills "reports" gap         |
+| 6   | **Track E** Pitch + script    | Rehearse                              |
+| 7   | Buffer / **Track D** if time  | Vercel deploy + final rehearsal       |
+
+If time-boxed harder, skip Track D entirely. Track A + B + C + E covers
+the manual's complete demo surface.
+
+---
+
+## Source documents
+
+- `docs/Easy Piping User Manual.pdf` — 156-page TechnipFMC manual (truth)
+- `docs/PIPEQC_CONTEXT.md` — this file
+- For Track A: **§16** (the 5 activities) and **§17** (homepage description).
+- For Track B: **§3** (26 referentials, page 17–38).
+- For Track C: **§9, §13, §20** (each is short).
+- For Track D: **§6** (page 45–63).

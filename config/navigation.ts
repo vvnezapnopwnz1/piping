@@ -11,6 +11,10 @@ import {
   Activity,
   type LucideIcon,
   HardHat,
+  CircleDot,
+  Gauge,
+  FolderTree,
+  FlaskConical,
 } from 'lucide-react'
 import type { Role } from '@/contexts/role-context'
 
@@ -107,6 +111,33 @@ export const navigationConfig: NavSection[] = [
         title: 'Reports',
         href: '/reports',
         icon: FileText,
+      },
+    ],
+  }, {
+    title: 'TESTING',
+    roles: ['qc_engineer', 'project_manager', 'nde_inspector'],
+    items: [
+      {
+        title: 'Testpack',
+        href: '/testpack',
+        icon: FlaskConical, // или TestTube2
+        children: [
+          {
+            title: 'Explorer',
+            href: '/testpack/explorer',
+            icon: FolderTree,
+          },
+          {
+            title: 'Pressure Test',
+            href: '/testpack/pressure-test',
+            icon: Gauge,
+          },
+        ],
+      },
+      {
+        title: 'Flange Management',
+        href: '/flange',
+        icon: CircleDot,
       },
     ],
   },
