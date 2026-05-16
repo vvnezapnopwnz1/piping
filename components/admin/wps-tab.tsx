@@ -1,33 +1,33 @@
-"use client"
+"use client";
 
-import { useMemo, useState } from "react"
-import { Search } from "lucide-react"
+import { useMemo, useState } from "react";
+import { Search } from "lucide-react";
 
-import { WPS_LIST } from "@/lib/engineering-references"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
+import { WPS_LIST } from "@/lib/engineering-references";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { cn, formatDate } from "@/lib/utils";
 
 export function WpsTab() {
-  const [search, setSearch] = useState("")
+  const [search, setSearch] = useState("");
 
   const kpis = useMemo(() => {
-    const total = WPS_LIST.length
-    const active = WPS_LIST.filter((w) => w.status === "Active").length
-    const superseded = WPS_LIST.filter((w) => w.status === "Superseded").length
-    return { total, active, superseded }
-  }, [])
+    const total = WPS_LIST.length;
+    const active = WPS_LIST.filter((w) => w.status === "Active").length;
+    const superseded = WPS_LIST.filter((w) => w.status === "Superseded").length;
+    return { total, active, superseded };
+  }, []);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return WPS_LIST
-    const q = search.toLowerCase()
+    if (!search.trim()) return WPS_LIST;
+    const q = search.toLowerCase();
     return WPS_LIST.filter(
       (w) =>
         w.code.toLowerCase().includes(q) ||
         w.baseMaterial.toLowerCase().includes(q) ||
-        w.fillerMaterial.toLowerCase().includes(q)
-    )
-  }, [search])
+        w.fillerMaterial.toLowerCase().includes(q),
+    );
+  }, [search]);
 
   return (
     <div className="space-y-4">
@@ -116,14 +116,14 @@ export function WpsTab() {
                 </tr>
               )}
               {filtered.map((w, i) => {
-                const visiblePos = w.positions.slice(0, 4)
-                const remaining = w.positions.length - 4
+                const visiblePos = w.positions.slice(0, 4);
+                const remaining = w.positions.length - 4;
                 return (
                   <tr
                     key={w.code}
                     className={cn(
                       "border-b border-slate-100 transition-colors",
-                      i % 2 === 0 ? "bg-white" : "bg-slate-50/50"
+                      i % 2 === 0 ? "bg-white" : "bg-slate-50/50",
                     )}
                   >
                     <td className="px-3 py-2 whitespace-nowrap font-mono text-xs text-slate-700">
@@ -169,7 +169,7 @@ export function WpsTab() {
                       {w.revision}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-500">
-                      {new Date(w.approvedDate).toLocaleDateString()}
+                      {formatDate(w.approvedDate)}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap">
                       {w.status === "Active" ? (
@@ -189,12 +189,12 @@ export function WpsTab() {
                       )}
                     </td>
                   </tr>
-                )
+                );
               })}
             </tbody>
           </table>
         </div>
       </div>
     </div>
-  )
+  );
 }

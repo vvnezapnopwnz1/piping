@@ -1,41 +1,41 @@
-"use client"
+"use client";
 
-import { useMemo } from "react"
+import { useMemo } from "react";
 
-import { WELDER_QUALIFICATIONS } from "@/lib/welder-qualifications"
-import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
+import { WELDER_QUALIFICATIONS } from "@/lib/welder-qualifications";
+import { Badge } from "@/components/ui/badge";
+import { cn, formatDate } from "@/lib/utils";
 
 export function WelderQualificationsTab() {
-  const today = useMemo(() => new Date(), [])
+  const today = useMemo(() => new Date(), []);
   const currentQuarterStart = useMemo(() => {
-    const q = Math.floor(today.getMonth() / 3)
-    return new Date(today.getFullYear(), q * 3, 1)
-  }, [today])
+    const q = Math.floor(today.getMonth() / 3);
+    return new Date(today.getFullYear(), q * 3, 1);
+  }, [today]);
   const currentQuarterEnd = useMemo(() => {
-    const q = Math.floor(today.getMonth() / 3)
-    return new Date(today.getFullYear(), q * 3 + 3, 0)
-  }, [today])
+    const q = Math.floor(today.getMonth() / 3);
+    return new Date(today.getFullYear(), q * 3 + 3, 0);
+  }, [today]);
 
   const kpis = useMemo(() => {
-    const total = WELDER_QUALIFICATIONS.length
-    const wpsSet = new Set<string>()
-    let expiring = 0
+    const total = WELDER_QUALIFICATIONS.length;
+    const wpsSet = new Set<string>();
+    let expiring = 0;
 
     WELDER_QUALIFICATIONS.forEach((w) => {
-      w.qualifiedWPS.forEach((wps) => wpsSet.add(wps))
-      const expiry = new Date(w.qualificationExpiresOn)
+      w.qualifiedWPS.forEach((wps) => wpsSet.add(wps));
+      const expiry = new Date(w.qualificationExpiresOn);
       if (expiry >= currentQuarterStart && expiry <= currentQuarterEnd) {
-        expiring++
+        expiring++;
       }
-    })
+    });
 
     return {
       total,
       distinctWps: wpsSet.size,
       expiring,
-    }
-  }, [currentQuarterStart, currentQuarterEnd])
+    };
+  }, [currentQuarterStart, currentQuarterEnd]);
 
   return (
     <div className="space-y-4">
@@ -53,7 +53,9 @@ export function WelderQualificationsTab() {
         </div>
         <div className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs">
           <span className="text-slate-500">Qualified WPS codes:</span>
-          <span className="font-semibold text-slate-900">{kpis.distinctWps}</span>
+          <span className="font-semibold text-slate-900">
+            {kpis.distinctWps}
+          </span>
         </div>
         <div className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs">
           <span className="text-slate-500">Expiring this quarter:</span>
@@ -91,16 +93,16 @@ export function WelderQualificationsTab() {
             </thead>
             <tbody>
               {WELDER_QUALIFICATIONS.map((w, i) => {
-                const isExpired = new Date(w.qualificationExpiresOn) < today
-                const visibleWps = w.qualifiedWPS.slice(0, 3)
-                const remaining = w.qualifiedWPS.length - 3
+                const isExpired = new Date(w.qualificationExpiresOn) < today;
+                const visibleWps = w.qualifiedWPS.slice(0, 3);
+                const remaining = w.qualifiedWPS.length - 3;
 
                 return (
                   <tr
                     key={w.welderCode}
                     className={cn(
                       "border-b border-slate-100 transition-colors",
-                      i % 2 === 0 ? "bg-white" : "bg-slate-50/50"
+                      i % 2 === 0 ? "bg-white" : "bg-slate-50/50",
                     )}
                   >
                     <td className="px-3 py-2 whitespace-nowrap font-mono text-xs text-slate-700">
@@ -135,9 +137,7 @@ export function WelderQualificationsTab() {
                       —
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-500">
-                      {new Date(
-                        w.qualificationExpiresOn
-                      ).toLocaleDateString()}
+                      {formatDate(w.qualificationExpiresOn)}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap">
                       {isExpired ? (
@@ -157,7 +157,7 @@ export function WelderQualificationsTab() {
                       )}
                     </td>
                   </tr>
-                )
+                );
               })}
               {/* Empty-state padding if list is short */}
               {WELDER_QUALIFICATIONS.length < 8 && (
@@ -175,5 +175,5 @@ export function WelderQualificationsTab() {
         </div>
       </div>
     </div>
-  )
+  );
 }

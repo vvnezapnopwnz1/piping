@@ -1,20 +1,20 @@
-"use client"
+"use client";
 
-import { useState, useMemo } from "react"
-import { MoreHorizontal, Search } from "lucide-react"
+import { useState, useMemo } from "react";
+import { MoreHorizontal, Search } from "lucide-react";
 
-import { useAdminStore, type Subcontractor } from "@/store/admin-store"
-import { AddSubcontractorDialog } from "./add-subcontractor-dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
+import { useAdminStore, type Subcontractor } from "@/store/admin-store";
+import { AddSubcontractorDialog } from "./add-subcontractor-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/dropdown-menu";
+import { cn, formatDate } from "@/lib/utils";
 
 const SCOPE_LABELS: Record<Subcontractor["scope"][number], string> = {
   fabrication: "Fabrication",
@@ -24,39 +24,41 @@ const SCOPE_LABELS: Record<Subcontractor["scope"][number], string> = {
   finishing: "Finishing",
   reinstatement: "Reinstatement",
   nde: "NDE",
-}
+};
 
 export function SubcontractorsTab() {
-  const subcontractors = useAdminStore((s) => s.subcontractors)
-  const toggleSubcontractorActive = useAdminStore((s) => s.toggleSubcontractorActive)
+  const subcontractors = useAdminStore((s) => s.subcontractors);
+  const toggleSubcontractorActive = useAdminStore(
+    (s) => s.toggleSubcontractorActive,
+  );
 
-  const [search, setSearch] = useState("")
+  const [search, setSearch] = useState("");
 
   const kpis = useMemo(() => {
-    const total = subcontractors.length
-    const active = subcontractors.filter((s) => s.active).length
-    const scopes = new Set<Subcontractor["scope"][number]>()
+    const total = subcontractors.length;
+    const active = subcontractors.filter((s) => s.active).length;
+    const scopes = new Set<Subcontractor["scope"][number]>();
     subcontractors.forEach((s) => {
       if (s.active) {
-        s.scope.forEach((sc) => scopes.add(sc))
+        s.scope.forEach((sc) => scopes.add(sc));
       }
-    })
-    return { total, active, scopes }
-  }, [subcontractors])
+    });
+    return { total, active, scopes };
+  }, [subcontractors]);
 
   const filtered = useMemo(() => {
-    let rows = [...subcontractors]
+    let rows = [...subcontractors];
     if (search.trim()) {
-      const q = search.toLowerCase()
+      const q = search.toLowerCase();
       rows = rows.filter(
         (s) =>
           s.code.toLowerCase().includes(q) ||
           s.name.toLowerCase().includes(q) ||
-          s.contact.toLowerCase().includes(q)
-      )
+          s.contact.toLowerCase().includes(q),
+      );
     }
-    return rows
-  }, [subcontractors, search])
+    return rows;
+  }, [subcontractors, search]);
 
   return (
     <div className="space-y-4">
@@ -141,7 +143,7 @@ export function SubcontractorsTab() {
                   key={sub.code}
                   className={cn(
                     "border-b border-slate-100 transition-colors",
-                    i % 2 === 0 ? "bg-white" : "bg-slate-50/50"
+                    i % 2 === 0 ? "bg-white" : "bg-slate-50/50",
                   )}
                 >
                   <td className="px-3 py-2 whitespace-nowrap font-mono text-xs text-slate-700">
@@ -184,7 +186,7 @@ export function SubcontractorsTab() {
                     )}
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-500">
-                    {new Date(sub.createdAt).toLocaleDateString()}
+                    {formatDate(sub.createdAt)}
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap">
                     <DropdownMenu>
@@ -209,5 +211,5 @@ export function SubcontractorsTab() {
         </div>
       </div>
     </div>
-  )
+  );
 }

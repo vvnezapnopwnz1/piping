@@ -1,20 +1,24 @@
-"use client"
+"use client";
 
-import { useState, useMemo } from "react"
-import { MoreHorizontal, Search } from "lucide-react"
+import { useState, useMemo } from "react";
+import { MoreHorizontal, Search } from "lucide-react";
 
-import { useAdminStore, type TeamType, getTeamTypeLabel } from "@/store/admin-store"
-import { AddTeamDialog } from "./add-team-dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
+import {
+  useAdminStore,
+  type TeamType,
+  getTeamTypeLabel,
+} from "@/store/admin-store";
+import { AddTeamDialog } from "./add-team-dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/dropdown-menu";
+import { cn, formatDate } from "@/lib/utils";
 
 const TYPE_OPTIONS: (TeamType | "all")[] = [
   "all",
@@ -23,7 +27,7 @@ const TYPE_OPTIONS: (TeamType | "all")[] = [
   "finishing",
   "reinstatement",
   "jointer",
-]
+];
 
 const TYPE_LABELS: Record<TeamType | "all", string> = {
   all: "All",
@@ -32,14 +36,14 @@ const TYPE_LABELS: Record<TeamType | "all", string> = {
   finishing: "Finishing",
   reinstatement: "Reinstatement",
   jointer: "Jointer",
-}
+};
 
 export function TeamsTab() {
-  const teams = useAdminStore((s) => s.teams)
-  const toggleTeamActive = useAdminStore((s) => s.toggleTeamActive)
+  const teams = useAdminStore((s) => s.teams);
+  const toggleTeamActive = useAdminStore((s) => s.toggleTeamActive);
 
-  const [filterType, setFilterType] = useState<TeamType | "all">("all")
-  const [search, setSearch] = useState("")
+  const [filterType, setFilterType] = useState<TeamType | "all">("all");
+  const [search, setSearch] = useState("");
 
   const activeCounts = useMemo(() => {
     const counts: Record<TeamType, number> = {
@@ -48,45 +52,51 @@ export function TeamsTab() {
       finishing: 0,
       reinstatement: 0,
       jointer: 0,
-    }
+    };
     teams.forEach((t) => {
-      if (t.active) counts[t.type]++
-    })
-    return counts
-  }, [teams])
+      if (t.active) counts[t.type]++;
+    });
+    return counts;
+  }, [teams]);
 
   const filtered = useMemo(() => {
-    let rows = [...teams]
+    let rows = [...teams];
     if (filterType !== "all") {
-      rows = rows.filter((t) => t.type === filterType)
+      rows = rows.filter((t) => t.type === filterType);
     }
     if (search.trim()) {
-      const q = search.toLowerCase()
+      const q = search.toLowerCase();
       rows = rows.filter(
         (t) =>
-          t.code.toLowerCase().includes(q) || t.name.toLowerCase().includes(q)
-      )
+          t.code.toLowerCase().includes(q) || t.name.toLowerCase().includes(q),
+      );
     }
-    return rows
-  }, [teams, filterType, search])
+    return rows;
+  }, [teams, filterType, search]);
 
   return (
     <div className="space-y-4">
       {/* KPI strip */}
       <div className="flex flex-wrap items-center gap-3">
-        {(["lineCheck", "blinding", "finishing", "reinstatement", "jointer"] as TeamType[]).map(
-          (type) => (
-            <div
-              key={type}
-              className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs"
-            >
-              <span className="text-slate-500">{getTeamTypeLabel(type)}:</span>
-              <span className="font-semibold text-slate-900">
-                {activeCounts[type]}
-              </span>
-            </div>
-          )
-        )}
+        {(
+          [
+            "lineCheck",
+            "blinding",
+            "finishing",
+            "reinstatement",
+            "jointer",
+          ] as TeamType[]
+        ).map((type) => (
+          <div
+            key={type}
+            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs"
+          >
+            <span className="text-slate-500">{getTeamTypeLabel(type)}:</span>
+            <span className="font-semibold text-slate-900">
+              {activeCounts[type]}
+            </span>
+          </div>
+        ))}
       </div>
 
       {/* Filter row */}
@@ -102,7 +112,7 @@ export function TeamsTab() {
                 "h-7 text-xs",
                 filterType === type
                   ? "bg-sky-600 hover:bg-sky-700 text-white"
-                  : "text-slate-600"
+                  : "text-slate-600",
               )}
             >
               {TYPE_LABELS[type]}
@@ -165,7 +175,7 @@ export function TeamsTab() {
                   key={team.code}
                   className={cn(
                     "border-b border-slate-100 transition-colors",
-                    i % 2 === 0 ? "bg-white" : "bg-slate-50/50"
+                    i % 2 === 0 ? "bg-white" : "bg-slate-50/50",
                   )}
                 >
                   <td className="px-3 py-2 whitespace-nowrap font-mono text-xs text-slate-700">
@@ -195,7 +205,7 @@ export function TeamsTab() {
                     )}
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-500">
-                    {new Date(team.createdAt).toLocaleDateString()}
+                    {formatDate(team.createdAt)}
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap">
                     <DropdownMenu>
@@ -220,5 +230,5 @@ export function TeamsTab() {
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -31,7 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 
 interface FilterState {
   categories: PunchCategory[];
@@ -591,7 +591,7 @@ export function PreparationView() {
                         {row.originator}
                       </td>
                       <td className="px-3 py-2 text-xs text-slate-500 whitespace-nowrap">
-                        {new Date(row.createdAt).toLocaleDateString()}
+                        {formatDate(row.createdAt)}
                       </td>
                     </tr>
                   ))}

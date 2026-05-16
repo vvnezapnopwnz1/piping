@@ -35,7 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 
 function SortIcon({
   active,
@@ -520,7 +520,7 @@ export function ProgressView() {
                         {row.assignedToLabel || row.assignedTo}
                       </td>
                       <td className="px-3 py-2 text-xs text-slate-500 whitespace-nowrap">
-                        {new Date(row.assignedOn).toLocaleDateString()}
+                        {formatDate(row.assignedOn)}
                       </td>
                     </tr>
                   ))}
@@ -543,10 +543,8 @@ export function ProgressView() {
                   >
                     <div className="font-medium text-slate-900">{pi.id}</div>
                     <div className="text-slate-500">
-                      {pi.reinstatedAt
-                        ? new Date(pi.reinstatedAt).toLocaleDateString()
-                        : ""}{" "}
-                      · {pi.jointerNo}
+                      {pi.reinstatedAt ? formatDate(pi.reinstatedAt) : ""} ·{" "}
+                      {pi.jointerNo}
                     </div>
                   </div>
                 ))}
@@ -618,7 +616,7 @@ export function ProgressView() {
                 <div className="flex justify-between text-xs">
                   <span className="text-slate-500">Assigned on</span>
                   <span className="font-medium text-slate-900">
-                    {new Date(selectedItem.assignedOn).toLocaleDateString()}
+                    {formatDate(selectedItem.assignedOn)}
                   </span>
                 </div>
               </div>
