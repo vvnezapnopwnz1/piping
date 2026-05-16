@@ -88,6 +88,72 @@ export const WELDER_QUALIFICATIONS: WelderQualification[] = [
     qualificationExpiresOn: "2026-07-22",
   },
 
+  // --- Field welders (erection site) ----------------------------------
+  {
+    welderCode: "WLD-F01",
+    fullName: "Ahmed Hassan (Field)",
+    qualifiedWPS: ["GTAW-P1-1G", "SMAW-P1-2G"],
+    qualifiedMaterials: ["CS A106B"],
+    qualifiedDiameters: ["all"],
+    qualificationExpiresOn: "2027-03-15",
+  },
+  {
+    welderCode: "WLD-F02",
+    fullName: "Boris Petrov (Field)",
+    qualifiedWPS: ["GTAW-P1-1G"],
+    qualifiedMaterials: ["CS A106B"],
+    qualifiedDiameters: ["all"],
+    qualificationExpiresOn: "2027-04-20",
+  },
+  {
+    welderCode: "WLD-F03",
+    fullName: "Chen Wei (Field)",
+    qualifiedWPS: ["GTAW-P8-1G"],
+    qualifiedMaterials: ["SS 316L", "SS 304L"],
+    qualifiedDiameters: ["all"],
+    qualificationExpiresOn: "2027-05-10",
+  },
+  {
+    welderCode: "WLD-F04",
+    fullName: "Dmitry Volkov (Field)",
+    qualifiedWPS: ["GTAW-P91-1G"],
+    qualifiedMaterials: ["CS A335 P91"],
+    qualifiedDiameters: ["all"],
+    qualificationExpiresOn: "2027-06-18",
+  },
+  {
+    welderCode: "WLD-F05",
+    fullName: "Eduard Kowalski (Field)",
+    qualifiedWPS: ["GTAW-P91-1G"],
+    qualifiedMaterials: ["CS A335 P91"],
+    qualifiedDiameters: ["all"],
+    qualificationExpiresOn: "2027-02-28",
+  },
+  {
+    welderCode: "WLD-F06",
+    fullName: "Fernando Silva (Field)",
+    qualifiedWPS: ["GTAW-P8-1G"],
+    qualifiedMaterials: ["SS 316L", "SS 304L"],
+    qualifiedDiameters: ["all"],
+    qualificationExpiresOn: "2027-07-01",
+  },
+  {
+    welderCode: "WLD-F07",
+    fullName: "Giovanni Rossi (Field)",
+    qualifiedWPS: ["SMAW-P1-2G"],
+    qualifiedMaterials: ["CS A106B"],
+    qualifiedDiameters: ["all"],
+    qualificationExpiresOn: "2027-08-12",
+  },
+  {
+    welderCode: "WLD-F08",
+    fullName: "Hiroshi Tanaka (Field)",
+    qualifiedWPS: ["GTAW-P8-2G"],
+    qualifiedMaterials: ["SS 316L", "SS 304L"],
+    qualifiedDiameters: ["all"],
+    qualificationExpiresOn: "2027-09-05",
+  },
+
   // --- The DEMO TRIGGER welder ----------------------------------------
   // When QC Engineer enters WLD-099, the form must reject for any P91
   // (and any stainless steel) — this drives the scripted wow moment.

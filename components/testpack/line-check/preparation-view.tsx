@@ -16,11 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import {
-  useTestpackStore,
-  useLineCheckKPIs,
-  LINE_CHECKER_TEAMS,
-} from "@/store";
+import { useTestpackStore, useLineCheckKPIs, useTeams } from "@/store";
 import { SEED_ISO_SPOOLS } from "@/lib/testpack-seed";
 
 import { Badge } from "@/components/ui/badge";
@@ -67,6 +63,7 @@ export function PreparationView() {
   const testPacks = useTestpackStore((s) => s.testPacks);
   const assignLineCheck = useTestpackStore((s) => s.assignLineCheck);
   const kpis = useLineCheckKPIs();
+  const lineCheckTeams = useTeams("lineCheck");
 
   const [filters, setFilters] = useState<FilterState>({
     testPack: testpackParam || "all",
@@ -596,13 +593,13 @@ export function PreparationView() {
                   <SelectValue placeholder="Select team" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border-slate-300">
-                  {LINE_CHECKER_TEAMS.map((team) => (
+                  {lineCheckTeams.map((team) => (
                     <SelectItem
-                      key={team}
-                      value={team}
+                      key={team.code}
+                      value={team.code}
                       className="text-slate-900 focus:bg-slate-100"
                     >
-                      {team}
+                      {team.code} — {team.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

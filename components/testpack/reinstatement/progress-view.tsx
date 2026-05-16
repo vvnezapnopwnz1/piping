@@ -19,8 +19,8 @@ import {
   useTestpackStore,
   useNotificationsStore,
   useReinstatementKPIs,
-  REINSTATEMENT_TEAMS,
-  JOINTER_LIST,
+  useTeams,
+  useAllTeams,
 } from "@/store";
 import { type PunchCategory } from "@/lib/testpack-seed";
 
@@ -84,6 +84,9 @@ export function ProgressView() {
   const markReinstated = useTestpackStore((s) => s.markReinstated);
   const pushNotification = useNotificationsStore((s) => s.pushNotification);
   const kpis = useReinstatementKPIs();
+  const reinstatementTeams = useTeams("reinstatement");
+  const allReinstatementTeams = useAllTeams("reinstatement");
+  const jointerTeams = useTeams("jointer");
 
   const [search, setSearch] = useState("");
   const [selectedTeam, setSelectedTeam] = useState<string>(teamFilter || "all");
@@ -124,7 +127,7 @@ export function ProgressView() {
         (r) => r.id === pi.reinstatementRequestId,
       );
       const teamName =
-        REINSTATEMENT_TEAMS.find((t) => t.code === req?.assignedTo)?.name ??
+        allReinstatementTeams.find((t) => t.code === req?.assignedTo)?.name ??
         req?.assignedTo ??
         "";
       return {
@@ -350,7 +353,7 @@ export function ProgressView() {
                   >
                     All teams
                   </SelectItem>
-                  {REINSTATEMENT_TEAMS.map((team) => (
+                  {reinstatementTeams.map((team) => (
                     <SelectItem
                       key={team.code}
                       value={team.code}
@@ -667,13 +670,13 @@ export function ProgressView() {
                       <SelectValue placeholder="Select jointer" />
                     </SelectTrigger>
                     <SelectContent className="bg-white border-slate-300">
-                      {JOINTER_LIST.map((j) => (
+                      {jointerTeams.map((j) => (
                         <SelectItem
-                          key={j}
-                          value={j}
+                          key={j.code}
+                          value={j.code}
                           className="text-slate-900 focus:bg-slate-100"
                         >
-                          {j}
+                          {j.code}
                         </SelectItem>
                       ))}
                     </SelectContent>

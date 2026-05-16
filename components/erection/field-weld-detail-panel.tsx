@@ -2,18 +2,11 @@
 
 import { useEffect, useState } from "react";
 import type { ChangeEvent, ReactNode } from "react";
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Lock,
-  Save,
-  Scan,
-  X,
-} from "lucide-react";
+import { AlertTriangle, CheckCircle2, Lock, Save, Scan, X } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-import { useBatchesStore } from "@/store";
+import { useBatchesStore, useErectionStore } from "@/store";
 import { determineNDEMethods } from "@/lib/welder-qualifications";
 
 import { StatusBadge } from "@/components/status-badge";
@@ -31,14 +24,16 @@ import {
 import { cn } from "@/lib/utils";
 import { validateWelder } from "@/lib/welder-qualifications";
 import type { FieldWeldJoint, ErectionStatus } from "@/lib/erection-weld-data";
-import { ERECTION_STATUS_OPTIONS, FIELD_WELDERS } from "@/lib/erection-weld-data";
+import {
+  ERECTION_STATUS_OPTIONS,
+  FIELD_WELDERS,
+} from "@/lib/erection-weld-data";
 
 type WeldStatus = FieldWeldJoint["status"];
 
 interface FieldWeldDetailPanelProps {
-  joint: FieldWeldJoint | null;
+  selectedId: string | null;
   onClose: () => void;
-  onSave: (updated: FieldWeldJoint) => void;
 }
 
 const WELD_STATUSES: WeldStatus[] = [
@@ -107,24 +102,26 @@ function ReadOnlyField({ value }: { value: string }) {
 }
 
 export function FieldWeldDetailPanel({
-  joint,
+  selectedId,
   onClose,
-  onSave,
 }: FieldWeldDetailPanelProps) {
   const router = useRouter();
   const createBatch = useBatchesStore((s) => s.createBatch);
+  const weld = useErectionStore((s) =>
+    s.fieldWelds.find((w) => w.id === selectedId),
+  );
   const [form, setForm] = useState<FieldWeldJoint | null>(null);
   const [saved, setSaved] = useState(false);
   const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
-    if (joint) {
-      setForm({ ...joint });
+    if (weld) {
+      setForm({ ...weld });
       setSaved(false);
     }
-  }, [joint]);
+  }, [selectedId]);
 
-  if (!joint || !form) {
+  if (!weld || !form) {
     return (
       <aside className="w-[360px] rounded-xl border bg-white flex flex-col items-center justify-center">
         <div className="text-center px-8">
@@ -178,37 +175,38 @@ export function FieldWeldDetailPanel({
 
   const handleSave = () => {
     if (form && !isLocked) {
-      onSave(form);
+      useErectionStore.getState().updateFieldWeld(form.id, { ...form });
       setSaved(true);
+      toast.success("Changes saved");
     }
   };
 
   const handleSendToNDE = async () => {
-    if (!joint) return;
+    if (!weld) return;
     setIsSending(true);
     await new Promise((r) => setTimeout(r, 800));
-    const { primary } = determineNDEMethods(joint);
+    const { primary } = determineNDEMethods(weld);
     const batch = createBatch({
       method: primary,
       welds: [
         {
-          id: joint.id,
-          jointNo: joint.jointNo,
-          spoolNo: joint.spoolNo,
-          isoNo: joint.isoNo,
-          diaInch: joint.diaInch,
-          welder: joint.welderCode,
-          dwirNo: joint.dwirNo,
-          materialType: joint.materialType,
-          wpsNo: joint.wpsNo,
+          id: weld.id,
+          jointNo: weld.jointNo,
+          spoolNo: weld.spoolNo,
+          isoNo: weld.isoNo,
+          diaInch: weld.diaInch,
+          welder: weld.welderCode,
+          dwirNo: weld.dwirNo,
+          materialType: weld.materialType,
+          wpsNo: weld.wpsNo,
         },
       ],
       createdBy: "QC-ENG-01",
-      matrixRef: `NDE-M-${joint.materialType.replace(/\s/g, "")}`,
+      matrixRef: `NDE-M-${weld.materialType.replace(/\s/g, "")}`,
     });
     setIsSending(false);
     toast.success(`Batch ${batch.batchNo} created`, {
-      description: `${primary} examination · ${joint.jointNo} (${joint.diaInch} ${joint.materialType})`,
+      description: `${primary} examination · ${weld.jointNo} (${weld.diaInch} ${weld.materialType})`,
       action: {
         label: "View in NDE",
         onClick: () => router.push(`/nde?batch=${batch.id}`),
@@ -219,8 +217,7 @@ export function FieldWeldDetailPanel({
   };
 
   const handleDateChange =
-    (field: keyof FieldWeldJoint) =>
-    (event: ChangeEvent<HTMLInputElement>) => {
+    (field: keyof FieldWeldJoint) => (event: ChangeEvent<HTMLInputElement>) => {
       update(field, toDisplayDate(event.target.value));
     };
 
@@ -269,27 +266,37 @@ export function FieldWeldDetailPanel({
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4">
+      <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-5">
         <div>
           <p className="text-xs font-semibold text-slate-700 uppercase tracking-widest mb-3 pb-1.5 border-b border-slate-200">
-            Identification
+            Joint Information
           </p>
           <div className="flex flex-col gap-3">
             <div className="grid grid-cols-2 gap-3">
+              <FieldRow label="Joint No">
+                <ReadOnlyField value={form.jointNo} />
+              </FieldRow>
               <FieldRow label="ISO No">
                 <ReadOnlyField value={form.isoNo} />
+              </FieldRow>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <FieldRow label="Spool No">
+                <ReadOnlyField value={form.spoolNo} />
               </FieldRow>
               <FieldRow label="Dia-inch">
                 <ReadOnlyField value={form.diaInch} />
               </FieldRow>
             </div>
-            <FieldRow label="Material Type">
-              <ReadOnlyField value={form.materialType} />
-            </FieldRow>
             <div className="grid grid-cols-2 gap-3">
+              <FieldRow label="Material Type">
+                <ReadOnlyField value={form.materialType} />
+              </FieldRow>
               <FieldRow label="WPS No">
                 <ReadOnlyField value={form.wpsNo} />
               </FieldRow>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
               <FieldRow label="Heat No">
                 {isLocked ? (
                   <ReadOnlyField value={form.heatNo || "—"} />
@@ -682,7 +689,7 @@ export function FieldWeldDetailPanel({
 
       {!isLocked && (
         <div className="px-5 py-4 border-t border-slate-200 flex flex-col gap-3 flex-shrink-0">
-          {joint.status === "Completed" && !joint.rtNo && (
+          {weld.status === "Completed" && !weld.rtNo && (
             <Button
               variant="outline"
               onClick={handleSendToNDE}

@@ -259,24 +259,24 @@ When wiring real workflows in Tracks A and D below, plan to add:
 
 Page numbers below refer to the Easy Piping User Manual PDF (156 pp).
 
-| Manual §      | Topic                                 | PipeQC status                                                                                             |
-| ------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| §1–§2         | Project definition + System ref       | not built                                                                                                 |
-| §3 (3.1–3.26) | **Project Referential** — 26 entities | not built (placeholder /admin)                                                                            |
-| §5            | Import settings (NDE matrix, PMC)     | not built                                                                                                 |
-| §6            | Spooling (Ident Code, Marian, Browse) | not built (placeholder /spooling)                                                                         |
-| §7            | Fabrication module (Start Fab → QC)   | partially — Weld Progress + Dash                                                                          |
-| §9            | Fabrication reports                   | not built                                                                                                 |
-| §10           | Spool Tracking + Dashboard            | ✅ /tracking                                                                                              |
-| §11           | NDE Management (batch lifecycle)      | ✅ /nde                                                                                                   |
-| §12           | Erection module                       | ✅ /erection                                                                                              |
-| §13           | Erection reports                      | not built                                                                                                 |
-| §14–§15       | Testpack management + Preparation     | partially — Explorer only                                                                                 |
-| §16           | **Pressure Test (5 activities × 2)**  | only homepage; 9 sub-screens missing                                                                      |
-| §17           | Testpack homepage (bar graph)         | ✅ /testpack/pressure-test                                                                                |
-| §18           | Testpack Explorer (3 levels × 4 tabs) | ✅ /testpack/explorer — Release Tracking tab now wired to live `useTestpackStore` data for TP-201..TP-206 |
-| §19           | Flange management (browse + progress) | ✅ browse; progress import missing                                                                        |
-| §20           | Testpack reports                      | not built                                                                                                 |
+| Manual §      | Topic                                 | PipeQC status                                                                                              |
+| ------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| §1–§2         | Project definition + System ref       | not built                                                                                                  |
+| §3 (3.1–3.26) | **Project Referential** — 26 entities | B1 merged: Teams, Subcontractors, Welder Qualifications tabs in /admin; Team pickers read from admin store |
+| §5            | Import settings (NDE matrix, PMC)     | not built                                                                                                  |
+| §6            | Spooling (Ident Code, Marian, Browse) | not built (placeholder /spooling)                                                                          |
+| §7            | Fabrication module (Start Fab → QC)   | partially — Weld Progress + Dash                                                                           |
+| §9            | Fabrication reports                   | not built                                                                                                  |
+| §10           | Spool Tracking + Dashboard            | ✅ /tracking                                                                                               |
+| §11           | NDE Management (batch lifecycle)      | ✅ /nde                                                                                                    |
+| §12           | Erection module                       | ✅ /erection                                                                                               |
+| §13           | Erection reports                      | not built                                                                                                  |
+| §14–§15       | Testpack management + Preparation     | partially — Explorer only                                                                                  |
+| §16           | **Pressure Test (5 activities × 2)**  | only homepage; 9 sub-screens missing                                                                       |
+| §17           | Testpack homepage (bar graph)         | ✅ /testpack/pressure-test                                                                                 |
+| §18           | Testpack Explorer (3 levels × 4 tabs) | ✅ /testpack/explorer — Release Tracking tab now wired to live `useTestpackStore` data for TP-201..TP-206  |
+| §19           | Flange management (browse + progress) | ✅ browse; progress import missing                                                                         |
+| §20           | Testpack reports                      | not built                                                                                                  |
 
 ### §16 Pressure Test — full sub-screen list (still to build)
 
@@ -330,6 +330,12 @@ test packs flow through line check, item clearance, blinding, hydrotest,
 reinstatement. Each gated by the previous activity."
 
 ### Track B — Admin / Project Referential (§3)
+
+**B1 merged:** Tabbed admin shell with 3 referential tabs — Teams (read+add), Subcontractors (read+add), Welder Qualifications (read-only). A new `store/admin-store.ts` persists teams and subcontractors; Track A team-pickers now read from this store instead of hardcoded seed constants. Adding a team in admin makes it appear in all downstream pickers on next mount. Reset Demo also resets admin store.
+
+**B2 merged:** 4 read-only engineering reference tabs added — WPS List (§3.5), NDE Matrix (§3.9), Rework Codes (§3.10), Joint Categories X/Y/Z (§3.13). Static data lives in `lib/engineering-references.ts`; no store, no mutations. Admin shell now has 7 tabs total. URL sync (`?tab=`) covers all 7.
+
+Remaining B3 tabs: Systems/Subsystems, Material Class, and other minor referentials (§3.12, §3.19–§3.20).
 
 Single-screen tabbed UI covering 26 referentials (read-only is fine for demo).
 Reuse `weld-table` pattern; one tab per referential.
@@ -408,3 +414,11 @@ the manual's complete demo surface.
 - For Track B: **§3** (26 referentials, page 17–38).
 - For Track C: **§9, §13, §20** (each is short).
 - For Track D: **§6** (page 45–63).
+
+---
+
+## Merge log
+
+- **E2.1** — Erection store (`store/erection-store.ts`) created and wired.
+  Field weld edits now persist to localStorage (`pipeqc-erection` key).
+  `resetAll()` re-seeds from `lib/erection-weld-data.ts`.

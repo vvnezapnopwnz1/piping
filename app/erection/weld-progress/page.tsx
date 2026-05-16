@@ -5,7 +5,7 @@ import { useState } from "react";
 import { FieldFilterSidebar } from "@/components/erection/field-filter-sidebar";
 import { FieldWeldDetailPanel } from "@/components/erection/field-weld-detail-panel";
 import { FieldWeldTable } from "@/components/erection/field-weld-table";
-import { FIELD_WELD_DATA, type FieldWeldJoint } from "@/lib/erection-weld-data";
+import { useErectionStore } from "@/store";
 
 interface FilterState {
   pdsArea: string;
@@ -45,19 +45,17 @@ function parseDisplayDate(value: string) {
 }
 
 export default function ErectionWeldProgressPage() {
-  const [welds, setWelds] = useState<FieldWeldJoint[]>(FIELD_WELD_DATA);
+  const fieldWelds = useErectionStore((s) => s.fieldWelds);
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [appliedFilters, setAppliedFilters] =
     useState<FilterState>(DEFAULT_FILTERS);
-  const [selectedJoint, setSelectedJoint] = useState<FieldWeldJoint | null>(
-    null,
-  );
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const handleApplyFilters = () => {
     setAppliedFilters({ ...filters });
   };
 
-  const filteredJoints = welds.filter((joint) => {
+  const filteredJoints = fieldWelds.filter((joint) => {
     if (
       appliedFilters.pdsArea !== "all" &&
       !joint.spoolNo.includes(appliedFilters.pdsArea.replace("-", ""))
@@ -114,11 +112,6 @@ export default function ErectionWeldProgressPage() {
     return true;
   });
 
-  const handleSave = (updated: FieldWeldJoint) => {
-    setWelds((prev) => prev.map((w) => (w.id === updated.id ? updated : w)));
-    setSelectedJoint(updated);
-  };
-
   return (
     <div className="flex h-[calc(100vh-8rem)] min-h-[720px] gap-1 overflow-hidden">
       <FieldFilterSidebar
@@ -130,15 +123,14 @@ export default function ErectionWeldProgressPage() {
       <main className="flex min-w-0 flex-1 overflow-hidden">
         <FieldWeldTable
           data={filteredJoints}
-          onSelectJoint={setSelectedJoint}
-          selectedJointId={selectedJoint?.id}
+          onSelectJoint={(joint) => setSelectedId(joint.id)}
+          selectedJointId={selectedId ?? undefined}
         />
       </main>
 
       <FieldWeldDetailPanel
-        joint={selectedJoint}
-        onClose={() => setSelectedJoint(null)}
-        onSave={handleSave}
+        selectedId={selectedId}
+        onClose={() => setSelectedId(null)}
       />
     </div>
   );

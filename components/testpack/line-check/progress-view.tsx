@@ -17,11 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import {
-  useTestpackStore,
-  useNotificationsStore,
-  LINE_CHECKER_TEAMS,
-} from "@/store";
+import { useTestpackStore, useNotificationsStore, useTeams } from "@/store";
 import {
   type PunchItem,
   type ISORecord,
@@ -98,6 +94,7 @@ export function ProgressView() {
   const checkingRequests = useTestpackStore((s) => s.checkingRequests);
   const recordLineCheck = useTestpackStore((s) => s.recordLineCheck);
   const pushNotification = useNotificationsStore((s) => s.pushNotification);
+  const lineCheckTeams = useTeams("lineCheck");
 
   const [search, setSearch] = useState("");
   const [selectedTeam, setSelectedTeam] = useState<string>(teamFilter || "all");
@@ -218,7 +215,8 @@ export function ProgressView() {
   };
 
   const addPunchRow = () => {
-    const team = selectedISO?.lineCheckAssignedTo ?? LINE_CHECKER_TEAMS[0];
+    const team =
+      selectedISO?.lineCheckAssignedTo ?? lineCheckTeams[0]?.code ?? "";
     setPunchRows((prev) => [
       ...prev,
       {
@@ -390,13 +388,13 @@ export function ProgressView() {
                   >
                     All teams
                   </SelectItem>
-                  {LINE_CHECKER_TEAMS.map((team) => (
+                  {lineCheckTeams.map((team) => (
                     <SelectItem
-                      key={team}
-                      value={team}
+                      key={team.code}
+                      value={team.code}
                       className="text-slate-900 focus:bg-slate-100"
                     >
-                      {team}
+                      {team.code}
                     </SelectItem>
                   ))}
                 </SelectContent>

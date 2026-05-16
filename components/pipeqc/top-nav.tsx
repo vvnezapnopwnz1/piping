@@ -38,7 +38,7 @@ const projects = [
 
 // Route labels for breadcrumb
 const routeLabels: Record<string, string> = {
-  admin: "Admin Module",
+  admin: "Admin",
   spooling: "Spooling Module",
   fabrication: "Fabrication",
   "weld-progress": "Weld Progress",

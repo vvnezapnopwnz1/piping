@@ -16,11 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import {
-  useTestpackStore,
-  useItemClearanceKPIs,
-  FINISHING_TEAMS,
-} from "@/store";
+import { useTestpackStore, useItemClearanceKPIs, useTeams } from "@/store";
 import { type PunchCategory } from "@/lib/testpack-seed";
 
 import { Button } from "@/components/ui/button";
@@ -87,6 +83,7 @@ export function PreparationView() {
   const testPacks = useTestpackStore((s) => s.testPacks);
   const assignItemClearance = useTestpackStore((s) => s.assignItemClearance);
   const kpis = useItemClearanceKPIs();
+  const finishingTeams = useTeams("finishing");
 
   const [filters, setFilters] = useState<FilterState>({
     categories: ["X"],
@@ -679,7 +676,7 @@ export function PreparationView() {
                   <SelectValue placeholder="Select team" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border-slate-300">
-                  {FINISHING_TEAMS.map((team) => (
+                  {finishingTeams.map((team) => (
                     <SelectItem
                       key={team.code}
                       value={team.code}

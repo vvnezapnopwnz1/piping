@@ -15,11 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import {
-  useTestpackStore,
-  useNotificationsStore,
-  BLINDING_TEAMS,
-} from "@/store";
+import { useTestpackStore, useNotificationsStore, useTeams } from "@/store";
 import { type TestPackRecord } from "@/lib/testpack-seed";
 
 import { Button } from "@/components/ui/button";
@@ -77,6 +73,7 @@ export function ProgressView() {
   const blindingRequests = useTestpackStore((s) => s.blindingRequests);
   const recordBlindingDate = useTestpackStore((s) => s.recordBlindingDate);
   const pushNotification = useNotificationsStore((s) => s.pushNotification);
+  const blindingTeams = useTeams("blinding");
 
   const [search, setSearch] = useState("");
   const [selectedTeam, setSelectedTeam] = useState<string>(teamFilter || "all");
@@ -104,7 +101,7 @@ export function ProgressView() {
     let rows = activeTestPacks.map((tp) => {
       const req = blindingRequests.find((r) => r.id === tp.blindingRequestId);
       const teamName =
-        BLINDING_TEAMS.find((t) => t.code === req?.assignedTo)?.name ??
+        blindingTeams.find((t) => t.code === req?.assignedTo)?.name ??
         req?.assignedTo ??
         "";
       return {
@@ -257,7 +254,7 @@ export function ProgressView() {
                   <SelectItem value="all" className="text-sm">
                     All teams
                   </SelectItem>
-                  {BLINDING_TEAMS.map((t) => (
+                  {blindingTeams.map((t) => (
                     <SelectItem key={t.code} value={t.code} className="text-sm">
                       {t.code}
                     </SelectItem>

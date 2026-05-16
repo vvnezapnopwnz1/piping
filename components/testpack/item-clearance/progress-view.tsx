@@ -20,7 +20,7 @@ import {
   useTestpackStore,
   useNotificationsStore,
   useItemClearanceKPIs,
-  FINISHING_TEAMS,
+  useTeams,
 } from "@/store";
 import { type PunchCategory } from "@/lib/testpack-seed";
 
@@ -85,6 +85,7 @@ export function ProgressView() {
   );
   const pushNotification = useNotificationsStore((s) => s.pushNotification);
   const kpis = useItemClearanceKPIs();
+  const finishingTeams = useTeams("finishing");
 
   const [search, setSearch] = useState("");
   const [selectedTeam, setSelectedTeam] = useState<string>(teamFilter || "all");
@@ -115,7 +116,7 @@ export function ProgressView() {
       const tp = testPacks.find((t) => t.id === iso?.testpackId);
       const req = clearanceRequests.find((r) => r.id === pi.clearanceRequestId);
       const teamName =
-        FINISHING_TEAMS.find((t) => t.code === req?.assignedTo)?.name ??
+        finishingTeams.find((t) => t.code === req?.assignedTo)?.name ??
         req?.assignedTo ??
         "";
       return {
@@ -346,7 +347,7 @@ export function ProgressView() {
                   >
                     All teams
                   </SelectItem>
-                  {FINISHING_TEAMS.map((team) => (
+                  {finishingTeams.map((team) => (
                     <SelectItem
                       key={team.code}
                       value={team.code}

@@ -16,11 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import {
-  useTestpackStore,
-  useReinstatementKPIs,
-  REINSTATEMENT_TEAMS,
-} from "@/store";
+import { useTestpackStore, useReinstatementKPIs, useTeams } from "@/store";
 import { type PunchCategory } from "@/lib/testpack-seed";
 
 import { Button } from "@/components/ui/button";
@@ -87,6 +83,7 @@ export function PreparationView() {
   const isos = useTestpackStore((s) => s.isos);
   const assignReinstatement = useTestpackStore((s) => s.assignReinstatement);
   const kpis = useReinstatementKPIs();
+  const reinstatementTeams = useTeams("reinstatement");
 
   const [filters, setFilters] = useState<FilterState>({
     categories: ["Y", "Z"],
@@ -620,7 +617,7 @@ export function PreparationView() {
                       <SelectValue placeholder="Select team" />
                     </SelectTrigger>
                     <SelectContent className="bg-white border-slate-300">
-                      {REINSTATEMENT_TEAMS.map((team) => (
+                      {reinstatementTeams.map((team) => (
                         <SelectItem
                           key={team.code}
                           value={team.code}

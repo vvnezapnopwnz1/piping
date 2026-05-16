@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { useTestpackStore, useBlindingKPIs, BLINDING_TEAMS } from "@/store";
+import { useTestpackStore, useBlindingKPIs, useTeams } from "@/store";
 import { SEED_ISO_SPOOLS } from "@/lib/testpack-seed";
 
 import { Badge } from "@/components/ui/badge";
@@ -62,6 +62,7 @@ export function PreparationView() {
   const testPacks = useTestpackStore((s) => s.testPacks);
   const assignBlinding = useTestpackStore((s) => s.assignBlinding);
   const kpis = useBlindingKPIs();
+  const blindingTeams = useTeams("blinding");
 
   const [filters, setFilters] = useState<FilterState>({
     testPack: testpackParam || "all",
@@ -574,7 +575,7 @@ export function PreparationView() {
                       <SelectValue placeholder="Select team" />
                     </SelectTrigger>
                     <SelectContent className="bg-white border-slate-300">
-                      {BLINDING_TEAMS.map((t) => (
+                      {blindingTeams.map((t) => (
                         <SelectItem
                           key={t.code}
                           value={t.code}

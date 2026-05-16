@@ -7,6 +7,8 @@ import { useWeldsStore } from "./welds-store"
 import { useBatchesStore } from "./batches-store"
 import { useNotificationsStore } from "./notifications-store"
 import { useTestpackStore } from "./testpack-store"
+import { useAdminStore } from "./admin-store"
+import { useErectionStore } from "./erection-store"
 
 /**
  * Demo store — global demo-mode toggle and master reset.
@@ -46,6 +48,8 @@ export const useDemoStore = create<DemoState>()(
         useBatchesStore.getState().resetDemo()
         useNotificationsStore.getState().resetDemo()
         useTestpackStore.getState().resetDemo()
+        useAdminStore.getState().resetAdmin()
+        useErectionStore.getState().resetErection()
         set({
           demoMode: true,
           lastResetAt: new Date().toISOString(),
