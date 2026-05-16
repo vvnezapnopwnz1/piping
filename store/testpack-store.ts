@@ -102,6 +102,8 @@ interface TestpackState {
     }
   ) => void
 
+  recordIsoWelded: (isoNo: string, source: "rollup" | "manual") => void
+
   // Demo helpers
   resetDemo: () => void
   hydrateDemoScenario: () => void
@@ -158,6 +160,19 @@ function recomputeBlindingEligibility(state: TestpackState) {
   })
 
   return updatedTestPacks
+}
+
+function recomputeReadyForTest(state: TestpackState) {
+  const isoById = new Map(state.isos.map((iso) => [iso.id, iso]))
+  return state.testPacks.map((tp) => {
+    // Empty testpacks are trivially ready (matches TP-206 seed)
+    if (tp.isoIds.length === 0) return { ...tp, readyForTest: true }
+    const allReady = tp.isoIds.every((isoId) => {
+      const iso = isoById.get(isoId)
+      return iso?.allWeldsWelded && iso?.spoolsSupported
+    })
+    return { ...tp, readyForTest: allReady }
+  })
 }
 
 // ============================================================================
@@ -505,6 +520,38 @@ export const useTestpackStore = create<TestpackState>()(
               : pi
           ),
         }))
+      },
+
+      recordIsoWelded: (isoNo, _source) => {
+        set((state) => {
+          const isos = state.isos.map((iso) => {
+            if (iso.id !== isoNo) return iso
+            if (iso.allWeldsWelded) return iso
+            return { ...iso, allWeldsWelded: true }
+          })
+
+          // Recompute line-check eligibility for THIS iso only.
+          // Rule (from manual §15 + existing applyHistoricalOverrides):
+          //   lineCheckStatus becomes "Eligible" when
+          //     allWeldsWelded && spoolsSupported && lineCheckStatus is currently
+          //     one of "NotEligible" | undefined.
+          //   Do NOT downgrade Assigned / InProgress / Done.
+          const isosWithEligibility = isos.map((iso) => {
+            if (iso.id !== isoNo) return iso
+            if (!iso.allWeldsWelded || !iso.spoolsSupported) return iso
+            if (
+              iso.lineCheckStatus === "Assigned" ||
+              iso.lineCheckStatus === "InProgress" ||
+              iso.lineCheckStatus === "Done"
+            )
+              return iso
+            return { ...iso, lineCheckStatus: "Eligible" as LineCheckStatus }
+          })
+
+          const stateWithIsos = { ...state, isos: isosWithEligibility }
+          const testPacks = recomputeReadyForTest(stateWithIsos)
+          return { ...stateWithIsos, testPacks }
+        })
       },
 
       resetDemo: () => {

@@ -348,7 +348,7 @@ store mutations. KPI хук `useErectionKPIs` | ✅ Merged | ⭐⭐⭐ блок�
   `iso.weldStatus = "Done"` когда все spools ISO
   erected И все их welds Accepted. Эмитит уведомление
   "ISO-1004: welded — ready for line check" в
-  testpack-store | hardcode в seed | ⭐⭐⭐ замыкает
+  testpack-store | ✅ Merged | ⭐⭐⭐ замыкает
   upstream→Track A handoff (шаг 11) |
 
 **Экраны затрагиваемые:**
@@ -365,25 +365,27 @@ store mutations. KPI хук `useErectionKPIs` | ✅ Merged | ⭐⭐⭐ блок�
 
 ## 7. Связь с Track A (handoff contract)
 
-Только две точки соприкосновения нужно реально
-реализовать:
+Обе точки соприкосновения реализованы:
 
 1. **`recordIsoWelded(isoNo)` мутация в
-   testpack-store** — вызывается из
-   E2.5 когда ISO становится Welded. Внутри: эмитит
-   уведомление,
-   triggers recompute eligibility (если все ISO
-   testpack-а Welded,
-   testpack помечается `lineCheckEligibility = 
-"Eligible"`).
-2. **Reset Demo** должен сбрасывать welds-store +
-   batches-store +
-   erection-store (новый) — сейчас демо-store
-   сбрасывает только
-   testpack + admin.
+   testpack-store** — ✅ Wired via E2.5.
+   Вызывается из `useIsoWeldedWatcher()` (в
+   `components/iso-watcher-mount.tsx`) когда rollup
+   показывает `status = "Welded"`. Внутри: флипает
+   `ISORecord.allWeldsWelded = true`, рекомпьютит
+   `lineCheckStatus` → "Eligible" (если
+   `spoolsSupported`), рекомпьютит
+   `TestPack.readyForTest`. Эмитит уведомление
+   `"ISO-XXXX: welded — Ready for line check on
+TP-YYY"`.
+2. **Reset Demo** — ✅ E2.1 добавил
+   `useErectionStore.getState().resetErection()` в
+   `demo-store.ts:resetAll()`.
 
-Всё остальное — это handoff через нарратив, не через
-код.
+Upstream → Track A handoff теперь замкнут end-to-end.
+Демо-аудитория видит, как weld в
+`/fabrication/weld-progress` влияет на
+`/testpack/explorer` и `/testpack/pressure-test`.
 
 ## 8. Приоритет реализации
 

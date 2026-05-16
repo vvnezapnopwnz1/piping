@@ -224,7 +224,7 @@ export const SEED_ISOS: ISORecord[] = [
   {
     id: "ISO-1001",
     testpackId: "TP-201",
-    spoolsSupported: false,
+    spoolsSupported: true,
     allWeldsWelded: false,
     lineCheckStatus: "NotEligible",
     punchItemIds: [],
@@ -240,7 +240,7 @@ export const SEED_ISOS: ISORecord[] = [
   {
     id: "ISO-1003",
     testpackId: "TP-201",
-    spoolsSupported: false,
+    spoolsSupported: true,
     allWeldsWelded: true,
     lineCheckStatus: "NotEligible",
     punchItemIds: [],
