@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 
 import { BatchDetailPanel } from "@/components/nde/batch-detail-panel";
+import { CreateBatchDialog } from "@/components/nde/create-batch-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -27,14 +28,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -257,11 +251,6 @@ export function BatchManagementView() {
     );
   };
 
-  const handleCreateNewBatch = () => {
-    toast.info("Coming soon");
-    setCreateDialogOpen(false);
-  };
-
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -437,32 +426,18 @@ export function BatchManagementView() {
               </Popover>
             </div>
 
-            <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-              <Button size="sm" onClick={() => setCreateDialogOpen(true)}>
-                <Plus className="h-4 w-4" />
-                Create new batch
-              </Button>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create new NDE batch</DialogTitle>
-                  <DialogDescription>
-                    Batch authoring flow will be added next. For now this hero
-                    flow stops at a placeholder action.
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                  <Button
-                    variant="outline"
-                    onClick={() => setCreateDialogOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button onClick={handleCreateNewBatch}>
-                    Show placeholder
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <Button size="sm" onClick={() => setCreateDialogOpen(true)}>
+              <Plus className="h-4 w-4" />
+              Create new batch
+            </Button>
+            <CreateBatchDialog
+              open={createDialogOpen}
+              onOpenChange={setCreateDialogOpen}
+              onCreated={(batch) => {
+                pulseBatch(batch.id);
+                toast.success(`${batch.batchNo} created`);
+              }}
+            />
           </div>
         </div>
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { FieldFilterSidebar } from "@/components/erection/field-filter-sidebar";
+import { FieldFilterBar } from "@/components/erection/field-filter-sidebar";
 import { FieldWeldDetailPanel } from "@/components/erection/field-weld-detail-panel";
 import { FieldWeldTable } from "@/components/erection/field-weld-table";
 import { useErectionStore } from "@/store";
@@ -113,25 +113,27 @@ export default function ErectionWeldProgressPage() {
   });
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] min-h-[720px] gap-1 overflow-hidden">
-      <FieldFilterSidebar
+    <div className="flex flex-col h-[calc(100vh-8rem)] min-h-[720px] gap-1 overflow-hidden max-w-full">
+      <FieldFilterBar
         filters={filters}
         onFilterChange={setFilters}
         onApply={handleApplyFilters}
       />
 
-      <main className="flex min-w-0 flex-1 overflow-hidden">
-        <FieldWeldTable
-          data={filteredJoints}
-          onSelectJoint={(joint) => setSelectedId(joint.id)}
-          selectedJointId={selectedId ?? undefined}
-        />
-      </main>
+      <div className="grid flex-1 min-h-0 overflow-hidden gap-1 grid-cols-[minmax(0,1fr)_360px]">
+        <main className="flex min-w-0 overflow-hidden">
+          <FieldWeldTable
+            data={filteredJoints}
+            onSelectJoint={(joint) => setSelectedId(joint.id)}
+            selectedJointId={selectedId ?? undefined}
+          />
+        </main>
 
-      <FieldWeldDetailPanel
-        selectedId={selectedId}
-        onClose={() => setSelectedId(null)}
-      />
+        <FieldWeldDetailPanel
+          selectedId={selectedId}
+          onClose={() => setSelectedId(null)}
+        />
+      </div>
     </div>
   );
 }

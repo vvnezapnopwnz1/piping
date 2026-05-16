@@ -30,15 +30,7 @@ export type NdeBatchStatus =
 
 export type NdeWeldResult = "Pending" | "Accepted" | "Rejected"
 
-export type ReworkCode = "POR" | "CRK" | "LOF" | "SLG" | "UNC"
-
-export const REWORK_CODE_LABELS: Record<ReworkCode, string> = {
-  POR: "Porosity",
-  CRK: "Crack",
-  LOF: "Lack of Fusion",
-  SLG: "Slag Inclusion",
-  UNC: "Undercut",
-}
+export type ReworkCode = string
 
 export interface NdeBatchWeld {
   id: string
@@ -178,14 +170,14 @@ export const INITIAL_BATCHES: NdeBatch[] = [
     resultsReceivedDate: daysAgo(8),
     closedDate: daysAgo(6),
     welds: [
-      { id: "2", jointNo: "J-1025", spoolNo: "PL-TK100-001-B", isoNo: "ISO-TK100-P-001 R2", welder: "WLD-042", result: "Rejected", reworkCode: "POR", inspector: "NDE-INS-07", date: daysAgo(8), remarks: "Porosity cluster at 3 o'clock position, root pass. Requires grinding and re-weld.", dwirNo: "DWIR-2025-0848", materialType: "CS A106B", diaInch: '6"', wpsNo: "GTAW-P1-1G", photos: [] },
-      { id: "13", jointNo: "J-1036", spoolNo: "PL-TK100-004-A", isoNo: "ISO-TK100-P-004 R2", welder: "WLD-061", result: "Rejected", reworkCode: "SLG", inspector: "NDE-INS-07", date: daysAgo(8), remarks: "Slag inclusion and incomplete fusion. Full cut-out required.", dwirNo: "DWIR-2025-0780", materialType: "CS A106B", diaInch: '16"', wpsNo: "SAW-P1-1G", photos: [] },
+      { id: "2", jointNo: "J-1025", spoolNo: "PL-TK100-001-B", isoNo: "ISO-TK100-P-001 R2", welder: "WLD-042", result: "Rejected", reworkCode: "RW-001", inspector: "NDE-INS-07", date: daysAgo(8), remarks: "Porosity cluster at 3 o'clock position, root pass. Requires grinding and re-weld.", dwirNo: "DWIR-2025-0848", materialType: "CS A106B", diaInch: '6"', wpsNo: "GTAW-P1-1G", photos: [] },
+      { id: "13", jointNo: "J-1036", spoolNo: "PL-TK100-004-A", isoNo: "ISO-TK100-P-004 R2", welder: "WLD-061", result: "Rejected", reworkCode: "RW-003", inspector: "NDE-INS-07", date: daysAgo(8), remarks: "Slag inclusion and incomplete fusion. Full cut-out required.", dwirNo: "DWIR-2025-0780", materialType: "CS A106B", diaInch: '16"', wpsNo: "SAW-P1-1G", photos: [] },
     ],
     history: [
       { id: "h-151-1", title: "Batch created", detail: "2 welds bundled for RT examination", actor: "QC-ENG-02", timestamp: daysAgo(11), status: "Created" },
       { id: "h-151-2", title: "Issued to SGS Industrial", detail: "Subcontractor notified", actor: "QC-ENG-02", timestamp: daysAgo(10), status: "Issued" },
-      { id: "h-151-3", title: "Results received", detail: "2 of 2 welds Rejected — POR, SLG", actor: "NDE-INS-07", timestamp: daysAgo(8), status: "Results Received" },
-      { id: "h-151-4", title: "Rework dispatched", detail: "J-1025 (POR), J-1036 (SLG) sent back to fabrication", actor: "QC-ENG-02", timestamp: daysAgo(8), status: "Rework" },
+      { id: "h-151-3", title: "Results received", detail: "2 of 2 welds Rejected — RW-001, RW-003", actor: "NDE-INS-07", timestamp: daysAgo(8), status: "Results Received" },
+      { id: "h-151-4", title: "Rework dispatched", detail: "J-1025 (RW-001), J-1036 (RW-003) sent back to fabrication", actor: "QC-ENG-02", timestamp: daysAgo(8), status: "Rework" },
       { id: "h-151-5", title: "Re-examined and Accepted", detail: "Batch closed after successful rework", actor: "NDE-INS-07", timestamp: daysAgo(6), status: "Closed" },
     ],
   },
@@ -200,12 +192,12 @@ export const INITIAL_BATCHES: NdeBatch[] = [
     issuedDate: daysAgo(4),
     resultsReceivedDate: daysAgo(1),
     welds: [
-      { id: "5", jointNo: "J-1028", spoolNo: "PL-FU300-007-A", isoNo: "ISO-FU300-P-007 R0", welder: "WLD-019", result: "Rejected", reworkCode: "UNC", inspector: "NDE-INS-04", date: daysAgo(1), remarks: "Undercut on external bead, depth 1.2mm. Grinding and re-weld required.", dwirNo: "DWIR-2025-0820", materialType: "CS A106B", diaInch: '4"', wpsNo: "SMAW-P1-2G", photos: [] },
+      { id: "5", jointNo: "J-1028", spoolNo: "PL-FU300-007-A", isoNo: "ISO-FU300-P-007 R0", welder: "WLD-019", result: "Rejected", reworkCode: "RW-004", inspector: "NDE-INS-04", date: daysAgo(1), remarks: "Undercut on external bead, depth 1.2mm. Grinding and re-weld required.", dwirNo: "DWIR-2025-0820", materialType: "CS A106B", diaInch: '4"', wpsNo: "SMAW-P1-2G", photos: [] },
     ],
     history: [
       { id: "h-156-1", title: "Batch created", detail: "1 weld bundled for RT examination", actor: "QC-ENG-01", timestamp: daysAgo(5), status: "Created" },
       { id: "h-156-2", title: "Issued to Bureau Veritas", detail: "Subcontractor notified", actor: "QC-ENG-01", timestamp: daysAgo(4), status: "Issued" },
-      { id: "h-156-3", title: "Results received", detail: "1 weld Rejected (UNC) — awaiting disposition", actor: "NDE-INS-04", timestamp: daysAgo(1), status: "Results Received" },
+      { id: "h-156-3", title: "Results received", detail: "1 weld Rejected (RW-004) — awaiting disposition", actor: "NDE-INS-04", timestamp: daysAgo(1), status: "Results Received" },
     ],
   },
   {

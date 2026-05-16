@@ -3,7 +3,7 @@ import { WELD_DATA } from "@/lib/weld-data"
 export type NdeMethod = "RT" | "UT" | "MT" | "PT" | "PMI" | "HT"
 export type NdeBatchStatus = "Created" | "Issued" | "In Progress" | "Results Received" | "Closed" | "Rework"
 export type NdeWeldResult = "Pending" | "Accepted" | "Rejected"
-export type ReworkCode = "POR" | "CRK" | "LOF" | "SLG" | "UNC"
+export type ReworkCode = string
 
 export interface NdeBatchWeld {
   id: string
@@ -68,23 +68,23 @@ const inspectors = Array.from({ length: 12 }, (_, index) => `NDE-INS-${String(in
 
 const rejectionLibrary: Array<{ code: ReworkCode; remarks: string }> = [
   {
-    code: "POR",
+    code: "RW-001",
     remarks: "Porosity cluster at 3 o'clock position, root pass",
   },
   {
-    code: "CRK",
+    code: "RW-002",
     remarks: "Linear indication 12mm, requires grinding and re-weld",
   },
   {
-    code: "LOF",
+    code: "RW-005",
     remarks: "Lack of fusion at cap to side wall transition",
   },
   {
-    code: "SLG",
+    code: "RW-003",
     remarks: "Slag inclusion noted on fill pass, local repair required",
   },
   {
-    code: "UNC",
+    code: "RW-004",
     remarks: "Undercut above allowable limit on external bead profile",
   },
 ]

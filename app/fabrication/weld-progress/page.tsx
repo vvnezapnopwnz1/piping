@@ -122,15 +122,15 @@ function WeldProgressInner() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] min-h-[720px] gap-1 overflow-hidden">
+    <div className="flex flex-col h-[calc(100vh-8rem)] min-h-[720px] gap-1 overflow-hidden max-w-full">
       <FilterBar
         filters={filters}
         onFilterChange={setFilters}
         onApply={handleApplyFilters}
       />
 
-      <div className="flex flex-1 min-h-0 overflow-hidden gap-1">
-        <main className="flex min-w-0 flex-1 overflow-hidden flex-col">
+      <div className="grid flex-1 min-h-0 overflow-hidden gap-1 grid-cols-[minmax(0,1fr)_360px]">
+        <main className="flex min-w-0 overflow-hidden flex-col">
           {spoolFilter && (
             <div className="px-4 py-2 shrink-0">
               <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-50 text-sky-800 text-sm border border-sky-200">

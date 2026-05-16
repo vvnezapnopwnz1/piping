@@ -86,7 +86,7 @@ export function FieldWeldTable({
 
   const ColHeader = ({ label, col }: { label: string; col: SortKey }) => (
     <th
-      className="px-3 py-2.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap cursor-pointer select-none hover:text-slate-900 transition-colors"
+      className="px-2 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap cursor-pointer select-none hover:text-slate-900 transition-colors"
       onClick={() => handleSort(col)}
     >
       <span className="inline-flex items-center">
@@ -97,10 +97,10 @@ export function FieldWeldTable({
   );
 
   return (
-    <div className="flex flex-col h-full overflow-hidden rounded-xl border border-slate-200 bg-white">
-      <div className="px-5 py-3 border-b border-slate-200 flex items-center justify-between gap-4 flex-shrink-0">
+    <div className="flex flex-col h-full min-w-0 w-full overflow-hidden rounded-xl border border-slate-200 bg-white">
+      <div className="px-3 py-2 border-b border-slate-200 flex items-center justify-between gap-2 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <h2 className="text-base font-semibold text-slate-900">
+          <h2 className="text-sm font-semibold text-slate-900">
             Field Weld Progress
           </h2>
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-sky-100 text-sky-800 border border-sky-300">
@@ -134,7 +134,7 @@ export function FieldWeldTable({
                 setSearch(event.target.value)
               }
               placeholder="Search joints…"
-              className="pl-8 h-8 w-56 bg-slate-50 border-slate-300 text-slate-900 text-xs placeholder:text-slate-500 focus-visible:ring-sky-600"
+              className="pl-8 h-8 w-44 bg-slate-50 border-slate-300 text-slate-900 text-xs placeholder:text-slate-500 focus-visible:ring-sky-600"
             />
           </div>
 
@@ -150,7 +150,7 @@ export function FieldWeldTable({
       </div>
 
       <div className="flex-1 overflow-auto">
-        <table className="w-full border-collapse text-sm min-w-[950px]">
+        <table className="w-full border-collapse text-sm min-w-[760px]">
           <thead className="sticky top-0 z-10">
             <tr className="bg-slate-100 border-b border-slate-200">
               <ColHeader label="Joint No" col="jointNo" />
@@ -166,7 +166,7 @@ export function FieldWeldTable({
               <ColHeader label="DWIR No" col="dwirNo" />
               <ColHeader label="Status" col="status" />
               <ColHeader label="Erection Status" col="erectionStatus" />
-              <th className="px-3 py-2.5 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider w-16">
+              <th className="px-2 py-2 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider w-14">
                 Action
               </th>
             </tr>
@@ -189,66 +189,66 @@ export function FieldWeldTable({
                     !isSelected && "hover:bg-slate-100",
                   )}
                 >
-                  <td className="px-3 py-2.5 whitespace-nowrap">
+                  <td className="px-2 py-2 whitespace-nowrap">
                     <span className="font-semibold text-sky-600 hover:text-sky-700 text-xs font-mono">
                       {row.jointNo}
                     </span>
                   </td>
-                  <td className="px-3 py-2.5 whitespace-nowrap">
+                  <td className="px-2 py-2 whitespace-nowrap">
                     <span className="text-xs text-slate-600">
                       {row.areaZone}
                     </span>
                   </td>
-                  <td className="px-3 py-2.5 whitespace-nowrap">
+                  <td className="px-2 py-2 whitespace-nowrap">
                     <span className="text-xs text-slate-700 font-mono">
                       {row.spoolNo}
                     </span>
                   </td>
-                  <td className="px-3 py-2.5 whitespace-nowrap">
+                  <td className="px-2 py-2 whitespace-nowrap">
                     <span className="text-xs text-slate-600">{row.isoNo}</span>
                   </td>
-                  <td className="px-3 py-2.5 whitespace-nowrap text-center">
+                  <td className="px-2 py-2 whitespace-nowrap text-center">
                     <span className="text-xs text-slate-700 font-mono">
                       {row.diaInch}
                     </span>
                   </td>
-                  <td className="px-3 py-2.5 whitespace-nowrap">
+                  <td className="px-2 py-2 whitespace-nowrap">
                     <span className="text-xs text-slate-700">
                       {row.materialType}
                     </span>
                   </td>
-                  <td className="px-3 py-2.5 whitespace-nowrap">
+                  <td className="px-2 py-2 whitespace-nowrap">
                     <span className="text-xs text-slate-700">
                       {row.fieldJointType}
                     </span>
                   </td>
-                  <td className="px-3 py-2.5 whitespace-nowrap">
+                  <td className="px-2 py-2 whitespace-nowrap">
                     <span className="text-xs text-slate-600 font-mono">
                       {row.wpsNo}
                     </span>
                   </td>
-                  <td className="px-3 py-2.5 whitespace-nowrap">
+                  <td className="px-2 py-2 whitespace-nowrap">
                     <span className="text-xs text-slate-700 font-mono">
                       {row.welderCode}
                     </span>
                   </td>
-                  <td className="px-3 py-2.5 whitespace-nowrap">
+                  <td className="px-2 py-2 whitespace-nowrap">
                     <span className="text-xs text-slate-600">
                       {row.weldDate || "—"}
                     </span>
                   </td>
-                  <td className="px-3 py-2.5 whitespace-nowrap">
+                  <td className="px-2 py-2 whitespace-nowrap">
                     <span className="text-xs text-slate-600 font-mono">
                       {row.dwirNo}
                     </span>
                   </td>
-                  <td className="px-3 py-2.5 whitespace-nowrap">
+                  <td className="px-2 py-2 whitespace-nowrap">
                     <StatusBadge status={row.status} />
                   </td>
-                  <td className="px-3 py-2.5 whitespace-nowrap">
+                  <td className="px-2 py-2 whitespace-nowrap">
                     <ErectionStatusBadge status={row.erectionStatus} />
                   </td>
-                  <td className="px-3 py-2.5 whitespace-nowrap">
+                  <td className="px-2 py-2 whitespace-nowrap">
                     {row.isLocked ? (
                       <span
                         title="Weld progressed — locked"
@@ -283,7 +283,7 @@ export function FieldWeldTable({
         )}
       </div>
 
-      <div className="px-5 py-2 border-t border-slate-200 flex items-center justify-between flex-shrink-0">
+      <div className="px-3 py-1.5 border-t border-slate-200 flex items-center justify-between flex-shrink-0">
         <span className="text-xs text-slate-600">
           Showing {filtered.length} of {data.length} joints
         </span>

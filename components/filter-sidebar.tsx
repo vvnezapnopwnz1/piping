@@ -5,9 +5,9 @@ import type { ChangeEvent } from "react";
 import { SlidersHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MultiSelectFilter } from "@/components/ui/multi-select-filter";
 import {
   Select,
   SelectContent,
@@ -26,7 +26,7 @@ interface FilterState {
   dateTo: string;
 }
 
-interface FilterSidebarProps {
+interface FilterBarProps {
   filters: FilterState;
   onFilterChange: (filters: FilterState) => void;
   onApply: () => void;
@@ -34,32 +34,22 @@ interface FilterSidebarProps {
 
 const STATUS_OPTIONS = ["Not Started", "In Progress", "Completed", "On Hold"];
 
-export function FilterSidebar({
+export function FilterBar({
   filters,
   onFilterChange,
   onApply,
-}: FilterSidebarProps) {
-  const handleStatusToggle = (status: string) => {
-    const updated = filters.statuses.includes(status)
-      ? filters.statuses.filter((s) => s !== status)
-      : [...filters.statuses, status];
-
-    onFilterChange({ ...filters, statuses: updated });
-  };
-
+}: FilterBarProps) {
   return (
-    <aside className="w-[240px] flex-shrink-0 rounded-xl border border-slate-200 bg-slate-50 flex flex-col h-full overflow-y-auto">
-      <div className="px-5 py-4 border-b border-slate-200">
-        <div className="flex items-center gap-2">
-          <SlidersHorizontal className="w-4 h-4 text-sky-600" />
-          <span className="text-sm font-semibold text-slate-900 tracking-wide uppercase">
-            Spool Fabrication
-          </span>
-        </div>
+    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 flex flex-col gap-2 shrink-0 max-w-full">
+      <div className="flex items-center gap-1.5 border-b border-slate-200/80 pb-2">
+        <SlidersHorizontal className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+        <span className="text-xs font-semibold text-slate-900 tracking-wide uppercase">
+          Spool Fabrication
+        </span>
       </div>
 
-      <div className="flex-1 px-3 py-5 flex flex-col gap-5">
-        <div className="flex flex-col gap-1.5">
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="flex flex-col gap-1 w-[108px] shrink-0">
           <Label className="text-xs font-medium text-slate-600 uppercase tracking-wider">
             PDS Area
           </Label>
@@ -101,7 +91,7 @@ export function FilterSidebar({
           </Select>
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1 w-[108px] shrink-0 mr-2">
           <Label className="text-xs font-medium text-slate-600 uppercase tracking-wider">
             Subcontractor
           </Label>
@@ -137,7 +127,7 @@ export function FilterSidebar({
           </Select>
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1 w-[108px] shrink-0 ml-2">
           <Label className="text-xs font-medium text-slate-600 uppercase tracking-wider">
             Material Type
           </Label>
@@ -173,7 +163,7 @@ export function FilterSidebar({
           </Select>
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1 w-[126px] shrink-0">
           <Label className="text-xs font-medium text-slate-600 uppercase tracking-wider">
             Service Class
           </Label>
@@ -209,69 +199,50 @@ export function FilterSidebar({
           </Select>
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1 w-[120px] shrink-0">
           <Label className="text-xs font-medium text-slate-600 uppercase tracking-wider">
             Status
           </Label>
-          <div className="flex flex-col gap-2.5">
-            {STATUS_OPTIONS.map((status) => (
-              <div key={status} className="flex items-center gap-2.5">
-                <Checkbox
-                  id={`status-${status}`}
-                  checked={filters.statuses.includes(status)}
-                  onCheckedChange={() => handleStatusToggle(status)}
-                  className="border-slate-300 data-[state=checked]:bg-sky-600 data-[state=checked]:border-sky-600"
-                />
-                <label
-                  htmlFor={`status-${status}`}
-                  className="text-sm text-slate-700 cursor-pointer select-none"
-                >
-                  {status}
-                </label>
-              </div>
-            ))}
-          </div>
+          <MultiSelectFilter
+            value={filters.statuses}
+            options={STATUS_OPTIONS}
+            onChange={(statuses) => onFilterChange({ ...filters, statuses })}
+            placeholder="All"
+          />
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1 w-[200px] shrink-0">
           <Label className="text-xs font-medium text-slate-600 uppercase tracking-wider">
             Date Range
           </Label>
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-col gap-1">
-              <span className="text-xs text-slate-600">From</span>
-              <Input
-                type="date"
-                value={filters.dateFrom}
-                onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                  onFilterChange({ ...filters, dateFrom: event.target.value })
-                }
-                className="bg-white border-slate-300 text-slate-900 text-sm h-8 [color-scheme:light]"
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-xs text-slate-600">To</span>
-              <Input
-                type="date"
-                value={filters.dateTo}
-                onChange={(event: ChangeEvent<HTMLInputElement>) =>
-                  onFilterChange({ ...filters, dateTo: event.target.value })
-                }
-                className="bg-white border-slate-300 text-slate-900 text-sm h-8 [color-scheme:light]"
-              />
-            </div>
+          <div className="flex items-center gap-1">
+            <Input
+              type="date"
+              value={filters.dateFrom}
+              onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                onFilterChange({ ...filters, dateFrom: event.target.value })
+              }
+              className="bg-white border-slate-300 text-slate-900 text-sm h-8 [color-scheme:light] flex-1 min-w-0"
+            />
+            <span className="text-xs text-slate-500">-</span>
+            <Input
+              type="date"
+              value={filters.dateTo}
+              onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                onFilterChange({ ...filters, dateTo: event.target.value })
+              }
+              className="bg-white border-slate-300 text-slate-900 text-sm h-8 [color-scheme:light] flex-1 min-w-0"
+            />
           </div>
         </div>
-      </div>
 
-      <div className="px-5 py-4 border-t border-slate-200">
         <Button
           onClick={onApply}
-          className="w-full bg-sky-600 hover:bg-sky-500 text-white text-sm font-medium h-9"
+          className="bg-sky-600 hover:bg-sky-500 text-white text-xs font-medium h-8 px-4 shrink-0"
         >
-          Apply Filters
+          Apply
         </Button>
       </div>
-    </aside>
+    </div>
   );
 }

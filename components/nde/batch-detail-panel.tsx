@@ -50,6 +50,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ReceiveResultsPanel } from "@/components/nde/receive-results-panel";
 import {
   useBatchesStore,
   useWeldsStore,
@@ -147,9 +148,9 @@ export function BatchDetailPanel({
 }: BatchDetailPanelProps) {
   const [expandedWelds, setExpandedWelds] = useState<string[]>([]);
   const [confirmReworkOpen, setConfirmReworkOpen] = useState(false);
+  const [receivePanelOpen, setReceivePanelOpen] = useState(false);
 
   const issueBatch = useBatchesStore((s) => s.issueBatch);
-  const receiveResultsAction = useBatchesStore((s) => s.receiveResults);
   const markForReworkBatch = useBatchesStore((s) => s.markForRework);
   const closeBatchAction = useBatchesStore((s) => s.closeBatch);
 
@@ -199,17 +200,9 @@ export function BatchDetailPanel({
     toast.success(`Batch ${batch.batchNo} issued to Bureau Veritas`);
   };
 
-  const handleReceiveResults = async () => {
+  const handleReceiveResults = () => {
     if (!batch) return;
-    await new Promise((r) => setTimeout(r, 800));
-    receiveResultsAction(
-      batch.id,
-      batch.welds.map((w) => ({
-        weldId: w.id,
-        result: "Accepted" as const,
-      })),
-    );
-    toast.success(`Results received — all welds Accepted`);
+    setReceivePanelOpen(true);
   };
 
   const handleConfirmRework = async () => {
@@ -688,6 +681,15 @@ export function BatchDetailPanel({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ReceiveResultsPanel
+        batch={batch}
+        open={receivePanelOpen}
+        onOpenChange={setReceivePanelOpen}
+        onSubmitted={() => {
+          // Batch detail panel auto-refreshes from store selectors
+        }}
+      />
     </>
   );
 }
