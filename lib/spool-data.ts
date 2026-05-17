@@ -164,7 +164,11 @@ export const MATERIAL_CHECK_SEED: MaterialCheckRecord[] = [
 export function deriveFabStage(
   readiness: SpoolReadiness | undefined,
   mcRecord?: MaterialCheckRecord,
+  qcRecord?: QCReleaseRecord,
 ): SpoolFabStage {
+  // G3: signed-off QC record takes highest priority
+  if (qcRecord?.signedOffDate) return "QC Release"
+
   if (!readiness || readiness.total === 0) {
     // If no welds but we have an MC record, use MC logic
     if (mcRecord) {
@@ -187,3 +191,89 @@ export function deriveFabStage(
   if (readiness.status === "Not started") return "Not Started"
   return "Weld Progress"
 }
+
+// ---------------------------------------------------------------------------
+// QC Release data model (G3)
+// ---------------------------------------------------------------------------
+
+export type QCChecklistKey = "dimensional" | "visual" | "documentation" | "traceability"
+
+export interface QCChecklistItem {
+  key: QCChecklistKey
+  label: string
+  description: string
+}
+
+export const QC_CHECKLIST: QCChecklistItem[] = [
+  { key: "dimensional", label: "Dimensional check", description: "Length, flange face, bolt-hole orientation against ISO" },
+  { key: "visual", label: "Visual inspection", description: "Surface defects, weld spatter, alignment" },
+  { key: "documentation", label: "Documentation review", description: "WPS, welder logs, NDE reports all on file" },
+  { key: "traceability", label: "Heat-number traceability", description: "All pieces match the Material Check record" },
+]
+
+export type QCChecklistStatus = "Pending" | "Pass" | "Pass with remark"
+
+export interface QCChecklistEntry {
+  key: QCChecklistKey
+  status: QCChecklistStatus
+  remark?: string  // required when status === "Pass with remark"
+}
+
+export interface QCReleaseRecord {
+  spoolNo: string
+  entries: QCChecklistEntry[]   // length 4, one per QC_CHECKLIST item
+  inspector?: string             // set on sign-off
+  signedOffDate?: string         // ISO date — set on sign-off
+}
+
+function makeQCRecord(
+  spoolNo: string,
+  entries: Partial<Record<QCChecklistKey, { status: QCChecklistStatus; remark?: string }>>,
+  opts?: { inspector?: string; signedOffDate?: string },
+): QCReleaseRecord {
+  return {
+    spoolNo,
+    entries: QC_CHECKLIST.map((item) => ({
+      key: item.key,
+      status: entries[item.key]?.status ?? "Pending",
+      remark: entries[item.key]?.remark,
+    })),
+    inspector: opts?.inspector,
+    signedOffDate: opts?.signedOffDate,
+  }
+}
+
+export const QC_RELEASE_SEED: QCReleaseRecord[] = [
+  // Pre-released spools — all 4 entries Pass
+  makeQCRecord(
+    "PL-TK100-002-A",
+    {
+      dimensional: { status: "Pass" },
+      visual: { status: "Pass" },
+      documentation: { status: "Pass" },
+      traceability: { status: "Pass" },
+    },
+    { inspector: "QC-ENG-01", signedOffDate: "2025-05-12" },
+  ),
+  makeQCRecord(
+    "PL-CW200-005-A",
+    {
+      dimensional: { status: "Pass" },
+      visual: { status: "Pass" },
+      documentation: { status: "Pass" },
+      traceability: { status: "Pass" },
+    },
+    { inspector: "QC-ENG-02", signedOffDate: "2025-05-11" },
+  ),
+  // Anchor spool — Pass with remark on Dimensional
+  makeQCRecord(
+    "PL-TK100-001-A",
+    {
+      dimensional: { status: "Pass with remark", remark: "0.3 mm out on flange face — within tolerance per spec 12-PIP-002" },
+      visual: { status: "Pass" },
+      documentation: { status: "Pass" },
+      traceability: { status: "Pass" },
+    },
+    { inspector: "QC-ENG-03", signedOffDate: "2025-05-10" },
+  ),
+]

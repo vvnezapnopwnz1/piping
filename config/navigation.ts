@@ -16,6 +16,7 @@ import {
   FolderTree,
   FlaskConical,
   ClipboardCheck,
+  ShieldCheck,
 } from 'lucide-react'
 import type { Role } from '@/contexts/role-context'
 
@@ -73,6 +74,11 @@ export const navigationConfig: NavSection[] = [
             title: 'Material Check',
             href: '/fabrication/material-check',
             icon: ClipboardCheck,
+          },
+          {
+            title: 'QC Release',
+            href: '/fabrication/qc-release',
+            icon: ShieldCheck,
           },
           {
             title: 'Weld Progress',

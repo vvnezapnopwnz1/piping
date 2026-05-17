@@ -141,11 +141,12 @@ Status: ❌ Track D — placeholder
 Modul: Spool Fabrication lifecycle (Start Fab → Material Check →
 Weld Progress → Fabricated → QC Release → Sent to Paint →
 Painted/Final QC/Laydown)
-Status: � G1 funnel + G2 Material Check merged. Dashboard funnel is live (8
-stages; 4 Material Check, 7 Weld Progress, 4 Fabricated from seed). MC screen
-(`/fabrication/material-check`) with persisted store, heat-number verification,
-NC flagging, and sign-off action. Remaining stages: QC Release (G3), Paint &
-Laydown (G4/G5).
+Status: 🟢 G1 funnel + G2 Material Check + G1.1 funnel-nav cleanup + G3 QC
+Release merged. Dashboard funnel is live (8
+stages; 4 Material Check, 7 Weld Progress, 4 Fabricated, 3 QC Release from
+seed). MC screen (`/fabrication/material-check`) and QC Release screen
+(`/fabrication/qc-release`) both with persisted stores, checklist sign-off, and
+audit trail. 4/7 stages live; remaining: Paint & Laydown (G4/G5).
 ────────────────────────────────────────
 §: 8
 Modul: Import Progress Module

@@ -212,6 +212,8 @@ const materialShortages = [
 const STAGE_SCREENS: Partial<Record<SpoolFabStage, string>> = {
   "Material Check": "/fabrication/material-check",
   "Weld Progress": "/fabrication/weld-progress",
+  Fabricated: "/fabrication/qc-release",
+  "QC Release": "/fabrication/qc-release",
 };
 
 function FunnelSection() {
