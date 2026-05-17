@@ -210,10 +210,13 @@ const materialShortages = [
 ];
 
 const STAGE_SCREENS: Partial<Record<SpoolFabStage, string>> = {
-  "Material Check": "/fabrication/material-check",
+  "Material Check": "/fabrication/material-check?status=Pending",
   "Weld Progress": "/fabrication/weld-progress",
-  Fabricated: "/fabrication/qc-release",
-  "QC Release": "/fabrication/qc-release",
+  Fabricated: "/fabrication/qc-release?status=Awaiting",
+  "QC Release": "/fabrication/qc-release?status=Released",
+  "Sent to Paint": "/fabrication/paint?status=InShop",
+  Painted: "/fabrication/paint?status=Painted",
+  Laydown: "/fabrication/laydown?status=InYard",
 };
 
 function FunnelSection() {

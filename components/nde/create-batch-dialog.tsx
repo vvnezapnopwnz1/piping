@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -99,19 +99,32 @@ export function CreateBatchDialog({
     [subcontractors],
   );
 
+  const preselectedRef = useRef(preselectedWeldIds);
+  preselectedRef.current = preselectedWeldIds;
+  const activeNdeSubsRef = useRef(activeNdeSubs);
+  activeNdeSubsRef.current = activeNdeSubs;
+  const batchesRef = useRef(batches);
+  batchesRef.current = batches;
+  const defaultMethodRef = useRef(defaultMethod);
+  defaultMethodRef.current = defaultMethod;
+  const wasOpenRef = useRef(false);
+
   useEffect(() => {
-    if (activeNdeSubs.length > 0 && !subcontractor) {
-      setSubcontractor(activeNdeSubs[0].name);
+    if (!open) {
+      wasOpenRef.current = false;
+      return;
     }
-  }, [activeNdeSubs, subcontractor]);
+    if (wasOpenRef.current) return;
+    wasOpenRef.current = true;
 
-  useEffect(() => {
-    if (!open) return;
-
-    const initialMethod = defaultMethod ?? "RT";
+    const initialMethod = defaultMethodRef.current ?? "RT";
     setMethod(initialMethod);
     setMatrixRef(defaultMatrixByMethod[initialMethod]);
-    setSubcontractor(activeNdeSubs.length > 0 ? activeNdeSubs[0].name : "");
+    setSubcontractor(
+      activeNdeSubsRef.current.length > 0
+        ? activeNdeSubsRef.current[0].name
+        : "",
+    );
     setInspector("NDE-INS-04");
     setCreatedBy("QC-ENG-01");
     setShowRework(false);
@@ -120,7 +133,7 @@ export function CreateBatchDialog({
 
     const alreadyBatched = new Set<string>();
     let blockedBatchNo = "";
-    for (const batch of batches) {
+    for (const batch of batchesRef.current) {
       if (batch.status !== "Closed") {
         for (const weld of batch.welds) {
           alreadyBatched.add(weld.id);
@@ -129,8 +142,10 @@ export function CreateBatchDialog({
       }
     }
 
-    const cleanIds = preselectedWeldIds.filter((id) => !alreadyBatched.has(id));
-    const droppedCount = preselectedWeldIds.length - cleanIds.length;
+    const cleanIds = preselectedRef.current.filter(
+      (id) => !alreadyBatched.has(id),
+    );
+    const droppedCount = preselectedRef.current.length - cleanIds.length;
     if (droppedCount > 0 && blockedBatchNo) {
       setPreselectWarning(
         `${droppedCount} of the preselected welds are already in batch ${blockedBatchNo} and were unselected.`,
@@ -139,7 +154,7 @@ export function CreateBatchDialog({
 
     setSelectedIds(new Set(cleanIds));
     setStep(cleanIds.length > 0 ? 2 : 1);
-  }, [open, preselectedWeldIds, defaultMethod, activeNdeSubs, batches]);
+  }, [open]);
 
   const weldsInNonClosedBatches = useMemo(() => {
     const ids = new Set<string>();

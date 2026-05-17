@@ -49,6 +49,14 @@ Track / Phase: N1
 #: 12
 Track / Phase: N2
 Что: Per-weld Receive Results
+────────────────────────────────────────
+#: 13
+Track / Phase: G4
+Что: Paint stages — dispatch, sign-off, DFT (Sent to Paint + Painted)
+────────────────────────────────────────
+#: 14
+Track / Phase: G5
+Что: Laydown stage — yard placement + release to site + funnel deep-link cleanup
 
 🔜 Next (priority order)
 
@@ -142,11 +150,11 @@ Modul: Spool Fabrication lifecycle (Start Fab → Material Check →
 Weld Progress → Fabricated → QC Release → Sent to Paint →
 Painted/Final QC/Laydown)
 Status: 🟢 G1 funnel + G2 Material Check + G1.1 funnel-nav cleanup + G3 QC
-Release merged. Dashboard funnel is live (8
-stages; 4 Material Check, 7 Weld Progress, 4 Fabricated, 3 QC Release from
-seed). MC screen (`/fabrication/material-check`) and QC Release screen
-(`/fabrication/qc-release`) both with persisted stores, checklist sign-off, and
-audit trail. 4/7 stages live; remaining: Paint & Laydown (G4/G5).
+Release + G4 Paint + G5 Laydown merged. Dashboard funnel is live (8
+stages; 4 Material Check, 7 Weld Progress, 4 Fabricated, 3 QC Release, 1 Sent
+to Paint, 1 Painted, 1 Laydown from seed). MC, QC Release, Paint, and Laydown
+screens all with persisted stores, checklist/sign-off, and audit trail. 7/7
+stages live. Track G is complete.
 ────────────────────────────────────────
 §: 8
 Modul: Import Progress Module

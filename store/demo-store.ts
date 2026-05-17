@@ -11,6 +11,8 @@ import { useAdminStore } from "./admin-store"
 import { useErectionStore } from "./erection-store"
 import { useSpoolsStore } from "./spools-store"
 import { useQCReleaseStore } from "./qc-release-store"
+import { usePaintStore } from "./paint-store"
+import { useLaydownStore } from "./laydown-store"
 import { useFlangeStore } from "./flange-store"
 import { useSpoolingStore } from "./spooling-store"
 
@@ -56,6 +58,8 @@ export const useDemoStore = create<DemoState>()(
         useErectionStore.getState().resetErection()
         useSpoolsStore.getState().resetSpools()
         useQCReleaseStore.getState().resetQCRelease()
+        usePaintStore.getState().resetPaint()
+        useLaydownStore.getState().resetLaydown()
         useFlangeStore.getState().resetDemo()
         useSpoolingStore.getState().resetDemo()
         set({

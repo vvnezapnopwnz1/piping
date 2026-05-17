@@ -68,8 +68,10 @@ app/
   fabrication/
     dashboard/page.tsx                  # Fabrication Dashboard ✅
     material-check/page.tsx             # Material Check (G2) ✅
+    paint/page.tsx                        # Paint dispatch & sign-off (G4) ✅
     qc-release/page.tsx                 # QC Release (G3) ✅
     weld-progress/page.tsx              # Weld Progress + CRUD ✅
+    laydown/page.tsx                      # Laydown yard placement & release (G5) ✅
   nde/page.tsx                          # NDE Batch Management ✅
   tracking/page.tsx                     # Spool Tracking ✅
   erection/
@@ -105,6 +107,11 @@ components/
   pipeqc/
     sidebar-nav.tsx                     # role-based nav
     top-nav.tsx                         # role switcher, reset, demo badge
+  fabrication/
+    paint-view.tsx                        # Paint list (G4)
+    paint-detail-panel.tsx                # Paint dispatch / sign-off Sheet (G4)
+    laydown-view.tsx                      # Laydown list (G5)
+    laydown-detail-panel.tsx              # Place on yard / release Sheet (G5)
   fabrication-dashboard.tsx             # ← reference dashboard pattern
   weld-table.tsx                        # ← reference table pattern
   weld-detail-panel.tsx                 # ← reference side panel pattern
@@ -163,6 +170,8 @@ store/                                  # Zustand stores
   testpack-store.ts                     # testpack readiness + line check + item-clearance + blinding + testing + reinstatement (Track A)
   admin-store.ts                        # teams + subcontractors (B1)
   erection-store.ts                     # field welds (E2.1) — persisted, mirrors welds-store shape
+  paint-store.ts                          # paint dispatch & sign-off (G4)
+  laydown-store.ts                        # yard placement & release (G5)
   index.ts
   flange-store.ts                       # ✅ shared persisted flange joints
   # ⚠ Flange screens currently read straight from lib/flange-data.ts;
@@ -299,24 +308,24 @@ with a unique localStorage key, exports a main hook and a KPI hook.
 
 Page numbers below refer to the Easy Piping User Manual PDF (156 pp).
 
-| Manual §      | Topic                                 | PipeQC status                                                                                              |
-| ------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| §1–§2         | Project definition + System ref       | not built                                                                                                  |
-| §3 (3.1–3.26) | **Project Referential** — 26 entities | B1 merged: Teams, Subcontractors, Welder Qualifications tabs in /admin; Team pickers read from admin store |
-| §5            | Import settings (NDE matrix, PMC)     | not built                                                                                                  |
-| §6            | Spooling (Ident Code, Marian, Browse) | not built (placeholder /spooling)                                                                          |
-| §7            | Fabrication module (Start Fab → QC)   | Fabrication module (§7) — Weld Progress + Dashboard funnel + Material Check + QC Release (G1+G2+G1.1+G3)   |
-| §9            | Fabrication reports                   | not built                                                                                                  |
-| §10           | Spool Tracking + Dashboard            | ✅ /tracking                                                                                               |
-| §11           | NDE Management (batch lifecycle)      | ✅ /nde — N1 Create Batch wizard + N2 per-weld Receive Results merged                                      |
-| §12           | Erection module                       | ✅ /erection — field-weld page store-backed after E2.1 (persistence)                                       |
-| §13           | Erection reports                      | not built                                                                                                  |
-| §14–§15       | Testpack management + Preparation     | partially — Explorer + Pressure Test A1–A6 prep/progress screens merged                                    |
-| §16           | **Pressure Test (5 activities × 2)**  | ✅ homepage + 8 sub-screens merged (A1 line-check, A2 item-clearance, A4 blinding, A5 testing, A6 reinst.) |
-| §17           | Testpack homepage (bar graph)         | ✅ /testpack/pressure-test                                                                                 |
-| §18           | Testpack Explorer (3 levels × 4 tabs) | ✅ /testpack/explorer — Release Tracking tab now wired to live `useTestpackStore` data for TP-201..TP-206  |
-| §19           | Flange management (browse + progress) | ✅ browse; progress import missing                                                                         |
-| §20           | Testpack reports                      | not built                                                                                                  |
+| Manual §      | Topic                                 | PipeQC status                                                                                                                    |
+| ------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| §1–§2         | Project definition + System ref       | not built                                                                                                                        |
+| §3 (3.1–3.26) | **Project Referential** — 26 entities | B1 merged: Teams, Subcontractors, Welder Qualifications tabs in /admin; Team pickers read from admin store                       |
+| §5            | Import settings (NDE matrix, PMC)     | not built                                                                                                                        |
+| §6            | Spooling (Ident Code, Marian, Browse) | not built (placeholder /spooling)                                                                                                |
+| §7            | Fabrication module (Start Fab → QC)   | Fabrication module (§7) — Weld Progress + Dashboard funnel + Material Check + QC Release + Paint + Laydown (G1+G2+G1.1+G3+G4+G5) |
+| §9            | Fabrication reports                   | not built                                                                                                                        |
+| §10           | Spool Tracking + Dashboard            | ✅ /tracking                                                                                                                     |
+| §11           | NDE Management (batch lifecycle)      | ✅ /nde — N1 Create Batch wizard + N2 per-weld Receive Results merged                                                            |
+| §12           | Erection module                       | ✅ /erection — field-weld page store-backed after E2.1 (persistence)                                                             |
+| §13           | Erection reports                      | not built                                                                                                                        |
+| §14–§15       | Testpack management + Preparation     | partially — Explorer + Pressure Test A1–A6 prep/progress screens merged                                                          |
+| §16           | **Pressure Test (5 activities × 2)**  | ✅ homepage + 8 sub-screens merged (A1 line-check, A2 item-clearance, A4 blinding, A5 testing, A6 reinst.)                       |
+| §17           | Testpack homepage (bar graph)         | ✅ /testpack/pressure-test                                                                                                       |
+| §18           | Testpack Explorer (3 levels × 4 tabs) | ✅ /testpack/explorer — Release Tracking tab now wired to live `useTestpackStore` data for TP-201..TP-206                        |
+| §19           | Flange management (browse + progress) | ✅ browse; progress import missing                                                                                               |
+| §20           | Testpack reports                      | not built                                                                                                                        |
 
 ### §16 Pressure Test — full sub-screen list (still to build)
 
@@ -473,7 +482,8 @@ the manual's complete demo surface.
 - **G2** — Material Check screen + persisted spools store. New `store/spools-store.ts` holds `MaterialCheckRecord` per spool with `HeatPiece[]`, inspector, signed-off date, and NC tracking. Persisted under `pipeqc-spools` key; cascades into `resetAll()`. `lib/spool-data.ts` extended with `MaterialCheckRecord`, `HeatPiece`, `MATERIAL_CHECK_SEED` (15 records covering all spools — 4 at MC, 7 at Weld Progress, 4 at Fabricated), and widened `deriveFabStage(readiness, mcRecord)` that places spools at Material Check when unsigned or pending. New route `/fabrication/material-check` with list view (`components/fabrication/material-check-view.tsx`) and detail Sheet (`components/fabrication/material-check-detail-panel.tsx`). List shows stage chips, search, and clickable rows. Detail panel allows editing heat numbers / mill certs / status per piece, saving drafts, and signing off (≥1 Cleared piece required, NC remarks mandatory). Sign-off pushes a notification and advances the spool to Weld Progress. Sidebar nav updated with Material Check entry between Dashboard and Weld Progress. Funnel `Material Check` tile now links to the new route.
 - **G1.1** — Funnel navigation cleanup. Fixes the G1/G2 structural navigation mistake where every funnel tile linked to `/fabrication/weld-progress?stage=<Stage>`. Funnel tiles for stages without a screen (`Fabricated`, `QC Release`, `Sent to Paint`, `Painted`, `Laydown`, `Not Started`) are now non-clickable with `cursor-not-allowed` and a native `title="Coming in G3/G4/G5"` tooltip. Only `Weld Progress` and `Material Check` tiles remain clickable, linking directly to their own routes without `?stage=`. `/fabrication/weld-progress` drops all `?stage=` plumbing (chip, filter, empty-state copy) while keeping the `?spool=` chip from E2.3 intact. `/fabrication/material-check` replaces stage chips with MC-status chips (`All / Pending / Approved / NC`) driven by `deriveMCStatus(record)`, uses `?status=` URL sync, and iterates `records` instead of all spools. `useSpoolsAtStage` selector remains untouched in `store/spool-stage.ts` for future G3/G4/G5 screens.
 - **G3** — QC Release screen + Fabricated → Released advancement. New `store/qc-release-store.ts` persisted under `pipeqc-qc-release` key; cascades into `resetAll()`. `lib/spool-data.ts` extended with `QCReleaseRecord`, `QCChecklistEntry`, `QC_CHECKLIST`, `QC_RELEASE_SEED` (3 records: 2 pre-released + 1 Pass-with-remark anchor on `PL-TK100-001-A`). `deriveFabStage()` widened with `qcRecord` param; signed-off QC record takes highest priority → `"QC Release"`. New route `/fabrication/qc-release` with list view (`components/fabrication/qc-release-view.tsx`) and detail Sheet (`components/fabrication/qc-release-detail-panel.tsx`). List shows `All / Awaiting Release / Released` internal chips, spool search, and clickable rows. Detail panel has a 4-item checklist (Dimensional, Visual, Documentation, Traceability) with `Pending / Pass / Pass with remark` segmented controls, remark textarea for "Pass with remark", inspector dropdown, Save Draft, and Sign off. Sign-off validates no Pending items and no empty remarks. Funnel `Fabricated` and `QC Release` tiles now link to `/fabrication/qc-release`. Sidebar nav updated with `QC Release` entry between `Material Check` and `Weld Progress`.
-
+- **G4** — Paint stages (Sent to Paint + Painted). New `store/paint-store.ts` persisted under `pipeqc-paint` key; cascades into `resetAll()`. `lib/spool-data.ts` extended with `PaintRecord`, `PAINT_SYSTEMS`, `PAINT_SUBCONTRACTORS`, `PAINT_SEED` (2 records: `PL-TK100-002-A` dispatched to ColorPro + `PL-CW200-005-A` painted by Apex). `deriveFabStage()` widened with `paintRecord` param; paint-signed-off → `"Painted"`, dispatched → `"Sent to Paint"`, both above the existing G3 QC-Release rule. New route `/fabrication/paint` with list view (`components/fabrication/paint-view.tsx`) and detail Sheet (`components/fabrication/paint-detail-panel.tsx`). List shows `All / Awaiting Dispatch / In Paint Shop / Painted` internal chips, spool search, and conditional columns per chip. Detail panel has three modes: Dispatch (paint system + subcontractor dropdowns + remark), Sign-off (read-only dispatch summary + DFT input + inspector dropdown), and Done (all read-only). Funnel `Sent to Paint` and `Painted` tiles now link to `/fabrication/paint`. Sidebar nav updated with `Paint` entry between `QC Release` and `Weld Progress`.
+- **G5** — Laydown stage (yard placement + release to site). New `store/laydown-store.ts` persisted under `pipeqc-laydown` key; cascades into `resetAll()`. `lib/spool-data.ts` extended with `LaydownRecord`, `YARD_LOCATIONS`, `LAYDOWN_SEED` (1 record: `PL-CW200-005-A` placed at `YARD-A-12`). `deriveFabStage()` widened with `laydownRecord` param; placed → `"Laydown"` as highest priority, above all paint rules. New route `/fabrication/laydown` with list view (`components/fabrication/laydown-view.tsx`) and detail Sheet (`components/fabrication/laydown-detail-panel.tsx`). List shows `All / Awaiting Placement / In Yard / Released to Site` internal chips, spool search, and conditional columns per chip. Detail panel has two modes: Place (yard location + placer dropdowns) and Release (releaser dropdown); released spools show read-only summary. On place: 700 ms delay → toast + home notification. On release: 700 ms delay → toast + home notification with href `/erection/dashboard`. Funnel `Laydown` tile now links to `/fabrication/laydown`. Sidebar nav updated with `Laydown` entry between `Paint` and `Weld Progress`. **Funnel deep-link cleanup:** all 6 existing tiles now carry `?status=` matching their chip (e.g. `Sent to Paint` → `?status=InShop`, `Painted` → `?status=Painted`). Track G is **complete** — all 7 active stages of §7 have real screens, persisted state, and audit trail.
 
 ## Manual-alignment notes (2026-05-17)
 
@@ -481,4 +491,4 @@ the manual's complete demo surface.
 - Reinstatement is based on flange joints categories Y/Z (after test / after pre-commissioning).
 - Flange state is persisted in shared `store/flange-store.ts`.
 - NDE includes manual-facing state vocabulary and tracer demo behavior, while full auto-allocation remains simplified.
-- Fabrication QC Release, Sent to Paint, Painted, Final QC, Laydown remain out of scope for this alignment pass.
+- Fabrication QC Release, Sent to Paint, Painted, Final QC, and Laydown are all now wired (Track G complete).

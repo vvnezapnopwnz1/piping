@@ -17,6 +17,8 @@ import {
   FlaskConical,
   ClipboardCheck,
   ShieldCheck,
+  Paintbrush,
+  Warehouse,
 } from 'lucide-react'
 import type { Role } from '@/contexts/role-context'
 
@@ -79,6 +81,16 @@ export const navigationConfig: NavSection[] = [
             title: 'QC Release',
             href: '/fabrication/qc-release',
             icon: ShieldCheck,
+          },
+          {
+            title: 'Paint',
+            href: '/fabrication/paint',
+            icon: Paintbrush,
+          },
+          {
+            title: 'Laydown',
+            href: '/fabrication/laydown',
+            icon: Warehouse,
           },
           {
             title: 'Weld Progress',

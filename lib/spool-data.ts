@@ -158,14 +158,79 @@ export const MATERIAL_CHECK_SEED: MaterialCheckRecord[] = [
 ]
 
 // ---------------------------------------------------------------------------
-// Stage derivation (G1 + G2)
+// Paint data model (G4)
+// ---------------------------------------------------------------------------
+
+export const PAINT_SYSTEMS = [
+  "PS-1A: Zinc Primer only",
+  "PS-2B: Epoxy 2-coat",
+  "PS-3A: Zinc Primer + Epoxy (250 µm)",
+  "PS-4C: High-temp Silicone (cryo lines)",
+] as const
+export type PaintSystem = (typeof PAINT_SYSTEMS)[number]
+
+export const PAINT_SUBCONTRACTORS = [
+  "ColorPro Coatings Inc",
+  "Apex Industrial Painting",
+  "PetroCoat Services",
+] as const
+export type PaintSubcontractor = (typeof PAINT_SUBCONTRACTORS)[number]
+
+export interface PaintRecord {
+  spoolNo: string
+  paintSystem?: PaintSystem
+  subcontractor?: PaintSubcontractor
+  dispatchDate?: string         // ISO date — set on dispatch
+  returnDate?: string            // ISO date — set on sign-off
+  dftMicrons?: number            // dry-film thickness, µm
+  finalQCInspector?: string      // from QC_INSPECTORS (reuse from G2/G3)
+  finalQCSignedOffDate?: string  // ISO date — set on sign-off
+  dispatchRemark?: string        // optional note captured on dispatch
+}
+
+function makePaintRecord(
+  spoolNo: string,
+  patch: Partial<Omit<PaintRecord, "spoolNo">>,
+): PaintRecord {
+  return { spoolNo, ...patch }
+}
+
+export const PAINT_SEED: PaintRecord[] = [
+  makePaintRecord("PL-TK100-002-A", {
+    paintSystem: "PS-3A: Zinc Primer + Epoxy (250 µm)",
+    subcontractor: "ColorPro Coatings Inc",
+    dispatchDate: "2025-05-13",
+  }),
+  makePaintRecord("PL-CW200-005-A", {
+    paintSystem: "PS-2B: Epoxy 2-coat",
+    subcontractor: "Apex Industrial Painting",
+    dispatchDate: "2025-05-11",
+    returnDate: "2025-05-14",
+    dftMicrons: 285,
+    finalQCInspector: "QC-ENG-02",
+    finalQCSignedOffDate: "2025-05-14",
+  }),
+]
+
+// ---------------------------------------------------------------------------
+// Stage derivation (G1 + G2 + G3 + G4)
 // ---------------------------------------------------------------------------
 
 export function deriveFabStage(
   readiness: SpoolReadiness | undefined,
   mcRecord?: MaterialCheckRecord,
   qcRecord?: QCReleaseRecord,
+  paintRecord?: PaintRecord,
+  laydownRecord?: LaydownRecord,
 ): SpoolFabStage {
+  // G5: placed on laydown yard takes absolute priority
+  if (laydownRecord?.placedDate) return "Laydown"
+
+  // G4: paint-signed-off takes absolute priority
+  if (paintRecord?.finalQCSignedOffDate) return "Painted"
+  // G4: dispatched to paint shop (not yet signed off)
+  if (paintRecord?.dispatchDate) return "Sent to Paint"
+
   // G3: signed-off QC record takes highest priority
   if (qcRecord?.signedOffDate) return "QC Release"
 
@@ -276,4 +341,42 @@ export const QC_RELEASE_SEED: QCReleaseRecord[] = [
     },
     { inspector: "QC-ENG-03", signedOffDate: "2025-05-10" },
   ),
+]
+
+// ---------------------------------------------------------------------------
+// Laydown data model (G5)
+// ---------------------------------------------------------------------------
+
+export const YARD_LOCATIONS = [
+  "YARD-A-01",
+  "YARD-A-12",
+  "YARD-B-04",
+  "YARD-B-09",
+  "YARD-C-02",
+  "YARD-C-15",
+] as const
+export type YardLocation = (typeof YARD_LOCATIONS)[number]
+
+export interface LaydownRecord {
+  spoolNo: string
+  yardLocation: YardLocation
+  placedDate: string
+  placedBy: string
+  releasedToSiteDate?: string
+  releasedBy?: string
+}
+
+function makeLaydownRecord(
+  spoolNo: string,
+  patch: Partial<Omit<LaydownRecord, "spoolNo">> & { yardLocation: YardLocation; placedDate: string; placedBy: string },
+): LaydownRecord {
+  return { spoolNo, ...patch }
+}
+
+export const LAYDOWN_SEED: LaydownRecord[] = [
+  makeLaydownRecord("PL-CW200-005-A", {
+    yardLocation: "YARD-A-12",
+    placedDate: "2025-05-15",
+    placedBy: "QC-ENG-02",
+  }),
 ]
