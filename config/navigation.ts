@@ -15,6 +15,7 @@ import {
   Gauge,
   FolderTree,
   FlaskConical,
+  ClipboardCheck,
 } from 'lucide-react'
 import type { Role } from '@/contexts/role-context'
 
@@ -67,6 +68,11 @@ export const navigationConfig: NavSection[] = [
             title: 'Dashboard',
             href: '/fabrication/dashboard',
             icon: LayoutDashboard,
+          },
+          {
+            title: 'Material Check',
+            href: '/fabrication/material-check',
+            icon: ClipboardCheck,
           },
           {
             title: 'Weld Progress',

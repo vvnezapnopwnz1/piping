@@ -62,7 +62,14 @@ function WeldProgressInner() {
 
   const clearSpoolFilter = () => {
     setSpoolFilter(null);
-    window.history.replaceState({}, "", "/fabrication/weld-progress");
+    const params = new URLSearchParams(window.location.search);
+    params.delete("spool");
+    const qs = params.toString();
+    window.history.replaceState(
+      {},
+      "",
+      `/fabrication/weld-progress${qs ? `?${qs}` : ""}`,
+    );
   };
 
   const handleApplyFilters = () => {

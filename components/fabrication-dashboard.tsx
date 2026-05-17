@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   RefreshCw,
   Download,
@@ -15,7 +16,8 @@ import {
   Activity,
   BarChart3,
 } from "lucide-react";
-import { useWeldsKPIs } from "@/store";
+import { useWeldsKPIs, useSpoolStageCounts } from "@/store";
+import { STAGE_ORDER, STAGE_COLOR, type SpoolFabStage } from "@/lib/spool-data";
 import {
   LineChart,
   Line,
@@ -207,6 +209,77 @@ const materialShortages = [
   { material: '8" Flange RF 150#', required: 64, available: 48, unit: "pcs" },
 ];
 
+const STAGE_SCREENS: Partial<Record<SpoolFabStage, string>> = {
+  "Material Check": "/fabrication/material-check",
+  "Weld Progress": "/fabrication/weld-progress",
+};
+
+function FunnelSection() {
+  const counts = useSpoolStageCounts();
+
+  return (
+    <div className="space-y-3">
+      <h3 className="text-xs font-medium uppercase tracking-wider text-slate-500">
+        Spool fabrication pipeline
+      </h3>
+      <div className="grid grid-cols-4 xl:grid-cols-8 gap-3">
+        {STAGE_ORDER.map((stage) => {
+          const count = counts[stage];
+          const colors = STAGE_COLOR[stage];
+          const isEmpty = count === 0;
+
+          const tile = (
+            <div
+              className={[
+                "relative flex flex-col gap-1 rounded-lg border bg-white p-3",
+                "overflow-hidden",
+                isEmpty
+                  ? "opacity-50 cursor-default"
+                  : "hover:shadow-sm transition-shadow",
+              ].join(" ")}
+            >
+              <div
+                className={`absolute left-0 top-0 bottom-0 w-1 ${colors.rail}`}
+              />
+              <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">
+                {stage}
+              </span>
+              <span className="text-2xl font-semibold text-slate-900">
+                {count}
+              </span>
+              <span className="text-xs text-slate-500">
+                {isEmpty ? "empty" : `${count} spool${count === 1 ? "" : "s"}`}
+              </span>
+            </div>
+          );
+
+          const screen = STAGE_SCREENS[stage];
+          if (!screen) {
+            return (
+              <div
+                key={stage}
+                className={[
+                  "cursor-not-allowed opacity-60",
+                  isEmpty ? "opacity-40" : "",
+                ].join(" ")}
+                title="Coming in G3/G4/G5"
+              >
+                {tile}
+              </div>
+            );
+          }
+
+          return (
+            <Link key={stage} href={screen} className="block">
+              {tile}
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function FabricationDashboard() {
   const [timeScale, setTimeScale] = useState("30D");
   const [wbu, setWbu] = useState("all");
@@ -319,6 +392,8 @@ export function FabricationDashboard() {
           </div>
         </div>
       </div>
+
+      <FunnelSection />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
