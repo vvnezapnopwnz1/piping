@@ -11,6 +11,8 @@ import { useAdminStore } from "./admin-store"
 import { useErectionStore } from "./erection-store"
 import { useSpoolsStore } from "./spools-store"
 import { useQCReleaseStore } from "./qc-release-store"
+import { useFlangeStore } from "./flange-store"
+import { useSpoolingStore } from "./spooling-store"
 
 /**
  * Demo store — global demo-mode toggle and master reset.
@@ -54,6 +56,8 @@ export const useDemoStore = create<DemoState>()(
         useErectionStore.getState().resetErection()
         useSpoolsStore.getState().resetSpools()
         useQCReleaseStore.getState().resetQCRelease()
+        useFlangeStore.getState().resetDemo()
+        useSpoolingStore.getState().resetDemo()
         set({
           demoMode: true,
           lastResetAt: new Date().toISOString(),

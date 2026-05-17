@@ -66,6 +66,7 @@ import {
   type NdeBatchStatus,
 } from "@/store";
 import { cn } from "@/lib/utils";
+import { mapBatchStatusToManual } from "@/lib/nde-status";
 
 const statusFilters: Array<"All" | NdeBatchStatus> = [
   "All",
@@ -137,6 +138,7 @@ function MethodBadge({ method }: { method: NdeBatch["method"] }) {
 }
 
 function StatusBadge({ status }: { status: NdeBatchStatus }) {
+  const manual = mapBatchStatusToManual(status);
   return (
     <span
       className={cn(
@@ -144,7 +146,7 @@ function StatusBadge({ status }: { status: NdeBatchStatus }) {
         statusBadgeClasses[status],
       )}
     >
-      {status}
+      {manual}
     </span>
   );
 }

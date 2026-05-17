@@ -25,12 +25,11 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import {
-  flangeJoints as seedJoints,
   flangeFilterOptions,
   groupFlangesByIso,
   type BoltingStatus,
-  type FlangeJoint,
 } from "@/lib/flange-data";
+import { useFlangeStore } from "@/store";
 
 function boltingBadge(status: BoltingStatus) {
   switch (status) {
@@ -40,11 +39,16 @@ function boltingBadge(status: BoltingStatus) {
       return "border-sky-300 bg-sky-100 text-sky-800";
     case "Not Started":
       return "border-slate-300 bg-slate-100 text-slate-700";
+    case "Reinstatement Required":
+      return "border-amber-300 bg-amber-100 text-amber-800";
+    case "Reinstated":
+      return "border-emerald-300 bg-emerald-100 text-emerald-800";
   }
 }
 
 export function FlangeBrowse() {
-  const [joints, setJoints] = useState<FlangeJoint[]>(seedJoints);
+  const joints = useFlangeStore((s) => s.joints);
+  const updateJoint = useFlangeStore((s) => s.updateJoint);
   const [search, setSearch] = useState("");
   const [pdsArea, setPdsArea] = useState("All Areas");
   const [lineNo, setLineNo] = useState("All Lines");
@@ -80,7 +84,7 @@ export function FlangeBrowse() {
           j.btNo.toLowerCase().includes(q) ||
           j.isoNo.toLowerCase().includes(q) ||
           j.lineNo.toLowerCase().includes(q) ||
-          j.testPackId.toLowerCase().includes(q) ||
+          (j.testpackId ?? j.testPackId).toLowerCase().includes(q) ||
           (j.jointer?.toLowerCase().includes(q) ?? false)
         );
       }
@@ -425,9 +429,7 @@ export function FlangeBrowse() {
         joint={selectedJoint}
         onClose={() => setSelectedId(null)}
         onSave={(updated) => {
-          setJoints((prev) =>
-            prev.map((j) => (j.id === updated.id ? updated : j)),
-          );
+          updateJoint(updated.id, updated);
         }}
       />
     </div>

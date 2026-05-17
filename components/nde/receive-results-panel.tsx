@@ -33,6 +33,7 @@ import {
 import {
   useBatchesStore,
   useWeldsStore,
+  useErectionStore,
   useNotificationsStore,
   type NdeBatch,
   type NdeBatchWeld,
@@ -76,10 +77,7 @@ export function ReceiveResultsPanel({
     );
   };
 
-  const updateDecision = (
-    weldId: string,
-    patch: Partial<WeldDecision>
-  ) => {
+  const updateDecision = (weldId: string, patch: Partial<WeldDecision>) => {
     setDecisions((prev) => ({
       ...prev,
       [weldId]: {
@@ -93,7 +91,7 @@ export function ReceiveResultsPanel({
 
   const rejectedCount = useMemo(
     () => welds.filter((w) => getDecision(w.id).result === "Rejected").length,
-    [welds, decisions]
+    [welds, decisions],
   );
 
   const canSubmit =
@@ -132,15 +130,28 @@ export function ReceiveResultsPanel({
 
     // Cascade rejected welds to welds-store
     const rejectedWelds = welds.filter(
-      (w) => getDecision(w.id).result === "Rejected"
+      (w) => getDecision(w.id).result === "Rejected",
     );
     const markWeldForRework = useWeldsStore.getState().markForRework;
     for (const w of rejectedWelds) {
       const d = getDecision(w.id);
-      markWeldForRework(
-        w.id,
-        d.remarks || "Marked for rework from NDE batch"
-      );
+      markWeldForRework(w.id, d.remarks || "Marked for rework from NDE batch");
+    }
+
+    const allShopWelds = useWeldsStore.getState().welds;
+    const allFieldWelds = useErectionStore.getState().fieldWelds;
+    const setTracerSelections = useBatchesStore.getState().setTracerSelections;
+    const currentBatch = useBatchesStore.getState().getById(batch.id);
+    for (const rejected of rejectedWelds) {
+      const inStore = currentBatch?.welds.find((w) => w.id === rejected.id);
+      const welder = inStore?.welder ?? rejected.welder;
+      const sourceRows =
+        batch.source === "field" ? allFieldWelds : allShopWelds;
+      const candidates = sourceRows
+        .filter((w) => w.welderCode === welder && w.id !== rejected.id)
+        .slice(0, 2)
+        .map((w) => w.id);
+      setTracerSelections(batch.id, rejected.id, candidates, "NDE-INS-04");
     }
 
     if (rejectedCount > 0) {
@@ -155,7 +166,7 @@ export function ReceiveResultsPanel({
         actorLabel: batch.subcontractor,
       });
       toast.success(
-        `${batch.batchNo}: ${rejectedCount} rejected — rework cascaded`
+        `${batch.batchNo}: ${rejectedCount} rejected — rework cascaded`,
       );
     } else {
       toast.success(`${batch.batchNo}: all welds accepted`);
@@ -175,10 +186,7 @@ export function ReceiveResultsPanel({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="w-full gap-0 p-0 sm:max-w-[540px]"
-      >
+      <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-[540px]">
         {batch ? (
           <>
             <SheetHeader className="gap-3 border-b px-6 py-5">
@@ -187,8 +195,8 @@ export function ReceiveResultsPanel({
                   Receive Results
                 </SheetTitle>
                 <SheetDescription>
-                  {batch.batchNo} • {batch.method} • {batch.welds.length}{" "}
-                  weld{batch.welds.length === 1 ? "" : "s"}
+                  {batch.batchNo} • {batch.method} • {batch.welds.length} weld
+                  {batch.welds.length === 1 ? "" : "s"}
                 </SheetDescription>
               </div>
             </SheetHeader>
@@ -245,7 +253,7 @@ export function ReceiveResultsPanel({
                                   className={cn(
                                     "text-[11px] font-medium cursor-pointer",
                                     d.result === "Accepted" &&
-                                      "text-emerald-700"
+                                      "text-emerald-700",
                                   )}
                                 >
                                   Accept
@@ -261,7 +269,7 @@ export function ReceiveResultsPanel({
                                   htmlFor={`${w.id}-reject`}
                                   className={cn(
                                     "text-[11px] font-medium cursor-pointer",
-                                    d.result === "Rejected" && "text-red-700"
+                                    d.result === "Rejected" && "text-red-700",
                                   )}
                                 >
                                   Reject

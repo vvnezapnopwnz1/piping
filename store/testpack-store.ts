@@ -29,6 +29,7 @@ import {
   REINSTATEMENT_TEAMS,
   JOINTER_LIST,
 } from "@/lib/testpack-seed"
+import { useFlangeStore } from "./flange-store"
 
 export type { LineCheckStatus, BlindingStatus, PunchCategory, PunchItem, CheckingRequest, ClearanceRequest, BlindingRequest, ReinstatementRequest, ISORecord, TestPackRecord }
 
@@ -68,9 +69,9 @@ interface TestpackState {
   getTestpacksAwaitingPreComm: () => TestPackRecord[]
   getNextBlindingRequestId: () => string
 
-  getReinstatementEligibleItems: () => PunchItem[]
-  getAssignedReinstatementItems: (team?: string) => PunchItem[]
-  getCompletedReinstatementItems: () => PunchItem[]
+  getReinstatementEligibleItems: () => { id: string; category: "Y" | "Z"; testpackId: string; isoId: string }[]
+  getAssignedReinstatementItems: (team?: string) => { id: string; category: "Y" | "Z"; testpackId: string; isoId: string }[]
+  getCompletedReinstatementItems: () => { id: string; category: "Y" | "Z"; testpackId: string; isoId: string }[]
   getNextReinstatementRequestId: () => string
 
   // Mutations
@@ -90,9 +91,9 @@ interface TestpackState {
   recordBlindingDate: (testpackId: string, date: string) => void
   setTestingDates: (testpackId: string, payload: { testingStartDate?: string; testingDoneDate?: string; preCommDate?: string }) => void
 
-  assignReinstatement: (punchItemIds: string[], team: string) => { requestId: string }
+  assignReinstatement: (jointIds: string[], team: string) => { requestId: string }
   markReinstated: (
-    punchItemId: string,
+    jointId: string,
     payload: {
       date: string
       jointerNo: string
@@ -290,34 +291,56 @@ export const useTestpackStore = create<TestpackState>()(
       },
 
       getReinstatementEligibleItems: () => {
-        const items = get().punchItems
         const tps = get().testPacks
-        const isos = get().isos
-        return items.filter((pi) => {
-          if (pi.reinstatedAt || pi.reinstatementRequestId) return false
-          const iso = isos.find((i) => i.id === pi.isoId)
-          const tp = tps.find((t) => t.id === iso?.testpackId)
-          if (pi.category === "Y" && tp?.testingDoneDate) return true
-          if (pi.category === "Z" && tp?.preCommDate) return true
-          return false
-        })
+        const joints = useFlangeStore.getState().joints
+        return joints
+          .filter((joint) => {
+            if (joint.reinstatedAt || joint.reinstatementRequestId) return false
+            const tpId = joint.testpackId ?? joint.testPackId
+            const tp = tps.find((t) => t.id === tpId)
+            const category = joint.category ?? joint.jointCategory
+            if (category === "Y" && tp?.testingDoneDate) return true
+            if (category === "Z" && tp?.preCommDate) return true
+            return false
+          })
+          .map((joint) => ({
+            id: joint.id,
+            category: (joint.category ?? joint.jointCategory) as "Y" | "Z",
+            testpackId: (joint.testpackId ?? joint.testPackId) as string,
+            isoId: (joint.isoId ?? joint.isoNo) as string,
+          }))
       },
 
       getAssignedReinstatementItems: (team) => {
-        const items = get().punchItems
+        const joints = useFlangeStore.getState().joints
         const reqs = get().reinstatementRequests
-        return items.filter((pi) => {
-          if (!pi.reinstatementRequestId || pi.reinstatedAt) return false
-          if (team) {
-            const req = reqs.find((r) => r.id === pi.reinstatementRequestId)
-            return req?.assignedTo === team
-          }
-          return true
-        })
+        return joints
+          .filter((joint) => {
+            if (!joint.reinstatementRequestId || joint.reinstatedAt) return false
+            if (team) {
+              const req = reqs.find((r) => r.id === joint.reinstatementRequestId)
+              return req?.assignedTo === team
+            }
+            return true
+          })
+          .map((joint) => ({
+            id: joint.id,
+            category: (joint.category ?? joint.jointCategory) as "Y" | "Z",
+            testpackId: (joint.testpackId ?? joint.testPackId) as string,
+            isoId: (joint.isoId ?? joint.isoNo) as string,
+          }))
       },
 
       getCompletedReinstatementItems: () => {
-        return get().punchItems.filter((pi) => pi.reinstatedAt)
+        return useFlangeStore
+          .getState()
+          .joints.filter((joint) => !!joint.reinstatedAt)
+          .map((joint) => ({
+            id: joint.id,
+            category: (joint.category ?? joint.jointCategory) as "Y" | "Z",
+            testpackId: (joint.testpackId ?? joint.testPackId) as string,
+            isoId: (joint.isoId ?? joint.isoNo) as string,
+          }))
       },
 
       getNextReinstatementRequestId: () => {
@@ -482,7 +505,7 @@ export const useTestpackStore = create<TestpackState>()(
         }))
       },
 
-      assignReinstatement: (punchItemIds, team) => {
+      assignReinstatement: (jointIds, team) => {
         const requestId = get().getNextReinstatementRequestId()
         reinstatementRequestCounter++
 
@@ -490,36 +513,24 @@ export const useTestpackStore = create<TestpackState>()(
           id: requestId,
           createdAt: now(),
           assignedTo: team,
-          punchItemIds,
+          punchItemIds: jointIds,
         }
 
         set((state) => ({
           reinstatementRequests: [request, ...state.reinstatementRequests],
-          punchItems: state.punchItems.map((pi) =>
-            punchItemIds.includes(pi.id)
-              ? { ...pi, reinstatementRequestId: requestId }
-              : pi
-          ),
         }))
+        useFlangeStore.getState().assignReinstatement(jointIds, team)
 
         return { requestId }
       },
 
-      markReinstated: (punchItemId, payload) => {
-        set((state) => ({
-          punchItems: state.punchItems.map((pi) =>
-            pi.id === punchItemId
-              ? {
-                ...pi,
-                reinstatedAt: payload.date,
-                reinstatedBy: payload.reinstatedBy,
-                jointerNo: payload.jointerNo,
-                reportNo: payload.reportNo,
-                tagNo: payload.tagNo,
-              }
-              : pi
-          ),
-        }))
+      markReinstated: (jointId, payload) => {
+        useFlangeStore.getState().markReinstated(jointId, {
+          date: payload.date,
+          jointer: payload.jointerNo,
+          reportNo: payload.reportNo,
+          tagNo: payload.tagNo,
+        })
       },
 
       recordIsoWelded: (isoNo, _source) => {
@@ -733,33 +744,32 @@ export const useTestingKPIs = () => {
 }
 
 export const useReinstatementKPIs = () => {
-  const punchItems = useTestpackStore((s) => s.punchItems)
   const testPacks = useTestpackStore((s) => s.testPacks)
-  const isos = useTestpackStore((s) => s.isos)
-  const reinstatementRequests = useTestpackStore((s) => s.reinstatementRequests)
+  const flangeJoints = useFlangeStore((s) => s.joints)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  const eligibleItems = punchItems.filter((pi) => {
-    if (pi.reinstatedAt || pi.reinstatementRequestId) return false
-    const iso = isos.find((i) => i.id === pi.isoId)
-    const tp = testPacks.find((t) => t.id === iso?.testpackId)
-    if (pi.category === "Y" && tp?.testingDoneDate) return true
-    if (pi.category === "Z" && tp?.preCommDate) return true
+  const eligibleItems = flangeJoints.filter((joint) => {
+    if (joint.reinstatedAt || joint.reinstatementRequestId) return false
+    const tpId = joint.testpackId ?? joint.testPackId
+    const tp = testPacks.find((t) => t.id === tpId)
+    const category = joint.category ?? joint.jointCategory
+    if (category === "Y" && tp?.testingDoneDate) return true
+    if (category === "Z" && tp?.preCommDate) return true
     return false
   })
 
-  const eligibleY = eligibleItems.filter((pi) => pi.category === "Y").length
-  const eligibleZ = eligibleItems.filter((pi) => pi.category === "Z").length
+  const eligibleY = eligibleItems.filter((joint) => (joint.category ?? joint.jointCategory) === "Y").length
+  const eligibleZ = eligibleItems.filter((joint) => (joint.category ?? joint.jointCategory) === "Z").length
 
-  const assignedCount = punchItems.filter(
-    (pi) => pi.reinstatementRequestId && !pi.reinstatedAt
+  const assignedCount = flangeJoints.filter(
+    (joint) => joint.reinstatementRequestId && !joint.reinstatedAt
   ).length
 
-  const doneCount = punchItems.filter((pi) => pi.reinstatedAt).length
+  const doneCount = flangeJoints.filter((joint) => joint.reinstatedAt).length
 
   return mounted
     ? { eligibleY, eligibleZ, assignedCount, doneCount }

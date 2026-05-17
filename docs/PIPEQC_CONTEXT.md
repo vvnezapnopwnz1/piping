@@ -25,7 +25,7 @@ expectation, refer to the manual — not to your training data.
 
 | Layer      | Choice                                | Notes                                |
 | ---------- | ------------------------------------- | ------------------------------------ |
-| Framework  | Next.js 14 App Router                 | All routes under `app/`              |
+| Framework  | Next.js 16.2.6 App Router             | All routes under `app/`              |
 | Language   | TypeScript (strict)                   |                                      |
 | Styling    | Tailwind CSS                          | No CSS modules, no styled-components |
 | Components | shadcn/ui (style: "new-york")         | Already installed                    |
@@ -164,7 +164,7 @@ store/                                  # Zustand stores
   admin-store.ts                        # teams + subcontractors (B1)
   erection-store.ts                     # field welds (E2.1) — persisted, mirrors welds-store shape
   index.ts
-  # ⚠ MISSING: flange-store
+  flange-store.ts                       # ✅ shared persisted flange joints
   # ⚠ Flange screens currently read straight from lib/flange-data.ts;
   # mutations (assign jointer, mark torque progress) are not yet wired to a store.
   # ⚠ Pressure-test activity tallies are derived from testpack-store — no separate store.
@@ -473,3 +473,12 @@ the manual's complete demo surface.
 - **G2** — Material Check screen + persisted spools store. New `store/spools-store.ts` holds `MaterialCheckRecord` per spool with `HeatPiece[]`, inspector, signed-off date, and NC tracking. Persisted under `pipeqc-spools` key; cascades into `resetAll()`. `lib/spool-data.ts` extended with `MaterialCheckRecord`, `HeatPiece`, `MATERIAL_CHECK_SEED` (15 records covering all spools — 4 at MC, 7 at Weld Progress, 4 at Fabricated), and widened `deriveFabStage(readiness, mcRecord)` that places spools at Material Check when unsigned or pending. New route `/fabrication/material-check` with list view (`components/fabrication/material-check-view.tsx`) and detail Sheet (`components/fabrication/material-check-detail-panel.tsx`). List shows stage chips, search, and clickable rows. Detail panel allows editing heat numbers / mill certs / status per piece, saving drafts, and signing off (≥1 Cleared piece required, NC remarks mandatory). Sign-off pushes a notification and advances the spool to Weld Progress. Sidebar nav updated with Material Check entry between Dashboard and Weld Progress. Funnel `Material Check` tile now links to the new route.
 - **G1.1** — Funnel navigation cleanup. Fixes the G1/G2 structural navigation mistake where every funnel tile linked to `/fabrication/weld-progress?stage=<Stage>`. Funnel tiles for stages without a screen (`Fabricated`, `QC Release`, `Sent to Paint`, `Painted`, `Laydown`, `Not Started`) are now non-clickable with `cursor-not-allowed` and a native `title="Coming in G3/G4/G5"` tooltip. Only `Weld Progress` and `Material Check` tiles remain clickable, linking directly to their own routes without `?stage=`. `/fabrication/weld-progress` drops all `?stage=` plumbing (chip, filter, empty-state copy) while keeping the `?spool=` chip from E2.3 intact. `/fabrication/material-check` replaces stage chips with MC-status chips (`All / Pending / Approved / NC`) driven by `deriveMCStatus(record)`, uses `?status=` URL sync, and iterates `records` instead of all spools. `useSpoolsAtStage` selector remains untouched in `store/spool-stage.ts` for future G3/G4/G5 screens.
 - **G3** — QC Release screen + Fabricated → Released advancement. New `store/qc-release-store.ts` persisted under `pipeqc-qc-release` key; cascades into `resetAll()`. `lib/spool-data.ts` extended with `QCReleaseRecord`, `QCChecklistEntry`, `QC_CHECKLIST`, `QC_RELEASE_SEED` (3 records: 2 pre-released + 1 Pass-with-remark anchor on `PL-TK100-001-A`). `deriveFabStage()` widened with `qcRecord` param; signed-off QC record takes highest priority → `"QC Release"`. New route `/fabrication/qc-release` with list view (`components/fabrication/qc-release-view.tsx`) and detail Sheet (`components/fabrication/qc-release-detail-panel.tsx`). List shows `All / Awaiting Release / Released` internal chips, spool search, and clickable rows. Detail panel has a 4-item checklist (Dimensional, Visual, Documentation, Traceability) with `Pending / Pass / Pass with remark` segmented controls, remark textarea for "Pass with remark", inspector dropdown, Save Draft, and Sign off. Sign-off validates no Pending items and no empty remarks. Funnel `Fabricated` and `QC Release` tiles now link to `/fabrication/qc-release`. Sidebar nav updated with `QC Release` entry between `Material Check` and `Weld Progress`.
+
+
+## Manual-alignment notes (2026-05-17)
+
+- Testpack Release Tracking gates 1–3 are derived from live data (weld/flange/NDE), no longer hardcoded green.
+- Reinstatement is based on flange joints categories Y/Z (after test / after pre-commissioning).
+- Flange state is persisted in shared `store/flange-store.ts`.
+- NDE includes manual-facing state vocabulary and tracer demo behavior, while full auto-allocation remains simplified.
+- Fabrication QC Release, Sent to Paint, Painted, Final QC, Laydown remain out of scope for this alignment pass.

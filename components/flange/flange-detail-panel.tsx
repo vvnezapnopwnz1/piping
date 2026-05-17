@@ -81,6 +81,10 @@ export function FlangeDetailPanel({
           : form.boltingStatus === "Not Started"
             ? "Bolted"
             : form.boltingStatus,
+      testpackId: form.testpackId ?? form.testPackId,
+      category: form.category ?? form.jointCategory,
+      reportNo: form.reportNo ?? form.reportNbr,
+      tagNo: form.tagNo ?? form.tagNbr,
     };
     onSave(updated);
     setSaving(false);
@@ -96,7 +100,12 @@ export function FlangeDetailPanel({
           </p>
           <p className="text-xs text-muted-foreground">{form.isoNo}</p>
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onClose}
+          aria-label="Close"
+        >
           <X className="h-4 w-4" />
         </Button>
       </div>
@@ -179,7 +188,9 @@ export function FlangeDetailPanel({
           />
         </Field>
         <Field label="Report / Tag">
-          <ReadOnly value={`${form.reportNbr ?? "—"} / ${form.tagNbr ?? "—"}`} />
+          <ReadOnly
+            value={`${form.reportNbr ?? "—"} / ${form.tagNbr ?? "—"}`}
+          />
         </Field>
         {form.ut != null && (
           <Field label="UT (equiv.)">
@@ -189,11 +200,7 @@ export function FlangeDetailPanel({
       </div>
 
       <div className="border-t border-slate-200 p-4">
-        <Button
-          className="w-full gap-2"
-          disabled={saving}
-          onClick={handleSave}
-        >
+        <Button className="w-full gap-2" disabled={saving} onClick={handleSave}>
           <Save className="h-4 w-4" />
           {saving ? "Saving..." : "Save torque record"}
         </Button>

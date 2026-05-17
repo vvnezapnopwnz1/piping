@@ -60,6 +60,11 @@ import {
   type NdeBatchWeld,
 } from "@/store";
 import { cn } from "@/lib/utils";
+import {
+  hasNde100Requirement,
+  mapBatchStatusToManual,
+  mapResultToJointCode,
+} from "@/lib/nde-status";
 
 interface BatchDetailPanelProps {
   batch: NdeBatch | null;
@@ -83,6 +88,7 @@ const resultClasses = {
 } as const;
 
 function StatusPill({ status }: { status: NdeBatchStatus }) {
+  const manual = mapBatchStatusToManual(status);
   return (
     <span
       className={cn(
@@ -90,7 +96,7 @@ function StatusPill({ status }: { status: NdeBatchStatus }) {
         statusClasses[status],
       )}
     >
-      {status}
+      {manual}
     </span>
   );
 }
@@ -222,6 +228,11 @@ export function BatchDetailPanel({
     setConfirmReworkOpen(false);
   };
 
+  const tracerSelections = batch?.tracerSelections ?? [];
+  const nde100Required = batch
+    ? hasNde100Requirement(batch, tracerSelections)
+    : false;
+
   const handleCloseBatch = () => {
     if (!batch) return;
     closeBatchAction(batch.id);
@@ -269,6 +280,14 @@ export function BatchDetailPanel({
                   </TabsList>
 
                   <TabsContent value="overview" className="space-y-4">
+                    {nde100Required ? (
+                      <Card className="border-red-300 bg-red-50">
+                        <CardContent className="p-4 text-sm text-red-800">
+                          NDE 100 required for this welder group (4+ rejected
+                          weld points / tracers).
+                        </CardContent>
+                      </Card>
+                    ) : null}
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <Card className="gap-4 py-5">
                         <CardHeader className="px-5 pb-0">
@@ -484,6 +503,9 @@ export function BatchDetailPanel({
                                 Welder
                               </TableHead>
                               <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                Code
+                              </TableHead>
+                              <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                                 Result
                               </TableHead>
                               <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -515,6 +537,12 @@ export function BatchDetailPanel({
                                     <TableCell className="text-sm text-slate-900">
                                       {weld.welder}
                                     </TableCell>
+                                    <TableCell className="text-sm text-slate-900">
+                                      {mapResultToJointCode(
+                                        weld,
+                                        batch.tracerSelections,
+                                      )}
+                                    </TableCell>
                                     <TableCell>
                                       <ResultBadge result={weld.result} />
                                     </TableCell>
@@ -525,7 +553,7 @@ export function BatchDetailPanel({
                                   {isExpanded ? (
                                     <TableRow className="bg-slate-50/70 hover:bg-slate-50/70">
                                       <TableCell
-                                        colSpan={6}
+                                        colSpan={7}
                                         className="px-5 py-4"
                                       >
                                         <div className="grid gap-4 md:grid-cols-[1.2fr_0.8fr]">
@@ -562,6 +590,24 @@ export function BatchDetailPanel({
                                                   "No remarks captured."}
                                               </p>
                                             </div>
+                                            {weld.result === "Rejected" ? (
+                                              <div>
+                                                <p className="text-xs uppercase tracking-wider text-red-700">
+                                                  Tracer required
+                                                </p>
+                                                <p className="mt-1 text-sm text-red-700">
+                                                  {(
+                                                    batch.tracerSelections ?? []
+                                                  ).some(
+                                                    (t) =>
+                                                      t.sourceRejectedWeldId ===
+                                                      weld.id,
+                                                  )
+                                                    ? "Tracer welds selected."
+                                                    : "No available tracer candidates in demo seed."}
+                                                </p>
+                                              </div>
+                                            ) : null}
                                           </div>
                                           <div className="space-y-3 rounded-lg border border-dashed border-slate-300 bg-slate-100/70 p-4">
                                             <div className="flex items-center gap-2 text-sm font-medium text-slate-900">

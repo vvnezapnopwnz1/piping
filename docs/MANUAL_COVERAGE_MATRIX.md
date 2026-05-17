@@ -1,0 +1,13 @@
+# PipeQC Manual Coverage Matrix
+
+| Manual section | Manual requirement | Current implementation | Status | Risk | Next action |
+| --- | --- | --- | --- | --- | --- |
+| §6 Spooling | Import spooling, validation, revision management | Spooling shell with demo import, validation rules table, latest/history, revision conflict actions | Demo shell | Medium | Add real parser + persistent file history |
+| §11 NDE | Auto batches, S/SS/NR/T1/T2, tracers | Manual-facing batch labels, joint code tags, tracer requirement + candidate selection demo, NDE 100 warning | Partial | High | Implement full auto allocation from NDE Matrix |
+| §14-18 Testpack | Release tracking with live blockers | Gates 1-3 now derived from weld/flange/NDE live stores; QC/Ready states blocked by upstream metrics | Improved | Medium | Harden ISO/testpack seed linkage completeness |
+| §17.5 Reinstatement | Reinstatement from flange Y/Z after testing/pre-comm | Preparation/Progress use flange joints Y/Z; punch X stays in Item Clearance | Manual-aligned | Medium | Extend reporting export to include flange reinstatement evidence |
+| §19 Flange | Flange management and bolting progress | Shared persisted flange store feeds flange screens + testpack dependencies | Manual-aligned | Low | Add stronger mapping from flange -> ISO/testpack import lineage |
+| §20 Reports | Testpack report contexts | Existing reports shell retained; integration points preserved | Demo shell | Medium | Expand report templates to manual section outputs |
+| §7 Fabrication excluded slice | QC Release/Paint/Laydown workflows | Explicitly not modified in this pass | Out of scope | N/A | Separate implementation track |
+
+Statuses used: `Manual-aligned`, `Demo shell`, `Partial`, `Placeholder`, `Out of scope`.

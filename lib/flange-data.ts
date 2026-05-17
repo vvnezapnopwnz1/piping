@@ -1,9 +1,15 @@
 export type JointPeriod = "Before Test" | "Before PMC" | "After PMC";
 export type JointCategory = "X" | "Y" | "Z";
-export type BoltingStatus = "Not Started" | "Bolted" | "Torque Verified";
+export type BoltingStatus =
+  | "Not Started"
+  | "Bolted"
+  | "Torque Verified"
+  | "Reinstatement Required"
+  | "Reinstated";
 
 export interface FlangeJoint {
   id: string;
+  isoId?: string;
   isoNo: string;
   rev: string;
   sheetNo: string;
@@ -15,6 +21,7 @@ export interface FlangeJoint {
   boltQty: number;
   boltLength: number;
   testPackId: string;
+  testpackId?: string;
   pdsArea: string;
   serviceClass: string;
   priority: "High" | "Medium" | "Low";
@@ -23,14 +30,19 @@ export interface FlangeJoint {
   areaClassification: string;
   jointPeriod: JointPeriod;
   jointCategory: JointCategory;
+  category?: JointCategory;
   reason: string;
   jointingMethod: string;
   jointingValue: number;
   jointDate?: string;
   reportNbr?: string;
+  reportNo?: string;
   jointer?: string;
   tagNbr?: string;
+  tagNo?: string;
   boltingStatus: BoltingStatus;
+  reinstatedAt?: string;
+  reinstatementRequestId?: string;
   ut?: number;
 }
 
@@ -410,7 +422,14 @@ export const flangeFilterOptions = {
   serviceClasses: ["All Classes", "CW", "PG", "STM"],
   subcontractors: ["All Subcontractors", "Primary Fabricator", "Site Erector A", "Site Erector B"],
   areaClassifications: ["All Areas", "Class 1", "Class 2", "Class 3"],
-  boltingStatuses: ["All Statuses", "Not Started", "Bolted", "Torque Verified"] as const,
+  boltingStatuses: [
+    "All Statuses",
+    "Not Started",
+    "Bolted",
+    "Torque Verified",
+    "Reinstatement Required",
+    "Reinstated",
+  ] as const,
 };
 
 export const flangeKpis = {

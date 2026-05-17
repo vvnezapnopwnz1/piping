@@ -67,8 +67,15 @@ import {
   type ReleaseWorkItem,
   type TestpackStatus,
 } from "@/lib/testpack-data";
-import { useTestpackStore } from "@/store";
+import {
+  useBatchesStore,
+  useErectionStore,
+  useFlangeStore,
+  useTestpackStore,
+  useWeldsStore,
+} from "@/store";
 import { type TestPackRecord, type ISORecord } from "@/lib/testpack-seed";
+import { computeReleaseTrackingMetrics } from "@/lib/testpack-release-tracking";
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -580,45 +587,41 @@ function GateIcon({ state }: { state: GateState }) {
 function LiveReleaseTracking({ testpackId }: { testpackId: string }) {
   const router = useRouter();
   const store = useTestpackStore();
+  const welds = useWeldsStore((s) => s.welds);
+  const fieldWelds = useErectionStore((s) => s.fieldWelds);
+  const batches = useBatchesStore((s) => s.batches);
+  const flangeJoints = useFlangeStore((s) => s.joints);
   const storeTP = store.testPacks.find((tp) => tp.id === testpackId);
 
   if (!storeTP) return null;
 
   const tpISOs = store.isos.filter((iso) => storeTP.isoIds.includes(iso.id));
 
-  const lineCheckRemaining = tpISOs.filter(
-    (iso) => iso.lineCheckStatus !== "Done",
-  ).length;
-  const openXItems = store.punchItems.filter(
-    (pi) =>
-      !pi.clearedAt && pi.category === "X" && storeTP.isoIds.includes(pi.isoId),
-  ).length;
+  const releaseMetrics = computeReleaseTrackingMetrics({
+    testpack: storeTP,
+    isos: store.isos,
+    punchItems: store.punchItems,
+    welds,
+    fieldWelds,
+    batches,
+    flangeJoints,
+  });
+  const lineCheckRemaining = releaseMetrics.isosToReturnFromLineCheck;
+  const openXItems = releaseMetrics.itemsCatXToClear;
   const blinded = storeTP.blindingStatus === "Done";
   const hydrotestPassed = !!storeTP.testingDoneDate;
   const preComm = !!storeTP.preCommDate;
 
-  const openYOnThisTP = store.punchItems.filter(
-    (pi) =>
-      !pi.reinstatedAt &&
-      pi.category === "Y" &&
-      storeTP.isoIds.includes(pi.isoId) &&
-      storeTP.testingDoneDate,
-  ).length;
-  const openZOnThisTP = store.punchItems.filter(
-    (pi) =>
-      !pi.reinstatedAt &&
-      pi.category === "Z" &&
-      storeTP.isoIds.includes(pi.isoId) &&
-      storeTP.preCommDate,
-  ).length;
-  const reinstatementRemaining = openYOnThisTP + openZOnThisTP;
+  const reinstatementRemaining = useFlangeStore
+    .getState()
+    .getOpenReinstatementCount(
+      testpackId,
+      !!storeTP.testingDoneDate,
+      !!storeTP.preCommDate,
+    );
 
-  const qcReleased = lineCheckRemaining === 0 && openXItems === 0;
-  const readyForTest =
-    qcReleased &&
-    (storeTP.blindingStatus === "Eligible" ||
-      storeTP.blindingStatus === "Assigned" ||
-      storeTP.blindingStatus === "Done");
+  const qcReleased = releaseMetrics.qcReleased;
+  const readyForTest = releaseMetrics.readyForTest;
 
   const allGatesGreen =
     lineCheckRemaining === 0 &&
@@ -630,7 +633,12 @@ function LiveReleaseTracking({ testpackId }: { testpackId: string }) {
     preComm &&
     reinstatementRemaining === 0;
 
-  const blockers = lineCheckRemaining + openXItems;
+  const blockers =
+    releaseMetrics.jointsToBeWelded +
+    releaseMetrics.flangeJointsToBeBolted +
+    releaseMetrics.jointsAwaitingNde +
+    lineCheckRemaining +
+    openXItems;
 
   let badgeText = "";
   let badgeCls = "";
@@ -655,23 +663,41 @@ function LiveReleaseTracking({ testpackId }: { testpackId: string }) {
     {
       index: 1,
       name: "Welded joints to be welded",
-      metric: 0,
-      state: "green",
-      clickable: false,
+      metric: releaseMetrics.jointsToBeWelded,
+      state:
+        releaseMetrics.confidence.welded === "low"
+          ? "amber"
+          : releaseMetrics.jointsToBeWelded === 0
+            ? "green"
+            : "red",
+      clickable: true,
+      getUrl: () => "/fabrication/weld-progress",
     },
     {
       index: 2,
       name: "Flange joints to be bolted",
-      metric: 0,
-      state: "green",
-      clickable: false,
+      metric: releaseMetrics.flangeJointsToBeBolted,
+      state:
+        releaseMetrics.confidence.flange === "low"
+          ? "amber"
+          : releaseMetrics.flangeJointsToBeBolted === 0
+            ? "green"
+            : "red",
+      clickable: true,
+      getUrl: () => "/flange",
     },
     {
       index: 3,
       name: "Welded joints still to be NDE-tested",
-      metric: 0,
-      state: "green",
-      clickable: false,
+      metric: releaseMetrics.jointsAwaitingNde,
+      state:
+        releaseMetrics.confidence.nde === "low"
+          ? "amber"
+          : releaseMetrics.jointsAwaitingNde === 0
+            ? "green"
+            : "red",
+      clickable: true,
+      getUrl: () => "/nde",
     },
     {
       index: 4,
@@ -700,14 +726,14 @@ function LiveReleaseTracking({ testpackId }: { testpackId: string }) {
       index: 6,
       name: "QC released for test",
       metric: qcReleased,
-      state: qcReleased ? "green" : "slate",
+      state: qcReleased ? "green" : blockers > 0 ? "red" : "amber",
       clickable: false,
     },
     {
       index: 7,
       name: "Ready For Test",
       metric: readyForTest,
-      state: readyForTest ? "green" : "slate",
+      state: readyForTest ? "green" : qcReleased ? "amber" : "red",
       clickable: false,
     },
     {

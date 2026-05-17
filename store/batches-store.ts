@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react"
 import { create } from "zustand"
 import { persist, createJSONStorage } from "zustand/middleware"
+import { useWeldsStore } from "./welds-store"
+import { useErectionStore } from "./erection-store"
+import type { TracerSelection } from "@/lib/nde-status"
 
 /**
  * Batches store — NDE batch management state.
@@ -76,6 +79,7 @@ export interface NdeBatch {
   source: NdeBatchSource
   welds: NdeBatchWeld[]
   history: NdeBatchHistoryEvent[]
+  tracerSelections?: TracerSelection[]
 }
 
 // ============================================================================
@@ -124,6 +128,8 @@ interface BatchesState {
   markForRework: (id: string) => void
   closeBatch: (id: string) => void
   deleteBatch: (id: string) => void
+  setTracerSelections: (batchId: string, sourceRejectedWeldId: string, tracerWeldIds: string[], selectedBy: string) => void
+  allocateWeldToNdeQueue: (weldId: string, source: "shop" | "field") => void
 
   // Demo helpers
   resetDemo: () => void
@@ -482,6 +488,78 @@ export const useBatchesStore = create<BatchesState>()(
         set((state) => ({
           batches: state.batches.filter((b) => b.id !== id),
         })),
+
+      setTracerSelections: (batchId, sourceRejectedWeldId, tracerWeldIds, selectedBy) =>
+        set((state) => ({
+          batches: state.batches.map((batch) => {
+            if (batch.id !== batchId) return batch
+            const next: TracerSelection[] = [...(batch.tracerSelections ?? [])]
+            const existingForSource = new Set(
+              next.filter((t) => t.sourceRejectedWeldId === sourceRejectedWeldId).map((t) => t.level)
+            )
+            for (const tracerWeldId of tracerWeldIds) {
+              const level = existingForSource.has("T1") ? "T2" : "T1"
+              if (existingForSource.has(level)) continue
+              next.push({
+                sourceRejectedWeldId,
+                tracerWeldId,
+                level,
+                selectedAt: new Date().toISOString(),
+                selectedBy,
+              })
+              existingForSource.add(level)
+            }
+            return {
+              ...batch,
+              tracerSelections: next,
+              history: [
+                ...batch.history,
+                {
+                  id: nextHistoryId(),
+                  title: "Tracer required",
+                  detail: tracerWeldIds.length > 0
+                    ? `${tracerWeldIds.length} tracer weld(s) selected for rejected joint ${sourceRejectedWeldId}`
+                    : `No available tracer candidates in demo seed for rejected joint ${sourceRejectedWeldId}`,
+                  actor: selectedBy,
+                  timestamp: new Date().toISOString(),
+                  status: "In Progress",
+                },
+              ],
+            }
+          }),
+        })),
+
+      allocateWeldToNdeQueue: (weldId, source) => {
+        const weld =
+          source === "shop"
+            ? useWeldsStore.getState().welds.find((w) => w.id === weldId)
+            : useErectionStore.getState().fieldWelds.find((w) => w.id === weldId)
+        if (!weld) return
+        const alreadyQueued = get().batches.some((batch) =>
+          batch.status !== "Closed" && batch.welds.some((w) => w.id === weldId)
+        )
+        if (alreadyQueued) return
+        const method = (weld.pwhtRequired ? "UT" : "RT") as NdeMethod
+        get().createBatch({
+          method,
+          source,
+          createdBy: "SYSTEM",
+          matrixRef: `AUTO-${source.toUpperCase()}-${weld.materialType.replace(/\\s+/g, "")}`,
+          welds: [
+            {
+              id: weld.id,
+              jointNo: weld.jointNo,
+              spoolNo: weld.spoolNo,
+              isoNo: weld.isoNo,
+              welder: weld.welderCode,
+              dwirNo: weld.dwirNo,
+              materialType: weld.materialType,
+              diaInch: weld.diaInch,
+              wpsNo: weld.wpsNo,
+            },
+          ],
+        })
+      },
 
       resetDemo: () => {
         historyIdCounter = 1000
