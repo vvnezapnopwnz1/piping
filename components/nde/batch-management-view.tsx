@@ -85,6 +85,7 @@ const subcontractorOptions = [
   "SGS Industrial",
   "TÜV Rheinland",
 ] as const;
+const sourceOptions = ["All", "Shop", "Field"] as const;
 
 // KPI cards rendered dynamically from store selectors below
 
@@ -185,6 +186,8 @@ export function BatchManagementView() {
     useState<(typeof statusFilters)[number]>("All");
   const [subcontractorFilter, setSubcontractorFilter] =
     useState<(typeof subcontractorOptions)[number]>("All");
+  const [sourceFilter, setSourceFilter] =
+    useState<(typeof sourceOptions)[number]>("All");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(() =>
     getDefaultDateRange(batches),
   );
@@ -199,10 +202,10 @@ export function BatchManagementView() {
     [batches, selectedBatchId],
   );
 
-  const filteredBatches = useMemo(() => {
+  const { filteredBatches, sourceCounts } = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    return batches.filter((batch) => {
+    const otherFiltered = batches.filter((batch) => {
       const matchesQuery =
         query.length === 0 ||
         batch.id.toLowerCase().includes(query) ||
@@ -229,6 +232,23 @@ export function BatchManagementView() {
         matchesDate
       );
     });
+
+    const counts = {
+      All: otherFiltered.length,
+      Shop: otherFiltered.filter((b) => b.source === "shop").length,
+      Field: otherFiltered.filter((b) => b.source === "field").length,
+    };
+
+    const filtered =
+      sourceFilter === "All"
+        ? otherFiltered
+        : otherFiltered.filter((batch) =>
+            sourceFilter === "Shop"
+              ? batch.source === "shop"
+              : batch.source === "field",
+          );
+
+    return { filteredBatches: filtered, sourceCounts: counts };
   }, [
     batches,
     dateRange,
@@ -236,6 +256,7 @@ export function BatchManagementView() {
     search,
     statusFilter,
     subcontractorFilter,
+    sourceFilter,
   ]);
 
   if (!hasHydrated) {
@@ -374,6 +395,24 @@ export function BatchManagementView() {
                     )}
                   >
                     {status}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {sourceOptions.map((source) => (
+                  <button
+                    key={source}
+                    type="button"
+                    onClick={() => setSourceFilter(source)}
+                    className={cn(
+                      "rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                      sourceFilter === source
+                        ? "border-sky-300 bg-sky-100 text-sky-800"
+                        : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50",
+                    )}
+                  >
+                    {source} · {sourceCounts[source]}
                   </button>
                 ))}
               </div>

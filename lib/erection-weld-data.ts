@@ -55,7 +55,7 @@ export const FIELD_WELDERS = [
 ];
 
 export const FIELD_WELD_DATA: FieldWeldJoint[] = [
-  // 4 RFT
+  // 3 RFT
   {
     id: "fj-2001",
     jointNo: "FJ-2001",
@@ -150,7 +150,7 @@ export const FIELD_WELD_DATA: FieldWeldJoint[] = [
     dwirNo: "DWIR-2025-2004",
     status: "Completed" as WeldStatus,
     isLocked: true,
-    erectionStatus: "RFT",
+    erectionStatus: "Supported",
     fieldJointType: "Butt Weld",
     areaZone: "Area C - Tank Farm",
     rootPercent: 40,
@@ -165,7 +165,7 @@ export const FIELD_WELD_DATA: FieldWeldJoint[] = [
     foremanConfirmed: true,
     remarks: "PWHT completed per spec.",
   },
-  // 3 Supported
+  // 1 Supported + 2 Not Started
   {
     id: "fj-2005",
     jointNo: "FJ-2005",
@@ -179,7 +179,7 @@ export const FIELD_WELD_DATA: FieldWeldJoint[] = [
     dwirNo: "DWIR-2025-2005",
     status: "Completed" as WeldStatus,
     isLocked: true,
-    erectionStatus: "Supported",
+    erectionStatus: "Not Started",
     fieldJointType: "Butt Weld",
     areaZone: "Area A - North Pipe Rack",
     rootPercent: 40,
@@ -207,7 +207,7 @@ export const FIELD_WELD_DATA: FieldWeldJoint[] = [
     dwirNo: "DWIR-2025-2006",
     status: "Completed" as WeldStatus,
     isLocked: true,
-    erectionStatus: "Supported",
+    erectionStatus: "Not Started",
     fieldJointType: "Socket Weld",
     areaZone: "Area B - Compressor Hall",
     rootPercent: 35,
@@ -234,7 +234,7 @@ export const FIELD_WELD_DATA: FieldWeldJoint[] = [
     dwirNo: "DWIR-2025-2007",
     status: "Completed" as WeldStatus,
     isLocked: true,
-    erectionStatus: "Supported",
+    erectionStatus: "Not Started",
     fieldJointType: "Flange Bolt",
     areaZone: "Area D - Utility Corridor",
     rootPercent: 0,
@@ -248,7 +248,7 @@ export const FIELD_WELD_DATA: FieldWeldJoint[] = [
     foremanConfirmed: true,
     remarks: "Flange bolted and torqued to spec.",
   },
-  // 2 Welded, 2 Bolted = 4
+  // 1 Welded + 1 Bolted + 2 Not Started
   {
     id: "fj-2008",
     jointNo: "FJ-2008",
@@ -289,7 +289,7 @@ export const FIELD_WELD_DATA: FieldWeldJoint[] = [
     dwirNo: "DWIR-2025-2009",
     status: "Completed" as WeldStatus,
     isLocked: true,
-    erectionStatus: "Welded",
+    erectionStatus: "Not Started",
     fieldJointType: "Butt Weld",
     areaZone: "Area D - Utility Corridor",
     rootPercent: 40,
@@ -343,7 +343,7 @@ export const FIELD_WELD_DATA: FieldWeldJoint[] = [
     dwirNo: "DWIR-2025-2011",
     status: "Completed" as WeldStatus,
     isLocked: true,
-    erectionStatus: "Bolted",
+    erectionStatus: "Not Started",
     fieldJointType: "Flange Bolt",
     areaZone: "Area B - Compressor Hall",
     rootPercent: 0,
@@ -358,7 +358,7 @@ export const FIELD_WELD_DATA: FieldWeldJoint[] = [
     foremanConfirmed: true,
     remarks: "Gasket and bolts inspected.",
   },
-  // 3 Erected
+  // 2 Erected + 1 Not Started
   {
     id: "fj-2012",
     jointNo: "FJ-2012",
@@ -418,7 +418,7 @@ export const FIELD_WELD_DATA: FieldWeldJoint[] = [
     dwirNo: "DWIR-2025-2014",
     status: "In Progress" as WeldStatus,
     isLocked: false,
-    erectionStatus: "Erected",
+    erectionStatus: "Not Started",
     fieldJointType: "Butt Weld",
     areaZone: "Area A - North Pipe Rack",
     rootPercent: 40,
@@ -469,7 +469,7 @@ export const FIELD_WELD_DATA: FieldWeldJoint[] = [
     capPercent: 0,
     remarks: "Transport scheduled.",
   },
-  // 2 Not Started (one is Rejected for weld status)
+  // 8 Not Started total (one is Rejected for weld status)
   {
     id: "fj-2017",
     jointNo: "FJ-2017",

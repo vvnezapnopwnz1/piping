@@ -378,5 +378,28 @@ export const LAYDOWN_SEED: LaydownRecord[] = [
     yardLocation: "YARD-A-12",
     placedDate: "2025-05-15",
     placedBy: "QC-ENG-02",
+    releasedToSiteDate: "2025-05-15",
+    releasedBy: "QC-ENG-03",
+  }),
+  makeLaydownRecord("PL-TK100-002-B", {
+    yardLocation: "YARD-B-04",
+    placedDate: "2025-05-16",
+    placedBy: "QC-ENG-01",
+    releasedToSiteDate: "2025-05-17",
+    releasedBy: "QC-ENG-04",
+  }),
+  makeLaydownRecord("PL-TK100-003-A", {
+    yardLocation: "YARD-C-02",
+    placedDate: "2025-05-15",
+    placedBy: "QC-ENG-03",
+    releasedToSiteDate: "2025-05-16",
+    releasedBy: "QC-ENG-02",
+  }),
+  makeLaydownRecord("PL-TK100-004-A", {
+    yardLocation: "YARD-B-09",
+    placedDate: "2025-05-16",
+    placedBy: "QC-ENG-04",
+    releasedToSiteDate: "2025-05-17",
+    releasedBy: "QC-ENG-01",
   }),
 ]

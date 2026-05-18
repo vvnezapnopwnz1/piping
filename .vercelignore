@@ -1,0 +1,10 @@
+node_modules
+.git
+.next
+.venv-marker
+.claude
+.playwright-mcp
+*.log
+.DS_Store
+.env.local
+.env*.local

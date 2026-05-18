@@ -1,359 +1,166 @@
-Обновлённый список треков
+# Обновлённый список треков (свежий audit по main, 2026-05-18)
 
-✅ Merged (closed)
-
-#: 1
-Track / Phase: A1
-Что: Line Check Preparation + Progress
-────────────────────────────────────────
-#: 2
-Track / Phase: A2  
- Что: Item Clearance Preparation + Progress
-────────────────────────────────────────
-#: 3
-Track / Phase: A3
-Что: Explorer live gates (Release Tracking)
-────────────────────────────────────────
-#: 4
-Track / Phase: A4
-Что: Blinding Preparation + Progress
-────────────────────────────────────────
-#: 5
-Track / Phase: A5
-Что: Testing & Pre-comm Progress
-────────────────────────────────────────
-#: 6
-Track / Phase: A6
-Что: Reinstatement Preparation + Progress
-────────────────────────────────────────
-#: 7
-Track / Phase: B1
-Что: Admin shell + Teams + Subcontractors + Welder Qualifications
-────────────────────────────────────────
-#: 8
-Track / Phase: B2
-Что: WPS / NDE Matrix / Rework Codes / Joint Categories (read-only)
-────────────────────────────────────────
-#: 9
-Track / Phase: E2.1
-Что: Erection store (persistence)
-────────────────────────────────────────
-#: 10
-Track / Phase: E2.3
-Что: Spool readiness gate (F↔E handoff)
-────────────────────────────────────────
-#: 11
-Track / Phase: N1
-Что: Create Batch wizard
-────────────────────────────────────────
-#: 12
-Track / Phase: N2
-Что: Per-weld Receive Results
-────────────────────────────────────────
-#: 13
-Track / Phase: G4
-Что: Paint stages — dispatch, sign-off, DFT (Sent to Paint + Painted)
-────────────────────────────────────────
-#: 14
-Track / Phase: G5
-Что: Laydown stage — yard placement + release to site + funnel deep-link cleanup
-
-🔜 Next (priority order)
-
-#: 13
-Phase: E2.5
-Что: ISO weld rollup + Track A bridge
-Демо-вес: ⭐⭐⭐ замыкает upstream→Anna
-Размер: 0.5д ← next
-────────────────────────────────────────
-#: 14
-Phase: F2
-Что: "Send to NDE" из weld detail panel
-Демо-вес: ⭐⭐⭐ handoff F→N
-Размер: 0.5д
-────────────────────────────────────────
-#: 15
-Phase: E2.4
-Что: "Send field weld to NDE"
-Демо-вес: ⭐⭐ handoff E→N (step 9)
-Размер: 0.5д
-────────────────────────────────────────
-#: 16
-Phase: F1
-Что: Live fabrication dashboard
-Демо-вес: ⭐⭐ полировка
-Размер: 1д
-────────────────────────────────────────
-#: 17
-Phase: E2.2
-Что: Live erection dashboard
-Демо-вес: ⭐⭐ полировка
-Размер: 0.5д
-────────────────────────────────────────
-#: 18
-Phase: F3
-Что: /fabrication landing
-Демо-вес: ⭐
-Размер: 0.25д
-────────────────────────────────────────
-#: 19
-Phase: N3
-Что: Source filter (Shop/Field) на NDE batches
-Демо-вес: ⭐
-Размер: 0.25д
-────────────────────────────────────────
-#: 20
-Phase: N4
-Что: Усиленные NDE notifications
-Демо-вес: ⭐
-Размер: 0.25д
-────────────────────────────────────────
-#: 21
-Phase: B3
-Что: Systems/Subsystems + Material Class admin tabs
-Демо-вес: ⭐ полировка breadth
-Размер: 0.5д
-
-🆕 Что я нашёл по итогам пересмотра PDF (ранее не учтено)
-
-Полный список 20 модулей manual'а и наш покрытие:
-
-§: 1
-Modul: Project Definition
-Status: ⛔ Не нужно для демо (single project)
-────────────────────────────────────────
-§: 2
-Modul: System Referential (Material Type, Film/Diameter, UT calc,
-Torquing req)
-Status: ⛔ Не нужно
-────────────────────────────────────────
-§: 3
-Modul: Project Referential (26 sub-items)
-Status: 🟡 B1+B2 (7/26); B3 для оставшихся
-────────────────────────────────────────
-§: 4
-Modul: Access Rights
-Status: 🟡 Роли есть, admin UI нет — не критично
-────────────────────────────────────────
-§: 5
-Modul: Import Settings (NDE Matrix import, PMC import)
-Status: ⛔ Демо не показывает импорт
-────────────────────────────────────────
-§: 6
-Modul: Spooling (Ident Code, Bolting, Marian, Browse
-Latest/History,
-Manual Revision)
-Status: ❌ Track D — placeholder
-────────────────────────────────────────
-§: 7
-Modul: Spool Fabrication lifecycle (Start Fab → Material Check →
-Weld Progress → Fabricated → QC Release → Sent to Paint →
-Painted/Final QC/Laydown)
-Status: 🟢 G1 funnel + G2 Material Check + G1.1 funnel-nav cleanup + G3 QC
-Release + G4 Paint + G5 Laydown merged. Dashboard funnel is live (8
-stages; 4 Material Check, 7 Weld Progress, 4 Fabricated, 3 QC Release, 1 Sent
-to Paint, 1 Painted, 1 Laydown from seed). MC, QC Release, Paint, and Laydown
-screens all with persisted stores, checklist/sign-off, and audit trail. 7/7
-stages live. Track G is complete.
-────────────────────────────────────────
-§: 8
-Modul: Import Progress Module
-Status: ⛔ Не нужно для демо
-────────────────────────────────────────
-§: 9
-Modul: Fabrication Reports
-Status: ❌ Track C
-────────────────────────────────────────
-§: 10
-Modul: Spool Tracking (Dashboard / Data Analysis / Barcode / PDA
-Mobile / Offline Sync)
-Status: 🟢 Dashboard ✅; Barcode/PDA — out of scope
-────────────────────────────────────────
-§: 11
-Modul: NDE Management (Batch lifecycle / NDE 100 / Issue /
-Examination / Client Examination Progress / Reports)
-Status: 🟢 N1+N2; §11.6 Client Examination не покрыто (owner's rep
-sign-off — отдельная роль)
-────────────────────────────────────────
-§: 12
-Modul: Erection Module (Spool Erection / Material Check / To Site /
-
-    Erected / Welded/Bolted / Supported / RFT / Dashboard)
-
-Status: 🟢 Weld Progress + Dashboard. Стадии живут как badges на
-field welds — workflow per stage минимальный.
-────────────────────────────────────────
-§: 13
-Modul: Erection Reports
-Status: ❌ Track C
-────────────────────────────────────────
-§: 14
-Modul: Testpack Management
-Status: 🟢 Explorer
-────────────────────────────────────────
-§: 15
-Modul: Testpack Preparation (Testpack Builder, Testpack Import)
-Status: ❌ Testpack Builder отсутствует. Сейчас testpack-и — seed.
-По manual'у это UI где QC вручную собирает ISO в testpack.
-Кандидат на Track H.
-────────────────────────────────────────
-§: 16
-Modul: Pressure Test (5 activities × 2 screens)
-Status: 🟢 ✅ A1–A6
-────────────────────────────────────────
-§: 17
-Modul: Testpack Homepage
-Status: 🟢 ✅
-────────────────────────────────────────
-§: 18
-Modul: Testpack Explorer
-Status: 🟢 ✅ (Release Tracking live для store testpacks)
-────────────────────────────────────────
-§: 19
-Modul: Flange Management (Browse / Manual Revision / Progress
-Template / Import method / Input method)
-Status: 🟡 Browse ✅; progress import/input не реализовано — flange
-
-    workflow незавершён
-
-────────────────────────────────────────
-§: 20
-Modul: Testpack Management Reports
-Status: ❌ Track C
-
-3 содержательных gap'а, которые ранее не обсуждались:
-
-1. §7 Spool Fabrication lifecycle (Track G) — у нас есть только
-   weld progress, но manual описывает 7-стадийный pipeline спула. Не
-   критично для текущего демо-нарратива (он живёт на welds, не на
-   spools-as-objects), но если зритель спросит "а как вы трекаете
-   покраску/QC release/laydown спула" — ответа нет.
-2. §15 Testpack Builder (Track H) — QC engineer должен иметь UI для
-   сборки testpack из ISO. Сейчас это статичный seed. Если зритель —
-   QC manager, он спросит первым.
-3. §11.6 Client Examination Progress — owner's rep / клиент
-   подписывает результаты NDE. Это вторая подпись после N2. Можно
-   добавить как N5 (опционально).
+> Источник истины: `git log --oneline` репо `vvnezapnopwnz1/piping` + `docs/PIPEQC_CONTEXT.md` merge log + `docs/MANUAL_COVERAGE_MATRIX.md`. Предыдущий track_list (тот, который лежал у тебя локально) был синхронизирован примерно по состоянию до коммитов `3b896c4`, `f8e631c`, `a4c3ab7`, `7e05719`, `101c029`, `3591385` — все они уже на main и **в старом файле не отражены**. Этот файл переписан с нуля.
 
 ---
 
-Полный список user stories (по персонам и треку)
+## ✅ Merged (closed) — что реально лежит в main
 
-Persona: Anna — QC Engineer, Pressure Test (Track A — downstream)
+| #   | Track / Phase  | Что                                                                              | Подтверждение в репо                                             |
+| --- | -------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| 1   | A1             | Line Check Preparation + Progress                                                | `app/testpack/pressure-test/line-check/*`                        |
+| 2   | A2             | Item Clearance Preparation + Progress                                            | `app/testpack/pressure-test/item-clearance/*`                    |
+| 3   | A3             | Explorer live gates (Release Tracking)                                           | `lib/testpack-release-tracking.ts` + Explorer wired              |
+| 4   | A4             | Blinding Preparation + Progress                                                  | `app/testpack/pressure-test/blinding/*`                          |
+| 5   | A5             | Testing & Pre-comm Progress                                                      | `app/testpack/pressure-test/testing-precomm/*`                   |
+| 6   | A6             | Reinstatement Preparation + Progress (теперь на flange Y/Z, не punch)            | `components/testpack/reinstatement/*` (после `a4c3ab7`)          |
+| 7   | B1             | Admin shell + Teams + Subcontractors + Welder Qualifications                     | `app/admin` + `store/admin-store.ts`                             |
+| 8   | B2             | WPS / NDE Matrix / Rework Codes / Joint Categories (read-only)                   | `components/admin/*-tab.tsx`                                     |
+| 9   | E2.1           | Erection store (persistence)                                                     | `store/erection-store.ts`                                        |
+| 10  | E2.3           | Spool readiness gate (F↔E handoff)                                               | `useSpoolReadiness()` selector                                   |
+| 11  | E2.5           | **ISO weld rollup + Track A bridge** (было #13 в Next — закрыто)                 | `store/iso-rollup.ts` + `components/iso-watcher-mount.tsx`       |
+| 12  | N1             | Create Batch wizard                                                              | `components/nde/create-batch-dialog.tsx`                         |
+| 13  | N2             | Per-weld Receive Results                                                         | `components/nde/receive-results-panel.tsx`                       |
+| 14  | F2             | **Send to NDE из weld detail panel + Send entire spool** (было #14 в Next)       | коммит `3b896c4`                                                 |
+| 15  | E2.4           | **Send field weld to NDE (source=field)** (было #15 в Next)                      | коммит `3b896c4`                                                 |
+| 16  | G1             | Spool fabrication funnel + 8-stage derivation                                    | `lib/spool-data.ts` + `store/spool-stage.ts`                     |
+| 17  | G1.1           | Funnel navigation cleanup                                                        |                                                                  |
+| 18  | G2             | Material Check screen + persisted spools store                                   | `app/fabrication/material-check`                                 |
+| 19  | G3             | QC Release screen + Fabricated→Released                                          | `app/fabrication/qc-release`                                     |
+| 20  | G4             | Paint stages — dispatch, sign-off, DFT                                           | `app/fabrication/paint`                                          |
+| 21  | G5             | Laydown — yard placement + release to site + funnel deep-link cleanup            | `app/fabrication/laydown`                                        |
+| 22  | C1             | **Reports module (Fabrication / Erection / Testpack / NDE)** (был полный TODO)   | коммит `f8e631c`                                                 |
+| 23  | P0–P2 align    | Manual-alignment pass: flange-store, live release gates, NDE tracer, spooling sh | коммит `a4c3ab7` + `docs/MANUAL_COVERAGE_MATRIX.md`              |
+| 24  | F1 (частично)  | Fabrication dashboard теперь читает `useWeldsKPIs` + funnel                      | `components/fabrication-dashboard.tsx:294`                       |
+| 25  | N3             | Source column (Shop/Site) + chip-filter (All/Shop/Field) в /nde table            | коммит `3b896c4` (column) + filter добавлен сейчас               |
+| 26  | Spooling shell | Import / validation / latest-history / revision panels                           | `components/spooling/*`, `store/spooling-store.ts`               |
+| 27  | Flange store   | Persisted flange-store (§19.x частично)                                          | `store/flange-store.ts`                                          |
+| 28  | Devlog page    | 4-tab documentation page (`/documentation`)                                      | коммит `3591385`                                                 |
+| 29  | F3             | `/fabrication` → `/fabrication/dashboard` redirect + collapsed sidebar nav fix   | `app/fabrication/page.tsx` + `components/pipeqc/sidebar-nav.tsx` |
 
-- A1.1 Открыть Pressure Test Homepage, увидеть bar chart по
-  активностям и priority testpacks
-- A1.2 Назначить Line Checker team на eligible ISO → видеть запрос
-  (CR-YYYY-NNN)
-- A1.3 Записать line check date + punch items (X/Y/Z категории) для
-  ISO
-- A2.1 Назначить Finishing team на punch items (категория X) для
-  расчистки
-- A2.2 Отметить punch items cleared with timestamp/team
-- A3.1 Посмотреть live release-tracking gates по testpack-у в
-  Explorer
-- A4.1 Назначить Blinding team когда все X-items clear → testpack
-  становится Eligible for blinding
-- A4.2 Записать blinding date — testpack переходит в Ready For Test
-- A5.1 Записать testing start / testing done / pre-comm dates
-- A6.1 Назначить Reinstatement team на Y-items punch list
-- A6.2 Записать reinstatement complete с jointer/report/tag
-
-Persona: Sergey — Fabrication Shop Foreman (Track F)
-
-- F1.1 ✅ Видеть live KPI welds на /home: total, completed,
-  rejected, rework, acceptance rate
-- F1.2 ✅ Открыть weld в /fabrication/weld-progress, edit
-  welder/date/result
-- F1.3 ✅ Smart-validation welder qualification (WLD-099 case)
-- F1.4 ⛔ TODO (F1): Drill-down с fabrication dashboard на
-  weld-progress по KPI tile
-- F1.5 ⛔ TODO (F1): Live fabrication dashboard (KPI вместо static)
-- F2.1 ⛔ TODO (F2): "Send to NDE" из weld detail panel → переход в
-  Create Batch с пред-выбранными welds
-- F2.2 ⛔ TODO (F2): Bulk send (выбор several welds → один batch)
-- F3.1 ⛔ TODO (F3): /fabrication landing с 4 карточками + live
-  counts
-- G1.x ⛔ NEW (Track G): Stage workflow по спулу: Start Fab →
-  Material Check → QC Release → Paint → Laydown
-
-Persona: Mikhail — QC Engineer, NDE (Track N)
-
-- N1.1 ✅ Создать NDE batch (2-step wizard): метод + subcontractor
-
-* matrix + inspector → выбор welds
-
-- N1.2 ✅ Issue batch
-- N2.1 ✅ Per-weld Receive Results (Accept/Reject + Rework Code из
-  REWORK_CODES)
-- N2.2 ✅ Close batch
-- N2.3 ✅ Cascade rejected → welds-store markForRework + home
-  notification
-- N3.1 ⛔ TODO (N3): Filter Shop/Field в batch table
-- N4.1 ⛔ TODO (N4): Enriched notification на receive results
-- N5.1 ⛔ NEW (опц.): §11.6 Client Examination Progress — owner's
-  rep подпись после N2
-
-Persona: Hassan — Erection Superintendent (Track E)
-
-- E2.1 ✅ Изменения field weld erection status персистятся (store,
-  не useState)
-- E2.2 ✅ Spool delivery readiness card в /erection/dashboard
-  (E2.3)
-- E2.3 ✅ Deep-link ?spool= в /fabrication/weld-progress с
-  clearable chip
-- E2.5.1 🔜 E2.5: Видеть на /home notification "ISO-XXXX welded —
-  RFLC"
-- E2.5.2 🔜 E2.5: TP-201 testpack показывает eligibility live в
-  Explorer
-- E2.4.1 ⛔ TODO (E2.4): "Send field weld to NDE" из
-  field-weld-detail-panel
-- E2.2.1 ⛔ TODO (E2.2): Live erection dashboard (charts вместо
-  static)
-- E2.x.x ⛔ Manual §12: workflow per erection stage (Spool Erection
-  / Material Check / To Site / etc.) минимальный
-
-Persona: System Admin (Track B)
-
-- B1.1 ✅ View Teams, Subcontractors, Welder Qualifications
-- B1.2 ✅ Add team / subcontractor → отражается в Track A pickers
-- B1.3 ✅ Toggle subcontractor active
-- B2.1 ✅ View WPS / NDE Matrix / Rework Codes / Joint Categories
-  (read-only)
-- B3.1 ⛔ TODO (B3): Systems / Subsystems / Material Class
-  read-only tabs
-
-Persona: Project Manager / Stakeholder (Track C — reports)
-
-- C1 ⛔ TODO: Fabrication Progress Report
-- C2 ⛔ TODO: Erection Progress Report
-- C3 ⛔ TODO: Testpack Readiness Report
-- C4 ⛔ TODO: NDE Summary, Welder Performance, Joint History
-
-Persona: Spooling Team (Track D — §6)
-
-- D1 ⛔ TODO: Spooling browse Latest / History
-- D2 ⛔ TODO: Ident Code lookup
-- D3 ⛔ TODO: Bolting Report import (fake dialog)
-- D4 ⛔ TODO: Manual revision management
-
-Persona: Flange Joint Engineer (Track §19)
-
-- §19.1 ✅ Browse flange joints + detail panel
-- §19.2 ⛔ TODO: Flange progress template / import / input —
-  torquing progress workflow
-
-Новые предложенные треки
-
-- Track G — Spool Fabrication Lifecycle (§7): Start Fab → Material
-  Check → QC Release → Paint → Laydown stages workflow
-- Track H — Testpack Builder (§15): QC собирает testpack из ISO
-  вручную (сейчас seed-only)
+**Итого:** все 5 пунктов из «🔜 Next priority order» твоего предыдущего файла (E2.5, F2, E2.4, частично F1, N3) уже на main. Старый track_list, мягко говоря, отстал.
 
 ---
 
-Что предлагаю дальше: после E2.5 двигаемся по приоритету в F2 (Send
-to NDE) + E2.4 (Send field weld to NDE) — они вместе закрывают
-шаги 4–5 и 8–9 демо-нарратива, и оба слайса по 0.5 дня. После них
-upstream-демо проходит end-to-end полностью на пользовательских
-действиях, без seed-магии.
+## 🔜 Next — рекомендуемый порядок на следующий спринт
+
+Группирую по тому, что **обязательно** для презентационного нарратива vs. что **полировка**. Цель — закрыть upstream→downstream цикл так, чтобы он переживал live walkthrough без оговорок типа «это пока статика».
+
+### Sprint Goal: "Demo-rehearsable end-to-end в обе стороны"
+
+**P0 — Без этого live walkthrough не убедительный**
+
+| #   | Phase | Что                                                                                                                                                                                               | Почему сейчас                                                                                                                                          | Размер |
+| --- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
+| 1   | E2.2  | Live erection dashboard — `useErectionKPIs` + drill-down. Сейчас `components/erection-dashboard.tsx` (892 LOC) на статике; на live walkthrough это будет первый вопрос «а здесь цифры настоящие?» | Hassan-нарратив в шаге 7 и 10 опирается на этот экран. Если рядом с live fabrication-dashboard стоит статичный erection-dashboard — диссонанс заметен. | 0.5 д  |
+
+**P1 — Закрывают слабые места которые ловит индустриальная аудитория**
+
+| #   | Phase     | Что                                                                                                                                                                                                                              | Размер |
+| --- | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| 4   | N4        | Enriched NDE notifications — на receive-results если есть rejected: «BTH-XXX: N welds rejected — rework cascaded»; на receive-results-all-accepted: «BTH-XXX: closed clean». Сейчас цепочка реализована частично, текста бедные. | 0.25 д |
+| 5   | N5 (опц.) | §11.6 Client Examination Progress — owner's rep signs off N2 results. Это вторая подпись после inspector'а. EPC-аудитория узнает паттерн «owner's representative» сразу.                                                         | 0.5 д  |
+| 6   | B3        | Systems / Subsystems / Material Class admin tabs (read-only). 7 → 10 вкладок в admin. Покрытие §3 поднимается с 7/26 до 10/26.                                                                                                   | 0.5 д  |
+| 7   | §19.2     | Flange torquing progress: assign jointer + record torque pass. Flange-store уже персистится, нужно UI на progress. Сейчас reinstatement (A6) опирается на flange но **редактировать** torque нельзя.                             | 0.5 д  |
+
+**P2 — Новые треки, опциональны для следующего спринта**
+
+| #   | Phase   | Что                                                                                                                                                                                     | Размер |
+| --- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| 8   | Track H | **Testpack Builder** (§15). Сейчас testpack'и — seed-only. По manual'у это UI где QC вручную собирает ISO в testpack. Если в demo попадёт QC manager — спросит первым.                  | 1.5 д  |
+| 9   | Track D | Углубить spooling: ident code lookup + bolting report import (fake dialog) + manual revision lifecycle. P0-P2 alignment уже сделал shell; здесь — наполнение.                           | 1 д    |
+| 10  | §12     | Workflow per erection stage (Spool Erection / Material Check / To Site / Welded / Bolted / Supported / RFT). Сейчас живёт как badges на field welds, manual описывает отдельные стадии. | 1 д    |
+
+**P3 — НЕ в этом спринте, явно за горизонтом**
+
+- §5 Import settings (NDE Matrix import, PMC import) — выходит за рамки демо
+- §1–§2 Project Definition / System Referential — single-project demo не нуждается
+- Real auth / multi-tenancy / backend — не demo-цель
+
+### Если выбирать «минимум для следующего спринта»
+
+**MVP-набор P0:** E2.2 = ~0.5 дня работы. С этим набором live walkthrough проходит без визуальных диссонансов.
+
+**Расширенный набор P0+P1:** + N4 + N5 + B3 + §19.2 = ~2.5 дня работы. С этим набором демо переживает индустриального аудитора (бывший QC manager EPC), а не только VC.
+
+**Полный спринт (рекомендую):** P0 + P1 + Track H (testpack builder) = ~4 дня. Дальше идёт фаза подготовки к презентации (см. ниже).
+
+---
+
+## 🎯 Стратегия подготовки к демонстрации и презентации (Track E — Demo Polish, переименован в «Demo Prep»)
+
+Это не код-трек. Это блок задач, который должен идти **параллельно** последней неделе разработки, не **после** неё.
+
+### Demo Prep — список задач
+
+**DP1. Deployment harden (1 день)**
+
+- Vercel deploy `main`. Проверить:
+  - все Zustand stores персистятся в localStorage браузера зрителя
+  - `resetAll()` (в top-nav) восстанавливает seed в один клик — это спасение в момент когда что-то пошло не так на live
+  - SSR hydration: `7fda1c9` уже починил date formatting, но прогнать ещё раз на /reports после `f8e631c`
+- Завести два URL: `pipeqc.vercel.app` (prod) и `pipeqc-stage.vercel.app` (дублирующий стенд на случай если первый ляжет). Это 2-минутная страховка.
+
+**DP2. Demo script v1 (0.5 дня)**
+
+- 8–10 минутный narrative по 11 шагам из `track-upstream.md §3`. Это уже готовый сценарий — нужно только **переписать формулировки** под аудиторию (см. presentation_strategy.md).
+- Один cue card per role switch: Михаил / Сергей / Хассан / Анна. Чёткое «передаю микрофон» в каждый момент.
+- **Anti-Murphy чеклист** (что делать если):
+  - F5 — `resetAll()` и продолжить с шага 1
+  - случайный клик на пустую страницу — открыть `/documentation` (devlog) и потянуть time
+  - вопрос «а где X из manual'а» — есть `docs/MANUAL_COVERAGE_MATRIX.md`, можно показать
+
+**DP3. Pre-recorded fallback (1 день)**
+
+- Записать 5-минутный screencast по тому же 11-шаговому сценарию (Loom или OBS).
+- Хранить в slides как backup slide — если live упадёт или сеть подведёт, переключаешься без потери ритма.
+- Это стандартная практика для enterprise B2B демо (см. источники ниже).
+
+**DP4. Seed data hardening (0.5 дня)**
+
+- Прогнать `resetAll()` → пройти полный demo flow → убедиться что ни одна цифра не «ноль из-за того что seed не покрывает этот case». Сейчас seed в track_list упоминает «4 Material Check, 7 Weld Progress, 4 Fabricated, 3 QC Release, 1 Sent to Paint, 1 Painted, 1 Laydown» — этого хватает для воронки, но проверь Anna's flow тоже.
+- Добавить пару «красивых» imperfections: один rejected weld c понятным rework code, один overdue NDE batch, один testpack который вот-вот станет RFLC. Это даёт визуальный «жизненный» tone вместо «всё green».
+
+**DP5. Role-switch rehearsal (0.5 дня)**
+
+- Прогнать 3 раза подряд, переключая роли в top-nav. Засечь время. Цель — 8–10 минут чистого walkthrough + 5–10 минут Q&A.
+- Записать ответы на 5 самых вероятных вопросов (см. presentation_strategy.md).
+
+**DP6. Pitch deck v1 (1.5 дня)** — см. ниже отдельный документ.
+
+### Целевой состав времени на спринт
+
+Если спринт 7 дней:
+
+- День 1–4: P0 + P1 (или P0 + Track H, на выбор)
+- День 5: DP1 (deploy) + DP4 (seed hardening) — параллельно с финальным тестированием
+- День 6: DP2 (script) + DP6 (pitch deck v1)
+- День 7: DP3 (screencast) + DP5 (rehearsal) + буфер
+
+Если спринт 10 дней — добавляем P2 (Track H) и больше rehearsal'ов.
+
+---
+
+## 📊 Дельта против старого track_list — что изменилось в реальности
+
+Чтобы было понятно почему этот файл другой:
+
+1. **«Next priority» #1–5 закрыты:** E2.5, F2, E2.4, N3 — все в main. F1 частично (KPI цифры live, но drill-down chip ещё не на всех tiles).
+2. **Track C появился из ниоткуда:** в твоём файле C1–C4 были все «⛔ TODO». В main лежит полная reports-view с 12 отчётами, 5 KPI tiles, search, download mock-flow.
+3. **Track D шагнул из placeholder в shell:** spooling-view + import / validation / revision panels + persisted store. Это не полный §6, но уже не «placeholder header only».
+4. **Manual-alignment pass:** reinstatement переехал с punch X/Y на flange Y/Z (это правильнее по §17.5); testpack release gates стали live-derived из welds/flange/NDE; NDE получил manual-facing vocabulary и tracer demo (NDE100 warning seam).
+5. **In-app `/documentation` тоже устарел:** Tab 4 (Tracks & Stories) в `app/documentation/page.tsx` всё ещё показывает E2.5/F2/E2.4 как «Next», хотя они merged. Это надо подправить — `mergedTracks` array на строках ~270–280, `nextTracks` array на строках ~284–293.
+
+---
+
+## 🆕 Гэпы, которые НЕ закрыты и не на радаре спринта (для прозрачности)
+
+1. §11.6 Client Examination Progress — owner's rep подпись (N5)
+2. §15 Testpack Builder (Track H)
+3. §12 полный erection workflow per stage
+4. §19.2 flange torquing input (UI редактирования есть browse, нет progress)
+5. Heat-treatment (PWHT) workflow — упомянут в weld panel, flow нет
+6. Material traceability (heat number → mill certificate) — поля есть, flow нет
+7. Welder qualifications mismatch validation как user story (есть в `lib/welder-qualifications.ts`, не оформлено)
+
+Эти семь — потенциальный «Upstream-2» pass если получится pilot и поедем углублять.

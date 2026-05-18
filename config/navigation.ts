@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   Paintbrush,
   Warehouse,
+  Truck,
 } from 'lucide-react'
 import type { Role } from '@/contexts/role-context'
 
@@ -78,6 +79,11 @@ export const navigationConfig: NavSection[] = [
             icon: ClipboardCheck,
           },
           {
+            title: 'Weld Progress',
+            href: '/fabrication/weld-progress',
+            icon: Activity,
+          },
+          {
             title: 'QC Release',
             href: '/fabrication/qc-release',
             icon: ShieldCheck,
@@ -92,11 +98,6 @@ export const navigationConfig: NavSection[] = [
             href: '/fabrication/laydown',
             icon: Warehouse,
           },
-          {
-            title: 'Weld Progress',
-            href: '/fabrication/weld-progress',
-            icon: Activity,
-          },
         ],
       }, {
         title: 'Erection',
@@ -107,6 +108,11 @@ export const navigationConfig: NavSection[] = [
             title: 'Dashboard',
             href: '/erection/dashboard',
             icon: LayoutDashboard,
+          },
+          {
+            title: 'To Site',
+            href: '/erection/to-site',
+            icon: Truck,
           },
           {
             title: 'Site Weld Progress',

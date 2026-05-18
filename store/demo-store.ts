@@ -15,6 +15,7 @@ import { usePaintStore } from "./paint-store"
 import { useLaydownStore } from "./laydown-store"
 import { useFlangeStore } from "./flange-store"
 import { useSpoolingStore } from "./spooling-store"
+import { useToSiteStore } from "./to-site-store"
 
 /**
  * Demo store — global demo-mode toggle and master reset.
@@ -60,6 +61,7 @@ export const useDemoStore = create<DemoState>()(
         useQCReleaseStore.getState().resetQCRelease()
         usePaintStore.getState().resetPaint()
         useLaydownStore.getState().resetLaydown()
+        useToSiteStore.getState().resetToSite()
         useFlangeStore.getState().resetDemo()
         useSpoolingStore.getState().resetDemo()
         set({

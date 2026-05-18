@@ -1,11 +1,11 @@
-'use client'
+"use client";
 
-import * as React from 'react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { ChevronRight, Home } from 'lucide-react'
+import * as React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { ChevronRight, Home } from "lucide-react";
 
-import { cn } from '@/lib/utils'
+import { cn } from "@/lib/utils";
 import {
   Sidebar,
   SidebarContent,
@@ -18,26 +18,46 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-} from '@/components/ui/sidebar'
+  useSidebar,
+} from "@/components/ui/sidebar";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@/components/ui/collapsible'
-import { useRole } from '@/contexts/role-context'
-import { getVisibleNavigation, type NavItem } from '@/config/navigation'
+} from "@/components/ui/collapsible";
+import { useRole } from "@/contexts/role-context";
+import { getVisibleNavigation, type NavItem } from "@/config/navigation";
 
 function NavItemWithChildren({
   item,
   isActive,
 }: {
-  item: NavItem
-  isActive: boolean
+  item: NavItem;
+  isActive: boolean;
 }) {
-  const pathname = usePathname()
+  const pathname = usePathname();
+  const { state } = useSidebar();
   const [isOpen, setIsOpen] = React.useState(
-    item.children?.some((child) => pathname.startsWith(child.href)) || false
-  )
+    item.children?.some((child) => pathname.startsWith(child.href)) || false,
+  );
+
+  if (state === "collapsed") {
+    return (
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          asChild
+          isActive={isActive}
+          tooltip={item.title}
+          className="w-full"
+        >
+          <Link href={item.href}>
+            <item.icon className="size-4" />
+            <span>{item.title}</span>
+          </Link>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    );
+  }
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -52,8 +72,8 @@ function NavItemWithChildren({
             <span>{item.title}</span>
             <ChevronRight
               className={cn(
-                'ml-auto size-4 transition-transform duration-200',
-                isOpen && 'rotate-90'
+                "ml-auto size-4 transition-transform duration-200",
+                isOpen && "rotate-90",
               )}
             />
           </SidebarMenuButton>
@@ -62,7 +82,10 @@ function NavItemWithChildren({
           <SidebarMenuSub>
             {item.children?.map((child) => (
               <SidebarMenuSubItem key={child.href}>
-                <SidebarMenuSubButton asChild isActive={pathname === child.href}>
+                <SidebarMenuSubButton
+                  asChild
+                  isActive={pathname === child.href}
+                >
                   <Link href={child.href}>
                     <child.icon className="size-4" />
                     <span>{child.title}</span>
@@ -74,7 +97,7 @@ function NavItemWithChildren({
         </CollapsibleContent>
       </SidebarMenuItem>
     </Collapsible>
-  )
+  );
 }
 
 function NavItemLink({ item, isActive }: { item: NavItem; isActive: boolean }) {
@@ -87,17 +110,17 @@ function NavItemLink({ item, isActive }: { item: NavItem; isActive: boolean }) {
         </Link>
       </SidebarMenuButton>
     </SidebarMenuItem>
-  )
+  );
 }
 
 export function SidebarNav() {
-  const pathname = usePathname()
-  const { currentRole } = useRole()
+  const pathname = usePathname();
+  const { currentRole } = useRole();
 
   const visibleNavigation = React.useMemo(
     () => getVisibleNavigation(currentRole),
-    [currentRole]
-  )
+    [currentRole],
+  );
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border">
@@ -106,7 +129,11 @@ export function SidebarNav() {
         <SidebarGroup>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname === '/'} tooltip="Home">
+              <SidebarMenuButton
+                asChild
+                isActive={pathname === "/"}
+                tooltip="Home"
+              >
                 <Link href="/">
                   <Home className="size-4" />
                   <span>Home</span>
@@ -126,7 +153,7 @@ export function SidebarNav() {
                   const isActive =
                     pathname === item.href ||
                     (item.children &&
-                      item.children.some((child) => pathname === child.href))
+                      item.children.some((child) => pathname === child.href));
 
                   if (item.children && item.children.length > 0) {
                     return (
@@ -135,7 +162,7 @@ export function SidebarNav() {
                         item={item}
                         isActive={!!isActive}
                       />
-                    )
+                    );
                   }
 
                   return (
@@ -144,7 +171,7 @@ export function SidebarNav() {
                       item={item}
                       isActive={pathname === item.href}
                     />
-                  )
+                  );
                 })}
               </SidebarMenu>
             </SidebarGroupContent>
@@ -152,5 +179,5 @@ export function SidebarNav() {
         ))}
       </SidebarContent>
     </Sidebar>
-  )
+  );
 }

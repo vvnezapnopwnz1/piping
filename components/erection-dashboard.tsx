@@ -40,7 +40,6 @@ import {
 } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import {
-  Package,
   HardHat,
   Wrench,
   CheckCircle2,
@@ -52,7 +51,12 @@ import {
   Download,
   Truck,
 } from "lucide-react";
-import { useSpoolReadiness } from "@/store";
+import { Badge } from "@/components/ui/badge";
+import { useSpoolErectionStageCounts, useSpoolReadiness } from "@/store";
+import {
+  ERECTION_STAGE_COLOR,
+  ERECTION_STAGE_ORDER,
+} from "@/lib/erection-stage";
 import { cn } from "@/lib/utils";
 
 // Mock data
@@ -147,6 +151,7 @@ function SpoolReadinessPill({
 }: {
   status: import("@/store").SpoolReadinessStatus;
 }) {
+  const router = useRouter();
   const styles: Record<string, string> = {
     "Ready for delivery": "bg-emerald-50 text-emerald-700 border-emerald-200",
     Blocked: "bg-red-50 text-red-700 border-red-200",
@@ -162,6 +167,124 @@ function SpoolReadinessPill({
     >
       {status}
     </span>
+  );
+}
+
+function StaticBadge() {
+  return (
+    <Badge
+      variant="outline"
+      className="border-amber-200 bg-amber-50 text-amber-700"
+    >
+      Static
+    </Badge>
+  );
+}
+
+function ErectionFunnelSection({
+  readyCount,
+  blockedCount,
+  inFabCount,
+}: {
+  readyCount: number;
+  blockedCount: number;
+  inFabCount: number;
+}) {
+  const router = useRouter();
+  const counts = useSpoolErectionStageCounts();
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <h3 className="text-xs font-medium uppercase tracking-wider text-slate-500">
+          Spool erection pipeline
+        </h3>
+        <div className="flex items-center gap-4">
+          <span className="text-xs text-slate-500">
+            <span className="font-medium text-emerald-700">{readyCount}</span>{" "}
+            ready for delivery
+            {blockedCount > 0 && (
+              <>
+                {" "}
+                ·{" "}
+                <span className="font-medium text-red-600">
+                  {blockedCount}
+                </span>{" "}
+                blocked
+              </>
+            )}
+            {inFabCount > 0 && (
+              <>
+                {" "}
+                · <span className="text-slate-500">{inFabCount} in fab</span>
+              </>
+            )}
+            {" · "}
+            <a
+              href="#spool-readiness"
+              className="text-emerald-600 hover:underline"
+            >
+              View details ↓
+            </a>
+          </span>
+          <p className="text-xs text-slate-500">
+            {ERECTION_STAGE_ORDER.reduce(
+              (sum, stage) => sum + counts[stage],
+              0,
+            )}{" "}
+            spools in live rollout
+          </p>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+        {ERECTION_STAGE_ORDER.map((stage) => {
+          const count = counts[stage];
+          const colors = ERECTION_STAGE_COLOR[stage];
+          const isClickable = stage === "To Site";
+          const helper =
+            stage === "Not Started"
+              ? `${count} spool${count === 1 ? "" : "s"} not yet released`
+              : `${count} spool${count === 1 ? "" : "s"}`;
+
+          return (
+            <div
+              key={stage}
+              className={isClickable ? "cursor-pointer" : "cursor-not-allowed"}
+              title={isClickable ? undefined : "Coming in I3/I4/I5/I6"}
+              onClick={() => {
+                if (isClickable) {
+                  router.push("/erection/to-site");
+                }
+              }}
+            >
+              <Card className="relative overflow-hidden border bg-white">
+                <div
+                  className={cn("absolute inset-y-0 left-0 w-1", colors.rail)}
+                />
+                <CardContent className="flex min-h-28 flex-col justify-between gap-3 p-4">
+                  <Badge
+                    variant="secondary"
+                    className={cn(
+                      "w-fit border-transparent text-[10px] uppercase tracking-wider",
+                      colors.bg,
+                      colors.text,
+                    )}
+                  >
+                    {stage}
+                  </Badge>
+                  <div className="space-y-1">
+                    <div className="text-3xl font-semibold text-slate-900">
+                      {count}
+                    </div>
+                    <p className="text-xs text-slate-500">{helper}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -287,104 +410,11 @@ export function ErectionDashboard() {
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription className="flex items-center gap-2">
-              <Truck className="h-4 w-4" />
-              Spools ready for delivery
-            </CardDescription>
-            <CardTitle className="text-3xl font-bold">{readyCount}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              {blockedCount} blocked · {inFabCount} in fab
-            </p>
-            <div className="flex items-center gap-1 mt-1 text-sm text-emerald-600">
-              <a href="#spool-readiness" className="hover:underline">
-                View details ↓
-              </a>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Total Spools (Site Scope)
-            </CardDescription>
-            <CardTitle className="text-3xl font-bold">2,418</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Field installation scope
-            </p>
-            <div className="flex items-center gap-1 mt-1 text-sm text-emerald-600">
-              <TrendingUp className="h-3 w-3" />
-              <span>+186 received this month</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription className="flex items-center gap-2">
-              <HardHat className="h-4 w-4" />
-              Spools Erected
-            </CardDescription>
-            <CardTitle className="text-3xl font-bold">1,124</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Progress value={46.5} className="flex-1" />
-              <span className="text-sm font-medium">46.5%</span>
-            </div>
-            <div className="flex items-center gap-1 mt-1 text-sm text-emerald-600">
-              <TrendingUp className="h-3 w-3" />
-              <span>+8% vs last week</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription className="flex items-center gap-2">
-              <Wrench className="h-4 w-4" />
-              Field Joints Welded
-            </CardDescription>
-            <CardTitle className="text-3xl font-bold">3,847 / 6,240</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Progress value={61.6} className="flex-1" />
-              <span className="text-sm font-medium">61.6%</span>
-            </div>
-            <div className="flex items-center gap-1 mt-1 text-sm text-emerald-600">
-              <TrendingUp className="h-3 w-3" />
-              <span>142 welded this week</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4" />
-              RFT Achieved
-            </CardDescription>
-            <CardTitle className="text-3xl font-bold">687</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">ISOs ready for test</p>
-            <div className="flex items-center gap-1 mt-1 text-sm text-emerald-600">
-              <TrendingUp className="h-3 w-3" />
-              <span>28.4% of scope</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <ErectionFunnelSection
+        readyCount={readyCount}
+        blockedCount={blockedCount}
+        inFabCount={inFabCount}
+      />
 
       {/* Spool delivery readiness */}
       <Card id="spool-readiness">
@@ -457,9 +487,12 @@ export function ErectionDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              Spool Erection Progress
-            </CardTitle>
+            <div className="flex items-center justify-between gap-3">
+              <CardTitle className="text-sm font-medium">
+                Spool Erection Progress
+              </CardTitle>
+              <StaticBadge />
+            </div>
             <CardDescription>Weekly activities breakdown</CardDescription>
           </CardHeader>
           <CardContent>
@@ -504,9 +537,12 @@ export function ErectionDashboard() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              Field Joint Welding Progress
-            </CardTitle>
+            <div className="flex items-center justify-between gap-3">
+              <CardTitle className="text-sm font-medium">
+                Field Joint Welding Progress
+              </CardTitle>
+              <StaticBadge />
+            </div>
             <CardDescription>Cumulative weekly totals</CardDescription>
           </CardHeader>
           <CardContent>
@@ -553,9 +589,12 @@ export function ErectionDashboard() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              Site NDE Status
-            </CardTitle>
+            <div className="flex items-center justify-between gap-3">
+              <CardTitle className="text-sm font-medium">
+                Site NDE Status
+              </CardTitle>
+              <StaticBadge />
+            </div>
             <CardDescription>
               Non-destructive examination results
             </CardDescription>
@@ -589,9 +628,12 @@ export function ErectionDashboard() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
-              Erection Completion by Area
-            </CardTitle>
+            <div className="flex items-center justify-between gap-3">
+              <CardTitle className="text-sm font-medium">
+                Erection Completion by Area
+              </CardTitle>
+              <StaticBadge />
+            </div>
             <CardDescription>Scope vs actual progress</CardDescription>
           </CardHeader>
           <CardContent>
