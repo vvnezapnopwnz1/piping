@@ -6,37 +6,38 @@
 
 ## ✅ Merged (closed) — что реально лежит в main
 
-| #   | Track / Phase  | Что                                                                              | Подтверждение в репо                                             |
-| --- | -------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| 1   | A1             | Line Check Preparation + Progress                                                | `app/testpack/pressure-test/line-check/*`                        |
-| 2   | A2             | Item Clearance Preparation + Progress                                            | `app/testpack/pressure-test/item-clearance/*`                    |
-| 3   | A3             | Explorer live gates (Release Tracking)                                           | `lib/testpack-release-tracking.ts` + Explorer wired              |
-| 4   | A4             | Blinding Preparation + Progress                                                  | `app/testpack/pressure-test/blinding/*`                          |
-| 5   | A5             | Testing & Pre-comm Progress                                                      | `app/testpack/pressure-test/testing-precomm/*`                   |
-| 6   | A6             | Reinstatement Preparation + Progress (теперь на flange Y/Z, не punch)            | `components/testpack/reinstatement/*` (после `a4c3ab7`)          |
-| 7   | B1             | Admin shell + Teams + Subcontractors + Welder Qualifications                     | `app/admin` + `store/admin-store.ts`                             |
-| 8   | B2             | WPS / NDE Matrix / Rework Codes / Joint Categories (read-only)                   | `components/admin/*-tab.tsx`                                     |
-| 9   | E2.1           | Erection store (persistence)                                                     | `store/erection-store.ts`                                        |
-| 10  | E2.3           | Spool readiness gate (F↔E handoff)                                               | `useSpoolReadiness()` selector                                   |
-| 11  | E2.5           | **ISO weld rollup + Track A bridge** (было #13 в Next — закрыто)                 | `store/iso-rollup.ts` + `components/iso-watcher-mount.tsx`       |
-| 12  | N1             | Create Batch wizard                                                              | `components/nde/create-batch-dialog.tsx`                         |
-| 13  | N2             | Per-weld Receive Results                                                         | `components/nde/receive-results-panel.tsx`                       |
-| 14  | F2             | **Send to NDE из weld detail panel + Send entire spool** (было #14 в Next)       | коммит `3b896c4`                                                 |
-| 15  | E2.4           | **Send field weld to NDE (source=field)** (было #15 в Next)                      | коммит `3b896c4`                                                 |
-| 16  | G1             | Spool fabrication funnel + 8-stage derivation                                    | `lib/spool-data.ts` + `store/spool-stage.ts`                     |
-| 17  | G1.1           | Funnel navigation cleanup                                                        |                                                                  |
-| 18  | G2             | Material Check screen + persisted spools store                                   | `app/fabrication/material-check`                                 |
-| 19  | G3             | QC Release screen + Fabricated→Released                                          | `app/fabrication/qc-release`                                     |
-| 20  | G4             | Paint stages — dispatch, sign-off, DFT                                           | `app/fabrication/paint`                                          |
-| 21  | G5             | Laydown — yard placement + release to site + funnel deep-link cleanup            | `app/fabrication/laydown`                                        |
-| 22  | C1             | **Reports module (Fabrication / Erection / Testpack / NDE)** (был полный TODO)   | коммит `f8e631c`                                                 |
-| 23  | P0–P2 align    | Manual-alignment pass: flange-store, live release gates, NDE tracer, spooling sh | коммит `a4c3ab7` + `docs/MANUAL_COVERAGE_MATRIX.md`              |
-| 24  | F1 (частично)  | Fabrication dashboard теперь читает `useWeldsKPIs` + funnel                      | `components/fabrication-dashboard.tsx:294`                       |
-| 25  | N3             | Source column (Shop/Site) + chip-filter (All/Shop/Field) в /nde table            | коммит `3b896c4` (column) + filter добавлен сейчас               |
-| 26  | Spooling shell | Import / validation / latest-history / revision panels                           | `components/spooling/*`, `store/spooling-store.ts`               |
-| 27  | Flange store   | Persisted flange-store (§19.x частично)                                          | `store/flange-store.ts`                                          |
-| 28  | Devlog page    | 4-tab documentation page (`/documentation`)                                      | коммит `3591385`                                                 |
-| 29  | F3             | `/fabrication` → `/fabrication/dashboard` redirect + collapsed sidebar nav fix   | `app/fabrication/page.tsx` + `components/pipeqc/sidebar-nav.tsx` |
+| #   | Track / Phase  | Что                                                                              | Подтверждение в репо                                                   |
+| --- | -------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| 1   | A1             | Line Check Preparation + Progress                                                | `app/testpack/pressure-test/line-check/*`                              |
+| 2   | A2             | Item Clearance Preparation + Progress                                            | `app/testpack/pressure-test/item-clearance/*`                          |
+| 3   | A3             | Explorer live gates (Release Tracking)                                           | `lib/testpack-release-tracking.ts` + Explorer wired                    |
+| 4   | A4             | Blinding Preparation + Progress                                                  | `app/testpack/pressure-test/blinding/*`                                |
+| 5   | A5             | Testing & Pre-comm Progress                                                      | `app/testpack/pressure-test/testing-precomm/*`                         |
+| 6   | A6             | Reinstatement Preparation + Progress (теперь на flange Y/Z, не punch)            | `components/testpack/reinstatement/*` (после `a4c3ab7`)                |
+| 7   | B1             | Admin shell + Teams + Subcontractors + Welder Qualifications                     | `app/admin` + `store/admin-store.ts`                                   |
+| 8   | B2             | WPS / NDE Matrix / Rework Codes / Joint Categories (read-only)                   | `components/admin/*-tab.tsx`                                           |
+| 9   | E2.1           | Erection store (persistence)                                                     | `store/erection-store.ts`                                              |
+| 10  | E2.3           | Spool readiness gate (F↔E handoff)                                               | `useSpoolReadiness()` selector                                         |
+| 11  | E2.5           | **ISO weld rollup + Track A bridge** (было #13 в Next — закрыто)                 | `store/iso-rollup.ts` + `components/iso-watcher-mount.tsx`             |
+| 12  | N1             | Create Batch wizard                                                              | `components/nde/create-batch-dialog.tsx`                               |
+| 13  | N2             | Per-weld Receive Results                                                         | `components/nde/receive-results-panel.tsx`                             |
+| 14  | F2             | **Send to NDE из weld detail panel + Send entire spool** (было #14 в Next)       | коммит `3b896c4`                                                       |
+| 15  | E2.4           | **Send field weld to NDE (source=field)** (было #15 в Next)                      | коммит `3b896c4`                                                       |
+| 16  | G1             | Spool fabrication funnel + 8-stage derivation                                    | `lib/spool-data.ts` + `store/spool-stage.ts`                           |
+| 17  | G1.1           | Funnel navigation cleanup                                                        |                                                                        |
+| 18  | G2             | Material Check screen + persisted spools store                                   | `app/fabrication/material-check`                                       |
+| 19  | G3             | QC Release screen + Fabricated→Released                                          | `app/fabrication/qc-release`                                           |
+| 20  | G4             | Paint stages — dispatch, sign-off, DFT                                           | `app/fabrication/paint`                                                |
+| 21  | G5             | Laydown — yard placement + release to site + funnel deep-link cleanup            | `app/fabrication/laydown`                                              |
+| 22  | C1             | **Reports module (Fabrication / Erection / Testpack / NDE)** (был полный TODO)   | коммит `f8e631c`                                                       |
+| 23  | P0–P2 align    | Manual-alignment pass: flange-store, live release gates, NDE tracer, spooling sh | коммит `a4c3ab7` + `docs/MANUAL_COVERAGE_MATRIX.md`                    |
+| 24  | F1 (частично)  | Fabrication dashboard теперь читает `useWeldsKPIs` + funnel                      | `components/fabrication-dashboard.tsx:294`                             |
+| 25  | N3             | Source column (Shop/Site) + chip-filter (All/Shop/Field) в /nde table            | коммит `3b896c4` (column) + filter добавлен сейчас                     |
+| 26  | Spooling shell | Import / validation / latest-history / revision panels                           | `components/spooling/*`, `store/spooling-store.ts`                     |
+| 27  | Flange store   | Persisted flange-store (§19.x частично)                                          | `store/flange-store.ts`                                                |
+| 28  | Devlog page    | 4-tab documentation page (`/documentation`)                                      | коммит `3591385`                                                       |
+| 29  | F3             | `/fabrication` → `/fabrication/dashboard` redirect + collapsed sidebar nav fix   | `app/fabrication/page.tsx` + `components/pipeqc/sidebar-nav.tsx`       |
+| 30  | I8             | Field Flange Bolt Progress — §19.2.1 torque assign / record / verify per joint   | `app/erection/flange-progress` + `store/flange-bolt-progress-store.ts` |
 
 **Итого:** все 5 пунктов из «🔜 Next priority order» твоего предыдущего файла (E2.5, F2, E2.4, частично F1, N3) уже на main. Старый track_list, мягко говоря, отстал.
 
@@ -61,7 +62,7 @@
 | 4   | N4        | Enriched NDE notifications — на receive-results если есть rejected: «BTH-XXX: N welds rejected — rework cascaded»; на receive-results-all-accepted: «BTH-XXX: closed clean». Сейчас цепочка реализована частично, текста бедные. | 0.25 д |
 | 5   | N5 (опц.) | §11.6 Client Examination Progress — owner's rep signs off N2 results. Это вторая подпись после inspector'а. EPC-аудитория узнает паттерн «owner's representative» сразу.                                                         | 0.5 д  |
 | 6   | B3        | Systems / Subsystems / Material Class admin tabs (read-only). 7 → 10 вкладок в admin. Покрытие §3 поднимается с 7/26 до 10/26.                                                                                                   | 0.5 д  |
-| 7   | §19.2     | Flange torquing progress: assign jointer + record torque pass. Flange-store уже персистится, нужно UI на progress. Сейчас reinstatement (A6) опирается на flange но **редактировать** torque нельзя.                             | 0.5 д  |
+| 7   | §19.2     | ~~Flange torquing progress~~ — **I8 merged** (`/erection/flange-progress`). Remaining: gate I4 on `allVerified` + feed into RFT eligibility (I9).                                                                                | 0.5 д  |
 
 **P2 — Новые треки, опциональны для следующего спринта**
 
@@ -158,7 +159,7 @@
 1. §11.6 Client Examination Progress — owner's rep подпись (N5)
 2. §15 Testpack Builder (Track H)
 3. §12 полный erection workflow per stage
-4. §19.2 flange torquing input (UI редактирования есть browse, нет progress)
+4. ~~§19.2 flange torquing input~~ — I8 merged; I9 = gate widening + RFT eligibility
 5. Heat-treatment (PWHT) workflow — упомянут в weld panel, flow нет
 6. Material traceability (heat number → mill certificate) — поля есть, flow нет
 7. Welder qualifications mismatch validation как user story (есть в `lib/welder-qualifications.ts`, не оформлено)

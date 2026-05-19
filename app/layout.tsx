@@ -15,6 +15,7 @@ import { SidebarNav } from "@/components/pipeqc/sidebar-nav";
 import { TopNav } from "@/components/pipeqc/top-nav";
 import { Toaster } from "@/components/ui/sonner";
 import { IsoWatcherMount } from "@/components/iso-watcher-mount";
+import { SpoolRFTWatcherMount } from "@/components/spool-rft-watcher-mount";
 
 // Initialize fonts
 const _inter = V0_Font_Inter({
@@ -73,6 +74,7 @@ export default function RootLayout({
         </RoleProvider>
         <Toaster richColors position="top-right" />
         <IsoWatcherMount />
+        <SpoolRFTWatcherMount />
         {process.env.NODE_ENV === "production" && <Analytics />}
       </body>
     </html>

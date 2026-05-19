@@ -52,7 +52,11 @@ import {
   Truck,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useSpoolErectionStageCounts, useSpoolReadiness } from "@/store";
+import {
+  useSpoolErectionStageCounts,
+  useSpoolReadiness,
+  useFleetFlangeBoltCounts,
+} from "@/store";
 import {
   ERECTION_STAGE_COLOR,
   ERECTION_STAGE_ORDER,
@@ -193,8 +197,40 @@ function ErectionFunnelSection({
   const router = useRouter();
   const counts = useSpoolErectionStageCounts();
 
+  const totalSpools = ERECTION_STAGE_ORDER.reduce((s, st) => s + counts[st], 0);
+  const awaitingRelease = counts["Awaiting Release"];
+  const activeInErection =
+    counts["To Site"] +
+    counts["Field Material Check"] +
+    counts["Erected"] +
+    counts["Welded/Bolted"] +
+    counts["Supported"];
+  const rftCount = counts["RFT"];
+
   return (
     <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 rounded-lg border bg-slate-50 p-3">
+        <div>
+          <p className="text-xs text-slate-500">Total spools</p>
+          <p className="text-2xl font-semibold text-slate-900">{totalSpools}</p>
+        </div>
+        <div>
+          <p className="text-xs text-slate-500">Awaiting Release</p>
+          <p className="text-2xl font-semibold text-slate-600">
+            {awaitingRelease}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-slate-500">Active in erection</p>
+          <p className="text-2xl font-semibold text-sky-700">
+            {activeInErection}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-slate-500">RFT</p>
+          <p className="text-2xl font-semibold text-emerald-700">{rftCount}</p>
+        </div>
+      </div>
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h3 className="text-xs font-medium uppercase tracking-wider text-slate-500">
           Spool erection pipeline
@@ -236,24 +272,53 @@ function ErectionFunnelSection({
           </p>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
         {ERECTION_STAGE_ORDER.map((stage) => {
           const count = counts[stage];
           const colors = ERECTION_STAGE_COLOR[stage];
-          const isClickable = stage === "To Site";
+          const isClickable =
+            stage === "Awaiting Release" ||
+            stage === "To Site" ||
+            stage === "Field Material Check" ||
+            stage === "Erected" ||
+            stage === "Welded/Bolted" ||
+            stage === "Supported" ||
+            stage === "RFT";
           const helper =
-            stage === "Not Started"
+            stage === "Awaiting Release"
               ? `${count} spool${count === 1 ? "" : "s"} not yet released`
               : `${count} spool${count === 1 ? "" : "s"}`;
+          const tileTitle =
+            stage === "Awaiting Release"
+              ? "Go to Laydown"
+              : stage === "RFT"
+                ? "View RFT list"
+                : undefined;
+          const href =
+            stage === "Awaiting Release"
+              ? "/fabrication/laydown"
+              : stage === "To Site"
+                ? "/erection/to-site"
+                : stage === "Erected"
+                  ? "/erection/erected"
+                  : stage === "Welded/Bolted"
+                    ? "/erection/welded-bolted"
+                    : stage === "Supported"
+                      ? "/erection/supported"
+                      : stage === "RFT"
+                        ? "/erection/rft"
+                        : stage === "Field Material Check"
+                          ? "/erection/material-check"
+                          : undefined;
 
           return (
             <div
               key={stage}
               className={isClickable ? "cursor-pointer" : "cursor-not-allowed"}
-              title={isClickable ? undefined : "Coming in I3/I4/I5/I6"}
+              title={tileTitle}
               onClick={() => {
-                if (isClickable) {
-                  router.push("/erection/to-site");
+                if (href) {
+                  router.push(href);
                 }
               }}
             >
@@ -284,7 +349,49 @@ function ErectionFunnelSection({
           );
         })}
       </div>
+
+      <FlangeBoltKPICard />
     </div>
+  );
+}
+
+function FlangeBoltKPICard() {
+  const router = useRouter();
+  const counts = useFleetFlangeBoltCounts();
+  if (counts.total === 0) return null;
+  const pct = Math.round((counts.verified / counts.total) * 100);
+  return (
+    <Card
+      className="mt-3 cursor-pointer border bg-white"
+      onClick={() => router.push("/erection/flange-progress")}
+      title="Open flange bolt progress"
+    >
+      <CardContent className="flex items-center justify-between gap-4 p-4">
+        <div>
+          <p className="text-xs uppercase tracking-wider text-slate-500">
+            Flange bolt verification (§19.2.1)
+          </p>
+          <p className="text-sm text-slate-800">
+            <span className="text-2xl font-semibold text-slate-900">
+              {counts.verified}
+            </span>
+            <span className="text-slate-500"> / {counts.total} verified</span>
+            {counts.assigned - counts.verified > 0 && (
+              <span className="ml-3 text-slate-500">
+                · {counts.assigned - counts.bolted} assigned ·{" "}
+                {counts.bolted - counts.verified} bolted
+              </span>
+            )}
+          </p>
+        </div>
+        <Badge
+          variant="secondary"
+          className="border-transparent bg-slate-100 text-slate-700"
+        >
+          {pct}%
+        </Badge>
+      </CardContent>
+    </Card>
   );
 }
 

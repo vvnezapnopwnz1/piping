@@ -104,6 +104,7 @@ interface TestpackState {
   ) => void
 
   recordIsoWelded: (isoNo: string, source: "rollup" | "manual") => void
+  recordSpoolRFT: (spoolNo: string) => void
 
   // Demo helpers
   resetDemo: () => void
@@ -565,6 +566,16 @@ export const useTestpackStore = create<TestpackState>()(
         })
       },
 
+      recordSpoolRFT: (spoolNo) => {
+        set((state) => {
+          const updatedIsos = state.isos.map((iso) => {
+            if (iso.spoolsRFT.includes(spoolNo)) return iso
+            return { ...iso, spoolsRFT: [...iso.spoolsRFT, spoolNo] }
+          })
+          return { isos: updatedIsos }
+        })
+      },
+
       resetDemo: () => {
         punchItemCounter = SEED_PUNCH_ITEMS.length
         requestCounter = SEED_CHECKING_REQUESTS.length
@@ -602,10 +613,9 @@ export const useTestpackStore = create<TestpackState>()(
     {
       name: "pipeqc-testpack",
       storage: createJSONStorage(() => localStorage),
-      version: 4,
+      version: 5,
       migrate: (persistedState, version) => {
-        if (version < 4) {
-          // Wipe old data to force reset with new ReinstatementRequest shape
+        if (version < 5) {
           return undefined as unknown as TestpackState
         }
         return persistedState as TestpackState

@@ -27,6 +27,7 @@ export type NotificationCategory =
   | "nde_result"
   | "rework"
   | "tracking"
+  | "erection"
   | "system"
 
 export interface Notification {

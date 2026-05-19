@@ -123,5 +123,87 @@
 ---
 
 ✅ Чеклист пройден. Если хотя бы один пункт не совпал —
-   проверь localStorage (должны быть pipeqc-to-site и pipeqc-laydown
-   с seed-записями) и консоль браузера на ошибки.
+проверь localStorage (должны быть pipeqc-to-site и pipeqc-laydown
+с seed-записями) и консоль браузера на ошибки.
+
+    Анализ: что есть в Erection-модуле vs. чего не хватает
+
+Что уже на main (erection-side):
+
+- app/erection/dashboard/page.tsx + components/erection-dashboard.tsx (892 LOC) — sticky
+  filter bar, KPI-блок и четыре статичных мок-массива (SPOOL_ERECTION_DATA, FIELD_WELD_DATA,
+  NDE_STATUS_DATA, COMPLETION_BY_AREA_DATA). useErectionKPIs() определён в store, но не
+  подключён ни к одному tile. Live только одна штука — useSpoolReadiness (E2.3).
+- app/erection/weld-progress + components/erection/field-weld-\* — store-backed после E2.1,
+  мутации идут в useErectionStore.
+- lib/erection-weld-data.ts уже хранит ErectionStatus enum: To Site → Erected → Welded →
+  Bolted → Supported → RFT (+Not Started) и foremanConfirmed. Это field-joint-level, но не
+  spool-level, а §12 говорит про spool-level lifecycle.
+
+Что мандатит manual §12 (4118–4614):
+
+┌──────┬───────────────────────────────┬──────────────────────────────────────────────┐
+│ § │ Стадия │ Где сейчас в PipeQC │
+├──────┼───────────────────────────────┼──────────────────────────────────────────────┤
+│ 12.2 │ Material Check (field) │ ❌ нет (G2 покрывает только shop) │
+├──────┼───────────────────────────────┼──────────────────────────────────────────────┤
+│ 12.3 │ Weld Progress │ ✅ /erection/weld-progress │
+├──────┼───────────────────────────────┼──────────────────────────────────────────────┤
+│ 12.4 │ To Site │ ❌ нет screen — только enum в field-weld │
+│ │ │ store │
+├──────┼───────────────────────────────┼──────────────────────────────────────────────┤
+│ 12.5 │ Erected │ ❌ нет screen │
+├──────┼───────────────────────────────┼──────────────────────────────────────────────┤
+│ 12.6 │ Welded/Bolted │ ⚠ enum есть, но spool-level rollup │
+│ │ │ отсутствует │
+├──────┼───────────────────────────────┼──────────────────────────────────────────────┤
+│ 12.7 │ Supported (W-23) │ ❌ нет │
+├──────┼───────────────────────────────┼──────────────────────────────────────────────┤
+│ 12.8 │ RFT (auto) │ ❌ нет авто-derivации │
+├──────┼───────────────────────────────┼──────────────────────────────────────────────┤
+│ 12.9 │ Erection Dashboard │ ⚠ shell живой, но цифры/чарты статичны │
+├──────┼───────────────────────────────┼──────────────────────────────────────────────┤
+│ §19 │ Flange progress │ ⚠ browse-only, нет UI прогресса │
+│ │ (erection-side) │ │
+└──────┴───────────────────────────────┴──────────────────────────────────────────────┘
+
+Это зеркало Track G, только для erection-фазы. По объёму это полноценный новый трек.
+
+---
+
+Предложение: Track I — Erection Module Lifecycle (§12)
+
+(G/H уже заняты — H = Testpack Builder по памяти; следующая свободная буква — I.)
+
+Фазы (по аналогии с G1–G5):
+
+┌───────┬─────────────────────────────────────────────────────────────────┬───────────┐
+│ Phase │ Что │ Аналог в │
+│ │ │ G │
+├───────┼─────────────────────────────────────────────────────────────────┼───────────┤
+│ I1 │ Spool erection lifecycle foundation + funnel widget на Erection │ G1 + G1.1 │
+│ │ Dashboard + live KPI tiles │ │
+├───────┼─────────────────────────────────────────────────────────────────┼───────────┤
+│ I2 │ To Site screen (+ store) — приёмка spool'ов на площадке, бридж │ G2-style │
+│ │ с laydown release │ │
+├───────┼─────────────────────────────────────────────────────────────────┼───────────┤
+│ I3 │ Erected screen — area supervisor подтверждает установку │ G3-style │
+├───────┼─────────────────────────────────────────────────────────────────┼───────────┤
+│ I4 │ Welded/Bolted rollup screen — spool-level статус из field-welds │ G4-style │
+│ │ + flange progress │ │
+├───────┼─────────────────────────────────────────────────────────────────┼───────────┤
+│ I5 │ Supported screen (W-23) — supports erected & welded │ G5-style │
+├───────┼─────────────────────────────────────────────────────────────────┼───────────┤
+│ I6 │ RFT auto-derivation + handoff bridge на Track A (testpack │ bridge │
+│ │ readyForTest) │ │
+├───────┼─────────────────────────────────────────────────────────────────┼───────────┤
+│ I7 │ Field Material Check (§12.2) — heat-number traceability для │ G2 echo │
+│ │ field-joints │ │
+├───────┼─────────────────────────────────────────────────────────────────┼───────────┤
+│ I8 │ Flange progress в erection-контексте (§19.2, torque assign + │ (новый) │
+│ │ record) — частично P1 из track_list │ │
+└───────┴─────────────────────────────────────────────────────────────────┴───────────┘
+
+Sprint goal Track I: «после Track G Laydown release → spool появляется на Erection
+Dashboard в стадии "To Site" → проходит 5 стадий → RFT триггерит testpack readyForTest».
+Это закрывает upstream→downstream цикл с обеих сторон.

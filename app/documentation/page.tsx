@@ -198,6 +198,20 @@ const modules: Array<{
       "live field weld/store KPIs; stage workflow is represented mostly as status badges",
   },
   {
+    module: "Erection / RFT",
+    page: "/erection/rft",
+    status: "live",
+    notes:
+      "auto-derived RFT stage — watcher fires on Supported confirmation; read-only list with filter chips and predecessor audit panel",
+  },
+  {
+    module: "Erection / Field Material Check",
+    page: "/erection/material-check",
+    status: "live",
+    notes:
+      "per-spool field joint material check with inline heat-piece editing, sign-off gating, and To Site bridge",
+  },
+  {
     module: "Erection / Site Weld Progress",
     page: "/erection/weld-progress",
     status: "live",
@@ -270,28 +284,45 @@ const mergedTracks = [
   ["B1", "Admin shell + Teams + Subcontractors + Welder Qualifications"],
   ["B2", "WPS / NDE Matrix / Rework Codes / Joint Categories (read-only)"],
   ["E2.1", "Erection store (persistence)"],
-  ["E2.3", "Spool readiness gate (F<->E handoff)"],
+  ["E2.3", "Spool readiness gate (F\u2194E handoff)"],
+  ["E2.4", "Send field weld to NDE (source=field)"],
+  ["E2.5", "ISO weld rollup + Track A bridge"],
+  ["F1", "Live fabrication dashboard KPIs"],
+  ["F2", "Send to NDE from weld detail panel"],
+  ["F3", "/fabrication landing redirect + sidebar fix"],
+  ["G1", "Spool fabrication funnel + 8-stage derivation"],
+  ["G1.1", "Funnel navigation cleanup"],
+  ["G2", "Material Check screen + persisted spools store"],
+  ["G3", "QC Release screen + Fabricated → Released"],
+  ["G4", "Paint stages — dispatch, sign-off, DFT"],
+  ["G5", "Laydown — yard placement + release to site"],
   ["I1", "Erection lifecycle foundation + live dashboard funnel"],
   ["I2", "To Site screen — laydown receipt confirmation + persisted store"],
+  ["I3", "Erected screen — spool placement confirmation + persisted store"],
+  ["I4", "Welded/Bolted screen — gating sign-off + rollup + persisted store"],
+  [
+    "I5",
+    "Supported screen — supports tracking + confirmation + persisted store",
+  ],
+  [
+    "I6",
+    "RFT auto-derivation — watcher, store, read-only list, funnel cleanup",
+  ],
+  [
+    "I7",
+    "Field Material Check — per-joint heat-piece verification, sign-off gating, and erection blocking",
+  ],
   ["N1", "Create Batch wizard"],
   ["N2", "Per-weld Receive Results"],
-  ["G4", "Paint stages — dispatch, sign-off, DFT (Sent to Paint + Painted)"],
-  [
-    "G5",
-    "Laydown stage — yard placement + release to site + funnel deep-link cleanup",
-  ],
+  ["N3", "Source filter (Shop/Field) on NDE batches"],
 ];
 
 const nextTracks = [
-  ["E2.5", "ISO weld rollup + Track A bridge"],
-  ["F2", '"Send to NDE" from weld detail panel'],
-  ["E2.4", '"Send field weld to NDE"'],
-  ["F1", "Live fabrication dashboard"],
-  ["E2.2", "Covered by I1 — live erection dashboard foundation"],
-  ["F3", "/fabrication landing"],
-  ["N3", "Source filter (Shop/Field) on NDE batches"],
   ["N4", "Enhanced NDE notifications"],
   ["B3", "Systems/Subsystems + Material Class admin tabs"],
+  ["Track H", "Testpack Builder (§15) — assemble ISOs into test packs"],
+  ["§19.2", "Flange torquing progress — assign jointer + record torque pass"],
+  ["Track D", "Spooling depth — ident code lookup + bolting report import"],
 ];
 
 function ChecklistRow({

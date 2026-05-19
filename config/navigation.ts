@@ -20,6 +20,10 @@ import {
   Paintbrush,
   Warehouse,
   Truck,
+  Anchor,
+  Combine,
+  CheckCircle2,
+  Bolt,
 } from 'lucide-react'
 import type { Role } from '@/contexts/role-context'
 
@@ -113,6 +117,36 @@ export const navigationConfig: NavSection[] = [
             title: 'To Site',
             href: '/erection/to-site',
             icon: Truck,
+          },
+          {
+            title: 'Field Material Check',
+            href: '/erection/material-check',
+            icon: ClipboardCheck,
+          },
+          {
+            title: 'Erected',
+            href: '/erection/erected',
+            icon: MapPin,
+          },
+          {
+            title: 'Welded / Bolted',
+            href: '/erection/welded-bolted',
+            icon: Combine,
+          },
+          {
+            title: 'Flange Progress',
+            href: '/erection/flange-progress',
+            icon: Bolt,
+          },
+          {
+            title: 'Supported',
+            href: '/erection/supported',
+            icon: Anchor,
+          },
+          {
+            title: 'RFT',
+            href: '/erection/rft',
+            icon: CheckCircle2,
           },
           {
             title: 'Site Weld Progress',

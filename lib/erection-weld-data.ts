@@ -343,7 +343,7 @@ export const FIELD_WELD_DATA: FieldWeldJoint[] = [
     dwirNo: "DWIR-2025-2011",
     status: "Completed" as WeldStatus,
     isLocked: true,
-    erectionStatus: "Not Started",
+    erectionStatus: "Bolted",
     fieldJointType: "Flange Bolt",
     areaZone: "Area B - Compressor Hall",
     rootPercent: 0,

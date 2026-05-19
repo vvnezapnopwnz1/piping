@@ -16,6 +16,12 @@ import { useLaydownStore } from "./laydown-store"
 import { useFlangeStore } from "./flange-store"
 import { useSpoolingStore } from "./spooling-store"
 import { useToSiteStore } from "./to-site-store"
+import { useErectedStore } from "./erected-store"
+import { useWeldedBoltedStore } from "./welded-bolted-store"
+import { useSupportsStore } from "./supports-store"
+import { useRFTStore } from "./rft-store"
+import { useFieldMaterialCheckStore } from "./field-material-check-store"
+import { useFlangeBoltProgressStore } from "./flange-bolt-progress-store"
 
 /**
  * Demo store — global demo-mode toggle and master reset.
@@ -62,6 +68,12 @@ export const useDemoStore = create<DemoState>()(
         usePaintStore.getState().resetPaint()
         useLaydownStore.getState().resetLaydown()
         useToSiteStore.getState().resetToSite()
+        useErectedStore.getState().resetErected()
+        useWeldedBoltedStore.getState().resetWeldedBolted()
+        useSupportsStore.getState().resetSupports()
+        useRFTStore.getState().resetRFT()
+        useFieldMaterialCheckStore.getState().resetFieldMC()
+        useFlangeBoltProgressStore.getState().resetFlangeBoltProgress()
         useFlangeStore.getState().resetDemo()
         useSpoolingStore.getState().resetDemo()
         set({
