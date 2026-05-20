@@ -47,7 +47,7 @@ Google Drive folder ID: `1Ml-7gCf-mJ5YQ92hOr7I1lPw80_QzAH2`
 |2 |`2.EasyPiping Administration_1511017.pptx` |✅ Read 2026-05-20|
 |3 |`3.EasyPiping Preparation_1511017.pptx`    |✅ Read 2026-05-20|
 |4 |`4.EasyPiping Fabrication _10032021.pptx`  |✅ Read 2026-05-20|
-|5 |`5.EasyPiping Spool tracking_10032021.pptx`|⏳ Pending        |
+|5 |`5.EasyPiping Spool tracking_10032021.pptx`|✅ Read 2026-05-20|
 |6 |`6.EasyPiping Erection_10032021.pptx`      |⏳ Pending        |
 |7 |`7.Easy Piping Test Pack_10032021.pptx`    |⏳ Pending        |
 |8 |`8.PSMS_SpoolingDB_10032021.pptx`          |⏳ Pending        |
@@ -878,6 +878,229 @@ Perf. Control Sheet. Other three are unimplemented.
 
 -----
 
+## #5 Spool Tracking — module-specific findings
+
+### Module structure (definitive)
+
+Spool tracking is a **transversal module** (not site-activity-based).
+It has 3 sections + a dashboard on the homepage:
+
+|Section                       |Purpose                                              |
+|------------------------------|-----------------------------------------------------|
+|**Dashboard**                 |Auto-shown on entering the module                    |
+|**Data analysis**             |Spool/location/design-area exploration + flag reports|
+|**Barcode printing**          |Export Excel list for external Zebra printing        |
+|**Mobile device management**  |PDA usage analytics                                  |
+
+### Dashboard — 3 widget groups + 2 buttons
+
+Top-level buttons: **Refresh** (update displayed data), **Print**
+(print dashboard).
+
+|Group                |Widgets                                                                          |
+|---------------------|---------------------------------------------------------------------------------|
+|**Tracking**         |Cumulative % spools scanned (≥1 scan / total project spools)                     |
+|                     |# spools currently in scope (PSMS status "Start Fab" → "Erected") + trend arrow  |
+|                     |Avg PDA-computer sync count per day (last week) + trend arrow                    |
+|                     |Curve of spool scans during the running month                                    |
+|**Usage analysis**   |Spools scanned out of fabshop (red) vs all fabricated (PSMS status)              |
+|                     |Repartition of spools across areas right after fabrication                       |
+|                     |Spools scanned in paintshop (red) vs all painted (PSMS status)                   |
+|**Area capacity map**|Map of locations filled with current quantities vs capacity                      |
+
+**PipeQC current** (`components/spool-tracking-dashboard.tsx`): covers
+scan-trend curve, area capacity tiles, PDA list. Missing:
+
+- Cumulative % scanned KPI
+- Fabshop/paintshop "scanned out/in (red)" usage analysis
+- Repartition-right-after-fab widget
+- Trend arrows on KPIs
+- Refresh/print buttons (low priority for demo)
+
+### Data analysis — 4 tabs (NEW vs current PipeQC)
+
+The Data Analysis area is split into 4 tabs. PipeQC today has none of
+these as a dedicated tab structure — only a flat spool list.
+
+#### Tab 1 — Spool location
+
+- Search by **isometric** (returns first spool of iso, scroll to
+  siblings) OR by **barcode** (returns spool directly; click iso # to
+  go up)
+- Details panel:
+  - Location + duration + tracking history
+  - Spool description (material, WBU, etc.)
+  - **Spool image** (visual UI element)
+  - Location is clickable → opens spool list at that location
+- "Add" button → manually modify current location → **creates a new
+  history record** (audit-preserving, not destructive overwrite)
+- Tracking history of **erected** spool is still viewable here
+  (history persists; only excluded from active views)
+- Print button
+
+#### Tab 2 — Location
+
+- Lists all locations; click → table of spools at that location
+- Columns: iso, spool #, barcode, duration, flag
+- Iso/spool/barcode all clickable → drill into spool detail
+- **Erected spools NOT shown** (active view only)
+- Print button
+
+#### Tab 3 — Design area
+
+- Lists all design areas; click → panel showing:
+  - List of locations where this design area's spools sit
+  - List of spools
+  - **Image of the design area** (visual element — design-area map/sketch)
+- Click a location within design area → spools at intersection
+  (this area × this location)
+- Erected spools NOT shown
+- Print button
+
+#### Tab 4 — Consolidation reports (flag reports)
+
+Two distinct flag types:
+
+|Flag type        |Trigger                                                                                |
+|-----------------|---------------------------------------------------------------------------------------|
+|**Inconsistency**|PSMS status of spool ≠ expected location (e.g., painted spool still in fabshop)        |
+|**Inconsistency**|Erected spool has location scan AFTER erection date                                    |
+|**Transit out** |Spool scanned OUT a location but NOT scanned IN somewhere else, **>2 days**            |
+
+Click a location → table of flagged spools (iso, spool #, barcode,
+duration, PSMS status). Print.
+
+**Hardcoded domain rule:** 2-day transit threshold. Configurable per
+project? Not stated. Likely candidate for project referential
+(B4 — workflow step definition track, or new B5 — tracking rules).
+
+### Barcode printing — Excel-then-Zebra workflow
+
+**Key integration insight:** Easy Piping **does not print barcodes
+itself**. It produces an Excel list; printing is done in **Zebra
+software** externally.
+
+UX shape (two-column basket pattern):
+
+- Left: search by iso or barcode
+- Right: basket (selected spools)
+- Click "Export" → Excel sheet with all basket spools
+
+**PipeQC implication:**
+
+- Don't promise in-product barcode rendering. Match the export-to-Zebra
+  pattern (industry-standard for thermal label printers).
+- Two-column basket is a reusable UX pattern (also useful for Test Pack
+  builder Track H — spool selection by iso).
+
+### Mobile device management
+
+Per-PDA analytics, driven by sync data:
+
+- All PDAs from project referential listed
+- Per device: most-frequent **user**, most-frequent **location**
+- "Edit users" button → jumps to project referential PDA-users screen
+- Print button
+
+**PipeQC current:** PDA list shows id, operator, status, last sync,
+battery — but **no usage analytics** (most-frequent user/location).
+Battery + status are PipeQC additions not in Easy Piping (Easy Piping
+relied on raw sync count). Worth keeping; demo-friendly.
+
+### New cross-cutting findings from #5
+
+#### CC-11. "Active spool" definition (formal)
+
+Easy Piping's notion of a spool "currently being tracked":
+
+- `Start Fab date IS NOT NULL` AND
+- `Erection date IS NULL`
+
+Used by: dashboard count, "Active Spool List" export to PDA, exclusion
+filter on Location/Design Area tabs (erected spools dropped from active
+views but their history is still queryable via Spool Location tab).
+
+**PipeQC implication:** introduce an `is_active` derived flag on the
+spool model + filter on dashboard/location views. Cheap to add.
+
+#### CC-12. Offline-sync workflow (when no PDAs)
+
+From the manual (cross-ref to #5):
+
+- **Export:** Reports → Data Dump → Spool Tracking → 3 files (Active
+  Spool List, Sub Locations, PDA users)
+- **Import:** Import → Import Spool Tracking Data → reads `.txt` file
+  from `C:\Kalipso Project Updates\TR0001\ToPC\` (Kalipso = PDA app)
+- Validation: import dialog with "Export" (errors) and "Import"
+  (proceed) buttons
+- **Only System Admin and Project Admin** can do offline sync
+
+**PipeQC implication:** offline-mode is an explicit Easy Piping
+feature, not just "what if PDA is broken". Worth surfacing as a tile
+on the Spool Tracking module for demo (even as static screenshot) —
+shows enterprise field reality.
+
+#### CC-13. External integrations in Spool Tracking
+
+|Integration|Direction|Purpose                                  |
+|-----------|---------|-----------------------------------------|
+|**Kalipso**|bi-dir   |PDA scanning app (text-file sync)        |
+|**Zebra**  |export   |Barcode printing (consumes Excel list)   |
+
+PipeQC doesn't claim these today — but they're worth marking on the
+pitch deck's "integrations" slide as "industry-standard endpoints."
+
+### PipeQC gaps summary after #5 (Spool Tracking module)
+
+|Easy Piping feature                                       |PipeQC status              |Effort           |
+|----------------------------------------------------------|---------------------------|-----------------|
+|Dashboard: cumulative % scanned KPI                       |Missing                    |XS               |
+|Dashboard: trend arrows on KPIs                           |Missing                    |S                |
+|Dashboard: fabshop/paintshop usage analysis               |Missing                    |M                |
+|Data analysis: 4-tab IA                                   |Flat view only             |M                |
+|Spool location tab: history + image + add-location button |Missing                    |M                |
+|Design area tab + design area image                       |Missing                    |M                |
+|Inconsistency rule engine (PSMS vs location)              |Flag column exists; no rule|M                |
+|2-day transit-out rule                                    |Flag column exists; no rule|XS               |
+|Barcode printing: 2-column basket → Excel                 |Missing                    |S                |
+|Mobile device mgmt: most-frequent user/loc                |Missing                    |XS               |
+|Offline sync: text-file import/export                     |Missing                    |M (skip for demo)|
+
+**Recommendation for demo:** add tab structure to Data Analysis (S→M),
+plus inconsistency + transit-out rule engine (M). Skip offline sync.
+Add cumulative % scanned KPI (XS) — strong demo headline.
+
+### Note: Construction surveillance is NOT covered by #5
+
+Important — per #1, "Spool tracking" and "Construction surveillance
+(PDA-based)" are listed as **two separate transversal modules**.
+Presentation #5 covers **only spool tracking** (location scanning).
+Construction surveillance (checklist validation/rejection on PDA, with
+weekly graph plotting per #1) is **still undocumented in the
+presentation set so far**. Possibilities:
+
+- Covered in #6 Erection (PDA-based field checks)
+- Was a "module under development" — never delivered (per CC-7 pattern)
+- Lives in a presentation we don't have
+
+Keep the "Construction surveillance PDA checklists" open question alive
+through #6 read.
+
+-----
+
+## Open questions resolved by #5
+
+|Open Q                                  |Resolution                                                |
+|----------------------------------------|----------------------------------------------------------|
+|Spool tracking PDA workflow shape       |✅ Resolved: 3 sections + dashboard, 4-tab data analysis  |
+|Inconsistency flag logic                |✅ Resolved: PSMS status vs location mismatch (rule-based)|
+|Transit-out flag threshold              |✅ Resolved: hardcoded 2-day window                        |
+|"Active spool" definition               |✅ Resolved: Start Fab ≠ NULL AND Erection date = NULL    |
+|Barcode printing — in-product or export?|✅ Resolved: Excel export → external Zebra software        |
+|Construction surveillance PDA checklists|⚠️ NOT resolved by #5 — separate module, look in #6        |
+
+-----
+
 ## Open questions to answer in remaining presentations
 
 Track these across #5–#10 reads:
@@ -895,7 +1118,8 @@ Track these across #5–#10 reads:
    flow: sampled vs 100%, with tracer chain)
 1. ~~**Tracer joint logic**~~ → **✅ RESOLVED #4** (R1/R2/R3/R4 + T1/T2
    + T1-1/T1-2 hierarchy)
-1. **Construction surveillance PDA checklists** — #5 Spool tracking.
+1. **Construction surveillance PDA checklists** — *NOT covered by #5
+   (separate transversal module). Try #6 Erection next.*
 1. **Assembly vs Erection distinction** — what’s modular project? #9
    Assembly.
 1. **Painting DFT measurement workflow** — #10 Painting.
@@ -919,4 +1143,4 @@ If continuing in a new chat:
 
 -----
 
-*Last updated: 2026-05-20. Next read: #5 EasyPiping Spool tracking.*
+*Last updated: 2026-05-20. Next read: #6 EasyPiping Erection.*
