@@ -123,6 +123,8 @@ export function WeldedBoltedDetailPanel({
     );
   }, [spoolNo, stages]);
 
+  const flangeRollup = useSpoolFlangeBoltRollup(spoolNo ?? "");
+
   const validation = useMemo(() => {
     if (storeRecord) return { ok: true, message: "" };
     if (!rollup.allDone) {
@@ -138,6 +140,12 @@ export function WeldedBoltedDetailPanel({
         message: `Cannot confirm — ${parts.join(" and ")} not yet welded/bolted.`,
       };
     }
+    if (flangeRollup.totalBolts > 0 && !flangeRollup.allVerified) {
+      return {
+        ok: false,
+        message: `Cannot confirm — ${flangeRollup.totalBolts - flangeRollup.verified} flange bolt joint${flangeRollup.totalBolts - flangeRollup.verified === 1 ? "" : "s"} not yet torque verified.`,
+      };
+    }
     if (!confirmedBy) {
       return { ok: false, message: "Select the QC engineer who confirmed." };
     }
@@ -145,7 +153,7 @@ export function WeldedBoltedDetailPanel({
       return { ok: false, message: "Enter the W-24 QC form number." };
     }
     return { ok: true, message: "" };
-  }, [storeRecord, rollup, confirmedBy, form?.w24FormNo]);
+  }, [storeRecord, rollup, flangeRollup, confirmedBy, form?.w24FormNo]);
 
   if (!spoolNo || !form) {
     return (
@@ -160,8 +168,11 @@ export function WeldedBoltedDetailPanel({
   }
 
   const isConfirmed = !!storeRecord;
-  const isReady = rollup.allDone && !isConfirmed;
-  const isInProgress = !rollup.allDone && !isConfirmed;
+  const flangeVerificationReady =
+    flangeRollup.totalBolts === 0 || flangeRollup.allVerified;
+  const isReady = rollup.allDone && flangeVerificationReady && !isConfirmed;
+  const isInProgress =
+    (!rollup.allDone || !flangeVerificationReady) && !isConfirmed;
 
   const pendingWeld = rollup.weldJointsTotal - rollup.weldJointsDone;
   const pendingBolt = rollup.boltJointsTotal - rollup.boltJointsDone;
@@ -221,7 +232,9 @@ export function WeldedBoltedDetailPanel({
               ? `Confirmed on ${storeRecord.confirmedDate} by ${storeRecord.confirmedBy}.`
               : isReady
                 ? "All joints are welded/bolted. Ready for QC confirmation."
-                : `Joints in progress — ${pendingWeld + pendingBolt} remaining.`}
+                : rollup.allDone && !flangeVerificationReady
+                  ? "All joints are welded/bolted. Flange bolt torque verification remains open."
+                  : `Joints in progress — ${pendingWeld + pendingBolt} remaining.`}
           </SheetDescription>
         </SheetHeader>
 
@@ -354,6 +367,9 @@ export function WeldedBoltedDetailPanel({
                 {pendingWeld > 0 && pendingBolt > 0 && " "}
                 {pendingBolt > 0 &&
                   `${pendingBolt} bolt joint${pendingBolt === 1 ? "" : "s"} not yet bolted.`}
+                {rollup.allDone &&
+                  !flangeVerificationReady &&
+                  `${flangeRollup.totalBolts - flangeRollup.verified} flange bolt joint${flangeRollup.totalBolts - flangeRollup.verified === 1 ? "" : "s"} not yet torque verified.`}
               </p>
             </div>
           )}

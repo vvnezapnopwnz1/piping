@@ -78,29 +78,36 @@ export const navigationConfig: NavSection[] = [
             icon: LayoutDashboard,
           },
           {
-            title: 'Material Check',
-            href: '/fabrication/material-check',
-            icon: ClipboardCheck,
+            title: 'Spool Fabrication',
+            href: '/fabrication/spool-fabrication',
+            icon: Box,
+            children: [
+              {
+                title: 'Material Check',
+                href: '/fabrication/material-check',
+                icon: ClipboardCheck,
+              },
+              {
+                title: 'QC Release',
+                href: '/fabrication/qc-release',
+                icon: ShieldCheck,
+              },
+              {
+                title: 'Paint',
+                href: '/fabrication/paint',
+                icon: Paintbrush,
+              },
+              {
+                title: 'Laydown',
+                href: '/fabrication/laydown',
+                icon: Warehouse,
+              },
+            ],
           },
           {
-            title: 'Weld Progress',
+            title: 'Shop Weld Progress',
             href: '/fabrication/weld-progress',
             icon: Activity,
-          },
-          {
-            title: 'QC Release',
-            href: '/fabrication/qc-release',
-            icon: ShieldCheck,
-          },
-          {
-            title: 'Paint',
-            href: '/fabrication/paint',
-            icon: Paintbrush,
-          },
-          {
-            title: 'Laydown',
-            href: '/fabrication/laydown',
-            icon: Warehouse,
           },
         ],
       }, {
@@ -114,44 +121,51 @@ export const navigationConfig: NavSection[] = [
             icon: LayoutDashboard,
           },
           {
-            title: 'To Site',
-            href: '/erection/to-site',
-            icon: Truck,
-          },
-          {
-            title: 'Field Material Check',
-            href: '/erection/material-check',
-            icon: ClipboardCheck,
-          },
-          {
-            title: 'Erected',
-            href: '/erection/erected',
+            title: 'Spool Erection',
+            href: '/erection/spool-erection',
             icon: MapPin,
-          },
-          {
-            title: 'Welded / Bolted',
-            href: '/erection/welded-bolted',
-            icon: Combine,
-          },
-          {
-            title: 'Flange Progress',
-            href: '/erection/flange-progress',
-            icon: Bolt,
-          },
-          {
-            title: 'Supported',
-            href: '/erection/supported',
-            icon: Anchor,
-          },
-          {
-            title: 'RFT',
-            href: '/erection/rft',
-            icon: CheckCircle2,
+            children: [
+              {
+                title: 'To Site',
+                href: '/erection/to-site',
+                icon: Truck,
+              },
+              {
+                title: 'Field Material Check',
+                href: '/erection/material-check',
+                icon: ClipboardCheck,
+              },
+              {
+                title: 'Erected',
+                href: '/erection/erected',
+                icon: MapPin,
+              },
+              {
+                title: 'Welded / Bolted',
+                href: '/erection/welded-bolted',
+                icon: Combine,
+              },
+              {
+                title: 'Supported',
+                href: '/erection/supported',
+                icon: Anchor,
+              },
+              {
+                title: 'RFT',
+                href: '/erection/rft',
+                icon: CheckCircle2,
+              },
+            ],
           },
           {
             title: 'Site Weld Progress',
             href: '/erection/weld-progress',
             icon: Activity,
+          },
+          {
+            title: 'Flange Progress',
+            href: '/erection/flange-progress',
+            icon: Bolt,
           },
         ],
       },

@@ -1,17 +1,23 @@
 # Track I, Phase I9 — Erection Module Manual Reconciliation (backlog)
 
-This is a **scoping document**, not an executable implementation prompt. It captures findings from the post-I8 audit (2026-05-19) where the user asked: *"проверь весь erection — соответствует ли мануалу, что не соответствует, заложить в I9"*. Each item below is a candidate scope cut for I9; pick a subset and write a focused implementation prompt per slice before executing.
+This is a **scoping document**, not an executable implementation prompt. It captures findings from the post-I8 audit (2026-05-19) where the user asked: _"проверь весь erection — соответствует ли мануалу, что не соответствует, заложить в I9"_. Each item below is a candidate scope cut for I9; pick a subset and write a focused implementation prompt per slice before executing.
 
 ## Audit source
 
-- Manual reference: Easy Piping §12 (Spool Erection lifecycle), §19.2 (Bolted joint installation).
+- Manual reference: `docs/marker-output/manual.md` / `docs/Easy Piping User Manual.pdf`, Easy Piping §12 (Spool Erection lifecycle), §19.2 (Bolted joint installation).
 - Current state in working tree (post-I7 + I8): full Track I lens up to `Verified` flange bolts, but several manual gaps + UX inconsistencies surfaced during the audit.
+
+## Selected execution slice
+
+I9a executed the safe subset first: **I9.2 + I9.3**. I9b then executed the cross-stage gate widening: **I9.1 + I9.8**. I9c executed the navigation/sidebar UX slice: **I9.4 + I9.5 + I9.6**. Optional stage enum changes from I9.7 remain deferred.
 
 ---
 
 ## Backlog items
 
 ### I9.1 — Gate I4 Confirm on flange-bolt verification (§12.6 ↔ §19.2.1 closure)
+
+**Status.** Implemented in I9b.
 
 **Finding.** I8 added the audit lens but kept the I4 Confirm button display-only against `flangeRollup.allVerified`. A spool can be marked `Welded/Bolted` Confirmed even with un-verified flange bolts. Manual §12.6 mandates flange bolting is part of the Welded/Bolted sign-off.
 
@@ -27,13 +33,15 @@ This is a **scoping document**, not an executable implementation prompt. It capt
 
 ### I9.2 — Surface `Non-conformance` chip on Field Material Check (§12.2)
 
+**Status.** Implemented in I9a.
+
 **Finding.** I7 view chips are `All / Awaiting MC / Ready to Sign / Cleared`. Per-piece status `Non-conformance` is collapsed into `Awaiting MC` at the spool-level rollup. Manual §12.2 treats NC as a distinct status requiring explicit resolution.
 
 **Required work.**
 
 - Add a fifth chip `Non-conformance` to `MCStatus` union in `field-material-check-view.tsx`.
 - Update `deriveSpoolMCStatus`: if any record has `nonConformanceCount > 0` AND `!signedOffDate` → return `"Non-conformance"` (before `"Awaiting MC"`).
-- URL param `?status=NC`. Empty-state copy *"No spools with open non-conformances."*
+- URL param `?status=NC`. Empty-state copy _"No spools with open non-conformances."_
 - Update dashboard funnel tile colour or sub-indicator so NC spools surface in the `Field Material Check` tile with a warning dot (optional).
 
 **Risk.** Cosmetic + one selector tweak. Safe.
@@ -42,7 +50,9 @@ This is a **scoping document**, not an executable implementation prompt. It capt
 
 ### I9.3 — Expand `FIELD_WELD_DATA` Flange Bolt coverage for I8 demo
 
-**Finding.** Only **3** Flange Bolt joints exist in `FIELD_WELD_DATA` (`fj-2006`/`fj-2007` per offset reads + `fj-2010` + `fj-2011`; verify via `grep -c 'fieldJointType: "Flange Bolt"' lib/erection-weld-data.ts`). All 3 are seeded in `FLANGE_BOLT_SEED` (2 Verified + 1 Assigned). Result: chip `Awaiting Torque` is **empty on cold load** — violates I8 AC #2 (*"≥1 Awaiting Torque joint on first render"*).
+**Status.** Implemented in I9a.
+
+**Finding.** Only **3** Flange Bolt joints existed in `FIELD_WELD_DATA` (`fj-2007`, `fj-2010`, `fj-2011`). All 3 were seeded in `FLANGE_BOLT_SEED` (2 Verified + 1 Assigned). Result: chip `Awaiting Torque` was **empty on cold load** — violates I8 AC #2 (_"≥1 Awaiting Torque joint on first render"_).
 
 **Required work.**
 
@@ -55,6 +65,8 @@ This is a **scoping document**, not an executable implementation prompt. It capt
 ---
 
 ### I9.4 — Move `Site Weld Progress` into the pipeline order or split into "Analytics" group
+
+**Status.** Superseded by I10 — the `ERECTION ANALYTICS` group is retired and `Site Weld Progress` is now nested inside Erection → Welding subsection.
 
 **Finding.** Current sidebar order:
 
@@ -85,6 +97,8 @@ Recommended: **B** — keeps stage pipeline visually linear, surfaces analytics 
 
 ### I9.5 — Reconsider order: `Flange Progress` vs `Welded / Bolted`
 
+**Status.** Superseded by I10 — `Flange Progress` is now a peer subsection (Erection → Flange) rather than a stage between Erected and Welded/Bolted, per manual §12 structure.
+
 **Finding.** Current order is `Welded / Bolted` → `Flange Progress`. The spool-level **confirm** (I4) comes before the joint-level **detail** (I8). Reading top-down, a user lands on the confirm screen first, then drills into the bolt-up activity that feeds it. Inverted information flow.
 
 **Required work.**
@@ -98,11 +112,13 @@ Recommended: **B** — keeps stage pipeline visually linear, surfaces analytics 
 
 ### I9.6 — Unify Site Weld Progress filter pattern with I-screens
 
+**Status.** Implemented in I9c using option C.
+
 **Finding.** Every Track-I screen uses a lightweight chip + search pattern (`All / Status1 / Status2 / …`). `Site Weld Progress` uses a heavy `FieldFilterBar` sidebar with 9 fields (PDS Area, Subcontractor, Material, Service Class, Status multi-select, Erection Status multi-select, Area Zone, Date From, Date To). Visual + interaction inconsistency.
 
 **Required work.**
 
-- Decide intent: is Site Weld Progress an *advanced analytics* screen (sidebar OK) or a *standard pipeline* screen (chips required)?
+- Decide intent: is Site Weld Progress an _advanced analytics_ screen (sidebar OK) or a _standard pipeline_ screen (chips required)?
 - Option C: keep the FieldFilterBar but add a top chip row mirroring `Erection Status` multi-select as quick-pick chips, preserving the sidebar for full filter control. Best-of-both.
 - Option D: rip out the sidebar, replace with chips + a single search field, matching I-pattern. Risk: lose filter expressivity that downstream users rely on.
 
@@ -126,6 +142,8 @@ Recommended: **B** — keeps stage pipeline visually linear, surfaces analytics 
 ---
 
 ### I9.8 — Feed `flangeRollup.allVerified` into `isSpoolRFTEligible` (§12.8)
+
+**Status.** Implemented in I9b.
 
 **Finding.** I6 RFT eligibility today keys off Supported sign-off only. Per manual §12.8, RFT (Ready for Test) requires all field joints to be physically complete — including torque verification on every flange bolt. Today a spool can reach RFT with un-verified flange bolts.
 

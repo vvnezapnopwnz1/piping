@@ -130,12 +130,14 @@ export function isSpoolRFTEligible(
   erectedRecord?: ErectedRecord,
   weldedBoltedRecord?: WeldedBoltedRecord,
   supportedRecord?: SupportedRecord,
+  flangeRollup?: SpoolFlangeBoltRollup,
 ): boolean {
   return (
     toSiteRecord?.spoolNo === spoolNo &&
     erectedRecord?.spoolNo === spoolNo &&
     weldedBoltedRecord?.spoolNo === spoolNo &&
-    supportedRecord?.spoolNo === spoolNo
+    supportedRecord?.spoolNo === spoolNo &&
+    (!flangeRollup || flangeRollup.totalBolts === 0 || flangeRollup.allVerified)
   )
 }
 
@@ -358,7 +360,7 @@ export const WELDED_BOLTED_SEED: WeldedBoltedRecord[] = [
     confirmedBy: "QC-ENG-01",
     w24FormNo: "W24-2025-0149",
     weldedJointCount: 0,
-    boltedJointCount: 1,
+    boltedJointCount: 2,
     remark: "Flange bolt torqued and inspected per W-24.",
   },
   {
@@ -367,7 +369,7 @@ export const WELDED_BOLTED_SEED: WeldedBoltedRecord[] = [
     confirmedBy: "QC-ENG-02",
     w24FormNo: "W24-2025-0150",
     weldedJointCount: 1,
-    boltedJointCount: 0,
+    boltedJointCount: 1,
     remark: "Field butt weld completed per W-24.",
   },
   {
@@ -376,7 +378,7 @@ export const WELDED_BOLTED_SEED: WeldedBoltedRecord[] = [
     confirmedBy: "QC-ENG-03",
     w24FormNo: "W24-2025-0151",
     weldedJointCount: 0,
-    boltedJointCount: 1,
+    boltedJointCount: 2,
     remark: "Flange bolt torqued per W-24.",
   },
 ]
@@ -815,6 +817,62 @@ export const FLANGE_BOLT_SEED: FlangeBoltProgressRecord[] = [
     boltingMethod: "Hydraulic Wrench",
     assignedBy: "QC-ENG-01",
     assignedDate: "2025-05-17",
+    boltedDate: "2025-05-18",
+    jointer: "JTR-05",
+    tagNo: "TAG-FJ2007",
+    reportNo: "BR-19-2025-0207",
+    verifiedDate: "2025-05-18",
+    verifiedBy: "QC-ENG-02",
+    torqueTool: "TT-12",
+    remark: "Verified for Welded/Bolted sign-off gate.",
   },
-  // Awaiting Torque is implicit — no record needed for fj-2006 etc.
+  {
+    fieldJointId: "fj-2019",
+    spoolNo: "PL-CW200-005-A",
+    targetTorqueNm: 300,
+    boltingMethod: "Manual",
+    assignedBy: "QC-ENG-02",
+    assignedDate: "2025-05-17",
+    boltedDate: "2025-05-18",
+    jointer: "JTR-03",
+    tagNo: "TAG-FJ2019",
+    reportNo: "BR-19-2025-0219",
+    verifiedDate: "2025-05-18",
+    verifiedBy: "QC-ENG-01",
+    torqueTool: "TT-01",
+    remark: "Verified before W-24 welded/bolted confirmation.",
+  },
+  {
+    fieldJointId: "fj-2020",
+    spoolNo: "PL-FU300-007-A",
+    targetTorqueNm: 480,
+    boltingMethod: "Hydraulic Wrench",
+    assignedBy: "QC-ENG-03",
+    assignedDate: "2025-05-17",
+    boltedDate: "2025-05-18",
+    jointer: "JTR-06",
+    tagNo: "TAG-FJ2020",
+    reportNo: "BR-19-2025-0220",
+    verifiedDate: "2025-05-18",
+    verifiedBy: "QC-ENG-02",
+    torqueTool: "TT-09",
+    remark: "Verified before W-24 welded/bolted confirmation.",
+  },
+  {
+    fieldJointId: "fj-2021",
+    spoolNo: "PL-TK100-003-A",
+    targetTorqueNm: 540,
+    boltingMethod: "Hydraulic Wrench",
+    assignedBy: "QC-ENG-01",
+    assignedDate: "2025-05-08",
+    boltedDate: "2025-05-09",
+    jointer: "JTR-04",
+    tagNo: "TAG-FJ2021",
+    reportNo: "BR-19-2025-0221",
+    verifiedDate: "2025-05-09",
+    verifiedBy: "QC-ENG-03",
+    torqueTool: "TT-04",
+    remark: "Verified before RFT eligibility.",
+  },
+  // Awaiting Torque is implicit — no record needed for unseeded flange-bolt joints.
 ]

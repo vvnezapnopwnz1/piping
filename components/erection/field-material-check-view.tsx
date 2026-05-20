@@ -13,11 +13,17 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { FieldMaterialCheckDetailPanel } from "./field-material-check-detail-panel";
 
-type MCStatus = "All" | "Awaiting MC" | "Ready to Sign" | "Cleared";
+type MCStatus =
+  | "All"
+  | "Awaiting MC"
+  | "Non-conformance"
+  | "Ready to Sign"
+  | "Cleared";
 
 const MC_STATUSES: MCStatus[] = [
   "All",
   "Awaiting MC",
+  "Non-conformance",
   "Ready to Sign",
   "Cleared",
 ];
@@ -74,8 +80,8 @@ function deriveSpoolMCStatus(
   row: Pick<MCRow, "allCleared" | "hasRecords" | "pendingJoints" | "ncJoints">,
 ): Exclude<MCStatus, "All"> {
   if (row.allCleared) return "Cleared";
+  if (row.ncJoints > 0) return "Non-conformance";
   if (!row.hasRecords || row.pendingJoints > 0) return "Awaiting MC";
-  // Has records, not all cleared, no pending → ready to sign (all pieces are Cleared or NC)
   return "Ready to Sign";
 }
 
@@ -91,9 +97,12 @@ export function FieldMaterialCheckView() {
   const urlSpool = searchParams.get("spool");
   const activeStatus: MCStatus =
     urlStatus === "Awaiting MC" ||
+    urlStatus === "NC" ||
     urlStatus === "Ready to Sign" ||
     urlStatus === "Cleared"
-      ? urlStatus
+      ? urlStatus === "NC"
+        ? "Non-conformance"
+        : urlStatus
       : "All";
 
   const toSiteMap = useMemo(
@@ -187,6 +196,7 @@ export function FieldMaterialCheckView() {
     const counts: Record<MCStatus, number> = {
       All: 0,
       "Awaiting MC": 0,
+      "Non-conformance": 0,
       "Ready to Sign": 0,
       Cleared: 0,
     };
@@ -241,6 +251,8 @@ export function FieldMaterialCheckView() {
     const params = new URLSearchParams(searchParams.toString());
     if (status === "All") {
       params.delete("status");
+    } else if (status === "Non-conformance") {
+      params.set("status", "NC");
     } else {
       params.set("status", status);
     }
@@ -275,11 +287,13 @@ export function FieldMaterialCheckView() {
   const emptyText =
     activeStatus === "Awaiting MC"
       ? "No spools awaiting field material check."
-      : activeStatus === "Ready to Sign"
-        ? "No spools ready to sign off."
-        : activeStatus === "Cleared"
-          ? "No spools with cleared material check."
-          : "No spools available for material check.";
+      : activeStatus === "Non-conformance"
+        ? "No spools with open non-conformances."
+        : activeStatus === "Ready to Sign"
+          ? "No spools ready to sign off."
+          : activeStatus === "Cleared"
+            ? "No spools with cleared material check."
+            : "No spools available for material check.";
 
   return (
     <div className="flex h-[calc(100vh-8rem)] min-h-[720px] flex-col gap-4 overflow-hidden">
@@ -367,9 +381,11 @@ export function FieldMaterialCheckView() {
                             "inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium",
                             row.status === "Cleared"
                               ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                              : row.status === "Ready to Sign"
-                                ? "border-cyan-200 bg-cyan-50 text-cyan-700"
-                                : "border-amber-200 bg-amber-50 text-amber-700",
+                              : row.status === "Non-conformance"
+                                ? "border-red-200 bg-red-50 text-red-700"
+                                : row.status === "Ready to Sign"
+                                  ? "border-cyan-200 bg-cyan-50 text-cyan-700"
+                                  : "border-amber-200 bg-amber-50 text-amber-700",
                           )}
                         >
                           {row.clearedJoints}/{row.totalJoints} joints

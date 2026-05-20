@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { FilterBar } from "@/components/filter-sidebar";
 import { WeldDetailPanel } from "@/components/weld-detail-panel";
 import { WeldTable } from "@/components/weld-table";
-import { X } from "lucide-react";
+import { Factory, X } from "lucide-react";
 import { type WeldJoint } from "@/lib/weld-data";
 import { useWeldsStore } from "@/store";
 
@@ -77,6 +77,14 @@ function WeldProgressInner() {
   };
 
   const filteredJoints = welds.filter((joint) => {
+    // G6: shop-only invariant — exclude field joints by naming convention.
+    // useWeldsStore currently only seeds shop joints, but this guard is
+    // defensive and will also work once a formal `source` discriminator
+    // is added in G7.
+    if (joint.jointNo.startsWith("FJ-")) {
+      return false;
+    }
+
     if (spoolFilter && joint.spoolNo !== spoolFilter) {
       return false;
     }
@@ -138,8 +146,12 @@ function WeldProgressInner() {
 
       <div className="grid flex-1 min-h-0 overflow-hidden gap-1 grid-cols-[minmax(0,1fr)_360px]">
         <main className="flex min-w-0 overflow-hidden flex-col">
-          {spoolFilter && (
-            <div className="px-4 py-2 shrink-0">
+          <div className="px-4 py-2 shrink-0 flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-sm border border-emerald-200">
+              <Factory className="h-3.5 w-3.5" />
+              Shop joints only
+            </span>
+            {spoolFilter && (
               <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-50 text-sky-800 text-sm border border-sky-200">
                 Spool: {spoolFilter}
                 <button
@@ -150,8 +162,8 @@ function WeldProgressInner() {
                   <X className="h-3.5 w-3.5" />
                 </button>
               </span>
-            </div>
-          )}
+            )}
+          </div>
           <WeldTable
             data={filteredJoints}
             onSelectJoint={setSelectedJoint}

@@ -78,6 +78,7 @@ export function useSpoolRFTWatcher() {
   const wbRecords = useWeldedBoltedStore((s) => s.records)
   const supportedRecords = useSupportsStore((s) => s.records)
   const rftRecords = useRFTStore((s) => s.records)
+  const flangeRecords = useFlangeBoltProgressStore((s) => s.records)
   const recordRFT = useRFTStore((s) => s.recordRFT)
   const pushNotification = useNotificationsStore((s) => s.pushNotification)
   const recordSpoolRFT = useTestpackStore((s) => s.recordSpoolRFT)
@@ -103,8 +104,9 @@ export function useSpoolRFTWatcher() {
       const er = erectedMap.get(spoolNo)
       const wb = wbMap.get(spoolNo)
       const sup = supportedMap.get(spoolNo)
+      const flangeRollup = computeSpoolFlangeBoltRollup(spoolNo, FIELD_WELD_DATA, flangeRecords)
 
-      if (!isSpoolRFTEligible(spoolNo, ts, er, wb, sup)) continue
+      if (!isSpoolRFTEligible(spoolNo, ts, er, wb, sup, flangeRollup)) continue
 
       const today = new Date().toISOString().split("T")[0]
       recordRFT({
@@ -131,7 +133,7 @@ export function useSpoolRFTWatcher() {
 
       recordSpoolRFT(spoolNo)
     }
-  }, [toSiteRecords, erectedRecords, wbRecords, supportedRecords, rftRecords, recordRFT, pushNotification, recordSpoolRFT])
+  }, [toSiteRecords, erectedRecords, wbRecords, supportedRecords, rftRecords, flangeRecords, recordRFT, pushNotification, recordSpoolRFT])
 }
 
 export function useSpoolErectionStageCounts(): Record<SpoolErectionStage, number> {

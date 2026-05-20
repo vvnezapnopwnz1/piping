@@ -6,6 +6,8 @@ import { FieldFilterBar } from "@/components/erection/field-filter-sidebar";
 import { FieldWeldDetailPanel } from "@/components/erection/field-weld-detail-panel";
 import { FieldWeldTable } from "@/components/erection/field-weld-table";
 import { useErectionStore } from "@/store";
+import { cn } from "@/lib/utils";
+import { ERECTION_STATUS_OPTIONS } from "@/lib/erection-weld-data";
 
 interface FilterState {
   pdsArea: string;
@@ -53,6 +55,15 @@ export default function ErectionWeldProgressPage() {
 
   const handleApplyFilters = () => {
     setAppliedFilters({ ...filters });
+  };
+
+  const setErectionQuickFilter = (status: string | null) => {
+    const next = {
+      ...filters,
+      erectionStatuses: status ? [status] : [],
+    };
+    setFilters(next);
+    setAppliedFilters(next);
   };
 
   const filteredJoints = fieldWelds.filter((joint) => {
@@ -114,6 +125,40 @@ export default function ErectionWeldProgressPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] min-h-[720px] gap-1 overflow-hidden max-w-full">
+      <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="mr-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Erection quick status
+          </span>
+          <button
+            onClick={() => setErectionQuickFilter(null)}
+            className={cn(
+              "inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+              appliedFilters.erectionStatuses.length === 0
+                ? "border-sky-600 bg-sky-600 text-white"
+                : "border-slate-200 bg-white text-slate-600 hover:border-slate-300",
+            )}
+          >
+            All
+          </button>
+          {ERECTION_STATUS_OPTIONS.map((status) => (
+            <button
+              key={status}
+              onClick={() => setErectionQuickFilter(status)}
+              className={cn(
+                "inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                appliedFilters.erectionStatuses.length === 1 &&
+                  appliedFilters.erectionStatuses[0] === status
+                  ? "border-sky-600 bg-sky-600 text-white"
+                  : "border-slate-200 bg-white text-slate-600 hover:border-slate-300",
+              )}
+            >
+              {status}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <FieldFilterBar
         filters={filters}
         onFilterChange={setFilters}
