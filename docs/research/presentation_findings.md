@@ -1,14 +1,14 @@
 # Easy Piping Presentations — Research Findings Log
 
 > Durable record of domain insights extracted from the 10 Easy Piping
-> presentations in the user's Google Drive (folder "Piping"). Designed to
+> presentations in the user’s Google Drive (folder “Piping”). Designed to
 > survive across chat sessions — if continued in a new chat,
 > `project_knowledge_search` should surface this file.
->
+> 
 > **Drop into `docs/research/presentation_findings.md` of the PipeQC repo
 > after each session that appends new findings.**
 
----
+-----
 
 ## Purpose
 
@@ -18,43 +18,43 @@ TechnipFMC sales/training presentations frequently contain:
 - **Operational context** absent from the manual (who imports what when,
   who runs SOW, role hierarchies in deployment).
 - **Architectural diagrams** (data flows, PDA architecture, Marian
-  integration shape) the manual doesn't visualize.
+  integration shape) the manual doesn’t visualize.
 - **Real project benchmarks** (PMP project statistics) usable for TAM and
   scale claims.
 - **Customer-facing language** for the pitch deck.
 
 This file captures findings the manual alone does not give us.
 
----
+-----
 
 ## Methodology
 
 - Read presentations **sequentially** (1 → 10) — do not skip. Each
-  presentation builds on the previous (the user's directive 2026-05-20).
+  presentation builds on the previous (the user’s directive 2026-05-20).
 - For each: three buckets — cross-cutting findings, module-specific
   findings, gaps in PipeQC.
 - Append to this file after every read. **Do not overwrite.**
 
----
+-----
 
 ## Source files
 
 Google Drive folder ID: `1Ml-7gCf-mJ5YQ92hOr7I1lPw80_QzAH2`
 
-| # | File | Status |
-|---|---|---|
-| 1 | `1.PSMS overview_1511017.pptx` | ✅ Read 2026-05-20 |
-| 2 | `2.EasyPiping Administration_1511017.pptx` | ✅ Read 2026-05-20 |
-| 3 | `3.EasyPiping Preparation_1511017.pptx` | ✅ Read 2026-05-20 |
-| 4 | `4.EasyPiping Fabrication _10032021.pptx` | ⏳ Pending |
-| 5 | `5.EasyPiping Spool tracking_10032021.pptx` | ⏳ Pending |
-| 6 | `6.EasyPiping Erection_10032021.pptx` | ⏳ Pending |
-| 7 | `7.Easy Piping Test Pack_10032021.pptx` | ⏳ Pending |
-| 8 | `8.PSMS_SpoolingDB_10032021.pptx` | ⏳ Pending |
-| 9 | `9.EasyPiping Assembly_09022020.pptx` | ⏳ Pending |
-| 10 | `10.EasyPiping Painting_10032021 (1).pptx` | ⏳ Pending |
+|# |File                                       |Status           |
+|--|-------------------------------------------|-----------------|
+|1 |`1.PSMS overview_1511017.pptx`             |✅ Read 2026-05-20|
+|2 |`2.EasyPiping Administration_1511017.pptx` |✅ Read 2026-05-20|
+|3 |`3.EasyPiping Preparation_1511017.pptx`    |✅ Read 2026-05-20|
+|4 |`4.EasyPiping Fabrication _10032021.pptx`  |✅ Read 2026-05-20|
+|5 |`5.EasyPiping Spool tracking_10032021.pptx`|⏳ Pending        |
+|6 |`6.EasyPiping Erection_10032021.pptx`      |⏳ Pending        |
+|7 |`7.Easy Piping Test Pack_10032021.pptx`    |⏳ Pending        |
+|8 |`8.PSMS_SpoolingDB_10032021.pptx`          |⏳ Pending        |
+|9 |`9.EasyPiping Assembly_09022020.pptx`      |⏳ Pending        |
+|10|`10.EasyPiping Painting_10032021 (1).pptx` |⏳ Pending        |
 
----
+-----
 
 ## Cross-cutting findings (apply across multiple modules)
 
@@ -64,8 +64,8 @@ Google Drive folder ID: `1Ml-7gCf-mJ5YQ92hOr7I1lPw80_QzAH2`
   sold or maintained.
 - **No direct competitor** to PipeQC currently exists.
 - Treat Easy Piping as **domain reference**, not competitive threat.
-- "Why now" slide framing: incumbent didn't finish (multiple "modules
-  under development") and then left the market entirely.
+- “Why now” slide framing: incumbent didn’t finish (multiple “modules
+  under development”) and then left the market entirely.
 
 ### CC-2. System architecture context
 
@@ -85,19 +85,19 @@ Data pipeline (#1):
 
 From #2 Administration:
 
-| Tier | Role | Scope | PipeQC current |
-|---|---|---|---|
-| Admin | System Admin | Cross-project + system referential | ✅ `system_admin` (merged) |
-| Admin | Project Admin | One project, no system ref | ⚠️ merged into `system_admin` |
-| Admin | Site Admin | Parallel to Project Admin | ⚠️ merged into `system_admin` |
-| Editor | Project Editor | Production data, no admin | Split into functional sub-roles |
-| Editor (functional) | QC Engineer | Welds, NDE, QC sign-off | ✅ `qc_engineer` |
-| Editor (functional) | NDE Inspector | Batches, results | ✅ `nde_inspector` |
-| Editor (functional) | Project Manager | Reports, dashboards | ✅ `project_manager` |
-| Editor (functional) | Spooling Team | Spooling, revisions | ✅ `spooling_team` |
-| Editor (functional) | PDA User | Mobile barcode/checklists | ❌ not implemented |
-| Restricted | Subcontractor | PDS area locked | ✅ `subcontractor` (no scope lock) |
-| Restricted | Project Reader | Read-only | ❌ not implemented |
+|Tier               |Role           |Scope                             |PipeQC current                   |
+|-------------------|---------------|----------------------------------|---------------------------------|
+|Admin              |System Admin   |Cross-project + system referential|✅ `system_admin` (merged)        |
+|Admin              |Project Admin  |One project, no system ref        |⚠️ merged into `system_admin`     |
+|Admin              |Site Admin     |Parallel to Project Admin         |⚠️ merged into `system_admin`     |
+|Editor             |Project Editor |Production data, no admin         |Split into functional sub-roles  |
+|Editor (functional)|QC Engineer    |Welds, NDE, QC sign-off           |✅ `qc_engineer`                  |
+|Editor (functional)|NDE Inspector  |Batches, results                  |✅ `nde_inspector`                |
+|Editor (functional)|Project Manager|Reports, dashboards               |✅ `project_manager`              |
+|Editor (functional)|Spooling Team  |Spooling, revisions               |✅ `spooling_team`                |
+|Editor (functional)|PDA User       |Mobile barcode/checklists         |❌ not implemented                |
+|Restricted         |Subcontractor  |PDS area locked                   |✅ `subcontractor` (no scope lock)|
+|Restricted         |Project Reader |Read-only                         |❌ not implemented                |
 
 **8 effective roles** for PipeQC role × function matrix.
 
@@ -105,8 +105,8 @@ From #2 Administration:
 
 **Critical multi-tenant pattern not yet in PipeQC.**
 
-From #2: "Subcontractor dropdown lists in all screens to be disabled and
-set the selected value as logged-in subcontractor."
+From #2: “Subcontractor dropdown lists in all screens to be disabled and
+set the selected value as logged-in subcontractor.”
 
 Implementation requirement:
 
@@ -138,27 +138,27 @@ Dependencies discovered so far:
 
 **PMP project** (real Technip EPC project):
 
-| Metric | Total | Largest unit |
-|---|---|---|
-| Spooled ISOs issued | 5,003 | 2,447 |
-| Spools | 23,168 | 12,105 |
-| Shop Dia Inch | 325,970 | 158,599 |
-| Assembly Dia Inch | 59,382 | 29,614 |
-| Field Dia Inch | 30,599 | 11,886 |
-| Total Dia Inch | 415,951 | 200,099 |
-| Prefab % of DI | 78% | 79% |
+|Metric             |Total  |Largest unit|
+|-------------------|-------|------------|
+|Spooled ISOs issued|5,003  |2,447       |
+|Spools             |23,168 |12,105      |
+|Shop Dia Inch      |325,970|158,599     |
+|Assembly Dia Inch  |59,382 |29,614      |
+|Field Dia Inch     |30,599 |11,886      |
+|Total Dia Inch     |415,951|200,099     |
+|Prefab % of DI     |78%    |79%         |
 
 Use for pitch slide on **scale** / **TAM bottom-up** / **cost of the
 problem**.
 
-### CC-7. "Production" module — never finished by Easy Piping
+### CC-7. “Production” module — never finished by Easy Piping
 
-From #1 (multiple slides mark as "under development"):
+From #1 (multiple slides mark as “under development”):
 
 Production module was supposed to:
 
 - System set up with erection sequence at spool level
-- Calculate equivalent working quantities for "fair" dispatch
+- Calculate equivalent working quantities for “fair” dispatch
 - Display remaining qualified workfront
 - Display current available qualified workfront
 - Issue weekly production schedule per activity
@@ -170,37 +170,90 @@ angle for PipeQC if we choose to scope it later.
 
 Canonical role × work area split from Easy Piping deployment:
 
-| Activity | Owner |
-|---|---|
-| Project setup (Piping class, NDE matrix, weld type, rework, thickness) | Spooling Team (TP) |
-| Define WPS, welder qualifications | Subcontractor |
-| Import spool data from SpoolGen | Spooling Team (TP) |
-| Import material/paint from SPMAT | TP |
-| ISO modifications (HO rev) | Spooling Team |
-| ISO modifications (Site rev) | TP + Subcontractor |
-| Daily reports (welding, painting, spools, NDE) | Subcontractor |
-| Report analysis | TP + Subcontractor |
-| Weekly spool selection | TP |
-| Daily manhours + progress | Subcontractor |
-| Productivity calc | TP + Subcontractor |
-| NDE weld selection per system suggestions | Subcontractor |
-| Progressive sampling / penalty shoot | Subcontractor |
-| Examination program | Subcontractor |
-| Material traceability records | Subcontractor |
-| QC forms, weld history register | Subcontractor |
-| Welder statistics | TP + Subcontractor |
-| Backlog tracking | TP + Subcontractor |
-| Surveillance via PDA | TP |
-| Statistics analysis (surveillance) | TP |
-| Area Mapping (Spool Tracking) | Subcontractor |
-| System setup (Spool Tracking) | TP |
-| Barcode + scanning | Subcontractor |
-| Movement analysis | TP + Subcontractor |
+|Activity                                                              |Owner             |
+|----------------------------------------------------------------------|------------------|
+|Project setup (Piping class, NDE matrix, weld type, rework, thickness)|Spooling Team (TP)|
+|Define WPS, welder qualifications                                     |Subcontractor     |
+|Import spool data from SpoolGen                                       |Spooling Team (TP)|
+|Import material/paint from SPMAT                                      |TP                |
+|ISO modifications (HO rev)                                            |Spooling Team     |
+|ISO modifications (Site rev)                                          |TP + Subcontractor|
+|Daily reports (welding, painting, spools, NDE)                        |Subcontractor     |
+|Report analysis                                                       |TP + Subcontractor|
+|Weekly spool selection                                                |TP                |
+|Daily manhours + progress                                             |Subcontractor     |
+|Productivity calc                                                     |TP + Subcontractor|
+|NDE weld selection per system suggestions                             |Subcontractor     |
+|Progressive sampling / penalty shoot                                  |Subcontractor     |
+|Examination program                                                   |Subcontractor     |
+|Material traceability records                                         |Subcontractor     |
+|QC forms, weld history register                                       |Subcontractor     |
+|Welder statistics                                                     |TP + Subcontractor|
+|Backlog tracking                                                      |TP + Subcontractor|
+|Surveillance via PDA                                                  |TP                |
+|Statistics analysis (surveillance)                                    |TP                |
+|Area Mapping (Spool Tracking)                                         |Subcontractor     |
+|System setup (Spool Tracking)                                         |TP                |
+|Barcode + scanning                                                    |Subcontractor     |
+|Movement analysis                                                     |TP + Subcontractor|
 
 **Use for role × function matrix when we build it (after all 10
 presentations are read).**
 
----
+### CC-9. Preparation/Progress sub-module split (universal pattern)
+
+From #4: every fabrication activity in Easy Piping is divided into two
+sub-modules:
+
+|Sub-module     |Purpose                                             |
+|---------------|----------------------------------------------------|
+|**Preparation**|Workload dispatch — prepare the activity            |
+|**Progress**   |Data entry — record progress of the activity        |
+
+Applies to: Spool fabrication, Welding, NDE, Painting (also Assembly
+and Erection activities).
+
+**Status in Easy Piping itself:** only **NDE-Preparation** is fully
+implemented. Welding, Spool fab, Painting — Preparation tabs exist
+structurally but functionality not delivered. This is a “module under
+development” situation acknowledged by TechnipFMC.
+
+**PipeQC implication:**
+
+- This is the right IA pattern to adopt for activity pages. Spool
+  fabrication / Welding / NDE / Painting each should have two tabs:
+  *Preparation* and *Progress*.
+- For Preparation tabs where Easy Piping never finished (Welding,
+  Painting Spool fab) — we have a **clean greenfield** to design
+  workload dispatch UX. Possible differentiator.
+- NDE-Preparation in Easy Piping is the most fleshed-out preparation
+  experience. Use it as the reference for our NDE batch flow.
+
+### CC-10. Customizable workflow steps per project
+
+From #4 spool fabrication: **status steps are customizable during
+project set up**. Example given in the manual:
+
+- Start fabrication → MIR issued → Material check → Fabricated → QC
+  release
+
+But the comment is explicit: *“Definition of each steps to agreed
+before project start.”*
+
+**PipeQC current:** statuses are hardcoded enums in
+`lib/seed-data.ts`.
+
+**PipeQC implication:**
+
+- For demo, we can leave hardcoded steps. But for real-product
+  positioning: status definitions should live in project referential
+  (admin-editable per project).
+- Add to roadmap section of pitch deck: “configurable workflow
+  templates per project type (LNG/refinery/petchem).”
+- Possible track: **B4 — Workflow step definition** (project-level
+  referential for spool fab / welding / NDE step transitions).
+
+-----
 
 ## #1 PSMS overview — module-specific findings
 
@@ -209,33 +262,33 @@ presentations are read).**
 **Main modules** (site-activity-based):
 
 1. **Preparation**
-   - Spooling
-   - Material
-   - Test pack builder
-2. **Fabrication**
-   - Spool fabrication
-   - Welding
-   - NDE
-   - Painting
-3. **Assembly** (for modular projects — new module post-2020)
-   - Spool Erection
-   - Welding
-   - NDE
-   - Flange management
-   - Painting Progress
-   - Assembly Dashboard
-4. **Erection**
-   - Spool erection
-   - Welding
-   - NDE
-   - Flange management
-   - Erection Dashboard
-5. **Pressure test**
-   - Line check
-   - Item clearance
-   - Blinding
-   - Reinstatement
-   - Test Pack Explorer
+- Spooling
+- Material
+- Test pack builder
+1. **Fabrication**
+- Spool fabrication
+- Welding
+- NDE
+- Painting
+1. **Assembly** (for modular projects — new module post-2020)
+- Spool Erection
+- Welding
+- NDE
+- Flange management
+- Painting Progress
+- Assembly Dashboard
+1. **Erection**
+- Spool erection
+- Welding
+- NDE
+- Flange management
+- Erection Dashboard
+1. **Pressure test**
+- Line check
+- Item clearance
+- Blinding
+- Reinstatement
+- Test Pack Explorer
 
 **Transversal modules:**
 
@@ -245,27 +298,27 @@ presentations are read).**
 - Revision control (under development)
 - Admin
 
-Use for "module coverage" slide with ✅/⚠️/❌ vs PipeQC.
+Use for “module coverage” slide with ✅/⚠️/❌ vs PipeQC.
 
 ### Welding & NDE management features (full list from #1)
 
 15 functions explicitly named:
 
 1. Daily Progress Reporting
-2. Welder statistics and Performance Analysis
-3. Validation of welder's qualification with selected WPS per joint
-4. Multiple welders for single joint
-5. Selection of weld to be examined (progressive sampling)
-6. Repair joint management
-7. Penalty shoot management
-8. RT film quantity estimations
-9. Work order for NDE and PWHT activities
-10. Repair Percentage and types of defects Monitoring
-11. NDT Progress and Backlogs
-12. PWHT Progress and backlogs
-13. Material traceability records (Heat number tracking)
-14. Spool Final QC Clearance tracking
-15. Balance work and bottleneck identification
+1. Welder statistics and Performance Analysis
+1. Validation of welder’s qualification with selected WPS per joint
+1. Multiple welders for single joint
+1. Selection of weld to be examined (progressive sampling)
+1. Repair joint management
+1. Penalty shoot management
+1. RT film quantity estimations
+1. Work order for NDE and PWHT activities
+1. Repair Percentage and types of defects Monitoring
+1. NDT Progress and Backlogs
+1. PWHT Progress and backlogs
+1. Material traceability records (Heat number tracking)
+1. Spool Final QC Clearance tracking
+1. Balance work and bottleneck identification
 
 PipeQC coverage estimate: ~10/15 partial. Missing or stub:
 
@@ -290,35 +343,35 @@ Mobile-web could be a later differentiation.
 
 For pitch slides 1–3:
 
-- *"A tool to manage the entire life cycle of piping construction
+- *“A tool to manage the entire life cycle of piping construction
   activities, by monitoring and controlling step by step, each and every
-  fabrication and QC activity in sequence."*
-- *"Improve the overall piping performance. Technip and Subcontractor(s)
-  to work in close collaboration."*
-- *"Construction surveillance: do what we can / do what we should do."*
-- *"Auditable readiness."*
-- *"Manhours and progress."*
+  fabrication and QC activity in sequence.”*
+- *“Improve the overall piping performance. Technip and Subcontractor(s)
+  to work in close collaboration.”*
+- *“Construction surveillance: do what we can / do what we should do.”*
+- *“Auditable readiness.”*
+- *“Manhours and progress.”*
 
----
+-----
 
 ## #2 Administration — module-specific findings
 
 ### Admin module = 5 sub-sections
 
 1. **Project definition** — create project, project list (system admin only)
-2. **System referential** — cross-project parameters (system admin only)
-3. **Project referential** — 26 items, project admin
-4. **Define access rights** — user roles per project (system admin)
-5. **Import settings** — Excel templates per referential (project admin)
+1. **System referential** — cross-project parameters (system admin only)
+1. **Project referential** — 26 items, project admin
+1. **Define access rights** — user roles per project (system admin)
+1. **Import settings** — Excel templates per referential (project admin)
 
 ### System referential (4 items, system admin only)
 
-| § | Item | Notes |
-|---|---|---|
-| 2.1 | Material type | Add/edit/delete |
-| 2.2 | Film quantity per diameter | Read-only matrix, by pipe size × thickness |
-| 2.3 | UT calculation coefficients | Coef diam by diameter, Coef rating by flange rating |
-| 2.4 | Torquing method | Used by Flange management |
+|§  |Item                       |Notes                                              |
+|---|---------------------------|---------------------------------------------------|
+|2.1|Material type              |Add/edit/delete                                    |
+|2.2|Film quantity per diameter |Read-only matrix, by pipe size × thickness         |
+|2.3|UT calculation coefficients|Coef diam by diameter, Coef rating by flange rating|
+|2.4|Torquing method            |Used by Flange management                          |
 
 PipeQC status: **0/4 — none of these are surfaced.**
 
@@ -326,41 +379,41 @@ PipeQC status: **0/4 — none of these are surfaced.**
 
 Full list with PipeQC coverage status:
 
-| § | Item | PipeQC |
-|---|---|---|
-| 3.1 | Subcontractor List | ✅ B1 |
-| 3.2 | Progress Weight Factor | ❌ |
-| 3.3 | Area Classification | ❌ |
-| 3.4 | PDS Area / Subcontractor | ❌ |
-| 3.5 | WPS List | ✅ B2 (read-only) |
-| 3.6 | Welder Qualification | ✅ B1 (read-only) |
-| 3.7 | Service Class / Material Type | ❌ |
-| 3.8 | Weld Type List | ❌ |
-| 3.9 | NDE Matrix | ✅ B2 (read-only) |
-| 3.10 | Rework Code | ✅ B2 |
-| 3.11 | Thickness | ❌ |
-| 3.12 | Project Piping Material List | ❌ (seed only) |
-| 3.13 | Joint Category Definition | ✅ B2 (read-only) |
-| 3.14 | Unit of time reference | ❌ |
-| 3.15 | Jointer List | ✅ B1 |
-| 3.16 | Blinding Team | ✅ B1 |
-| 3.17 | Finishing Team | ✅ B1 |
-| 3.18 | Reinstatement Team | ✅ B1 |
-| 3.19 | System | ❌ (B3 candidate) |
-| 3.20 | Sub System | ❌ (B3 candidate) |
-| 3.21 | Line Checker Team | ✅ B1 |
-| 3.22 | Location Category | ❌ |
-| 3.23 | Location | ❌ |
-| 3.24 | Devices (mobile) | ❌ |
-| 3.25 | PDA Users | ❌ |
-| 3.26 | Unit Classification | ❌ |
-| — | Pressure unit | ❌ |
-| — | Line service | ❌ |
-| — | RAL Code | ❌ |
-| — | Paint Code Matrix | ❌ |
-| — | Spooling Material Type | ❌ |
-| — | Spooling Piping Class Material | ❌ |
-| — | Spooling Check List | ❌ |
+|§   |Item                          |PipeQC          |
+|----|------------------------------|----------------|
+|3.1 |Subcontractor List            |✅ B1            |
+|3.2 |Progress Weight Factor        |❌               |
+|3.3 |Area Classification           |❌               |
+|3.4 |PDS Area / Subcontractor      |❌               |
+|3.5 |WPS List                      |✅ B2 (read-only)|
+|3.6 |Welder Qualification          |✅ B1 (read-only)|
+|3.7 |Service Class / Material Type |❌               |
+|3.8 |Weld Type List                |❌               |
+|3.9 |NDE Matrix                    |✅ B2 (read-only)|
+|3.10|Rework Code                   |✅ B2            |
+|3.11|Thickness                     |❌               |
+|3.12|Project Piping Material List  |❌ (seed only)   |
+|3.13|Joint Category Definition     |✅ B2 (read-only)|
+|3.14|Unit of time reference        |❌               |
+|3.15|Jointer List                  |✅ B1            |
+|3.16|Blinding Team                 |✅ B1            |
+|3.17|Finishing Team                |✅ B1            |
+|3.18|Reinstatement Team            |✅ B1            |
+|3.19|System                        |❌ (B3 candidate)|
+|3.20|Sub System                    |❌ (B3 candidate)|
+|3.21|Line Checker Team             |✅ B1            |
+|3.22|Location Category             |❌               |
+|3.23|Location                      |❌               |
+|3.24|Devices (mobile)              |❌               |
+|3.25|PDA Users                     |❌               |
+|3.26|Unit Classification           |❌               |
+|—   |Pressure unit                 |❌               |
+|—   |Line service                  |❌               |
+|—   |RAL Code                      |❌               |
+|—   |Paint Code Matrix             |❌               |
+|—   |Spooling Material Type        |❌               |
+|—   |Spooling Piping Class Material|❌               |
+|—   |Spooling Check List           |❌               |
 
 PipeQC coverage: **~10/30 = 33%.**
 
@@ -381,13 +434,13 @@ this tri-state field. Stub today shows Y/N only.
 ### Import settings (6 Excel templates)
 
 1. Weld thickness/Flange
-2. NDE Matrix
-3. Project Piping Material List
-4. Spooling Images (zip, ≤4 MB)
-5. Spooling Material Type
-6. Spooling Class Material
+1. NDE Matrix
+1. Project Piping Material List
+1. Spooling Images (zip, ≤4 MB)
+1. Spooling Material Type
+1. Spooling Class Material
 
-None implemented in PipeQC. Could be a "data ingestion" slide for the
+None implemented in PipeQC. Could be a “data ingestion” slide for the
 pitch (paired with screenshots of Excel templates).
 
 ### Paint code matrix (in project referential)
@@ -400,31 +453,31 @@ pitch (paired with screenshots of Excel templates).
 Implication for G4 paint flow: PAINT_SYSTEMS enum should ideally become
 a referential. RAL Code is a missing concept entirely.
 
----
+-----
 
 ## #3 Preparation — module-specific findings
 
 ### Preparation module = 4 sub-sections
 
 1. Spooling (file imports)
-2. Material (Marian file imports)
-3. Browse (data exploration + revision management)
-4. Test pack builder
+1. Material (Marian file imports)
+1. Browse (data exploration + revision management)
+1. Test pack builder
 
 ### Spooling — 4 file imports from SpoolGen
 
 When SpoolGen export is not auto-pulled, manual upload via 4 tabs:
 
-| File | Content |
-|---|---|
-| `weld.txt` | Spooling file — ISO/spool/weld structure |
-| `trace.txt` | Ident code file — material traceability |
-| `bolt.txt` | Bolting file — flange joints |
-| `supp.txt` | Support file — pipe supports |
+|File       |Content                                 |
+|-----------|----------------------------------------|
+|`weld.txt` |Spooling file — ISO/spool/weld structure|
+|`trace.txt`|Ident code file — material traceability |
+|`bolt.txt` |Bolting file — flange joints            |
+|`supp.txt` |Support file — pipe supports            |
 
 **PipeQC gap:** spooling shell has import/validation for one file
-concept. Need 4 separate import tabs OR clear "this matches your
-SpoolGen output" framing.
+concept. Need 4 separate import tabs OR clear “this matches your
+SpoolGen output” framing.
 
 Track D candidate enhancement: surface 4 tabs even if the parsers are
 mocked.
@@ -441,29 +494,29 @@ Completion Date
 
 Example rows (#3):
 
-| Field | ISO-level | Spool-level |
-|---|---|---|
-| Iso No | `2P9-28-HCX-1000-01` | `S2P9-28-HCX-1000-01` |
-| Spool No | `03` | `SP01..SP05` |
-| Issue Status | `INCOMPLETE` | `03` |
-| Weight (kg) | empty | `2342.99`, `4155.91`, ... |
-| Completion Status | empty | `TO COMPLETE` |
+|Field            |ISO-level           |Spool-level            |
+|-----------------|--------------------|-----------------------|
+|Iso No           |`2P9-28-HCX-1000-01`|`S2P9-28-HCX-1000-01`  |
+|Spool No         |`03`                |`SP01..SP05`           |
+|Issue Status     |`INCOMPLETE`        |`03`                   |
+|Weight (kg)      |empty               |`2342.99`, `4155.91`, …|
+|Completion Status|empty               |`TO COMPLETE`          |
 
 **Data hierarchy confirmed:** ISO has N spools; weight + completion live
 at spool level; ISO carries top-level metadata only.
 
 **PipeQC implication:** material data is **upstream**. We seed manually
 today; in real product would integrate Marian via CSV. Useful for
-"integrations" pitch slide.
+“integrations” pitch slide.
 
 ### Browse — explore + revision management
 
 Two parallel browse trees:
 
-| Tree | Levels |
-|---|---|
-| ISO/Spool/Weld | Latest data + History data |
-| Flange joint | Single browse |
+|Tree          |Levels                    |
+|--------------|--------------------------|
+|ISO/Spool/Weld|Latest data + History data|
+|Flange joint  |Single browse             |
 
 Manual revision management (separate flows):
 
@@ -488,41 +541,382 @@ Functions:
 
 PipeQC gap: not built. Track H is the named candidate.
 
----
+-----
+
+## #4 Fabrication — module-specific findings
+
+### Fabrication module = 4 sub-sections × 2 sub-modules
+
+|Activity         |Preparation       |Progress|
+|-----------------|------------------|--------|
+|Spool fabrication|empty (not built) |✅      |
+|Welding          |empty (not built) |✅      |
+|NDE              |✅ (full)          |✅      |
+|Painting         |empty (not built) |✅      |
+
+Only NDE has a complete Preparation experience in Easy Piping. The
+others are structural stubs.
+
+### Fabrication progresses at two levels
+
+|Level             |Statuses (customizable)                                                              |
+|------------------|-------------------------------------------------------------------------------------|
+|**Spool level**   |Start fabrication → MIR issued → Material checked → Fabricated → Fab QC released → Send to Site → Painting|
+|**Joint level**   |Cutting → Beveling → Fit-up → Preheat → Welding → NDE → QC                           |
+
+A spool is **“QC release”** only when **all** joints belonging to it
+have status “released”. This rollup logic is hardcoded.
+
+### Progress entry — universal UX template
+
+All four Progress screens (spool fab / welding / NDE / painting) share
+the **same structure**:
+
+1. Intelligent search field at top (mandatory ★)
+1. Item summary panel (selected ISO or spool)
+1. Grid of spools (or joints) below the summary
+1. “−” buttons to collapse/hide rows of the grid
+1. Report section (popup with custom options per report)
+1. Excel template download for batch progress import
+1. “Default date” and “date inputs assistance” shortcuts
+
+**PipeQC implication:** if we build/refactor multiple progress screens,
+they should share a single layout component. Track candidate:
+**Track F — Progress Entry shared shell.**
+
+### Spool fabrication progress flow
+
+The status transitions (in default Easy Piping setup):
+
+|Status      |Trigger                                                          |Auto/Manual|
+|------------|-----------------------------------------------------------------|-----------|
+|Start fab   |User enters date                                                 |Manual     |
+|MIR issued  |Material Issue Request delivered to subcontractor                |Manual     |
+|Material check|Heat numbers in QC13 form match referential                   |**Auto**   |
+|Fabricated  |QC13 form signed by all parties                                  |Manual     |
+|QC release  |All joints in spool have NDE status “released”                   |**Auto**   |
+
+**Two auto-populated transitions** in default flow:
+
+1. Material check ← heat number traceability popup completion
+1. QC release ← rollup of joint NDE statuses
+
+PipeQC status: neither implemented.
+
+### QC13 — Daily Progress Report form (canonical paper artifact)
+
+This is **the** physical form that bridges site reality and the system:
+
+- Generated right after “Start fab” date is recorded
+- **Unique auto-assigned number** per QC13
+- Reprintable anytime with current system values
+- Filled by foreman / workers in the shop
+- Records: shop joint detail for the selected spool, heat numbers per
+  component, weld points per joint, welder code per weld point
+- When fully filled + signed → user enters “Fabricated” status in
+  Easy Piping; the form is the source of truth
+
+**PipeQC gap:** no QC13 generation today. This is a **strong demo
+artifact**: clickable button that produces a PDF stamped with project
+header, spool ID, date, signature block. High perceived fidelity for
+investor demo, low engineering cost (jsPDF / Puppeteer).
+
+Add as candidate: **Track G5 — QC13 generator.**
+
+### Material traceability popup (heat number flow)
+
+User flow in `weld/progress`:
+
+1. Foreman writes heat numbers on the printed QC13
+1. User opens “Material traceability” popup for the spool
+1. User enters each heat number
+1. System validates against **Project Piping Material List**
+   (referential 3.12, currently seed-only in PipeQC)
+1. Invalid heat numbers are **rejected at entry** — the record is
+   not accepted into the system
+1. When all heats are entered + valid, the spool’s “Material check”
+   status flips to ✅ automatically
+
+**PipeQC gaps:**
+
+- Project Piping Material List is seed-only; no admin CRUD
+- Heat number validation popup doesn’t exist on weld progress screen
+- “Material check” status is not derived from heat number completeness
+
+### Welding progress — WPS qualification check (definitive flow)
+
+When user enters welder code + WPS on a joint:
+
+1. System looks up welder qualifications referential (3.6)
+1. Checks if welder is qualified for the selected WPS
+1. **If not qualified → alert** (per #4 wording: “the system gives an
+   alert”)
+1. Open question still: is it a soft alert (warning, allows save) or
+   hard block? #4 doesn’t specify. Default assumption: warning.
+
+**PipeQC current:** welder qualifications library exists in seed but
+this validation is not wired into weld progress entry. Wiring it is a
+~half-day task and a strong demo moment.
+
+### Multiple welders per joint (definitive shape)
+
+Per #4 verbatim: *“In case of two weld points for one joint, the user
+can enter different information for the two points (multi welder etc.)”*
+
+So the model is:
+
+```
+Joint
+ ├─ Weld point 1 (welder A, WPS-X, heat-123, …)
+ └─ Weld point 2 (welder B, WPS-Y, heat-456, …)
+```
+
+Not “two welders on the same weld” but “two weld points on the same
+joint, each with its own welder”. This is consistent with the “root +
+cap” weld layering common in industry.
+
+**PipeQC current:** single welder field per joint. To support this we’d
+need either a sub-table on the joint or a “weld points” entity.
+Possible track: **Track G6 — Multi-point weld entry.**
+
+### Fabrication reports (5 production reports)
+
+|Report                  |Granularity     |Use                                |
+|------------------------|----------------|-----------------------------------|
+|Weekly progress – Fab   |Cumulative      |By Type (LB/SB) × Material         |
+|Fabrication             |Per design area |Spooling / Material / Fab steps in DI|
+|Summary                 |Per spool       |Achievement dates for each step    |
+|Spool                   |Per spool       |Trace graph for step analysis      |
+|Welders Production      |Per welder      |Production between selected dates  |
+
+**PipeQC has:** Fabrication Dashboard (KPI cards, charts) + reports
+catalog. We cover 2/5 conceptually (Fabrication Progress, Welder
+Performance Log). Missing: design-area breakdown report, trace-graph
+per spool, weekly LB/SB/Material breakdown.
+
+These are low-cost additions to the reports catalog. Worth adding 1–2
+to flesh out the “reports” section before demo.
+
+-----
+
+## #4 NDE — deep-dive findings (most important section)
+
+### NDE Batch concept (DEFINITIVE)
+
+Per #4 verbatim: *“A batch of weld is made by grouping the welds
+executed by **one welder** belonging to a **particular NDE category**.”*
+
+So:
+
+```
+Batch = (welder × NDE category) → set of welds
+```
+
+**Implications:**
+
+- Batch boundaries are derived automatically from welder + NDE category
+  fields on welds. Not user-defined.
+- A welder can have multiple batches (one per NDE category they touch).
+- Selection of welds to examine happens **within a batch**, not across.
+
+**PipeQC current:** batches exist as an entity but the grouping logic
+(welder × NDE category) is not surfaced explicitly in the data model
+docs. Worth confirming in code + documenting.
+
+### NDE rationale — tracer joint economics (DOMAIN INSIGHT)
+
+Per #4 verbatim: *“3 additional joints have to be examined for each
+weld defect of the welder \[i.e. 1 no. for repaired weld + 2 nos. for
+additional samples (tracer joints)\].”*
+
+This is the **economic argument** for QC: every weld defect costs you
+3× the NDE examination work. Strong pitch-deck material:
+
+> “One bad weld doesn’t cost one re-examination. It costs four:
+> the original, the repair, and two tracer joints. PipeQC makes
+> welder performance visible the day it happens — before tracer
+> overhead compounds.”
+
+### NDE100 vs sampled (NDE10/20) — distinct flows
+
+|Category type     |Statuses                                                                |Preparation flow            |
+|------------------|------------------------------------------------------------------------|----------------------------|
+|Sampled (NDE10/20)|S (to select), SS (selected, awaiting), NR (result updated), ? (selection complete)|Batch management |
+|100% (NDE100)     |H (to select), HS (selected, awaiting)                                  |NDE100 screen               |
+
+**PipeQC current:** stubs use a mixed status enum without this
+distinction. **The dual-track status flow is a real domain rule** —
+sampled and 100% categories don’t share the same state machine.
+
+This answers the open question **“NDE batch S/SS/NR/T1/T2 statuses —
+meaning + transitions”** definitively.
+
+### NDE Preparation has 4 sub-functions
+
+In NDE → Preparation tab, accessed via the “Joint to select” button
+dropdown:
+
+1. **Batch management** — manually pick welds within a batch; “Easy
+   Piping suggestion” helper button suggests welds per percentages
+1. **NDE100** — pick joints from 100% NDE categories
+1. **Batch status** — visualize NDE status of joints ISO-wise; clicking
+   a batch number opens it
+1. **Issue examination program** — generate the printable request
+   (`Request No` auto-assigned) for the lab/inspector
+
+**PipeQC current:** stub. None of the four sub-functions are
+implemented. **High-leverage demo build:** the “Easy Piping suggestion”
+button. Easy to mock (random sampler weighted by NDE %), visually
+striking, scratches the “AI/automation” itch for investors.
+
+### Rejected joint flow (KEY — was not in manual)
+
+When NDE result = R (rejected):
+
+1. User enters: defect code + location of defect
+1. Easy Piping **automatically creates a new joint** named with
+   suffix `R1` (or `R2`, `R3`, `R4` on further rejection)
+1. The new joint goes into the **100% NDE category** for the same
+   method. Example: original joint failed RT10 → R1 joint is RT100.
+1. The batch status flips back to “Joint to Select”
+1. Joints of the batch transition to **T1** status (tracer 1)
+
+**Tracer hierarchy:**
+
+```
+Original fail → T1 selected → if T1 fails → T1-1, T1-2 (tracer 1 level 2)
+                                          → if T2 path → T2-1, T2-2
+```
+
+### Penalty shoot rule (DEFINITIVE — was an open question)
+
+Per #4 verbatim: *“In a Batch When 2nd level Tracer (T1-1, T1-2, T2-1,
+T2-2) **or** 4 joints are rejected in the examination, all the
+remaining welds in this batch should be examined. All the remaining
+joints are automatically selected by Easy Piping and joint status
+changed to ‘SS’.”*
+
+So the trigger is:
+
+- **OR (a):** any 2nd-level tracer joint exists (T1-1 / T1-2 / T2-1 / T2-2)
+- **OR (b):** 4 rejections within the batch
+
+→ all remaining welds in batch auto-flip to SS, batch status flips
+from “Joint to Select” to “Awaiting NDE”.
+
+**PipeQC implication:** the penalty shoot concept exists today as a
+referential in admin, but the auto-trigger logic doesn’t exist.
+Implementation:
+
+- One scheduled job (or batch-status setter) checks the trigger after
+  every NDE result entry
+- If trigger fires → bulk update joints in batch to SS
+
+This is **the** flagship demo moment for the NDE module. Once built,
+the demo narrative becomes: *“Watch what happens when this welder’s
+4th joint fails in the same batch — the system pre-selects all
+remaining welds for examination, no human intervention.”*
+
+Add as candidate: **Track N4 — Penalty shoot automation.**
+
+### NDE Quality reports (8 reports)
+
+|Report                       |Pivot          |Purpose                                              |
+|-----------------------------|---------------|-----------------------------------------------------|
+|Batch status                 |Batch          |Released status per weld                             |
+|Radiographic status          |Period         |% accepted/rejected/defects (weekly + cumulative)    |
+|Outstanding Repairs          |Joint          |Joints awaiting repair + pending days                |
+|Service class wise NDE status|Piping class   |Examination percentage compliance check              |
+|Spool wise NDE status        |Spool          |QC released? + corresponding QC/W10 report numbers   |
+|Outstanding NDE              |Joint          |Joints awaiting NDE + pending days                   |
+|Radiographic film – Est. qty |Joint          |Estimated RT films to shoot                          |
+|Weld History sheet           |Spool          |Document for test pack — all welding + NDE records   |
+
+**Open questions answered:**
+
+- “RT film quantity estimation — algorithm + UI?” → it’s **a report**,
+  not a live UI element. Likely uses film quantity matrix (referential
+  2.2) × joint count. Lower priority than I thought.
+
+### NDE Welder monitoring reports (4 reports)
+
+|Report                  |Use                                       |
+|------------------------|------------------------------------------|
+|Perf. Control Sheet     |Per-welder weekly/cumulative stats        |
+|Rej. and Repaired joints|Repair backlog per welder                 |
+|Rej. and Tracers joints |Penalty shoot backlog (T-series joints)   |
+|Batch status (per welder)|Examination status for a welder           |
+
+**PipeQC coverage:** Welder Performance Log report covers ~25% of
+Perf. Control Sheet. Other three are unimplemented.
+
+### PipeQC gaps summary after #4 (NDE module)
+
+|Easy Piping feature        |PipeQC status     |Build effort   |Demo impact|
+|---------------------------|------------------|---------------|-----------|
+|Batch grouping logic       |Implicit          |None (document)|Low        |
+|S/SS/NR vs H/HS dual flow  |Mixed enum        |Half day       |Medium     |
+|Easy Piping suggestion btn |Missing           |Half day (mock)|High       |
+|Issue examination program  |Missing           |1 day (PDF gen)|Medium     |
+|Auto-R1/R2 joint creation  |Missing           |1 day          |High       |
+|Tracer joint hierarchy     |Missing           |1–2 days       |High       |
+|Penalty shoot auto-trigger |Missing           |1 day          |**Highest**|
+|8 quality reports          |1/8               |2 days for 3   |Medium     |
+
+-----
+
+## Open questions resolved by #4
+
+|Open Q                                  |Resolution                                                |
+|----------------------------------------|----------------------------------------------------------|
+|Penalty shoot — exact flow              |✅ Resolved: 2nd-level tracer OR 4 rejections → auto-SS all|
+|RT film quantity estimation             |✅ Resolved: it’s a report, not a live UI element          |
+|Multiple welders per joint — UX shape   |✅ Resolved: joint has N weld points, each with own welder |
+|NDE batch S/SS/NR/T1/T2 transitions     |✅ Resolved: dual-flow (sampled vs 100%) with tracer chain |
+|Tracer joint logic                      |✅ Resolved: R1/R2/R3/R4 suffix + T1/T2 + T1-1/T1-2 levels |
+|PWHT workflow                           |⚠️ Partial: PWHT is listed in NDE functionalities but no specific flow described in #4. Likely covered later (Painting #10 or Test Pack #7) |
+
+-----
 
 ## Open questions to answer in remaining presentations
 
-Track these across #4–#10 reads:
+Track these across #5–#10 reads:
 
-1. **PWHT workflow** — referenced in weld panel today but no flow. #4
-   Fabrication likely details it.
-2. **Penalty shoot** — what is the exact flow? #4 Fabrication.
-3. **RT film quantity estimation** — algorithm + UI? #4 Fabrication.
-4. **Multiple welders per joint** — UX shape? #4 Fabrication.
-5. **NDE batch S/SS/NR/T1/T2 statuses** — meaning + transitions? #4
-   Fabrication or dedicated NDE deep-dive.
-6. **Tracer joint logic** — full flow per #4 / #7.
-7. **Construction surveillance PDA checklists** — #5 Spool tracking.
-8. **Assembly vs Erection distinction** — what's modular project? #9
+1. ~~**PWHT workflow**~~ — *Partially answered #4. PWHT mentioned as
+   NDE functionality but flow not detailed. Likely in #7 Test Pack or
+   #10 Painting.*
+1. ~~**Penalty shoot**~~ → **✅ RESOLVED #4** (2nd-level tracer OR 4
+   rejections → auto-SS all remaining)
+1. ~~**RT film quantity estimation**~~ → **✅ RESOLVED #4** (it’s a
+   report, uses film qty matrix × joint count)
+1. ~~**Multiple welders per joint**~~ → **✅ RESOLVED #4** (N weld points
+   per joint, each with own welder)
+1. ~~**NDE batch S/SS/NR/T1/T2 statuses**~~ → **✅ RESOLVED #4** (dual
+   flow: sampled vs 100%, with tracer chain)
+1. ~~**Tracer joint logic**~~ → **✅ RESOLVED #4** (R1/R2/R3/R4 + T1/T2
+   + T1-1/T1-2 hierarchy)
+1. **Construction surveillance PDA checklists** — #5 Spool tracking.
+1. **Assembly vs Erection distinction** — what’s modular project? #9
    Assembly.
-9. **Painting DFT measurement workflow** — #10 Painting.
-10. **Test pack data model details** — #7 Test Pack.
-11. **PSMS SpoolingDB schema** — entity relationships? #8 SpoolingDB.
+1. **Painting DFT measurement workflow** — #10 Painting.
+1. **Test pack data model details** — #7 Test Pack.
+1. **PSMS SpoolingDB schema** — entity relationships? #8 SpoolingDB.
+1. **WPS qualification alert** — soft warning or hard block? Not
+   specified in #4. Likely in #7 Test Pack or domain interviews.
 
----
+-----
 
 ## How to use this file in a new chat session
 
 If continuing in a new chat:
 
-1. Run `project_knowledge_search` with query `presentation findings
-   research log`.
-2. Read this file fully before continuing presentation reads.
-3. Resume from the first ⏳ row in the source files table.
-4. Append findings to this file after each read. **Do not
+1. Run `project_knowledge_search` with query `presentation findings research log`.
+1. Read this file fully before continuing presentation reads.
+1. Resume from the first ⏳ row in the source files table.
+1. Append findings to this file after each read. **Do not
    restructure** — only append within existing sections or add new
    ones for cross-cutting findings.
 
----
+-----
 
-*Last updated: 2026-05-20. Next read: #4 EasyPiping Fabrication.*
+*Last updated: 2026-05-20. Next read: #5 EasyPiping Spool tracking.*
