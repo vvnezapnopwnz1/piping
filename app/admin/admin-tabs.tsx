@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TeamsTab } from "@/components/admin/teams-tab";
@@ -29,6 +29,7 @@ function isValidTab(value: string): value is TabValue {
 
 export function AdminTabs() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab") ?? "";
   const activeTab: TabValue = isValidTab(tabParam) ? tabParam : "teams";
@@ -37,7 +38,7 @@ export function AdminTabs() {
     if (isValidTab(value)) {
       const params = new URLSearchParams(searchParams.toString());
       params.set("tab", value);
-      router.replace(`/admin?${params.toString()}`, { scroll: false });
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
   };
 
@@ -46,9 +47,9 @@ export function AdminTabs() {
     if (!tabParam || !isValidTab(tabParam)) {
       const params = new URLSearchParams(searchParams.toString());
       params.set("tab", "teams");
-      router.replace(`/admin?${params.toString()}`, { scroll: false });
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
-  }, [tabParam, searchParams, router]);
+  }, [tabParam, searchParams, router, pathname]);
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">

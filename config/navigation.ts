@@ -1,5 +1,9 @@
 import {
   Shield,
+  Database,
+  FileCog,
+  FolderCog,
+  KeyRound,
   Box,
   Wrench,
   MapPin,
@@ -52,6 +56,38 @@ export const navigationConfig: NavSection[] = [
         title: 'Admin Module',
         href: '/admin',
         icon: Shield,
+        children: [
+          {
+            title: 'Home',
+            href: '/admin',
+            icon: LayoutDashboard,
+          },
+          {
+            title: 'Project Definition',
+            href: '/admin/project-definition',
+            icon: FileCog,
+          },
+          {
+            title: 'System Referential',
+            href: '/admin/system-referential',
+            icon: Database,
+          },
+          {
+            title: 'Project Referential',
+            href: '/admin/project-referential',
+            icon: FolderCog,
+          },
+          {
+            title: 'Access Rights',
+            href: '/admin/access-rights',
+            icon: KeyRound,
+          },
+          {
+            title: 'Import Settings',
+            href: '/admin/import-settings',
+            icon: Inbox,
+          },
+        ],
       },
     ],
   },
