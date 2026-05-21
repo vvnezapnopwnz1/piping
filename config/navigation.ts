@@ -24,6 +24,9 @@ import {
   Combine,
   CheckCircle2,
   Bolt,
+  Inbox,
+  GitBranch,
+  Send,
 } from 'lucide-react'
 import type { Role } from '@/contexts/role-context'
 
@@ -57,9 +60,31 @@ export const navigationConfig: NavSection[] = [
     roles: ['spooling_team', 'project_manager'],
     items: [
       {
-        title: 'Spooling Module',
+        title: 'Spooling',
         href: '/spooling',
         icon: Box,
+        children: [
+          {
+            title: 'Home',
+            href: '/spooling',
+            icon: LayoutDashboard,
+          },
+          {
+            title: 'Engineering Transmittals',
+            href: '/spooling/engineering-transmittals',
+            icon: Inbox,
+          },
+          {
+            title: 'ISO Workflow',
+            href: '/spooling/iso-workflow',
+            icon: GitBranch,
+          },
+          {
+            title: 'Spooling Transmittal',
+            href: '/spooling/spooling-transmittal',
+            icon: Send,
+          },
+        ],
       },
     ],
   },

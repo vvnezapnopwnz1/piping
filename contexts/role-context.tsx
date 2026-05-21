@@ -42,7 +42,7 @@ export function useRole() {
 }
 
 export function RoleProvider({ children }: { children: React.ReactNode }) {
-  const [currentRole, setCurrentRole] = React.useState<Role>('qc_engineer')
+  const [currentRole, setCurrentRole] = React.useState<Role>('project_manager')
 
   const roleInfo = React.useMemo(
     () => ROLES.find((r) => r.id === currentRole) || ROLES[0],
