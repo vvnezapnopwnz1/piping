@@ -51,8 +51,8 @@ Google Drive folder ID: `1Ml-7gCf-mJ5YQ92hOr7I1lPw80_QzAH2`
 | 6   | `6.EasyPiping Erection_10032021.pptx`       | ✅ Read 2026-05-21 |
 | 7   | `7.Easy Piping Test Pack_10032021.pptx`     | ✅ Read 2026-05-21 |
 | 8   | `8.PSMS_SpoolingDB_10032021.pptx`           | ✅ Read 2026-05-21 |
-| 9   | `9.EasyPiping Assembly_09022020.pptx`       | ⏳ Pending         |
-| 10  | `10.EasyPiping Painting_10032021 (1).pptx`  | ⏳ Pending         |
+| 9   | `9.EasyPiping Assembly_09022020.pptx`       | ✅ Read 2026-05-21 |
+| 10  | `10.EasyPiping Painting_10032021 (1).pptx`  | ✅ Read 2026-05-21 |
 
 ---
 
@@ -1633,17 +1633,17 @@ This is the **iso state machine** Easy Piping enforces, end to end, from enginee
 
 The Spooling home page is a multi-region dashboard, not unlike the Fabrication dashboard (#4):
 
-| Region                          | Content                                                                                                                                |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Progress curves                 | Quantities by date for Received / Spooled / Sent to Project (Transmitted)                                                              |
-| Display toggle on curves        | **Amont** (periodic bar chart) vs **Cumul** (cumulative S-curve) — note the French label leak; PipeQC should label "Period/Cumulative" |
-| KPI panel — Current progress    | Total Received • In spooling process • In Checking                                                                                     |
-| KPI panel — Completed           | Completed Isometrics                                                                                                                   |
+| Region                           | Content                                                                                                                                |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Progress curves                  | Quantities by date for Received / Spooled / Sent to Project (Transmitted)                                                              |
+| Display toggle on curves         | **Amont** (periodic bar chart) vs **Cumul** (cumulative S-curve) — note the French label leak; PipeQC should label "Period/Cumulative" |
+| KPI panel — Current progress     | Total Received • In spooling process • In Checking                                                                                     |
+| KPI panel — Completed            | Completed Isometrics                                                                                                                   |
 | KPI panel — Currently under HOLD | Tier-2 breakdown: Held for Reprocess • Held by Spooling team • Held by Engineering                                                     |
-| Recent actions feed             | Live log of all actions happening in the Spooling DB — same activity-feed pattern surfaced elsewhere                                   |
-| Filters                         | Time period • WBU • PDS • Drawing Type (All / Original / Revised)                                                                      |
-| Print                           | Whole-page print                                                                                                                       |
-| Entry button                    | "Spooling Explorer" — drills to iso-level grid                                                                                         |
+| Recent actions feed              | Live log of all actions happening in the Spooling DB — same activity-feed pattern surfaced elsewhere                                   |
+| Filters                          | Time period • WBU • PDS • Drawing Type (All / Original / Revised)                                                                      |
+| Print                            | Whole-page print                                                                                                                       |
+| Entry button                     | "Spooling Explorer" — drills to iso-level grid                                                                                         |
 
 **Filter inheritance:** filter selections apply to both the curves and the Iso Quantity Summary panel — same global-filter pattern PipeQC's Fabrication dashboard uses.
 
@@ -1653,46 +1653,46 @@ Reached from the "Spooling Explorer" button on the home page. Top of screen has 
 
 **Tab 1 — "Spooling" (spooling progress):**
 
-| Column | Source / meaning |
-| -- | -- |
-| Rev Number | Iso revision |
-| Iso size | Standard iso metadata |
-| Process Status | Latest status of iso (driven by state machine above) |
-| Transmittal No | Engineering transmittal that delivered this iso |
-| Received Date | Date iso received from engineering |
-| First Checkout Date | When iso was first assigned to a spooler |
-| Spooled By | Spooler name |
-| Last Check in Date | Spooling completion date |
+| Column              | Source / meaning                                     |
+| ------------------- | ---------------------------------------------------- |
+| Rev Number          | Iso revision                                         |
+| Iso size            | Standard iso metadata                                |
+| Process Status      | Latest status of iso (driven by state machine above) |
+| Transmittal No      | Engineering transmittal that delivered this iso      |
+| Received Date       | Date iso received from engineering                   |
+| First Checkout Date | When iso was first assigned to a spooler             |
+| Spooled By          | Spooler name                                         |
+| Last Check in Date  | Spooling completion date                             |
 
 **Tab 2 — "Checking" (verification):**
 
-| Column | Meaning |
-| -- | -- |
-| Rev Number, Iso size, Process Status | (same as above) |
-| Check Status | Verification state |
-| Tot. Round | **N rounds of checking** — checking is iterative (verifier rejects → spooler fixes → re-checks) |
-| Checker | Checker name |
-| Last Checking | Last verification completion date |
-| Checker Comments | Free-text checker remarks |
+| Column                               | Meaning                                                                                         |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| Rev Number, Iso size, Process Status | (same as above)                                                                                 |
+| Check Status                         | Verification state                                                                              |
+| Tot. Round                           | **N rounds of checking** — checking is iterative (verifier rejects → spooler fixes → re-checks) |
+| Checker                              | Checker name                                                                                    |
+| Last Checking                        | Last verification completion date                                                               |
+| Checker Comments                     | Free-text checker remarks                                                                       |
 
 **Tab 3 — "Hold Mgmt" (holds):**
 
-| Column | Meaning |
-| -- | -- |
-| Hold Type | One of two: **Spool Team** (inconsistency in iso from engineering) or **Engineering** (new revision being issued) |
-| Holder | Holder name (when Spool Team hold) |
-| Hold Date | When hold placed |
-| Release Date | When hold lifted |
+| Column       | Meaning                                                                                                           |
+| ------------ | ----------------------------------------------------------------------------------------------------------------- |
+| Hold Type    | One of two: **Spool Team** (inconsistency in iso from engineering) or **Engineering** (new revision being issued) |
+| Holder       | Holder name (when Spool Team hold)                                                                                |
+| Hold Date    | When hold placed                                                                                                  |
+| Release Date | When hold lifted                                                                                                  |
 
 **Tab 4 — "Spooling Transmittal" (outbound batches):**
 
-| Column | Meaning |
-| -- | -- |
-| Batch No | Batch identifier |
+| Column          | Meaning                                  |
+| --------------- | ---------------------------------------- |
+| Batch No        | Batch identifier                         |
 | Spl. Trans. No. | Spooling transmittal number sent to site |
-| Transmit Date | When sent |
-| Total Iso | Iso count in this transmittal |
-| Transmitter | Person who sent it |
+| Transmit Date   | When sent                                |
+| Total Iso       | Iso count in this transmittal            |
+| Transmitter     | Person who sent it                       |
 
 ### Browser sub-module — file import bridge
 
@@ -1710,6 +1710,234 @@ This confirms: SpoolGen output is not auto-ingested — a human operator browses
 #8 is a **short, structurally clean** deck — Spooling is a focused workflow without the complexity sprawl of NDE/Test Pack. The module is bounded and complete (no "under development" markers). This matches the fact that Spooling is a **mature, low-variance workflow** in piping projects — engineering ships isos, you spool them, you transmit them, done. The interesting business logic lives downstream.
 
 **Pitch implication:** PipeQC can match Easy Piping's Spooling module without heavy investment — the screens are mostly standard CRUD over the iso state machine, plus the activity feed and S-curve dashboard. Estimate: 2–3 days of focused build, not weeks.
+
+---
+
+## #9 Assembly — module-specific findings
+
+### The Assembly vs Erection question — definitively resolved
+
+The Assembly module is **structurally identical to Erection**. Same 4 sub-modules (Spool erection / Welding / NDE / Flange mgmt), same Preparation+Progress split per sub-module, same screens, same spool-level and joint-level status progressions, same QC W24 paper-form loop, same material-traceability pop-up, same flange-joint editor.
+
+The only difference is the **stage**: Assembly = pre-erection joining of spools into larger sub-assemblies (modular construction, done in shop/yard); Erection = on-site placement and final connection. Both stages use the same verb "Spool erection" in their UI — meaning "erecting spools into assemblies" in the Assembly case, "erecting assemblies into final position" in the Erection case.
+
+**Critical sync semantic:** the deck explicitly states _"Spool level progress entered in this screen will also be updated in erection module."_ This is not a copy/sync — it's the **same spool record**, written from either module. Same domain aggregate, two module-level UIs.
+
+### Module structure
+
+1. **4 sub-modules** — Spool erection, Welding, NDE, Flange management
+2. **Each sub-module has 2 panels** — Preparation (workload dispatch) + Progress (data entry)
+3. **Vendor-incomplete pattern recurs:** explicitly stated in the deck — _"For the moment, only the NDE – preparation is available in this module."_ The other three Preparation panels (Spool erection / Welding / Flange) were never built. Identical to #6 Erection and (per memory) #4 Fabrication.
+
+### Spool-level vs joint-level status progressions
+
+The deck nails the two-level state model that #6 Erection only sketched:
+
+**Spool level (5 states):**
+
+```
+To site → Erected → Welded bolted → Supported → RFT
+```
+
+**Joint level (6 states):**
+
+```
+Cutting → Beveling → Fit-up → Preheat → Welding → NDE
+```
+
+The two progressions are **orthogonal**: a spool moves through its 5-state lifecycle while its constituent joints independently traverse their 6-state lifecycle. The two are joined at RFT: `spool.RFT = spool.welded_bolted AND spool.supported AND all_joints(NDE_released AND PWHT_released)` — confirms CC-18 gate logic and aligns with the test-pack RFT semantics from #7.
+
+### Shared progress-entry UX pattern (system-wide)
+
+All progress screens in the Assembly module use the **same shape**:
+
+1. **Intelligent search field** (mandatory, autocomplete) — search by isometric or barcode
+2. **Item summary** displayed once selected
+3. **Grid of spools or joints** with collapse `−` buttons (per-row hide)
+4. **Report section** at right/bottom with popup customization
+5. **Excel template** for bulk progress import
+6. **Date assistance:** "default date" or "date inputs assistance" for fast entry
+
+This is the **canonical progress-entry shell** used across Easy Piping. Worth packaging as a shared PipeQC component (`<ProgressEntryShell>`) — it's reusable across Fabrication, Assembly, Erection, and likely Test Pack progress.
+
+### Spool erection sub-module — 5-step workflow
+
+The deck walks through the 5 progress steps in order:
+
+| Step                         | What                                                             | Resulting record                                               |
+| ---------------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------- |
+| 1. To site / Erected         | Mark spool as on-site and as erected                             | Spool dates: to_site, erected                                  |
+| 2. Generate QC W24 form      | Print daily progress report at isometric level, fill on paper    | PDF (paper form)                                               |
+| 3. Material traceability     | Open popup, enter heat numbers from foreman's filled form        | Heat-number records per joint; **material_check** auto-derived |
+| 4. Welding progress update   | Open weld/progress screen, enter welder + WPS per joint          | Weld point records                                             |
+| 5. Welded bolted + Supported | Final dates entered from completed form; **RFT auto-calculated** | Spool dates: welded_bolted, supported, RFT                     |
+
+The QC W24 form is **the same paper artifact** as in #6 Erection (CC-12). Identical loop: print → field crew fills → clerk re-keys.
+
+### Material traceability — heat number validation is a hard block
+
+Explicit in the deck:
+
+> "Easy piping detects heat numbers not available in the referential and **do not access these records**."
+
+Translation: heat numbers not in the project's material referential are **rejected at the input stage**. This is a **hard block**, not an alert. The user cannot enter an unknown heat number — they must add it to the referential first (or correct the typo).
+
+When heat numbers ARE valid, the **material check status of the spool is automatically populated** — confirming that material check is a derived/computed status, not a separately-managed workflow step.
+
+### WPS qualification — soft alert (NOT a hard block) — RESOLVED
+
+The single most-asked open question across reads #4/#5/#6/#7/#8 — now resolved unambiguously:
+
+> "The system checks if reported welder is qualified to use the selected WPS.
+> If not, **the system gives an alert**."
+
+The word is "alert". Not "rejects". Not "blocks". This means the user **can proceed** with a non-qualified welder/WPS pairing — they just see a warning. The integrity-vs-process distinction holds: WPS qualification gap is a **process compliance issue** (someone might still need to sign off later), not a **data integrity issue** (the work happened, we record it).
+
+This has direct implications for PipeQC: see CC-28 below.
+
+### Multi-welder per joint — confirmed
+
+Reconfirms #4: "In case of two weld points for one joint, the user can enter different information for the two points (multi welder etc.)" — one joint can have N weld points, each with its own welder and WPS.
+
+### Flange management — identical to #6
+
+Exactly the same screen and field set as #6 Erection's flange management. No new fields, no new behavior. This further reinforces CC-26 (Assembly = Erection at different stage).
+
+### Length / investment signal
+
+#9 is the **shortest, most-redundant** deck of the set — most of it is structurally identical to #6, with only the wrapping module name changed and one explicit data-sync sentence added (the Assembly→Erection spool update). The deck reads like it was written by copy-pasting #6 and editing the title slide.
+
+**Pitch implication (and PipeQC build implication):** Assembly is not a real "second module" — it's the same Erection module re-parameterized for a different project stage. Treat it as such. (See CC-26.)
+
+---
+
+## Open questions resolved by #9
+
+| Open Q                                      | Resolution                                                                                                                                                                                                                                  |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Assembly vs Erection distinction**        | ✅ **Resolved.** Structurally identical (same 4 sub-modules, same screens). Assembly = pre-erection joining of spools into sub-assemblies in shop/yard. Erection = on-site placement. Same UI, different scope, same data store. See CC-26. |
+| **WPS qualification alert — hard or soft?** | ✅ **Resolved.** Soft alert. User can proceed with non-qualified welder; a warning is shown. See CC-28.                                                                                                                                     |
+| **Material-check workflow**                 | ✅ **Implicit.** Material check is a derived status, automatically populated when heat numbers are validated against the project's material referential. Not a separately-managed workflow step.                                            |
+| **Hard-block on unknown heat numbers**      | ✅ **Confirmed.** Heat numbers not in the referential are rejected. This is the first explicit hard-block validation seen in the system. See CC-28.                                                                                         |
+| Construction surveillance PDA checklists    | ❌ **Still not found.** 5th module without PDA. Final read (#10) is the last chance. Default assumption now solidified: **never built**.                                                                                                    |
+| Penalty-shoot management UI                 | ❌ Not in #9. Try #10.                                                                                                                                                                                                                      |
+
+---
+
+## #10 Painting — module-specific findings
+
+### Module structure — 2 sections (not 4)
+
+The Painting module is **structurally lighter** than the construction modules. Just 2 sections:
+
+1. **Project Definition** — the painting referentials (RAL codes + Paint Matrix)
+2. **Painting Progress** — spool-level state entry
+
+This is in contrast to #6 Erection / #9 Assembly (4 sub-modules each) and reflects that Painting is conceptually a single activity, not a multi-activity construction phase.
+
+**Note on double-location:** Painting also appears as a sub-module inside Fabrication (#4) — meaning painting work that happens at the fab shop. The Painting module here covers the **paint-shop workflow** specifically. Two flavors of painting, one referential, one progress engine, two entry points. Worth simplifying in PipeQC IA.
+
+### Project Definition — two referentials
+
+**1. RAL Code referential**
+
+Per project, define color codes by fluid service:
+
+| Field         | Source                               |
+| ------------- | ------------------------------------ |
+| Color Code    | Free entry / lookup                  |
+| Fluid service | Free entry / lookup                  |
+| RAL code      | Free entry (standard RAL color code) |
+
+Then each `(isometric, fluid service)` is linked to a RAL code. This is a 2-level lookup: iso has fluid service, fluid service has RAL code → iso gets its color.
+
+**2. Paint Code Matrix referential**
+
+Per isometric, define the painting system:
+
+| Field             | Type    | Meaning                      |
+| ----------------- | ------- | ---------------------------- |
+| Blasting          | Y/N     | Whether blasting is required |
+| Primer            | Y/N     | Whether primer is required   |
+| Intermediate coat | numeric | How many intermediate coats  |
+| Final coat        | numeric | How many final coats         |
+| Final thickness   | numeric | Required DFT                 |
+
+**This matrix is the most sophisticated parameter-driven UI in all of Easy Piping** — see CC-31.
+
+### Painting state machine — 9 states at spool level
+
+```
+Sent to paint
+  → Received in paint
+    → Primer
+      → Intermediate Coat (×N, where N from Paint Matrix)
+        → Final Coat (×M, where M from Paint Matrix)
+          → Painted
+            → Final QC
+              → Laydown
+                → Send to Site
+```
+
+This is the most state-rich workflow in any single module — 9 distinct states with **dynamic step counts** for intermediate/final coats determined by the Paint Matrix.
+
+Two of these are split off into a separate screen — `Sent to paint`, `Painted`, `Final QC`, `Laydown` are entered in one screen (overall progress); `Received in paint`, `Primer`, `Intermediate coat`, `Final coat` in another (in-shop progress). The split mirrors the operational reality: outbound/inbound logistics vs in-shop work.
+
+### W10P form — the painting QC form
+
+The deck shows `W10P` as the QC form generated when a spool is NDE-released. Notable mechanics:
+
+- **Report number is unique and automatically assigned** by the system
+- Form is printed, filled on paper by QC personnel after all NDE done, signed
+- Then re-keyed into Easy Piping → QC release → "Sent to paint" status set
+
+This is **the third W-form in the system**:
+
+| Form         | Module                        | Purpose                                             |
+| ------------ | ----------------------------- | --------------------------------------------------- |
+| **W24**      | Erection / Assembly           | Daily progress report at isometric level (per #6)   |
+| **W10P**     | Painting                      | QC form, gates "sent to paint"                      |
+| (W10 family) | (other variants likely exist) | Form family, naming convention not fully documented |
+
+**Resolution of the "W10 report number" open question:** W10 is a **form family**, W10P is the Painting variant. Other variants likely exist (W10W for welding? W10E? — not seen in any deck). The naming convention is TechnipFMC-internal and not fully decoded in the 10 decks. Mostly resolved, fully closeable.
+
+### Painting reports
+
+Single named report: **Weekly progress – Painting**. Cumulative quantities between two dates, broken down by:
+
+- Type of spool (**LB / SB** — large bore / small bore)
+- Material
+
+This is the painting-specific reporting axis. Other modules reported by sub-area, sub-contractor, etc.; painting reports by physical pipe size and material — reflecting that paint consumption and cycle time scale with both.
+
+### Vendor-incomplete pattern — confirmed yet again, with sloppy boilerplate
+
+The deck literally states _"For the moment, only the NDE – preparation is available in this module"_ — even though the Painting module has just **one** activity (Painting), with no NDE sub-activity at all. This sentence is a **copy-paste leftover from #6 Erection / #9 Assembly**. Two interpretations, both unflattering to the vendor:
+
+1. **Sloppy documentation** — the deck author didn't proofread per-module boilerplate
+2. **Painting Preparation was also vaporware** — and they reused the standard disclaimer without bothering to correct it
+
+Most likely both. See CC-32 below.
+
+### Length / investment signal
+
+#10 is **short** — only 2 sections vs 4 in construction modules — but the **Paint Matrix dynamic-UI mechanic is substantive** and disproportionately interesting per slide. The deck is thin overall but the matrix idea is heavy. **PipeQC build estimate:** Painting module is small (1–2 days for Project Definition + state machine + W10P form generation) but should be done **after** establishing a parameterized-step UI pattern (Paint Matrix is the highest-leverage example to seed it).
+
+---
+
+## Open questions resolved by #10
+
+| Open Q                                                | Resolution                                                                                                                                                                                                                |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Painting DFT measurement workflow**                 | ✅ **Resolved (workflow level).** Final thickness defined per iso in Paint Matrix. Measurement happens via the QC form (W10P or similar). No dedicated DFT entry screen — DFT recording is part of the QC form workflow.  |
+| **W10 report number**                                 | ✅ **Resolved.** W10 is a form family; W10P is the Painting variant. Other variants likely exist (W10W, W10E, etc.) but their existence is not documented in the 10 decks. Form-naming convention is TechnipFMC-internal. |
+| **PWHT entry screen**                                 | ✅ **Resolved (by elimination).** Not in any of the 10 decks. PWHT date is almost certainly entered as part of the NDE batch workflow (#4), not in a dedicated screen.                                                    |
+| **Penalty-shoot management UI**                       | ✅ **Resolved (by elimination).** Not shown in any deck. Penalty-shoot logic (4 rejections → auto-SS) runs in the NDE batch workflow (#4) as a derived behavior; there is no separate "penalty-shoot management" UI.      |
+| **Construction surveillance PDA checklists**          | ✅ **Resolved as NEVER BUILT.** Six consecutive decks with zero PDA evidence. See CC-30.                                                                                                                                  |
+| **Shared print-template engine**                      | ⚠️ **Partially resolved.** No shared **template** engine described. There IS a shared **numbering** service (CC-33). Templates are likely module-local.                                                                   |
+| **SpoolGen file types accepted (Browser sub-module)** | ❌ Not addressed in #10. Likely lives in domain interviews or missing `Piping weld point process.pptx`. Closed as "domain interviews needed."                                                                             |
+| **Inquiry sub-module functionality**                  | ❌ Not addressed in #10. Closed as "domain interviews needed."                                                                                                                                                            |
+| **`Piping weld point process.pptx`**                  | ❌ Still missing from Drive folder. Closed as "search Drive separately."                                                                                                                                                  |
 
 ---
 
@@ -1772,10 +2000,10 @@ The single highest-leverage IA insight from #8. PipeQC's "Spooling" module must 
 
 Concrete renaming/scoping suggestion:
 
-| Current PipeQC label | Reframe |
-| -- | -- |
-| Spooling (module) | **Iso Spooling & Transmittal** (or just "Spooling" if context is clear, but the description must lead with "document handoff") |
-| Spool Fabrication | unchanged — but make sure copy/tooltips clarify "the cutting and marking of pipe into spools, happens after isos are received from the Spooling module" |
+| Current PipeQC label | Reframe                                                                                                                                                 |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Spooling (module)    | **Iso Spooling & Transmittal** (or just "Spooling" if context is clear, but the description must lead with "document handoff")                          |
+| Spool Fabrication    | unchanged — but make sure copy/tooltips clarify "the cutting and marking of pipe into spools, happens after isos are received from the Spooling module" |
 
 ### CC-23. Live activity feed is a recurring module-home pattern
 
@@ -1787,13 +2015,117 @@ Concrete renaming/scoping suggestion:
 
 The "Amont / Cumul" toggle on the Spooling dashboard is untranslated French (literally "upstream / cumulative" — `amont` is a TechnipFMC-internal shorthand for "instantaneous/per-period"). This is the second visible leak of the system's French-engineering origin (first was column labels in #5). Easy Piping never had a clean i18n pass.
 
-**PipeQC implication:** label *every* control in clear English from day one (e.g. "Period vs Cumulative"). Avoids the worst kind of usability friction (users not knowing what a control does) and is a small but meaningful pitch differentiator: "designed in English-first, no industry-jargon leaks."
+**PipeQC implication:** label _every_ control in clear English from day one (e.g. "Period vs Cumulative"). Avoids the worst kind of usability friction (users not knowing what a control does) and is a small but meaningful pitch differentiator: "designed in English-first, no industry-jargon leaks."
 
 ### CC-25. SpoolGen integration is operator-mediated, not API-driven
 
 The Browser sub-module makes clear that the supposedly-automated `SpoolGen → Easy Piping` pipeline in CC-2 is in fact a **manual import workflow**: an operator opens the Browser screen, filters for files, selects, imports. This is a watched-folder UX, not an API integration.
 
 **PipeQC opportunity:** a true automated SpoolGen webhook / API ingestion is a **clear pitch differentiator** vs the EP baseline. Worth showing on the demo even as a stubbed config screen ("SpoolGen connector — auto-poll every 5 min").
+
+### CC-26. Assembly = Erection-at-different-stage. Single parameterized module.
+
+The single most important architectural finding from #9. Easy Piping built Assembly as a literal duplicate of Erection (same 4 sub-modules, same screens, same workflows) and then synced their data through the shared spool record. They paid the cost of two modules to get what should have been one parameterized module.
+
+**PipeQC implication:** build a **single "Field Activities" (or "Construction Activities") module** with a `stage` parameter (`assembly` | `erection`). All 4 sub-modules (Spool Erection, Welding, NDE, Flange Mgmt) live inside, parameterized by stage. The stage parameter controls:
+
+- Which dates field are recorded (`assembled_date` vs `erected_date`)
+- Which downstream calculations trigger (Assembly RFT is informational; Erection RFT feeds Test Pack RFT)
+- Per-project visibility (some projects don't have Assembly at all — non-modular fabrication)
+
+Pitch payoff: "one module, configurable for modular and non-modular projects, with shared data" beats "two duplicated modules, manually kept in sync" on any technical-architecture slide.
+
+### CC-27. "Preparation never finished" is now a 3-module pattern
+
+`Preparation` sub-modules are explicitly listed in #4 Fabrication, #6 Erection, and #9 Assembly — but in every case **only the NDE Preparation was actually built**. The other Preparation sub-modules (Spool, Welding, Flange) are vaporware in all three modules.
+
+This raises the EP-vendor-incomplete pattern (CC-7 / CC-8) from "interesting anecdote" to "systemic vendor failure." Pitch framing tightens to: "the original vendor shipped **NDE preparation only** across every construction module — the other 75% of the workflow was never finished."
+
+This is also a **clear PipeQC differentiator**: build out **all** Preparation sub-modules in at least one module (Erection is highest-leverage) for the demo. Even a thin Preparation screen per activity (Spool / Welding / Flange) is more than EP ever shipped.
+
+### CC-28. Two-tier validation taxonomy — hard block vs soft alert
+
+#9 makes the validation model explicit by showing both in one module:
+
+| Validation                            | Trigger                 | Behavior                                                     |
+| ------------------------------------- | ----------------------- | ------------------------------------------------------------ |
+| Heat number not in referential        | At entry of heat number | **HARD BLOCK** — record rejected, must fix referential first |
+| Welder not qualified for selected WPS | At weld progress entry  | **SOFT ALERT** — warning shown, user can proceed anyway      |
+
+The principle: **data-integrity violations block, process-compliance violations warn.** This is the right design — it lets work continue in the real world (where compliance gaps get fixed later via punch items) while still preventing untrackable data from entering the system.
+
+**PipeQC implication:** encode validation as a two-tier system with `severity ∈ {BLOCK, WARN}`. Every input rule must declare which tier it belongs to. Default: WARN. BLOCK reserved for data-integrity issues. This avoids the worst form of B2B UX failure ("the system blocks me from recording what already happened").
+
+### CC-29. Cross-module write to a shared spool aggregate
+
+#9 confirms what was previously inferred: there is **one spool record**, written by multiple modules. Assembly's "spool erection" screen writes the same fields that Erection's "spool erection" screen writes. No copying, no eventual consistency — it's the same row.
+
+**PipeQC architectural implication:** the **Spool** is a top-level domain aggregate with cross-module projections, not a module-local entity. Same for Joint, Isometric, Test Pack. The module is a UI projection over these aggregates, not the owner of the data.
+
+This also implies that the **module navigation in PipeQC should be UI-layer only** — the data model underneath is module-flat. Worth documenting in the architecture deck and worth a single shared `useSpool(id)` hook (or equivalent) instead of module-specific repositories.
+
+---
+
+## Cross-cutting findings updates (from #10)
+
+### CC-30. Construction surveillance PDA checklists — definitively NEVER BUILT
+
+After **six consecutive presentations** (#5 Spool Tracking, #6 Erection, #7 Test Pack, #8 Spooling, #9 Assembly, #10 Painting) with zero PDA evidence, the construction-surveillance feature explicitly listed as a transversal module in #1 is **closed out as vaporware**. Reasonable confidence: 95%+. The 5% is reserved for the possibility that this feature lived in a deck that wasn't shared (the missing `Piping weld point process.pptx` is the only candidate).
+
+**PipeQC implications:**
+
+- **Not a parity gap.** PipeQC does not need to match this. EP never shipped it.
+- **Clear opportunity for differentiation.** Mobile-first field checklists (the actual functionality construction surveillance was meant to deliver) is now uncontested whitespace in this product category.
+- **Pitch framing:** _"the only competitor explicitly promised PDA-based field surveillance and never delivered it across 10+ years of development. PipeQC ships it as a foundational feature."_
+
+This finding alone, combined with CC-1 (TechnipFMC exited the market), is sufficient pitch material for a "why now" slide.
+
+### CC-31. Paint Matrix = the only fully parameterized-step UI in Easy Piping
+
+The Paint Matrix is the only place in the entire system where the UI's **required steps** are dynamically determined by a referential, per item. Three coats for one spool, one coat for another, all on the same screen. Step count is data-driven.
+
+Other parts of the system are referential-driven for **values** (welder dropdowns from the welder list, RAL codes from RAL list, etc.) but the **structure of the workflow** is hard-coded. Paint Matrix breaks that pattern — its referential drives the workflow shape itself.
+
+**PipeQC architectural implication:** worth designing a **generic parameterized-step UI** pattern early. Useful contexts:
+
+- Paint Matrix (intermediate / final coats — direct port)
+- NDE Matrix (already partially used; could go further — different inspection types per joint material)
+- Test pack reinstatement (Y/Z categories trigger different reinstatement step sequences)
+- Custom project-specific QC steps
+
+Implementation pattern: a `WorkflowDefinition` referential per item type, with steps as data not code. UI renders the steps dynamically. The Paint Matrix becomes one instance of this generic pattern.
+
+### CC-32. Module-level documentation boilerplate copy-paste = vendor sloppiness signal
+
+The "For the moment, only the NDE – preparation is available" sentence appears verbatim in #6 Erection, #9 Assembly, AND #10 Painting — even though Painting has no NDE sub-activity. This is **mechanical copy-paste** without per-module review.
+
+**Significance:** the documentation was not maintained as a living artifact per module. It was authored once (likely for the Erection module) and dragged across other modules with minimal editing.
+
+**PipeQC implications:**
+
+- Write module docs **per-module from day one** — no shared boilerplate
+- Internal style: per-module README in the repo, each independently maintained
+- Customer-facing: per-module how-to in product, no generic "modules and sub-modules" preamble
+- Pitch payoff (mild): "documentation tailored to each module, not boilerplate"
+
+A small differentiator, but the kind of small differentiator that signals product care in an enterprise B2B evaluation.
+
+### CC-33. Form numbering — shared service, per-template namespace
+
+The W-form family (W24, W10P, others) shares two patterns across modules:
+
+1. **Forms have stable codes** (W24, W10P) — these are TechnipFMC template identifiers, fixed per form type
+2. **Report numbers are unique and auto-assigned** by the system — per the W10P slide explicitly, and implied for W24 too
+
+Together: the system has a **shared form-numbering service** that assigns unique sequential numbers per form template. Each form template has its own numbering namespace (W24 numbers don't collide with W10P numbers).
+
+**PipeQC implications:**
+
+- One shared `FormNumberingService` with `(template_code, project_id) → next_number`
+- Per-template, per-project sequence
+- Hard-coded form templates initially (W24-style daily progress, W10P-style QC form), template engine later
+
+This partially answers the previously-open "shared print-template engine" question. There's no shared **template engine** described in any of the 10 decks — but there IS a shared **numbering service** behind the templates. The templates themselves are likely module-local; the numbering is shared.
 
 ---
 
@@ -1810,35 +2142,137 @@ The Browser sub-module makes clear that the supposedly-automated `SpoolGen → E
 
 ## Open questions resolved by #8
 
-| Open Q | Resolution |
-| -- | -- |
-| **PSMS SpoolingDB schema** | ⚠️ **Partial.** No ERD shown, but iso entity model fully inferable from the 4 explorer tabs: `Isometric(rev#, size, process_status)` ←1:N `CheckingRound(round_no, checker, date, comments)`, `Hold(type, holder, hold_date, release_date)`, `EngineeringTransmittal(no, received_date)` and `SpoolingTransmittal(batch_no, trans_no, transmit_date, transmitter)` 1:N `Isometric`. No deep schema (foreign keys, types) shown. |
-| WPS qualification alert — hard block or soft? | ❌ Not addressed in #8. Try #9 Assembly. |
-| Construction surveillance PDA checklists | ❌ Still not found. Three modules in a row with no PDA UI (#6/#7/#8). Confidence rising that this is a vendor-incomplete feature per CC-7/CC-8 pattern. Final chances: #9, #10. |
-| Shared print-template engine | ❌ Not addressed in depth. Spooling home page has a "Print button" but no template-engine architecture is visible. Increasingly likely each module just has its own print routine — no shared infrastructure. |
-| Punch-code referential location | ❌ Not in #8. Re-check #2 admin notes — most likely already covered there. |
+| Open Q                                        | Resolution                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **PSMS SpoolingDB schema**                    | ⚠️ **Partial.** No ERD shown, but iso entity model fully inferable from the 4 explorer tabs: `Isometric(rev#, size, process_status)` ←1:N `CheckingRound(round_no, checker, date, comments)`, `Hold(type, holder, hold_date, release_date)`, `EngineeringTransmittal(no, received_date)` and `SpoolingTransmittal(batch_no, trans_no, transmit_date, transmitter)` 1:N `Isometric`. No deep schema (foreign keys, types) shown. |
+| WPS qualification alert — hard block or soft? | ❌ Not addressed in #8. Try #9 Assembly.                                                                                                                                                                                                                                                                                                                                                                                        |
+| Construction surveillance PDA checklists      | ❌ Still not found. Three modules in a row with no PDA UI (#6/#7/#8). Confidence rising that this is a vendor-incomplete feature per CC-7/CC-8 pattern. Final chances: #9, #10.                                                                                                                                                                                                                                                 |
+| Shared print-template engine                  | ❌ Not addressed in depth. Spooling home page has a "Print button" but no template-engine architecture is visible. Increasingly likely each module just has its own print routine — no shared infrastructure.                                                                                                                                                                                                                   |
+| Punch-code referential location               | ❌ Not in #8. Re-check #2 admin notes — most likely already covered there.                                                                                                                                                                                                                                                                                                                                                      |
 
 ---
 
-## Open questions to answer in remaining presentations (updated after #8)
+## Final status of all open questions
 
-1. ~~**PSMS SpoolingDB schema**~~ → **⚠️ PARTIAL #8** (entity model yes, ERD no)
-2. **PWHT entry screen** — still missing. Try #10 Painting.
-3. **Construction surveillance PDA checklists** — ❌ not in #5/#6/#7/#8. Last chances: #9, #10. Default assumption now: **never built** (CC-7/CC-8 pattern).
-4. **Assembly vs Erection distinction** — definitive answer expected in #9.
-5. **Painting DFT measurement workflow** — #10.
-6. **WPS qualification alert — hard block or soft warning?** — try #9 or #10.
-7. **`Piping weld point process.pptx`** — sub-deck, still missing from Drive folder.
-8. **W10 report number** — still undefined.
-9. **Penalty-shoot management UI** — still missing.
-10. **Punch-code referential location** — re-check #2 admin notes (most likely already covered).
-11. **Shared print-template engine?** — likely no shared engine; each module prints its own. To be confirmed in #9/#10 if relevant.
-12. **NEW: Inquiry sub-module functionality** — #8 lists "Inquiry" as one of 8 sub-modules but doesn't show its screen. Read-only lookup is the inference, but unverified.
-13. **NEW: SpoolGen file types accepted** — #8 mentions "Type of Files to be imported" filter but doesn't enumerate types. Domain interviews or sub-deck `Piping weld point process.pptx` likely.
+Series complete. All questions are now either resolved or closed as "domain interviews needed."
+
+| Open Q                                          | Final status                                                                                      |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| **PWHT entry screen**                           | ✅ Resolved (by elimination) — #10. PWHT entered in NDE batch workflow (#4); no dedicated screen. |
+| **Construction surveillance PDA checklists**    | ✅ Resolved as NEVER BUILT — #10 (CC-30). Six decks, zero PDA evidence.                           |
+| **Painting DFT measurement workflow**           | ✅ Resolved — #10. Via QC form (W10P); no dedicated DFT screen.                                   |
+| **Penalty-shoot management UI**                 | ✅ Resolved (by elimination) — #10. Logic is in NDE batch workflow, no standalone UI.             |
+| **W10 report number**                           | ✅ Resolved — #10. W10 is a form family; W10P is the Painting variant.                            |
+| **Assembly vs Erection distinction**            | ✅ Resolved — #9 (CC-26). Same module, different stage parameter.                                 |
+| **WPS qualification alert — hard or soft?**     | ✅ Resolved — #9 (CC-28). Soft alert; user can proceed.                                           |
+| **Material-check workflow**                     | ✅ Resolved — #9. Derived status from heat number validation.                                     |
+| **Hard-block on heat numbers**                  | ✅ Resolved — #9 (CC-28). Hard block; record rejected if heat not in referential.                 |
+| **Shared print-template engine**                | ⚠️ Partially resolved — #10 (CC-33). No shared template engine; shared numbering service exists.  |
+| **SpoolGen file types accepted (Browser)**      | ❌ Closed — domain interviews needed.                                                             |
+| **Inquiry sub-module functionality (Spooling)** | ❌ Closed — read-only lookup inferred, unverified. Domain interviews needed.                      |
+| **`Piping weld point process.pptx`**            | ❌ Closed — missing from Drive folder. Search Drive separately.                                   |
+| **Full W-form family enumeration**              | ❌ Closed — TechnipFMC-internal naming convention; not fully documented in 10 decks.              |
 
 ---
 
-_Last updated: 2026-05-21. Next read: #9 EasyPiping Assembly._
+_Last updated: 2026-05-21. **Research series complete (10/10). No next read.**_
+
+---
+
+## Research project closeout — summary across all 10 reads
+
+The 10-deck Easy Piping presentation set has been read sequentially per the agreed methodology. This section summarizes the state of the research project at closeout.
+
+### Reads completed
+
+| #   | File                       | Status             |
+| --- | -------------------------- | ------------------ |
+| 1   | PSMS overview              | ✅ Read 2026-05-20 |
+| 2   | EasyPiping Administration  | ✅ Read 2026-05-20 |
+| 3   | EasyPiping Preparation     | ✅ Read 2026-05-20 |
+| 4   | EasyPiping Fabrication     | ✅ Read 2026-05-20 |
+| 5   | EasyPiping Spool tracking  | ✅ Read 2026-05-20 |
+| 6   | EasyPiping Erection        | ✅ Read 2026-05-21 |
+| 7   | Easy Piping Test Pack      | ✅ Read 2026-05-21 |
+| 8   | PSMS SpoolingDB (Spooling) | ✅ Read 2026-05-21 |
+| 9   | EasyPiping Assembly        | ✅ Read 2026-05-21 |
+| 10  | EasyPiping Painting        | ✅ Read 2026-05-21 |
+
+**Total:** 10/10. **Series complete.**
+
+### Cross-cutting findings inventory — 33 in total
+
+| #       | Title                                                        | Pitch / build impact                         |
+| ------- | ------------------------------------------------------------ | -------------------------------------------- |
+| CC-1    | TechnipFMC exited the market                                 | High — pitch foundation                      |
+| CC-2    | System architecture (3D → SpoolGen → EP)                     | High — pitch integration diagram             |
+| CC-3    | Role hierarchy (8 effective roles)                           | High — drives role × function matrix         |
+| CC-4    | Subcontractor scope lock                                     | High — multi-tenant requirement (Track J)    |
+| CC-5    | Module dependency map                                        | Medium — build sequencing                    |
+| CC-6    | PMP project benchmark (scale)                                | High — pitch TAM slide                       |
+| CC-7    | "Production" module never finished                           | High — pitch material                        |
+| CC-8    | Even Erection module incomplete                              | High — pitch material                        |
+| CC-9–16 | (from #6/#7 — see file)                                      | Mixed                                        |
+| CC-17   | "Generate Request" PDF dispatch pattern                      | Medium — universal pattern                   |
+| CC-18   | RFT gate = central business logic                            | **Highest** — Track H critical path          |
+| CC-19   | Numeric status code + tooltip + RAG                          | Medium — design system pattern               |
+| CC-20   | Punch X/Y/Z = post-fab sequencer                             | High — Track H critical path                 |
+| CC-21   | Iso revision lifecycle = first-class state machine           | Medium — entity modeling                     |
+| CC-22   | "Spooling" = engineering doc handoff, NOT shop floor         | **High** — IA reframe                        |
+| CC-23   | Live activity feed = recurring pattern                       | Low — shared component                       |
+| CC-24   | French copy leaks → translation cleanup signal               | Low — small pitch differentiator             |
+| CC-25   | SpoolGen integration is operator-mediated (NOT API)          | Medium — opportunity for diff                |
+| CC-26   | Assembly = Erection at different stage (single param module) | **Highest** — saves significant build effort |
+| CC-27   | Preparation never finished across 3 modules (pattern)        | High — pitch tightening                      |
+| CC-28   | Two-tier validation: BLOCK vs WARN                           | High — UX taxonomy                           |
+| CC-29   | Shared spool aggregate across modules                        | High — data architecture                     |
+| CC-30   | Construction surveillance PDA = NEVER BUILT                  | **Highest** — uncontested whitespace         |
+| CC-31   | Paint Matrix = only parameterized-step UI in EP              | High — generic pattern opportunity           |
+| CC-32   | Documentation boilerplate copy-paste = vendor sloppy         | Low — minor differentiator                   |
+| CC-33   | Form numbering = shared service, per-template namespace      | Medium — infra component                     |
+
+**Top 5 highest-impact findings (subjective ranking):**
+
+1. **CC-30** — Construction surveillance never built → uncontested whitespace
+2. **CC-26** — Assembly = Erection-at-stage → 50% module-build reduction
+3. **CC-18** — RFT gate logic → Track H critical path
+4. **CC-22** — Spooling IA reframe → avoids demo-day confusion
+5. **CC-1 / CC-7 / CC-8 / CC-27** (vendor-incomplete cluster) → pitch foundation
+
+### Settled facts (questions closed across the series)
+
+- **Assembly vs Erection** — same module, different stage parameter
+- **WPS qualification** — soft alert, not hard block (CC-28)
+- **Heat number validation** — hard block (CC-28)
+- **RFT gate composition** — fully specified in #7 (CC-18)
+- **Test pack data model** — fully specified in #7
+- **Tracer / penalty-shoot logic** — fully specified in #4 (4 rejections → auto-SS)
+- **Construction surveillance PDA** — never built (CC-30)
+- **PWHT entry** — embedded in NDE batch workflow (not a separate screen)
+- **Penalty-shoot management UI** — does not exist as a standalone screen
+- **W-form family** — TechnipFMC template codes with shared numbering service (CC-33)
+- **Painting DFT entry** — via QC form, no dedicated screen
+- **Material check status** — derived from heat number validation, not separate workflow
+- **Multi-welder per joint** — N weld points per joint, each with own welder/WPS
+- **Two hold sources for isos** — Engineering (new rev) or Spooling Team (inconsistency)
+- **SpoolGen integration** — operator-mediated file import (manual), not API
+
+### Permanently open — requires domain interviews or external sources
+
+- `Piping weld point process.pptx` — missing sub-deck
+- SpoolGen file types accepted — Browser sub-module filter
+- Inquiry sub-module (#8) — read-only lookup inferred
+- Full W-form family enumeration (W10E? W10W? others?)
+
+These are not blocking. PipeQC can be built without them; they would only sharpen specific implementation details.
+
+### Recommended next steps (out of scope for this log)
+
+1. **Role × function × interface × state matrix** — per the user's revised methodology, the natural next product-spec activity given the new domain understanding.
+2. **IA restructuring** — apply CC-22 (Spooling reframe) and CC-26 (Assembly = Erection at stage) to the PipeQC information architecture before any further screen builds.
+3. **Track H — Test Pack builder** — informed by RFT gate (CC-18), X/Y/Z punch sequencer (CC-20), reinstatement triggers (#7). Now substantially de-risked vs pre-research state.
+4. **Pitch deck refresh** — fold in the vendor-incomplete cluster, CC-30 whitespace finding, CC-26 architectural-superiority story.
+5. **Design system codification** — RAG + numeric code status badges (CC-19), two-tier validation (CC-28), shared activity feed component (CC-23).
 
 ---
 
