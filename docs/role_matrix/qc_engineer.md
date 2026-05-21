@@ -79,11 +79,16 @@ PM (watcher), QC Engineer трогает данные каждые 5 минут 
 16 функций. Status legend выше — ✅ live · ⚠ partial · ❌ missing · 📋 planned.
 
 1. **✅ Shop weld progress entry** — welder, WPS, root/cap %, foreman confirm
-2. **✅ Shop material check sign-off** per spool (heat numbers → mill cert)
-3. **✅ Shop QC release sign-off** per spool (4-item checklist + audit)
+2. **⚠ Shop material check sign-off** per spool — route/UI/store persist exist,
+   but no hard validation against Project Piping Material List referential yet.
+3. **⚠ Shop QC release sign-off** per spool — 4-item checklist persists, but no
+   Fail / Reject-to-Rework path and no real heat-trace hard block yet.
 4. **✅ Send completed welds to NDE batch** (shop)
-5. **✅ Review NDE batch results** (acceptance / rejection cascade)
-6. **✅ Mark welds for rework** with rework code
+5. **⚠ Review NDE batch results** — `/nde` receives batch results, but current
+   row action bulk-accepts and does not expose full per-weld defect entry dialog.
+6. **⚠ Mark welds for rework** with rework code — batch-level rework state
+   exists, but NDE result receive does not yet cascade rejected welds into
+   `welds-store` Rework with full repair workflow.
 7. **❌ Acknowledge tracer obligations** on rejected welds (penalty shoot
    trigger after 1 rejection; auto SS after 4) — **MISSING**, referenced
    в `lib/welder-qual.ts` но flow нет. Candidate for **Track N (NDE upgrade)**.
@@ -110,7 +115,7 @@ PM (watcher), QC Engineer трогает данные каждые 5 минут 
 NDE 100% override`), allows QC + Prj Admin to override sampling
     rate. Не реализовано. Niche feature, low priority.
 
-**Gap summary:** 9 функций ✅ live, 3 ⚠ partial, 4 ❌ missing.
+**Gap summary:** 5 функций ✅ live, 7 ⚠ partial, 4 ❌ missing.
 
 **Gap density observation:** все 4 missing функции + 3 partial — про
 welding/NDE management deeper features. Это объясняет почему мы оценили
@@ -118,28 +123,49 @@ welding coverage как **~10/15 partial** в #1 presentation findings. Если
 делать **Track N (NDE / welder qual upgrade)**, он закроет 7 функций
 QC Engineer одновременно. Это самый высокий ROI track для роли QC Engineer.
 
+**Gap triage (consolidated):**
+
+| #   | Function                        | St  | Pr  | Decision | Track   |
+| --- | ------------------------------- | --- | --- | -------- | ------- |
+| B1  | Shop weld progress entry        | ✅  | P0  | build    | —       |
+| B2  | Shop material check sign-off    | ⚠   | P0  | build    | Track A |
+| B3  | Shop QC release sign-off        | ⚠   | P0  | build    | Track G |
+| B4  | Send completed welds to NDE     | ✅  | P0  | build    | —       |
+| B5  | Review NDE batch results        | ⚠   | P0  | build    | Track N |
+| B6  | Mark welds for rework           | ⚠   | P0  | build    | Track N |
+| B7  | Tracer obligations / penalty    | ❌  | P1  | build    | Track N |
+| B8  | Field weld progress entry       | ✅  | P0  | build    | —       |
+| B9  | Field material check            | ✅  | P0  | build    | —       |
+| B10 | Field QC release                | ⚠   | P0  | build    | Track E |
+| B11 | Line check findings entry       | ✅  | P0  | build    | —       |
+| B12 | Item clearance sign-off         | ✅  | P0  | build    | —       |
+| B13 | PWHT release                    | ⚠   | P1  | build    | Track N |
+| B14 | Welder qualification validation | ⚠   | P1  | build    | Track N |
+| B15 | Multiple welders per joint      | ❌  | P2  | defer    | Track N |
+| B16 | NDE 100% override               | ❌  | P3  | defer    | Track N |
+
 ---
 
 ### C. Function → Screen → Interaction
 
-| #   | St  | Функция                       | Экран                                                          | Что нажимает / делает                                                                                                                                                                                                                                                                       |
-| --- | --- | ----------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| B1  | ✅  | Shop weld progress entry      | `/fabrication/weld-progress`                                   | Filter chip "Spool" → выбирает spool ID → row click на joint → side panel справа → welder dropdown → WPS dropdown → root % input → cap % input → "Foreman confirmed" checkbox → Save (~700ms) → toast "Weld saved". Row переходит в Completed.                                              |
-| B2  | ✅  | Shop material check           | `/fabrication/material-check`                                  | Filter "Pending" → row click на spool → side panel → для каждого heat piece: heat # input + mill cert ref input + inspector dropdown → "Sign off" (~700ms) → row из Pending в Done. Если heat # не в material referential → BLOCK с tooltip _"Heat XXXX missing from project list"_.        |
-| B3  | ✅  | Shop QC release               | `/fabrication/qc-release`                                      | Filter "Awaiting Release" → row click → side panel → 4-item checklist (visual / dimensional / NDE complete / heat trace) каждый Pass/Fail/Pass-with-remark → comment optional → "Release" (~700ms) → toast → row в Released bucket. Если любой Fail → button становится "Reject to Rework". |
-| B4  | ✅  | Send welds to NDE             | weld detail panel → CreateBatchDialog                          | В weld panel "Send to NDE" → Step 1 dialog: method (RT/UT/PT/MT) + subcontractor + NDE matrix coverage → Step 2: select welds checkboxes → "Create batch" (~700ms) → notification feed update.                                                                                              |
-| B5  | ✅  | Review NDE batch results      | `/nde/{batchId}` Receive Results panel                         | Открывает batch row → "Receive Results" → per-weld: Accept / Reject + rework code dropdown (только если Reject) + inspector signature → Submit → cascade: rejected welds auto-flip в Rework status в welds store, notification созданное.                                                   |
-| B6  | ✅  | Mark welds for rework         | `/nde/{batchId}` (вытекает из B5)                              | Auto-cascade из B5: rejected welds получают status Rework + rework code. Manual override доступен в weld detail panel (`Status → Rework` + comment) для редких случаев.                                                                                                                     |
-| B7  | ❌  | Acknowledge tracer obligation | (no screen yet — planned `/nde/penalty-shoot` или modal)       | После rejection в B5 — welder counter ++. На N=1 — banner в weld panel при следующем выборе того же welder'а _"Tracer obligation active: next weld 100% NDE"_. На N=4 — welder dropdown в weld entry получает chip _"SS — all welds 100% NDE forced"_. **NOT IMPLEMENTED.**                 |
-| B8  | ✅  | Field weld progress           | `/erection/weld-progress`                                      | Same UX as B1, source tag = Erection. Все same edge cases.                                                                                                                                                                                                                                  |
-| B9  | ✅  | Field material check          | `/erection/material-check`                                     | Same UX as B2, source = Erection. Field welds typically smaller scope (только closure welds + tie-ins on site).                                                                                                                                                                             |
-| B10 | ⚠   | Field QC release              | `/erection/rft` (currently)                                    | Сейчас RFT screen derived field — auto fires когда Supported. Нет explicit 4-item field QC checklist. **Gap для будущего Track:** add field QC release screen analogous to shop QC release.                                                                                                 |
-| B11 | ✅  | Line check findings           | `/testpack/pressure-test/line-check/progress`                  | Открывает CR-XXXX (assigned to LC team) → row click → "Add punch item" → code + category X/Y/Z + localization (ISO or spool) → assigned-to team → Save (~700ms).                                                                                                                            |
-| B12 | ✅  | Item clearance sign-off       | `/testpack/pressure-test/item-clearance/progress`              | Открывает CR-XXXX → punch item row → status select "Cleared" + inspector sig + closure comment → Save → cascade: если все Cat-X cleared → TP_RFT может widen.                                                                                                                               |
-| B13 | ⚠   | PWHT release                  | (currently in weld panel as field, no dedicated screen)        | В weld panel — `PWHT required` flag + `PWHT released by` field. Нет workflow screen для batch PWHT release. **Gap для Track N:** dedicated `/pwht` или PWHT tab в NDE module.                                                                                                               |
-| B14 | ⚠   | Welder qual validation        | Logic в `lib/welder-qual.ts`, UI not wired                     | Validation function существует. Нужно: в weld entry (B1, B8) при выборе welder + WPS пары — call validator → если mismatch yellow banner в side panel _"Welder qualification mismatch (expired / different material)"_ → Save остаётся active per CC-28 soft alert.                         |
-| B15 | ❌  | Multiple welders per joint    | Schema-level limitation                                        | weld entry support только single `welderId`. Need: extend schema → `welderRoot` + `welderCap` (optional) + UI: split welder selection в side panel. **Track N candidate.**                                                                                                                  |
-| B16 | ❌  | NDE 100% override             | (no screen — would be admin-section в Examination process tab) | Planned per IA sitemap. Override sampling rate для конкретного welder / WPS / period. **Low priority — niche feature.**                                                                                                                                                                     |
+| #   | St  | Функция                       | Экран                                                          | Что нажимает / делает                                                                                                                                                                                                                                                                                                                       |
+| --- | --- | ----------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| B1  | ✅  | Shop weld progress entry      | `/fabrication/weld-progress`                                   | Filter chip "Spool" → выбирает spool ID → row click на joint → side panel справа → welder dropdown → WPS dropdown → root % input → cap % input → "Foreman confirmed" checkbox → Save (~700ms) → toast "Weld saved". Row переходит в Completed.                                                                                              |
+| B2  | ⚠   | Shop material check           | `/fabrication/material-check`                                  | Filter "Pending" → row click на spool → side panel → heat # + mill cert ref + status per piece → Save Draft / Sign off (~700ms) → store persists + notification. **Сейчас:** no hard validation against Project Piping Material List; heat # referential BLOCK not implemented.                                                             |
+| B3  | ⚠   | Shop QC release               | `/fabrication/qc-release`                                      | Filter "Awaiting Release" → row click → side panel → 4-item checklist (visual / dimensional / NDE complete / heat trace) каждый Pending/Pass/Pass-with-remark → comment required for remark → "Sign QC Release" (~700ms) → store persists + notification. **Сейчас:** no Fail state / Reject-to-Rework path; no real heat-trace hard block. |
+| B4  | ✅  | Send welds to NDE             | weld detail panel → CreateBatchDialog                          | В weld panel "Send to NDE" → Step 1 dialog: method (RT/UT/PT/MT) + subcontractor + NDE matrix coverage → Step 2: select welds checkboxes → "Create batch" (~700ms) → notification feed update.                                                                                                                                              |
+| B5  | ⚠   | Review NDE batch results      | `/nde` batch row action / detail panel                         | Batch list has Issue / Receive Results / Close row actions and persisted batch history. **Сейчас:** dropdown "Receive Results" bulk-accepts all welds; full per-weld Accept/Reject + defect code dialog is not implemented.                                                                                                                 |
+| B6  | ⚠   | Mark welds for rework         | `/nde` batch workflow                                          | Batch store has Rework status and rejected weld fields. **Сейчас:** rejected results do not cascade into `welds-store` Rework status from the row action; full repair dispatch workflow remains Track N.                                                                                                                                    |
+| B7  | ❌  | Acknowledge tracer obligation | (no screen yet — planned `/nde/penalty-shoot` или modal)       | После rejection в B5 — welder counter ++. На N=1 — banner в weld panel при следующем выборе того же welder'а _"Tracer obligation active: next weld 100% NDE"_. На N=4 — welder dropdown в weld entry получает chip _"SS — all welds 100% NDE forced"_. **NOT IMPLEMENTED.**                                                                 |
+| B8  | ✅  | Field weld progress           | `/erection/weld-progress`                                      | Same UX as B1, source tag = Erection. Все same edge cases.                                                                                                                                                                                                                                                                                  |
+| B9  | ✅  | Field material check          | `/erection/material-check`                                     | Same UX as B2, source = Erection. Field welds typically smaller scope (только closure welds + tie-ins on site).                                                                                                                                                                                                                             |
+| B10 | ⚠   | Field QC release              | `/erection/rft` (currently)                                    | Сейчас RFT screen derived field — auto fires когда Supported. Нет explicit 4-item field QC checklist. **Gap для будущего Track:** add field QC release screen analogous to shop QC release.                                                                                                                                                 |
+| B11 | ✅  | Line check findings           | `/testpack/pressure-test/line-check/progress`                  | Открывает CR-XXXX (assigned to LC team) → row click → "Add punch item" → code + category X/Y/Z + localization (ISO or spool) → assigned-to team → Save (~700ms).                                                                                                                                                                            |
+| B12 | ✅  | Item clearance sign-off       | `/testpack/pressure-test/item-clearance/progress`              | Открывает CR-XXXX → punch item row → status select "Cleared" + inspector sig + closure comment → Save → cascade: если все Cat-X cleared → TP_RFT может widen.                                                                                                                                                                               |
+| B13 | ⚠   | PWHT release                  | (currently in weld panel as field, no dedicated screen)        | В weld panel — `PWHT required` flag + `PWHT released by` field. Нет workflow screen для batch PWHT release. **Gap для Track N:** dedicated `/pwht` или PWHT tab в NDE module.                                                                                                                                                               |
+| B14 | ⚠   | Welder qual validation        | Logic в `lib/welder-qual.ts`, UI not wired                     | Validation function существует. Нужно: в weld entry (B1, B8) при выборе welder + WPS пары — call validator → если mismatch yellow banner в side panel _"Welder qualification mismatch (expired / different material)"_ → Save остаётся active per CC-28 soft alert.                                                                         |
+| B15 | ❌  | Multiple welders per joint    | Schema-level limitation                                        | weld entry support только single `welderId`. Need: extend schema → `welderRoot` + `welderCap` (optional) + UI: split welder selection в side panel. **Track N candidate.**                                                                                                                                                                  |
+| B16 | ❌  | NDE 100% override             | (no screen — would be admin-section в Examination process tab) | Planned per IA sitemap. Override sampling rate для конкретного welder / WPS / period. **Low priority — niche feature.**                                                                                                                                                                                                                     |
 
 ---
 

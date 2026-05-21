@@ -50,10 +50,10 @@ NDE Inspector на EPC piping construction:
   particle), PMI (positive material identification, alloy verification),
   HT (hardness test, обычно follow-up на PWHT). Own staff для VT and
   basic surface methods, **subcontractor lab** (BV / SGS / TÜV / Intertek
-  + national labs) для RT + UT + PMI requiring certified personnel
-  (ASNT Level II/III).
+  - national labs) для RT + UT + PMI requiring certified personnel
+    (ASNT Level II/III).
 - **Per-weld result recording** — для каждого weld в batch'е: `Is Accepted
-  = A` (Accepted) или `R` (Rejected). On Rejection: **mandatory fields**
+= A` (Accepted) или `R` (Rejected). On Rejection: **mandatory fields**
   — Defect Code (POR/CRK/LOF/SLG/UNC/INC/OTH) + Location of Defect
   (root / cap / fill / side specification). Inspector remarks free-text.
 - **Maintain examination history per joint** — каждый weld может пройти
@@ -68,10 +68,10 @@ NDE Inspector на EPC piping construction:
   batch flip в T1 (tracer 1) status.
 - **Tracer hierarchy management** — если T1 weld тоже fails: T1-1 + T1-2
   (level 2 tracers) created automatically. Если T2 path triggers: T2-1
-  + T2-2. Это formal penalty-shoot tree, не optional convention. Tracer
-  joints are **additional welds added to the batch beyond original
-  sampling** — economic argument from #4: _"3 additional joints have to
-  be examined for each weld defect of the welder"_ (1 repair + 2 tracers).
+  - T2-2. Это formal penalty-shoot tree, не optional convention. Tracer
+    joints are **additional welds added to the batch beyond original
+    sampling** — economic argument from #4: _"3 additional joints have to
+    be examined for each weld defect of the welder"_ (1 repair + 2 tracers).
 - **Penalty shoot trigger** — auto-cascade rule (verbatim from #4): _"In
   a Batch When 2nd level Tracer (T1-1, T1-2, T2-1, T2-2) or 4 joints
   are rejected in the examination, all the remaining welds in this
@@ -97,9 +97,9 @@ NDE Inspector на EPC piping construction:
 - **Reports generation** — 8 management reports (Batch status,
   Radiographic status, Outstanding Repairs, Service class wise, Spool
   wise, Outstanding NDE, Radiographic film qty est, Weld History sheet)
-  + 4 welder monitoring reports (Perf Control Sheet, Rej. and Repaired,
-  Rej. and Tracers, Batch status per welder). Weld History sheet — the
-  critical one — inserted в final test pack dossier per CC-18.
+  - 4 welder monitoring reports (Perf Control Sheet, Rej. and Repaired,
+    Rej. and Tracers, Batch status per welder). Weld History sheet — the
+    critical one — inserted в final test pack dossier per CC-18.
 - **Reports up** to QC Engineer (rework dispatch decisions) and to
   Project Manager (acceptance rate trends, lab subcontractor performance).
 - **Reports to client QC** — monthly NDE acceptance summary, ad-hoc
@@ -124,13 +124,12 @@ expertise, не просто data entry.
 2. **✅ Issue batch (Created → Issued)** — batch row dropdown menu →
    "Issue" → subcontractor + inspector preselected from batch metadata →
    confirm → status flip + history entry _"Issued to [subcontractor]"_.
-3. **✅ Receive results per weld** — batch row dropdown → "Receive
-   Results" → per-weld dialog: Accept / Reject + rework code dropdown
-   (mandatory when Reject) + inspector remarks → Submit (~700ms) →
-   cascade в welds-store (rejected welds → Rework status).
-4. **✅ Close batch** — после all welds в batch'е Accepted: dropdown
-   "Close" → status Closed, batch goes в archive view. Если хоть один
-   weld Rejected → status flips в Rework instead.
+3. **⚠ Receive results** — batch row dropdown → "Receive Results" exists,
+   but today bulk-accepts all welds; full per-weld Accept / Reject +
+   rework code dialog and `welds-store` rejection cascade are not implemented.
+4. **✅ Close accepted batch** — после all welds в batch'е Accepted:
+   dropdown "Close" → status Closed, persisted in `batches-store`.
+   Rework/close branching for rejected welds remains partial via B3/B7 gaps.
 5. **⚠ Issue Examination Program (PDF dispatch)** — current C1 placeholder
    `/reports` имеет "NDE Batch Summary" + "NDE Overdue" reports.
    Полноценный Request No assignment + per-batch PDF generation с
@@ -173,7 +172,7 @@ expertise, не просто data entry.
     defect codes per cycle). Сегодня batch-level history есть в batch
     detail panel, но joint-level deep history view отсутствует.
 
-**Gap summary:** 4 функции ✅ live, 3 ⚠ partial, 7 ❌ missing.
+**Gap summary:** 3 функции ✅ live, 4 ⚠ partial, 7 ❌ missing.
 
 **Gap density observation:** в отличие от QC Engineer (где gaps размазаны
 по edge cases), NDE Inspector gaps cluster'ятся в two zones: **(a) deep
@@ -185,26 +184,45 @@ demo moment для investor pitch ("watch this welder's 4th joint fail —
 no human intervention, all remaining welds auto-selected for examination").
 Track C extension для NDE-specific reports закрывает B10/B11.
 
+**Gap triage (consolidated):**
+
+| #   | Function                       | St  | Pr  | Decision | Track   |
+| --- | ------------------------------ | --- | --- | -------- | ------- |
+| B1  | View batch list / filter       | ✅  | P0  | build    | —       |
+| B2  | Issue batch                    | ✅  | P0  | build    | —       |
+| B3  | Receive results                | ⚠   | P0  | build    | Track N |
+| B4  | Close accepted batch           | ✅  | P0  | build    | —       |
+| B5  | Issue Examination Program      | ⚠   | P1  | build    | Track N |
+| B6  | NDE100 sub-flow                | ❌  | P1  | build    | Track N |
+| B7  | Penalty shoot / tracer cascade | ❌  | P1  | build    | Track N |
+| B8  | Client examination request     | ❌  | P2  | defer    | Track N |
+| B9  | NDE acceptance rate report     | ⚠   | P1  | build    | Track C |
+| B10 | 8 management reports           | ❌  | P2  | defer    | Track C |
+| B11 | 4 welder monitoring reports    | ❌  | P2  | defer    | Track C |
+| B12 | NDE dashboard / KPI            | ⚠   | P1  | build    | Track N |
+| B13 | NDE 100% override              | ❌  | P3  | defer    | Track N |
+| B14 | Examination History per joint  | ❌  | P1  | build    | Track N |
+
 ---
 
 ### C. Function → Screen → Interaction
 
-| #   | St  | Функция                                  | Экран                                  | Что нажимает / делает                                                                                                                                                                                                                                                  |
-| --- | --- | ---------------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| B1  | ✅  | View batch list / filter                 | `/nde`                                 | Method chips (RT/UT/MT/PT/PMI/HT) + status chips + source chip (Shop/Field) → table updates. Row click → batch detail panel в Sheet (full welds list + history tab).                                                                                                  |
-| B2  | ✅  | Issue batch                              | `/nde` (row dropdown)                  | Batch row "..." menu → "Issue" → toast _"BTH-XXXX issued to [subcontractor]"_ → status flip Created → Issued. History entry added.                                                                                                                                       |
-| B3  | ✅  | Receive results per weld                 | `/nde` (row dropdown)                  | "Receive Results" → per-weld: Accept (default) / Reject + rework code dropdown (mandatory on Reject) + inspector remarks → Submit (~700ms) → cascade: rejected welds → Rework status в welds-store + notification feed update.                                          |
-| B4  | ✅  | Close batch                              | `/nde` (row dropdown)                  | "Close" — enabled only if all welds Accepted → status Closed → archive view. Если хоть один Rejected — option becomes "Mark for Rework" → status Rework.                                                                                                              |
-| B5  | ⚠   | Issue Examination Program                | `/reports` (mock today)                | Today: download mock-toast в /reports. Planned: from batch detail panel → "Issue Exam Program" button → dialog: lab + special instructions + Generate → PDF (mock) с Request No.                                                                                       |
-| B6  | ❌  | NDE100 sub-flow                          | (no screen — planned `/nde/nde100`)    | Planned: separate tab from main batch list. Pick NDE category → grid of joints в 100% category → status H/HS → "Mark Selected" → bulk action → batch generated automatically with HS-status joints.                                                                  |
-| B7  | ❌  | Penalty shoot / tracer cascade           | (no screen — auto-trigger logic)       | Planned auto-behavior: on each Reject in B3 → welder rejection counter ++ → если counter ≥4 в same batch OR T1-1/T1-2/T2-1/T2-2 created → all remaining welds в batch flip S/SS → notification _"Penalty shoot triggered for [batch] — N additional welds auto-selected"_. |
-| B8  | ❌  | Client examination request               | (no screen yet)                        | Planned: batch detail panel → "Client request" button → opens dialog для client-initiated re-exam: list welds + reason → creates separate "Client" sub-batch с tag.                                                                                                     |
-| B9  | ⚠   | NDE acceptance rate report               | `/reports`                             | Filter Category=NDE → row "NDE Batch Summary" or "NDE Overdue" → Download → mock-toast. Real per-welder/per-sub acceptance rate computation отсутствует — это mock.                                                                                                        |
-| B10 | ❌  | 8 management reports                     | `/reports` (placeholder)               | Today: 2 NDE rows mocked. Planned: add 6 more — Radiographic status, Outstanding Repairs, Service class NDE status, Spool wise NDE status, Outstanding NDE, Weld History sheet. Weld History sheet — main test-pack-dossier deliverable.                                  |
-| B11 | ❌  | 4 welder monitoring reports              | `/reports` (placeholder)               | Planned: Perf Control Sheet (full version vs ~25% Welder Perf Log сегодня), Rej. and Repaired joints, Rej. and Tracers joints, Batch status per welder.                                                                                                                  |
-| B12 | ⚠   | NDE dashboard / KPI                      | `/fabrication/dashboard` (mixed)       | Сейчас "awaiting NDE" + "rework queue" tiles в fab dashboard. Нет dedicated `/nde/dashboard` с acceptance rate trends, lab performance per-sub, defect Pareto. Planned для Track N phase 2.                                                                                |
-| B13 | ❌  | NDE 100% override                        | (no screen)                            | Per IA sitemap (Examination Process / NDE 100% override). Override sampling rate для welder × period × WPS. Niche.                                                                                                                                                       |
-| B14 | ❌  | Examination History per joint            | (no screen yet — would be deep panel)  | Planned: weld detail panel → "Examination History" tab → timeline view: original exam + R1 + R2 + ... с per-cycle Accept/Reject + inspector + defect code. Track N candidate.                                                                                          |
+| #   | St  | Функция                        | Экран                                 | Что нажимает / делает                                                                                                                                                                                                                                                      |
+| --- | --- | ------------------------------ | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| B1  | ✅  | View batch list / filter       | `/nde`                                | Method chips (RT/UT/MT/PT/PMI/HT) + status chips + source chip (Shop/Field) → table updates. Row click → batch detail panel в Sheet (full welds list + history tab).                                                                                                       |
+| B2  | ✅  | Issue batch                    | `/nde` (row dropdown)                 | Batch row "..." menu → "Issue" → toast _"BTH-XXXX issued to [subcontractor]"_ → status flip Created → Issued. History entry added.                                                                                                                                         |
+| B3  | ⚠   | Receive results                | `/nde` (row dropdown)                 | "Receive Results" row action exists and persists status/history in `batches-store`. **Сейчас:** action bulk-accepts all welds; no per-weld Accept/Reject + defect code dialog and no rejected-weld cascade into `welds-store`.                                             |
+| B4  | ✅  | Close accepted batch           | `/nde` (row dropdown)                 | "Close" — enabled only if all welds Accepted → status Closed persists in `batches-store`. Rejected-weld branch remains partial because full B3 reject workflow is not implemented yet.                                                                                     |
+| B5  | ⚠   | Issue Examination Program      | `/reports` (mock today)               | Today: download mock-toast в /reports. Planned: from batch detail panel → "Issue Exam Program" button → dialog: lab + special instructions + Generate → PDF (mock) с Request No.                                                                                           |
+| B6  | ❌  | NDE100 sub-flow                | (no screen — planned `/nde/nde100`)   | Planned: separate tab from main batch list. Pick NDE category → grid of joints в 100% category → status H/HS → "Mark Selected" → bulk action → batch generated automatically with HS-status joints.                                                                        |
+| B7  | ❌  | Penalty shoot / tracer cascade | (no screen — auto-trigger logic)      | Planned auto-behavior: on each Reject in B3 → welder rejection counter ++ → если counter ≥4 в same batch OR T1-1/T1-2/T2-1/T2-2 created → all remaining welds в batch flip S/SS → notification _"Penalty shoot triggered for [batch] — N additional welds auto-selected"_. |
+| B8  | ❌  | Client examination request     | (no screen yet)                       | Planned: batch detail panel → "Client request" button → opens dialog для client-initiated re-exam: list welds + reason → creates separate "Client" sub-batch с tag.                                                                                                        |
+| B9  | ⚠   | NDE acceptance rate report     | `/reports`                            | Filter Category=NDE → row "NDE Batch Summary" or "NDE Overdue" → Download → mock-toast. Real per-welder/per-sub acceptance rate computation отсутствует — это mock.                                                                                                        |
+| B10 | ❌  | 8 management reports           | `/reports` (placeholder)              | Today: 2 NDE rows mocked. Planned: add 6 more — Radiographic status, Outstanding Repairs, Service class NDE status, Spool wise NDE status, Outstanding NDE, Weld History sheet. Weld History sheet — main test-pack-dossier deliverable.                                   |
+| B11 | ❌  | 4 welder monitoring reports    | `/reports` (placeholder)              | Planned: Perf Control Sheet (full version vs ~25% Welder Perf Log сегодня), Rej. and Repaired joints, Rej. and Tracers joints, Batch status per welder.                                                                                                                    |
+| B12 | ⚠   | NDE dashboard / KPI            | `/fabrication/dashboard` (mixed)      | Сейчас "awaiting NDE" + "rework queue" tiles в fab dashboard. Нет dedicated `/nde/dashboard` с acceptance rate trends, lab performance per-sub, defect Pareto. Planned для Track N phase 2.                                                                                |
+| B13 | ❌  | NDE 100% override              | (no screen)                           | Per IA sitemap (Examination Process / NDE 100% override). Override sampling rate для welder × period × WPS. Niche.                                                                                                                                                         |
+| B14 | ❌  | Examination History per joint  | (no screen yet — would be deep panel) | Planned: weld detail panel → "Examination History" tab → timeline view: original exam + R1 + R2 + ... с per-cycle Accept/Reject + inspector + defect code. Track N candidate.                                                                                              |
 
 ---
 
@@ -213,7 +231,7 @@ Track C extension для NDE-specific reports закрывает B10/B11.
 Самые consequential функции для NDE Inspector ежедневно: **B3** (Receive
 results — основной daily input, batch-level entries сессиями) и **B7**
 (Penalty shoot trigger — flagship business logic, отличительный demo
-moment per CC-N4, отсутствует сегодня). Первая ✅ live, вторая ❌ —
+moment per CC-N4, отсутствует сегодня). Первая ⚠ partial, вторая ❌ —
 top Track N candidate.
 
 ---
@@ -240,8 +258,8 @@ RT film readings для BTH-2025-0156 (4 welds RT-examined, dispatched 4
    spec."_
 8. J-1030: **Reject** → rework code dropdown → выбирает POR (Porosity)
    → location of defect text _"Cap pass at 12 o'clock, 6mm cluster"_ →
-   inspector remark _"Pinhole porosity cluster on external cap. Grinding
-   + re-weld required."_
+   inspector remark \_"Pinhole porosity cluster on external cap. Grinding
+   - re-weld required."\_
 9. J-1031: Accept → inspector remark _"Acceptable per ASME B31.3."_
 10. Click "Submit" → ~700ms delay → toast _"BTH-2025-0156 results
     received · 3 accepted, 1 rejected"_

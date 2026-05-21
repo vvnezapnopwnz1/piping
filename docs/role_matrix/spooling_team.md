@@ -66,7 +66,7 @@ Spooling Team lead на EPC piping construction:
   Spl. Trans. No / Iso No / Type of Files), валидация, archive history.
   Это **manual integration step** (CC-25) — не auto-pipeline.
 - **Marian (SmartPlant Material) sync** — periodic CSV upload (`FAH CODE,
-  Run Number, ... , Completion Status, Completion Date`) обновляет
+Run Number, ... , Completion Status, Completion Date`) обновляет
   material readiness в spool aggregate. Spooling Team owns эту pipeline,
   потому что materials визуально появляются вместе с iso info.
 - **Revision management (R0→R1→R2)** — когда engineering issues new rev
@@ -141,24 +141,41 @@ reframe) ground truth наконец понятен, но build ещё впер�
 Это самый высокий ROI track для роли Spooling Team. **Track D — SpoolGen
 real parser** добирает B8 + B1 upgrade.
 
+**Gap triage (consolidated):**
+
+| #   | Function                        | St  | Pr  | Decision | Track   |
+| --- | ------------------------------- | --- | --- | -------- | ------- |
+| B1  | Demo import + validation table  | ⚠   | P1  | build    | Track D |
+| B2  | Revision management             | ⚠   | P1  | build    | Track K |
+| B3  | Engineering Transmittal receipt | ❌  | P0  | build    | Track K |
+| B4  | ISO checkout to spooler         | ❌  | P0  | build    | Track K |
+| B5  | Multi-round checking            | ❌  | P0  | build    | Track K |
+| B6  | Hold management                 | ❌  | P0  | build    | Track K |
+| B7  | Spooling Transmittal outbound   | ❌  | P0  | build    | Track K |
+| B8  | SpoolGen Browser                | ❌  | P1  | build    | Track D |
+| B9  | Latest / Issues / History views | ✅  | P1  | build    | —       |
+| B10 | Marian material status import   | ❌  | P2  | defer    | Track K |
+| B11 | Spooling Home dashboard         | ⚠   | P1  | build    | Track K |
+| B12 | SpoolGen auto-poll connector    | 📋  | P3  | redesign | Future  |
+
 ---
 
 ### C. Function → Screen → Interaction
 
-| #   | St  | Функция                          | Экран                                  | Что нажимает / делает                                                                                                                                                                                                                                                                |
-| --- | --- | -------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| B1  | ⚠   | Demo import + validation         | `/spooling/iso-workflow`               | "Load demo import" button → mock SpoolGen weld file parsing → validation table показывает rows с PASS / WARN / FAIL chips → клик на FAIL row → side panel с error detail (e.g. "Heat number HT-9999 missing from project material list") → "Acknowledge" / "Hold" / "Send to issues". |
-| B2  | ⚠   | Revision management              | `/spooling/iso-workflow` (Revision panel) | "Manual revision" button → dialog: source iso # → current rev → new rev (R0/R1/R2) → reason text → "Apply" → row updates, history entry created. Cascade impact analysis НЕ показан (gap).                                                                                              |
-| B3  | ❌  | Engineering Transmittal receipt  | `/spooling/engineering-transmittals`   | Placeholder сегодня. Planned: "New Transmittal" button → upload batch metadata (transmittal #, source team, iso list CSV) → preview taw isos → "Accept" → все isos появляются в `/spooling/iso-workflow` со статусом Received.                                                       |
-| B4  | ❌  | ISO checkout to spooler          | `/spooling/iso-workflow` (planned)     | Planned: row click → side panel → "Checkout" button → spooler dropdown (project team members) → "Assign" → iso status flip Received → Checked Out, `first_checkout_date` + `Spooled By` filled.                                                                                          |
-| B5  | ❌  | Multi-round checking             | `/spooling/iso-workflow` (planned)     | Planned: после spooler check-in → row click → "Open for checking" → review panel (preview SpoolGen output) → "Accept" или "Reject with comment" (Tot. Round ++ , Checker Comments field). Iterative: reject → spooler fixes → re-checks. Accept → status flip → Released bucket.        |
-| B6  | ❌  | Hold management                  | `/spooling/iso-workflow` (planned Hold tab) | Planned: "Hold" button on iso row → dialog: Hold Type (Spool Team / Engineering) → Holder dropdown → Hold reason from taxonomy → "Apply". Iso disappear из active queue → попадает в Hold tab. Release: "Release" button на hold row → reason → status restores.                |
-| B7  | ❌  | Spooling Transmittal (outbound)  | `/spooling/spooling-transmittal`       | Placeholder сегодня. Planned: "Compose batch" → select isos в Released bucket → group by Target System / PDS area → confirm composition → assign Spl. Trans. No. → "Send" → batch появляется в Fabrication module backlog.                                                            |
-| B8  | ❌  | SpoolGen Browser                 | (no screen — planned `/spooling/browser`) | Planned: filter bar (Spl. Trans. Batch no / Spl. Trans. No. / Iso No / File Type) → grid of files в network folder → multi-select → "Import" → cascade в /iso-workflow + ident code update.                                                                                            |
-| B9  | ✅  | Latest / Issues / History views  | `/spooling/iso-workflow` tabs           | Click tab "Latest accepted" → list of recently approved imports. Click "Issues" → list of validation FAILs awaiting acknowledgment. Click "History" → audit log всех import sessions с filter by date/user.                                                                                |
-| B10 | ❌  | Marian material status import    | `/spooling/iso-workflow` (planned tab)  | Planned: "Material Import" tab → upload CSV file (Marian export schema) → preview rows mapping iso/spool to material completion status → "Apply" → cascade в spool aggregate (material readiness updates).                                                                              |
-| B11 | ⚠   | Spooling Home dashboard          | `/spooling`                            | Static cards: Total Received / In Spooling / In Checking / Currently on HOLD (Spool Team + Engineering breakdown). Если есть data в `useSpoolingStore` — KPI strip ("Latest accepted: N · Pending issues: M"). Нет S-curve, нет live activity feed.                                       |
-| B12 | 📋  | SpoolGen auto-poll connector     | (no screen — planned config screen)     | Planned pilot-feature: config "auto-poll SpoolGen output folder every N min" + "auto-accept rows passing validation". Не demo-ready. Pitch slide differentiator vs EasyPiping manual integration.                                                                                       |
+| #   | St  | Функция                         | Экран                                       | Что нажимает / делает                                                                                                                                                                                                                                                                 |
+| --- | --- | ------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| B1  | ⚠   | Demo import + validation        | `/spooling/iso-workflow`                    | "Load demo import" button → mock SpoolGen weld file parsing → validation table показывает rows с PASS / WARN / FAIL chips → клик на FAIL row → side panel с error detail (e.g. "Heat number HT-9999 missing from project material list") → "Acknowledge" / "Hold" / "Send to issues". |
+| B2  | ⚠   | Revision management             | `/spooling/iso-workflow` (Revision panel)   | "Manual revision" button → dialog: source iso # → current rev → new rev (R0/R1/R2) → reason text → "Apply" → row updates, history entry created. Cascade impact analysis НЕ показан (gap).                                                                                            |
+| B3  | ❌  | Engineering Transmittal receipt | `/spooling/engineering-transmittals`        | Placeholder сегодня. Planned: "New Transmittal" button → upload batch metadata (transmittal #, source team, iso list CSV) → preview taw isos → "Accept" → все isos появляются в `/spooling/iso-workflow` со статусом Received.                                                        |
+| B4  | ❌  | ISO checkout to spooler         | `/spooling/iso-workflow` (planned)          | Planned: row click → side panel → "Checkout" button → spooler dropdown (project team members) → "Assign" → iso status flip Received → Checked Out, `first_checkout_date` + `Spooled By` filled.                                                                                       |
+| B5  | ❌  | Multi-round checking            | `/spooling/iso-workflow` (planned)          | Planned: после spooler check-in → row click → "Open for checking" → review panel (preview SpoolGen output) → "Accept" или "Reject with comment" (Tot. Round ++ , Checker Comments field). Iterative: reject → spooler fixes → re-checks. Accept → status flip → Released bucket.      |
+| B6  | ❌  | Hold management                 | `/spooling/iso-workflow` (planned Hold tab) | Planned: "Hold" button on iso row → dialog: Hold Type (Spool Team / Engineering) → Holder dropdown → Hold reason from taxonomy → "Apply". Iso disappear из active queue → попадает в Hold tab. Release: "Release" button на hold row → reason → status restores.                      |
+| B7  | ❌  | Spooling Transmittal (outbound) | `/spooling/spooling-transmittal`            | Placeholder сегодня. Planned: "Compose batch" → select isos в Released bucket → group by Target System / PDS area → confirm composition → assign Spl. Trans. No. → "Send" → batch появляется в Fabrication module backlog.                                                            |
+| B8  | ❌  | SpoolGen Browser                | (no screen — planned `/spooling/browser`)   | Planned: filter bar (Spl. Trans. Batch no / Spl. Trans. No. / Iso No / File Type) → grid of files в network folder → multi-select → "Import" → cascade в /iso-workflow + ident code update.                                                                                           |
+| B9  | ✅  | Latest / Issues / History views | `/spooling/iso-workflow` tabs               | Click tab "Latest accepted" → list of recently approved imports. Click "Issues" → list of validation FAILs awaiting acknowledgment. Click "History" → audit log всех import sessions с filter by date/user.                                                                           |
+| B10 | ❌  | Marian material status import   | `/spooling/iso-workflow` (planned tab)      | Planned: "Material Import" tab → upload CSV file (Marian export schema) → preview rows mapping iso/spool to material completion status → "Apply" → cascade в spool aggregate (material readiness updates).                                                                            |
+| B11 | ⚠   | Spooling Home dashboard         | `/spooling`                                 | Static cards: Total Received / In Spooling / In Checking / Currently on HOLD (Spool Team + Engineering breakdown). Если есть data в `useSpoolingStore` — KPI strip ("Latest accepted: N · Pending issues: M"). Нет S-curve, нет live activity feed.                                   |
+| B12 | 📋  | SpoolGen auto-poll connector    | (no screen — planned config screen)         | Planned pilot-feature: config "auto-poll SpoolGen output folder every N min" + "auto-accept rows passing validation". Не demo-ready. Pitch slide differentiator vs EasyPiping manual integration.                                                                                     |
 
 ---
 
@@ -184,7 +201,7 @@ human-judgment input). Обе ❌ missing — главные кандидаты 
 1. Сергей открывает `/spooling/engineering-transmittals`
 2. Видит badge "1 new transmittal" над таблицей
 3. Top row: `T-2026-018 · Eng Team Unit-2 · 23 ISOs · Received 2026-05-19 ·
-   status Pending`
+status Pending`
 4. Click на row → side panel со preview:
    - Source team: Engineering Unit-2 (Mehmet Yıldız, lead drafter)
    - Iso count: 23

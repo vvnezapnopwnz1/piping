@@ -25,6 +25,16 @@ commissioning. Самая интенсивная вовлечённость — 
 
 ---
 
+> This role matrix describes target-state PipeQC behavior derived from Easy Piping manual + presentation research.
+> It is not limited to currently implemented app screens.
+> Each function is tagged with implementation status and product decision.
+>
+> Status: ✅ live — implemented and working in current app · ⚠ partial — route/UI exists but behavior is incomplete · ❌ missing — no implemented screen/flow · 📋 planned — assigned to a named future track · 🧪 demo-only — mocked/demo behavior, not production-complete.
+> Priority: P0 — core lifecycle gate · P1 — high demo/domain leverage · P2 — parity/nice-to-have · P3 — archive/defer/reject.
+> Decision: build / defer / reject / redesign / document-only.
+
+---
+
 ### A. Real-world responsibilities (вне приложения)
 
 PM на EPC-проекте уровня LNG/refinery:
@@ -56,22 +66,57 @@ PM на EPC-проекте уровня LNG/refinery:
 
 ### B. Application functions (PipeQC scope)
 
-12 функций — все в основном read-oriented:
+12 функций — все в основном read-oriented. Status legend выше — ✅ live · ⚠ partial · ❌ missing · 📋 planned · 🧪 demo-only.
 
-1. Утренний обход — просмотр notifications на home page
-2. Мониторинг Fabrication dashboard (KPI + funnel + charts)
-3. Мониторинг Erection dashboard (то же по полевой стадии)
-4. Мониторинг Spool Tracking dashboard (где физически каждый spool)
-5. Мониторинг NDE dashboard (acceptance rate, batch backlogs)
-6. Мониторинг Testpack / Pressure Test homepage (RFT pursuit overview)
-7. Drill-down в Testpack Explorer (что именно блокирует конкретный TP)
-8. Drill-down в Release Tracking популы (Excel export списка работ)
-9. Скачивание reports — Weekly Fabrication, Summary, NDE Acceptance Rate
-10. Просмотр Reports for client handoff (Test Pack Mgmt Reports per §20)
-11. Read-only просмотр любого детального экрана для контекста
-    (открыть weld panel, batch detail) — не редактирует
-12. Мониторинг Spooling pipeline — engineering→site document handoff
-    health (после IA1)
+1. **⚠ Morning notification review** — `/` имеет notification feed и links,
+   но acknowledgement / archived / grouped escalation logic отсутствует.
+2. **✅ Fabrication dashboard monitoring** — `/fabrication/dashboard` имеет KPI,
+   funnel, charts и кликабельные переходы на stage screens.
+3. **✅ Erection dashboard monitoring** — `/erection/dashboard` имеет KPI,
+   funnel, per-stage drill-through и site NDE status widgets.
+4. **❌ Spool Tracking dashboard monitoring** — `/tracking` route отсутствует.
+   Track S candidate.
+5. **⚠ NDE bottleneck check** — `/nde` имеет batch list, filters, overdue KPI,
+   row detail; dedicated PM acceptance-rate / lab-performance dashboard отсутствует.
+6. **✅ Testpack / Pressure Test homepage monitoring** — `/testpack/pressure-test`
+   существует как RFT pursuit overview.
+7. **✅ Testpack Explorer drill-down** — `/testpack/explorer` реализует TP-level
+   drill-down и release tracking inspection.
+8. **🧪 Release Tracking worklist popup / export** — popup flow есть как demo,
+   Excel export остаётся mock-toast.
+9. **🧪 Weekly Fabrication / Summary reports download** — `/reports` имеет
+   category filter и download mock-toast; real report generation отсутствует.
+10. **🧪 NDE / Testpack client handoff reports** — `/reports` покрывает shell,
+    но §20 dossier-grade reports не генерируются.
+11. **⚠ Read-only deep-dive mode** — detail screens существуют, но `project_manager`
+    пока имеет edit-access как `qc_engineer`; PM write-lock отсутствует.
+12. **⚠ Spooling pipeline health** — `/spooling` и `/spooling/iso-workflow`
+    существуют, но показывают thin shell / demo import, не full lifecycle.
+
+**Gap summary:** 4 функции ✅ live, 5 ⚠ partial, 3 🧪 demo-only, 1 ❌ missing.
+
+**Gap density observation:** PM роль mostly covered at dashboard/navigation shell
+level, но weakest zones — **Track J** (PM read-only / write-lock), **Track S**
+(actual spool tracking dashboard), **Track K** (real iso lifecycle), and **Track C/H**
+(real report/export generation). PM matrix intentionally stays watcher-oriented:
+no weld editing, no NDE result entry, no batch assignment.
+
+**Gap triage (consolidated):**
+
+| #   | Function                         | St  | Pr  | Decision | Track   |
+| --- | -------------------------------- | --- | --- | -------- | ------- |
+| B1  | Morning notification review      | ⚠   | P1  | build    | Track J |
+| B2  | Fabrication dashboard monitoring | ✅  | P1  | build    | —       |
+| B3  | Erection dashboard monitoring    | ✅  | P1  | build    | —       |
+| B4  | Spool Tracking dashboard         | ❌  | P1  | build    | Track S |
+| B5  | NDE bottleneck check             | ⚠   | P1  | build    | Track N |
+| B6  | Testpack RFT homepage            | ✅  | P0  | build    | —       |
+| B7  | Testpack Explorer drill-down     | ✅  | P0  | build    | —       |
+| B8  | Release worklist popup / export  | 🧪  | P1  | build    | Track H |
+| B9  | Weekly fab / summary reports     | 🧪  | P2  | build    | Track C |
+| B10 | Client handoff reports           | 🧪  | P1  | build    | Track H |
+| B11 | PM read-only deep-dive           | ⚠   | P0  | build    | Track J |
+| B12 | Spooling pipeline health         | ⚠   | P1  | build    | Track K |
 
 **Design gap flag:** в текущем коде `project_manager` имеет тот же
 edit-access что и `qc_engineer` на многих screens. Это **gap** против
@@ -84,20 +129,20 @@ drill-down actions._
 
 ### C. Function → Screen → Interaction
 
-| #   | Функция                                   | Экран                             | Что нажимает / делает                                                                                                                                                                                            |
-| --- | ----------------------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| B1  | Утренний обход                            | `/` (Home)                        | Открывает app → видит notifications feed (sorted by severity red → amber → blue) → клик на warning → deep-link на problem screen → back. Делает 3-5 кликов утром.                                                |
-| B2  | Fab health check                          | `/fabrication/dashboard`          | Смотрит KPI tiles (welds total / completed / rejected / awaiting NDE) → 8-tile funnel widget → клик на любой stage tile → ведёт на spool-list filtered. Возвращается ➝ смотрит trend charts.                     |
-| B3  | Erection health check                     | `/erection/dashboard`             | То же что B2 для erection side: KPI tiles + funnel (To Site → Erected → Welded/Bolted → Supported → RFT) + per-system progress.                                                                                  |
-| B4  | Spool location overview                   | `/tracking`                       | Просматривает map / table where physically each spool is. Фильтрует inconsistency flags (PSMS vs location mismatch), transit-out warnings (>2 day).                                                              |
-| B5  | NDE bottleneck check                      | `/nde`                            | Filter chip "All open batches" → sort by created date desc → видит самые старые pending batches → клик → batch detail для контекста (Что застряло? Awaiting results? Awaiting subcontractor?).                   |
-| B6  | Testpack RFT pursuit overview             | `/testpack/pressure-test`         | Видит bar-graph 5 фаз × 3 buckets (Ready / Ongoing / Done) для всех TP в проекте. Сразу понимает где затор: "Line check 12 ready, 0 ongoing — нужно поднять LC team capacity".                                   |
-| B7  | Drill-down "что блокирует TP-205"         | `/testpack/explorer`              | TP-205 row click → 4 tabs (General / Release Tracking / Operation Mgmt / Progress Status) → "Release Tracking" tab → видит 8 кликабельных нумериков (см. Story B7 ниже).                                         |
-| B8  | Read worklist popup                       | "Release Work Dialog" popup       | Клик на любой нумерик из B7 → popup со списком конкретных welds/joints/items → кнопка Excel export (mock toast "Downloaded mock.xlsx").                                                                          |
-| B9  | Weekly fab report для client meeting      | `/reports`                        | Category filter "Fabrication" → row "Weekly fabrication report" → "Download" button → mock toast "Generating..." (~800ms) → toast "Downloaded mock.xlsx" с ссылкой на файл.                                      |
-| B10 | NDE acceptance rate report для escalation | `/reports`                        | Category "NDE" → row "Acceptance rate report" → Download. Используется когда нужно показать leadership что один subcontractor имеет 18% reject rate vs project avg 6%.                                           |
-| B11 | Read-only deep-dive в weld для контекста  | `/fabrication/weld-progress` etc. | Filter by spool в проблеме → клик на joint → side panel открывается. В планируемом state PM-роли: panel в **read-only mode** (нет Save button, fields disabled, может только просматривать audit log + history). |
-| B12 | Spooling pipeline health (после IA1)      | `/spooling` (Home)                | Проверяет: сколько iso received, сколько в spooling, сколько в HOLD. Если HOLD растёт — переходит в `/spooling/iso-workflow` → Hold tab → видит iso в hold + reason + holder.                                    |
+| #   | St  | Функция                                  | Экран                                 | Что нажимает / делает                                                                                                                                             |
+| --- | --- | ---------------------------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| B1  | ⚠   | Утренний обход                           | `/` (Home)                            | Открывает app → видит notifications feed → клик на warning → deep-link на problem screen → back. **Сейчас:** feed есть, но no acknowledge/archive/grouping logic. |
+| B2  | ✅  | Fab health check                         | `/fabrication/dashboard`              | Смотрит KPI tiles + 8-tile funnel widget → клик на stage tile → stage screen с filtered context.                                                                  |
+| B3  | ✅  | Erection health check                    | `/erection/dashboard`                 | То же что B2 для erection side: KPI tiles + funnel (To Site → Erected → Welded/Bolted → Supported → RFT) + per-system progress.                                   |
+| B4  | ❌  | Spool location overview                  | (no route — planned `/tracking`)      | Planned: map/table where physically each spool is; filters for inconsistency flags and transit-out warnings. **NOT IMPLEMENTED.**                                 |
+| B5  | ⚠   | NDE bottleneck check                     | `/nde`                                | Filter chips → oldest pending batches → row click → batch detail. **Сейчас:** batch operational list есть; dedicated PM trend dashboard отсутствует.              |
+| B6  | ✅  | Testpack RFT pursuit overview            | `/testpack/pressure-test`             | Видит RFT pursuit overview для pressure-test phases и понимает bottleneck by phase.                                                                               |
+| B7  | ✅  | Drill-down "что блокирует TP-205"        | `/testpack/explorer`                  | TP row click → Release Tracking tab → clickable RFT gate numerics / detail inspection.                                                                            |
+| B8  | 🧪  | Read worklist popup                      | Release Work Dialog popup             | Клик на RFT numeric → popup со списком конкретных welds/joints/items → Excel export. **Сейчас:** export is mock-toast, not real file generation.                  |
+| B9  | 🧪  | Weekly fab report для client meeting     | `/reports`                            | Category filter "Fabrication" → report row → Download → mock-toast. **Сейчас:** report shell only.                                                                |
+| B10 | 🧪  | NDE acceptance rate / handoff reports    | `/reports`                            | Category "NDE" / "Testpack" → report row → Download. **Сейчас:** mock reports, no dossier-grade §20 generation.                                                   |
+| B11 | ⚠   | Read-only deep-dive в weld для контекста | `/fabrication/weld-progress` etc.     | Filter by problem spool → side panel opens. **Сейчас:** PM read-only mode не enforced; fields/actions still editable according to current app role model.         |
+| B12 | ⚠   | Spooling pipeline health                 | `/spooling`, `/spooling/iso-workflow` | Проверяет KPI cards, Latest/Issues/History from demo import. **Сейчас:** no real transmittal receipt / checkout / hold state machine.                             |
 
 ---
 
@@ -197,7 +242,7 @@ RFT gates не закрыт.
 7. Клик на "1" (Items Cat-X to clear) — открывается popup
 8. Видит punch item:
    `PI-009 · Cat X · ISO-1004 · originator LC-01 ·
- opened 2026-05-15 · assigned to FT-02 · status Open`
+opened 2026-05-15 · assigned to FT-02 · status Open`
 9. Anna теперь знает причину: ждёт FT-02. Звонит FT-02 leader
    (телефон, не в приложении), выясняет: _"closure будет завтра
    к 14:00, инспектор уже в пути"_

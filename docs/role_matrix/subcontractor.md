@@ -74,9 +74,9 @@ Subcontractor на EPC piping construction project:
   системы с уникальным Request No.
 - **Record NDE results** — после выполнения RT/UT/PT/MT — записывает
   per-weld результаты: Accept (A) / Reject (R). На rejection: Defect Code
-  + Location of Defect (required). Per CC-8: _"Progressive sampling /
-  penalty shoot"_ — Subcontractor owner (знает об escalation поскольку это
-  его batches).
+  - Location of Defect (required). Per CC-8: _"Progressive sampling /
+    penalty shoot"_ — Subcontractor owner (знает об escalation поскольку это
+    его batches).
 - **QC forms and weld history register** — ведёт paper + digital records
   для клиентского QC. Per CC-8: _"QC forms, weld history register"_ —
   Subcontractor owner. W24 / QC13 / W10P forms — его responsibility
@@ -128,18 +128,14 @@ batches, только свою area. Это модель multi-tenant в рам�
    с `subcontractor` полем корректен, фильтрация по нему не wired к
    роли.
 
-4. **✅ NDE batch examination progress entry** — по каждому weld в batch:
-   Accept (A) / Reject (R). На Reject: rework code dropdown (required) +
-   inspector sig. Submit → cascade: rejected welds flip статус, notification
-   created. Экран `/nde/{batchId}` → "Receive Results" panel. **Полностью
-   работает** — это core NDE Inspector B5 flow, тот же экран. Subcontractor
-   в роли NDE subcontractor выполняет ту же операцию. Единственный ✅ live
-   в этой роли — потому что scope lock'а нет, но сам механизм result entry
-   работает.
+4. **⚠ NDE batch examination progress entry** — `/nde` row action can receive
+   results and persist batch status/history, but current flow bulk-accepts all
+   welds. Full per-weld Accept / Reject + rework code dialog and rejected-weld
+   cascade are not implemented yet.
 
 5. **⚠ Daily progress report access** — просмотр своей дневной статистики:
    welds done, batches status, rejections. Fabrication Dashboard `/fabrication/
-   dashboard` существует с KPI cards и charts. Subcontractor должен видеть
+dashboard` существует с KPI cards и charts. Subcontractor должен видеть
    только свой slice — по своему sub ID filter. **Сейчас:** dashboard не
    фильтрует по subcontractor — показывает проектные totals. Scope filter
    отсутствует. Структура экрана работает.
@@ -183,7 +179,7 @@ batches, только свою area. Это модель multi-tenant в рам�
     track (Track J / future mobile). Не строить сейчас — PDA User role
     не существует в коде.
 
-**Gap summary:** 1 функция ✅ live, 5 ⚠ partial, 2 ❌ missing, 2 📋 planned.
+**Gap summary:** 0 функций ✅ live, 6 ⚠ partial, 2 ❌ missing, 2 📋 planned.
 
 **Gap density observation:** почти все gaps в этой роли — одной природы:
 **CC-4 scope lock не реализован**. Это системная проблема, не точечная.
@@ -199,34 +195,34 @@ Subcontractor scope enforcement**, который закроет 5 из 10 фу�
 
 **Gap triage (consolidated):**
 
-| #   | Function                              | St  | Pr  | Decision      | Track    |
-| --- | ------------------------------------- | --- | --- | ------------- | -------- |
-| B1  | Scope-filtered weld progress entry    | ⚠   | P0  | build         | Track J  |
-| B2  | Scope-filtered material check         | ⚠   | P0  | build         | Track J  |
-| B3  | Scope-filtered NDE batch queue        | ⚠   | P0  | build         | Track J  |
-| B5  | Scope-filtered daily progress report  | ⚠   | P1  | build         | Track J  |
-| B6  | Scope-filtered welder perf. report    | ⚠   | P1  | build         | Track J  |
-| B7  | Issue examination program (PDF)       | ❌  | P1  | build         | Track N  |
-| B8  | Scope-locked barcode / spool tracking | ❌  | P2  | build         | Track S  |
-| B9  | QC forms — view own scope             | ⚠   | P2  | build         | Track G  |
-| B10 | PDA scanning offline                  | 📋  | P3  | defer         | —        |
+| #   | Function                              | St  | Pr  | Decision | Track   |
+| --- | ------------------------------------- | --- | --- | -------- | ------- |
+| B1  | Scope-filtered weld progress entry    | ⚠   | P0  | build    | Track J |
+| B2  | Scope-filtered material check         | ⚠   | P0  | build    | Track J |
+| B3  | Scope-filtered NDE batch queue        | ⚠   | P0  | build    | Track J |
+| B5  | Scope-filtered daily progress report  | ⚠   | P1  | build    | Track J |
+| B6  | Scope-filtered welder perf. report    | ⚠   | P1  | build    | Track J |
+| B7  | Issue examination program (PDF)       | ❌  | P1  | build    | Track N |
+| B8  | Scope-locked barcode / spool tracking | ❌  | P2  | build    | Track S |
+| B9  | QC forms — view own scope             | ⚠   | P2  | build    | Track G |
+| B10 | PDA scanning offline                  | 📋  | P3  | defer    | —       |
 
 ---
 
 ### C. Function → Screen → Interaction
 
-| #   | St  | Функция                          | Экран                                              | Что нажимает / делает                                                                                                                                                                                                                                                                          |
-| --- | --- | -------------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| B1  | ⚠   | Scope-filtered weld entry        | `/fabrication/weld-progress`, `/erection/weld-progress` | Открывает экран → **все spool/ISO rows видны только в assigned PDS areas** (scope filter applied) → row click → side panel → welder dropdown (populated with welders of own sub only) → subcontractor dropdown **disabled + forced to "BV"** → WPS / root% / cap% → Save. **Сейчас:** все rows видны, все dropdowns editable. |
-| B2  | ⚠   | Scope-filtered material check    | `/fabrication/material-check`, `/erection/material-check` | Same flow as QC Engineer B2 — но видит только spools своего area. Heat number input → validation → Sign off → spool material check status flips. **Сейчас:** scope filter absent.                                                                                                              |
-| B3  | ⚠   | NDE batch queue (own batches)    | `/nde/batches`                                     | Открывает batch list → видит только batches где `subcontractor = "Bureau Veritas"` (собственный sub ID) → click batch row → batch detail. **Сейчас:** `useBatchesBySubcontractor` selector существует в store но не wired к роли — все видят все batches.                                       |
-| B4  | ✅  | NDE result entry                 | `/nde/{batchId}` → "Receive Results" panel         | В batch detail → per-weld Accept/Reject + Defect Code (on R) + inspector sig → Submit → cascade: rejected welds flip to Rework, notification созданное. **Полностью работает** — тот же экран что NDE Inspector.                                                                               |
-| B5  | ⚠   | Daily progress report            | `/fabrication/dashboard`                           | Открывает dashboard → KPI cards (welds done, batches, rejections) → все цифры **scope-filtered** к собственному sub area. **Сейчас:** dashboard показывает проектные totals без scope.                                                                                                          |
-| B6  | ⚠   | Welder performance (own welders) | Reports section в `/nde` или `/fabrication`        | Открывает welder report → видит только welders квалифицированных под `subcontractor = BV` → rejection rate, tracer count, SS status per welder. **Сейчас:** не фильтруется по sub.                                                                                                              |
-| B7  | ❌  | Issue examination program        | (no screen — planned `/nde/examination-program`)   | В NDE Preparation → "Issue Examination Program" sub-function → pick NDE category → grid of joints (selected/SS status) → "Print" button → system assigns unique Request No → generates printable PDF: project header, batch #, joint list, inspector name, date, signature block. **NOT IMPLEMENTED.** |
-| B8  | ❌  | Barcode scanning / spool tracking | (no screen — planned `/tracking` with scope lock) | Opens spool tracking module → scope filtered to own PDS areas → scans spool barcode (or manually enters) → registers movement: Location OUT / Location IN → history record created (audit-preserving). Inconsistency flags visible for own area only. **NOT IMPLEMENTED.**                    |
-| B9  | ⚠   | QC forms — view own scope        | weld history panel in `/nde/{batchId}` (partial)   | В batch detail → "Weld History" tab → per-weld history entries (partial). Full form view: click "View W24" → PDF generation of QC W24 for that spool, own sub's scope only. **Сейчас:** weld history partial; W24/QC13 PDF генерация = Track G5.                                              |
-| B10 | 📋  | PDA offline scanning             | (no screen — future mobile app or mobile web)      | PDA User scans barcodes offline → local queue → sync to server via MCL Link equivalent. Requires `pda_user` role, offline-first app, sync mechanism. **Deferred.** Not building now.                                                                                                          |
+| #   | St  | Функция                           | Экран                                                     | Что нажимает / делает                                                                                                                                                                                                                                                                                                         |
+| --- | --- | --------------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| B1  | ⚠   | Scope-filtered weld entry         | `/fabrication/weld-progress`, `/erection/weld-progress`   | Открывает экран → **все spool/ISO rows видны только в assigned PDS areas** (scope filter applied) → row click → side panel → welder dropdown (populated with welders of own sub only) → subcontractor dropdown **disabled + forced to "BV"** → WPS / root% / cap% → Save. **Сейчас:** все rows видны, все dropdowns editable. |
+| B2  | ⚠   | Scope-filtered material check     | `/fabrication/material-check`, `/erection/material-check` | Same flow as QC Engineer B2 — но видит только spools своего area. Heat number input → validation → Sign off → spool material check status flips. **Сейчас:** scope filter absent.                                                                                                                                             |
+| B3  | ⚠   | NDE batch queue (own batches)     | `/nde/batches`                                            | Открывает batch list → видит только batches где `subcontractor = "Bureau Veritas"` (собственный sub ID) → click batch row → batch detail. **Сейчас:** `useBatchesBySubcontractor` selector существует в store но не wired к роли — все видят все batches.                                                                     |
+| B4  | ⚠   | NDE result entry                  | `/nde` row action                                         | "Receive Results" persists batch status/history, but currently bulk-accepts all welds. Full per-weld Accept/Reject + defect code dialog and rejected-weld cascade remain Track N gaps, same as NDE Inspector B3.                                                                                                              |
+| B5  | ⚠   | Daily progress report             | `/fabrication/dashboard`                                  | Открывает dashboard → KPI cards (welds done, batches, rejections) → все цифры **scope-filtered** к собственному sub area. **Сейчас:** dashboard показывает проектные totals без scope.                                                                                                                                        |
+| B6  | ⚠   | Welder performance (own welders)  | Reports section в `/nde` или `/fabrication`               | Открывает welder report → видит только welders квалифицированных под `subcontractor = BV` → rejection rate, tracer count, SS status per welder. **Сейчас:** не фильтруется по sub.                                                                                                                                            |
+| B7  | ❌  | Issue examination program         | (no screen — planned `/nde/examination-program`)          | В NDE Preparation → "Issue Examination Program" sub-function → pick NDE category → grid of joints (selected/SS status) → "Print" button → system assigns unique Request No → generates printable PDF: project header, batch #, joint list, inspector name, date, signature block. **NOT IMPLEMENTED.**                        |
+| B8  | ❌  | Barcode scanning / spool tracking | (no screen — planned `/tracking` with scope lock)         | Opens spool tracking module → scope filtered to own PDS areas → scans spool barcode (or manually enters) → registers movement: Location OUT / Location IN → history record created (audit-preserving). Inconsistency flags visible for own area only. **NOT IMPLEMENTED.**                                                    |
+| B9  | ⚠   | QC forms — view own scope         | weld history panel in `/nde/{batchId}` (partial)          | В batch detail → "Weld History" tab → per-weld history entries (partial). Full form view: click "View W24" → PDF generation of QC W24 for that spool, own sub's scope only. **Сейчас:** weld history partial; W24/QC13 PDF генерация = Track G5.                                                                              |
+| B10 | 📋  | PDA offline scanning              | (no screen — future mobile app or mobile web)             | PDA User scans barcodes offline → local queue → sync to server via MCL Link equivalent. Requires `pda_user` role, offline-first app, sync mechanism. **Deferred.** Not building now.                                                                                                                                          |
 
 ---
 
@@ -339,7 +335,7 @@ Bureau Veritas. BV inspector открывает систему утром что
   hidden. Это более тонкая scope модель чем просто area filter. В Easy
   Piping это решается через scope enum на subcontractor record (из
   `admin-store.ts`: `scope: ['fabrication' | 'erection' | 'lineCheck' |
-  'blinding' | 'finishing' | 'reinstatement' | 'nde']`). **Сейчас:**
+'blinding' | 'finishing' | 'reinstatement' | 'nde']`). **Сейчас:**
   scope enum в store существует, но не применяется к nav visibility или
   screen access. Track J нужно учитывать этот scope enum как источник
   activity-level filtering дополнительно к area filtering.
