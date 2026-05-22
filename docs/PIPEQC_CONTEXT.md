@@ -31,7 +31,7 @@ on operational context, competitive framing, or per-role capability scope.
 | -------- | ---- | ---------------- |
 | Presentation findings | `docs/research/presentation_findings.md` | All **10** Easy Piping sales/training decks read sequentially (#1 PSMS overview → #10 Painting). Cross-cutting findings CC-1…CC-23 (RFT formula, punch X/Y/Z gates, Generate Request pattern, role hierarchy, SpoolGen/Marian data flow, competitive positioning). Module-specific gaps per deck. |
 | Role matrices | `docs/role_matrix/*.md` | Per-role function inventories with ✅ live / ⚠ partial / 📋 planned / ❌ missing tags: `qc_engineer`, `nde_inspector`, `project_manager`, `spooling_team`, `subcontractor`, `system_admin` (+ approach notes in `chat_gpt_on_role_matrix_aproach.md`). Ground truth for **what to build next** — triage consolidated in each matrix's gap table. |
-| Roadmap v3 | `docs/roadmap_v3.md` | Module-by-module delivery order (Phase 0 Admin → … → Phase 7 polish). Replaces capability-first v2 sequencing. **Current focus after Phase 0:** Phase 1 Spooling. |
+| Roadmap v3 | `docs/roadmap_v3.md` | Module-by-module delivery order (Phase 0 Admin → … → Phase 7 polish). Replaces capability-first v2 sequencing. **Current focus after Phase 1:** Phase 2 Fabrication polish + Phase 3 NDE depth. |
 | Archived phase prompts | `docs/prompts/archive/` | Completed track prompts (A*, G*, I*, N*, etc.) moved out of `docs/prompts/` root during docs housekeeping. |
 
 **Recent merge milestones (not yet in older agent context):**
@@ -39,6 +39,7 @@ on operational context, competitive framing, or per-role capability scope.
 - **G6 / I10** (2026-05-20) — Fabrication + Erection sidebar trees realigned to manual §7 / §12 peer sections; recursive `sidebar-nav.tsx`.
 - **I8 + I9a/b/c** (2026-05-19) — Field flange bolt progress (`/erection/flange-progress`); I4 Confirm gated on all flange bolts Verified; RFT eligibility includes `flangeRollup.allVerified`; NC chip on Field MC; expanded flange-bolt seed coverage.
 - **Phase 0 Admin** (2026-05-22) — All 9 roadmap slices merged: project definition, system referential, WPS / welder qual / NDE matrix / PDS areas / heat registry / rework codes / joint categories / teams CRUD in `admin-store` v3.
+- **Phase 1 Spooling** (2026-05-22) — Roadmap slices 1.1–1.7: `spooling-store` v2 (ISO state machine, eng/spl transmittals), live Engineering Transmittals Accept, ISO Workflow checkout/check/hold, outbound Spooling Transmittal compose+send, revision cascade dialog, home KPI dashboard. Legacy demo import retained under ISO Workflow → Demo Import tab.
 
 ---
 
@@ -131,10 +132,10 @@ app/
   admin/access-rights/page.tsx          # ⚠ shell — role/scope UI scaffold
   admin/import-settings/page.tsx        # ⚠ shell — Excel import templates (Phase 7 defer)
   admin/admin-tabs.tsx                  # ✅ 8-tab referential CRUD with ?tab= URL sync
-  spooling/page.tsx                     # ✅ IA1 home hub (links to 3 sub-routes)
-  spooling/engineering-transmittals/      # ⚠ placeholder
-  spooling/iso-workflow/                # ⚠ placeholder (+ demo import elsewhere)
-  spooling/spooling-transmittal/          # ⚠ placeholder
+  spooling/page.tsx                     # ✅ Phase 1.7 — live KPI dashboard (`SpoolingHomeDashboard`)
+  spooling/engineering-transmittals/      # ✅ Phase 1.1 — inbound list + Accept sheet
+  spooling/iso-workflow/                # ✅ Phase 1.2–1.4 — ISO Workflow tab + detail panel; legacy demo import tab
+  spooling/spooling-transmittal/          # ✅ Phase 1.5 — outbound list + compose batch
   reports/page.tsx                      # ⚠ placeholder (header only)
   documentation/page.tsx                # ✅ 4-tab devlog (Overview / What works / Modules / Tracks & Stories)
   settings/                             # ⚠ placeholder
@@ -206,6 +207,19 @@ components/
   flange/
     flange-browse.tsx                   # 435 LOC
     flange-detail-panel.tsx             # 203 LOC
+  spooling/
+    spooling-view.tsx                   # legacy demo import / browse / revision tabs
+    spooling-import-panel.tsx
+    spooling-validation-table.tsx
+    spooling-revision-panel.tsx
+    eng-transmittal-list.tsx            # Phase 1.1
+    eng-transmittal-detail-panel.tsx
+    iso-workflow-view.tsx               # Phase 1.2 list + status chips
+    iso-detail-panel.tsx                # Phase 1.2–1.4 checkout / check / hold
+    revision-cascade-dialog.tsx         # Phase 1.6
+    spooling-transmittal-view.tsx       # Phase 1.5
+    spooling-transmittal-detail-panel.tsx
+    spooling-home-dashboard.tsx         # Phase 1.7
 
 store/                                  # Zustand stores
   welds-store.ts                        # shop welds (15 seed)
@@ -221,7 +235,7 @@ store/                                  # Zustand stores
   flange-bolt-progress-store.ts         # I8 field flange bolts — persisted
   paint-store.ts / laydown-store.ts / qc-release-store.ts / spools-store.ts  # G2–G5
   flange-store.ts                       # testpack §19 browse / Y-Z reinstatement
-  spooling-store.ts                     # IA1 demo import + revision state
+  spooling-store.ts                     # Phase 1 — ISO lifecycle + eng/spl transmittals (persist v2); legacy import rows preserved
   iso-rollup.ts                         # E2.5 ISO weld watcher (no persist)
   erection-rollup.ts                    # spool stages + I6 RFT watcher + I8 flange rollups
   spool-stage.ts                        # G1 fabrication funnel selectors
@@ -344,9 +358,18 @@ with a unique localStorage key, exports a main hook and a KPI hook.
 - Shared persisted testpack-side flange joints; Y/Z reinstatement reads categories from here
 - `/flange` browse + detail mutations wired; distinct from erection field flange bolts (I8)
 
+### `spooling-store.ts` (Phase 1)
+
+- **ISO lifecycle:** `Received → Checked Out → In Checking → Released / On Hold / Superseded`
+- **Entities:** `ISORecord`, `EngTransmittal`, `SpoolingTransmittal`, `CheckingRound`, `HoldRecord`
+- **Actions:** `acceptTransmittal`, `checkoutISO`, `checkInISO`, `approveISO`, `rejectISO`, `applyHold`, `releaseHold`, `composeAndSendTransmittal`, `applyRevision`
+- **Legacy (IA1):** `SpoolingImportRow`, validation issues, revision conflicts — still used by Demo Import tab
+- Persist key: `pipeqc-spooling-module` (version **2** with migrate from v1)
+- Barrel export: `ISORecord` exported from `@/store` as `SpoolingISORecord` (avoids clash with testpack `ISORecord`)
+
 ### ⚠ Remaining store gaps
 
-- None blocking demo hero flow; deepest gaps are NDE penalty-shoot/tracer depth and Spooling transmittal workflows (see `roadmap_v3.md` Phase 1+)
+- None blocking demo hero flow; deepest gaps are NDE penalty-shoot/tracer depth (Phase 3) and Spooling SpoolGen/Marian integrations (Phase 7 defer)
 
 ---
 
@@ -383,7 +406,7 @@ Page numbers below refer to the Easy Piping User Manual PDF (156 pp).
 | §3 (3.1–3.26) | **Project Referential** — 26 entities | ✅ Phase 0 core — 8 CRUD tabs + heat registry on `/admin/project-referential`; team pickers site-wide read `admin-store`. Remaining §3 items (systems, line service, devices, …) still shell/grouped placeholders on same page |
 | §4            | Access Rights                         | ⚠ shell `/admin/access-rights` — scope-lock **configured** via PDS×subcontractor matrix (0.5), full role matrix editor deferred                                                                                                                                  |
 | §5            | Import settings (NDE matrix, PMC)     | ⚠ shell `/admin/import-settings` — live CRUD covers matrix + PML without Excel; bulk import deferred Phase 7                                                                                                                                                        |
-| §6            | Spooling (Ident Code, Marian, Browse) | ⚠ partial — IA1 sidebar (Home / Engineering In / ISO Workflow / Spooling Out) + `spooling-store` demo import; 3 sub-routes placeholder. See `spooling_team.md` + Phase 1 in `roadmap_v3.md`                                                                       |
+| §6            | Spooling (Ident Code, Marian, Browse) | ✅ **Phase 1 substantial** — sidebar Home / Engineering Transmittals / ISO Workflow / Spooling Transmittal; eng handoff Accept, ISO checkout + multi-round check + holds, outbound batch, revision cascade, home KPIs. Legacy demo import under ISO Workflow. Deferred: SpoolGen parser, Marian CSV, Browser (Phase 7). See `spooling_team.md` |
 | §7            | Fabrication module (Start Fab → QC)   | Fabrication module (§7) — Weld Progress + Dashboard funnel + Material Check + QC Release + Paint + Laydown (G1+G2+G1.1+G3+G4+G5+G6); sidebar realigned to manual §7 peer sections (Spool Fabrication / Welding); shop-only filter on `/fabrication/weld-progress` |
 | §9            | Fabrication reports                   | not built                                                                                                                                                                                                                                                         |
 | §10           | Spool Tracking + Dashboard            | ✅ /tracking                                                                                                                                                                                                                                                      |
@@ -434,7 +457,7 @@ Snapshot **2026-05-22**:
 | Phase | Module | Status | Next gaps (see role matrix + roadmap) |
 | ----- | ------ | ------ | ------------------------------------- |
 | **0** | Admin | ✅ **Phase 0 complete** — 9/9 slices in `admin-store` v3 | Access Rights editor, Import Settings Excel, remaining §3 placeholder groups |
-| **1** | Spooling | ⚠ partial — IA1 nav + demo store | Transmittal receipt, checkout, multi-round check, holds, outbound batch (Phase 1.1–1.7) |
+| **1** | Spooling | ✅ **Phase 1 complete** — slices 1.1–1.7 live | SpoolGen parser, Marian CSV, Browser, S-curve chart (Phase 7); scope-lock UI filter (reuse CC-4 in Phase 2+) |
 | **2** | Fabrication | ✅ substantial — G1–G6 complete | Welder qual soft alert, PML validation depth, PWHT flow |
 | **3** | NDE | ⚠ partial — N1–N2 merged | Per-weld dialog polish, tracer, penalty shoot, reports |
 | **4** | Erection | ✅ substantial — I1–I10 + E2.x | Reuse Phase 3 NDE upgrades for field welds; PM write-lock |
@@ -515,6 +538,8 @@ NDE **§11** · Erection **§12–§13** · Test Pack **§14–§20** · Trackin
 
 - **Docs housekeeping (2026-05-22)** — `roadmap_v3.md` added; legacy track prompts moved to `docs/prompts/archive/`; role matrices + presentation findings referenced from this context file.
 
+- **Phase 1 Spooling (2026-05-22)** — Roadmap v3 Phase 1 closure (slices 1.1–1.7). `store/spooling-store.ts` extended with ISO state machine, inbound `EngTransmittal` + outbound `SpoolingTransmittal` entities, seed data, and mutations; persist bumped to **v2** with migration. `store/index.ts` exports spooling `ISORecord` as `SpoolingISORecord` to avoid testpack name clash. New components under `components/spooling/`: `eng-transmittal-list`, `eng-transmittal-detail-panel`, `iso-workflow-view`, `iso-detail-panel`, `revision-cascade-dialog`, `spooling-transmittal-view`, `spooling-transmittal-detail-panel`, `spooling-home-dashboard`. Routes wired: `/spooling` (live KPIs), `/spooling/engineering-transmittals` (Accept flow + notifications), `/spooling/iso-workflow` (workflow tab + legacy Demo Import tab), `/spooling/spooling-transmittal` (compose batch → Sent → ISOs Superseded). `demo-store.resetAll()` already cascades via `resetDemo()`. Implementation plan: `docs/superpowers/plans/2026-05-22-phase1-spooling.md`. **Deferred per roadmap:** SpoolGen Browser, Marian import, auto-poll, S-curve chart, real file parser (Phase 7); subcontractor scope-lock UI filtering (CC-4 foundation in admin matrix only).
+
 ## Manual-alignment notes (2026-05-22)
 
 - Testpack Release Tracking gates 1–3 are derived from live data (weld/flange/NDE), no longer hardcoded green.
@@ -526,3 +551,4 @@ NDE **§11** · Erection **§12–§13** · Test Pack **§14–§20** · Trackin
 - Fabrication QC Release, Sent to Paint, Painted, and Laydown are wired (Track G complete); sidebar matches §7 peer sections (G6).
 - Erection sidebar matches §12 peer sections (I10); Field Material Check is a documented standalone-screen deviation from strict manual tile order.
 - Admin Phase 0 covers the 9 referentials required before Spooling/Fab/NDE demos; Excel import templates remain Phase 7.
+- Spooling Phase 1 covers engineering handoff → spooler checkout → checker rounds → holds → outbound transmittal; Browse/Marian/SpoolGen file ingest remain Phase 7.

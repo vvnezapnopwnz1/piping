@@ -27,6 +27,22 @@ export * from "./rft-store"
 export * from "./field-material-check-store"
 export * from "./flange-bolt-progress-store"
 export * from "./flange-store"
-export * from "./spooling-store"
+export {
+  useSpoolingStore,
+  ENG_TRANSMITTAL_SEED,
+  ISO_SEED,
+  SPL_TRANSMITTAL_SEED,
+} from "./spooling-store"
+export type {
+  ISOStatus,
+  CheckingRound,
+  HoldRecord,
+  EngTransmittal,
+  SpoolingTransmittal,
+  SpoolingImportRow,
+  SpoolingValidationIssue,
+  RevisionConflict,
+  ISORecord as SpoolingISORecord,
+} from "./spooling-store"
 export { usePaintRecord, useLaydownRecord } from "./spool-stage"
 export { useSpoolFlangeBoltRollup, useFlangeBoltProgressByJoint, useFleetFlangeBoltCounts } from "./erection-rollup"
