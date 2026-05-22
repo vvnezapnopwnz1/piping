@@ -1,12 +1,24 @@
 import type { NdeBatch, NdeBatchStatus, NdeBatchWeld, NdeWeldResult } from "@/store"
 
 export type ManualNdeBatchState = "Joint to Select" | "Awaiting NDE" | "Released"
-export type ManualNdeJointCode = "S" | "SS" | "NR" | "T1" | "T2" | "T1S" | "T2S"
+export type ManualNdeJointCode =
+  | "S"
+  | "SS"
+  | "NR"
+  | "T1"
+  | "T2"
+  | "T1S"
+  | "T2S"
+  | "T1-1"
+  | "T1-2"
+  | "T2-1"
+  | "T2-2"
+  | "SS-PENALTY"
 
 export interface TracerSelection {
   sourceRejectedWeldId: string
   tracerWeldId: string
-  level: "T1" | "T2"
+  level: "T1" | "T2" | "T1-1" | "T1-2" | "T2-1" | "T2-2"
   selectedAt: string
   selectedBy: string
   result?: "Accepted" | "Rejected"
@@ -20,11 +32,15 @@ export const mapBatchStatusToManual = (status: NdeBatchStatus): ManualNdeBatchSt
 
 export const mapResultToJointCode = (
   weld: NdeBatchWeld,
-  tracerSelections: TracerSelection[] | undefined
+  tracerSelections: TracerSelection[] | undefined,
 ): ManualNdeJointCode => {
   const tracer = tracerSelections?.find((t) => t.tracerWeldId === weld.id)
-  if (tracer?.level === "T1") return tracer.result ? "T1S" : "T1"
-  if (tracer?.level === "T2") return tracer.result ? "T2S" : "T2"
+  if (tracer) {
+    if (tracer.level === "T1") return tracer.result ? "T1S" : "T1"
+    if (tracer.level === "T2") return tracer.result ? "T2S" : "T2"
+    return tracer.level
+  }
+  if (weld.category === "NDE100" && !weld.parentWeldId) return "SS-PENALTY"
   if (weld.result === "Pending") return "S"
   if (weld.result === "Accepted") return "NR"
   return "SS"

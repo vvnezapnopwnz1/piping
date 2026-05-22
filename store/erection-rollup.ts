@@ -17,6 +17,7 @@ import { useSupportsStore } from "@/store/supports-store"
 import { useRFTStore } from "@/store/rft-store"
 import { useFieldMaterialCheckStore } from "@/store/field-material-check-store"
 import { useFlangeBoltProgressStore } from "@/store/flange-bolt-progress-store"
+import { useFieldQCReleaseStore } from "@/store/field-qc-release-store"
 import { useNotificationsStore } from "@/store/notifications-store"
 import { useTestpackStore } from "@/store/testpack-store"
 import {
@@ -35,6 +36,7 @@ export function useSpoolErectionStages(): Array<{
   const supportedRecords = useSupportsStore((state) => state.records)
   const rftRecords = useRFTStore((state) => state.records)
   const mcRecords = useFieldMaterialCheckStore((state) => state.records)
+  const fieldQcRecords = useFieldQCReleaseStore((state) => state.records)
 
   return useMemo(() => {
     const spoolNos = [
@@ -52,9 +54,13 @@ export function useSpoolErectionStages(): Array<{
     const weldedBoltedMap = new Map(weldedBoltedRecords.map((record) => [record.spoolNo, record]))
     const supportedMap = new Map(supportedRecords.map((record) => [record.spoolNo, record]))
     const rftMap = new Map(rftRecords.map((record) => [record.spoolNo, record]))
+    const fieldQcMap = new Map(
+      fieldQcRecords.map((record) => [record.spoolNo, record]),
+    )
 
     return spoolNos.map((spoolNo) => {
       const mcRollup = computeSpoolFieldMCRollup(spoolNo, fieldWelds, mcRecords)
+      const fieldQc = fieldQcMap.get(spoolNo)
       return {
         spoolNo,
         stage: deriveSpoolErectionStage(
@@ -66,10 +72,11 @@ export function useSpoolErectionStages(): Array<{
           supportedMap.get(spoolNo),
           rftMap.get(spoolNo),
           mcRollup.totalJoints > 0 ? mcRollup : undefined,
+          !!fieldQc?.signedOffDate,
         ),
       }
     })
-  }, [fieldWelds, toSiteRecords, erectedRecords, weldedBoltedRecords, supportedRecords, rftRecords, mcRecords])
+  }, [fieldWelds, toSiteRecords, erectedRecords, weldedBoltedRecords, supportedRecords, rftRecords, mcRecords, fieldQcRecords])
 }
 
 export function useSpoolRFTWatcher() {
@@ -82,6 +89,7 @@ export function useSpoolRFTWatcher() {
   const recordRFT = useRFTStore((s) => s.recordRFT)
   const pushNotification = useNotificationsStore((s) => s.pushNotification)
   const recordSpoolRFT = useTestpackStore((s) => s.recordSpoolRFT)
+  const fieldQcRecords = useFieldQCReleaseStore((s) => s.records)
 
   const initialized = useRef(false)
   useEffect(() => {
@@ -105,8 +113,10 @@ export function useSpoolRFTWatcher() {
       const wb = wbMap.get(spoolNo)
       const sup = supportedMap.get(spoolNo)
       const flangeRollup = computeSpoolFlangeBoltRollup(spoolNo, FIELD_WELD_DATA, flangeRecords)
+      const fieldQc = fieldQcRecords.find((r) => r.spoolNo === spoolNo)
+      const isFieldQcReleased = !!fieldQc?.signedOffDate
 
-      if (!isSpoolRFTEligible(spoolNo, ts, er, wb, sup, flangeRollup)) continue
+      if (!isSpoolRFTEligible(spoolNo, ts, er, wb, sup, flangeRollup, isFieldQcReleased)) continue
 
       const today = new Date().toISOString().split("T")[0]
       recordRFT({
@@ -133,7 +143,7 @@ export function useSpoolRFTWatcher() {
 
       recordSpoolRFT(spoolNo)
     }
-  }, [toSiteRecords, erectedRecords, wbRecords, supportedRecords, rftRecords, flangeRecords, recordRFT, pushNotification, recordSpoolRFT])
+  }, [toSiteRecords, erectedRecords, wbRecords, supportedRecords, rftRecords, flangeRecords, fieldQcRecords, recordRFT, pushNotification, recordSpoolRFT])
 }
 
 export function useSpoolErectionStageCounts(): Record<SpoolErectionStage, number> {

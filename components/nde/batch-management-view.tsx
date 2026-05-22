@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { format, subDays } from "date-fns";
 import type { DateRange } from "react-day-picker";
@@ -67,6 +68,7 @@ import {
 } from "@/store";
 import { cn } from "@/lib/utils";
 import { mapBatchStatusToManual } from "@/lib/nde-status";
+import { useScopeLock } from "@/lib/scope-lock";
 
 const statusFilters: Array<"All" | NdeBatchStatus> = [
   "All",
@@ -176,6 +178,16 @@ export function BatchManagementView() {
   const hasHydrated = useHydrateBatchesStore();
   const batches = useBatchesStore((s) => s.batches);
   const kpis = useBatchesKPIs();
+  const scope = useScopeLock();
+  const activePenaltyShoots = useMemo(
+    () =>
+      batches.filter(
+        (b) =>
+          b.history.some((h) => h.title === "PENALTY SHOOT triggered") &&
+          b.status !== "Closed",
+      ).length,
+    [batches],
+  );
   const issueBatch = useBatchesStore((s) => s.issueBatch);
   const receiveResults = useBatchesStore((s) => s.receiveResults);
   const closeBatchAction = useBatchesStore((s) => s.closeBatch);
@@ -224,6 +236,10 @@ export function BatchManagementView() {
         batch.subcontractor === subcontractorFilter;
       const matchesDate = isWithinRange(batch.createdDate, dateRange);
 
+      if (scope.active && scope.subCode && batch.subcontractor !== scope.subCode) {
+        return false;
+      }
+
       return (
         matchesQuery &&
         matchesMethod &&
@@ -257,6 +273,8 @@ export function BatchManagementView() {
     statusFilter,
     subcontractorFilter,
     sourceFilter,
+    scope.active,
+    scope.subCode,
   ]);
 
   if (!hasHydrated) {
@@ -342,9 +360,13 @@ export function BatchManagementView() {
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Results &gt; 5 days late
+              {activePenaltyShoots > 0
+                ? `${activePenaltyShoots} active penalty shoot${activePenaltyShoots === 1 ? "" : "s"}`
+                : "Results > 5 days late"}
             </p>
-            <div className="text-sm font-medium text-red-600">Escalate</div>
+            <div className="text-sm font-medium text-red-600">
+              {activePenaltyShoots > 0 ? "Penalty Shoot" : "Escalate"}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -467,6 +489,9 @@ export function BatchManagementView() {
               </Popover>
             </div>
 
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/nde/dashboard">NDE Dashboard</Link>
+            </Button>
             <Button size="sm" onClick={() => setCreateDialogOpen(true)}>
               <Plus className="h-4 w-4" />
               Create new batch

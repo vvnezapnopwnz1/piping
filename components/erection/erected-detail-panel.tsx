@@ -20,6 +20,9 @@ import {
   type PlacementLocation,
 } from "@/lib/erection-stage";
 import { cn } from "@/lib/utils";
+import { usePmWriteLock } from "@/lib/pm-write-lock";
+import { PmWriteLockBanner } from "@/components/pm-write-lock-banner";
+import { W24PdfButton } from "./w24-pdf-button";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -87,6 +90,7 @@ export function ErectedDetailPanel({
     PlacementLocation | ""
   >("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { locked: pmLocked } = usePmWriteLock();
 
   useEffect(() => {
     if (storeRecord) {
@@ -217,6 +221,7 @@ export function ErectedDetailPanel({
               : "Confirm spool erection from the W-24 QC form once the area supervisor confirms placement in the designated location."}
           </SheetDescription>
         </SheetHeader>
+        <PmWriteLockBanner />
 
         <div className="flex-1 space-y-5 overflow-auto py-4">
           <div className="rounded-md border bg-slate-50 p-3 text-sm text-slate-700">
@@ -408,11 +413,17 @@ export function ErectedDetailPanel({
         </div>
 
         <SheetFooter className="shrink-0 flex-col items-stretch gap-2 border-t pt-4">
+          <W24PdfButton
+            spoolNo={form.spoolNo}
+            w24FormNo={form.w24FormNo}
+            areaZone={form.placementLocation}
+            erectedDate={storeRecord?.erectedDate}
+          />
           {!isErected ? (
             <>
               <Button
                 onClick={handleSubmit}
-                disabled={!validation.ok || isSubmitting}
+                disabled={!validation.ok || isSubmitting || pmLocked}
                 className="w-full"
               >
                 {isSubmitting ? "Marking…" : "Mark Erected"}

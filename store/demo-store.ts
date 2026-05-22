@@ -22,6 +22,8 @@ import { useSupportsStore } from "./supports-store"
 import { useRFTStore } from "./rft-store"
 import { useFieldMaterialCheckStore } from "./field-material-check-store"
 import { useFlangeBoltProgressStore } from "./flange-bolt-progress-store"
+import { usePwhtStore } from "./pwht-store"
+import { useFieldQCReleaseStore } from "./field-qc-release-store"
 
 /**
  * Demo store — global demo-mode toggle and master reset.
@@ -65,6 +67,8 @@ export const useDemoStore = create<DemoState>()(
         useErectionStore.getState().resetErection()
         useSpoolsStore.getState().resetSpools()
         useQCReleaseStore.getState().resetQCRelease()
+        useFieldQCReleaseStore.getState().resetField()
+        usePwhtStore.getState().resetDemo()
         usePaintStore.getState().resetPaint()
         useLaydownStore.getState().resetLaydown()
         useToSiteStore.getState().resetToSite()

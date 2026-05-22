@@ -18,6 +18,8 @@ import {
   computeSpoolSupportRollup,
 } from "@/lib/erection-stage";
 import { cn } from "@/lib/utils";
+import { usePmWriteLock } from "@/lib/pm-write-lock";
+import { PmWriteLockBanner } from "@/components/pm-write-lock-banner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,6 +77,7 @@ export function SupportedDetailPanel({
   const [form, setForm] = useState<SupportedRecord | null>(null);
   const [confirmedBy, setConfirmedBy] = useState<AreaSupervisor | "">("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { locked: pmLocked } = usePmWriteLock();
 
   const spoolSupports = useMemo(() => {
     if (!spoolNo) return [];
@@ -205,6 +208,7 @@ export function SupportedDetailPanel({
                 : `Supports in progress — ${rollup.total - rollup.welded} remaining.`}
           </SheetDescription>
         </SheetHeader>
+        <PmWriteLockBanner />
 
         <div className="flex-1 space-y-5 overflow-auto py-4">
           {/* W&B summary bridge */}
@@ -436,7 +440,7 @@ export function SupportedDetailPanel({
           <SheetFooter className="shrink-0 border-t pt-4">
             <Button
               onClick={handleSubmit}
-              disabled={!validation.ok || isSubmitting}
+              disabled={!validation.ok || isSubmitting || pmLocked}
               className="w-full"
             >
               {isSubmitting ? "Confirming…" : "Confirm Supported"}

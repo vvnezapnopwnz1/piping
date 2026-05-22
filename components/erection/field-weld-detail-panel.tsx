@@ -28,6 +28,9 @@ import {
 import { cn } from "@/lib/utils";
 import { validateWelder } from "@/lib/welder-qualifications";
 import { useActiveWelderQualifications } from "@/store/admin-store";
+import { usePmWriteLock } from "@/lib/pm-write-lock";
+import { PmWriteLockBanner } from "@/components/pm-write-lock-banner";
+import { Qc13PdfButton } from "@/components/fabrication/qc13-pdf-button";
 import type { FieldWeldJoint, ErectionStatus } from "@/lib/erection-weld-data";
 import {
   ERECTION_STATUS_OPTIONS,
@@ -119,6 +122,7 @@ export function FieldWeldDetailPanel({
   const [form, setForm] = useState<FieldWeldJoint | null>(null);
   const [saved, setSaved] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const { locked: pmLocked } = usePmWriteLock();
 
   useEffect(() => {
     if (weld) {
@@ -154,7 +158,7 @@ export function FieldWeldDetailPanel({
     );
   }
 
-  const isLocked = form.isLocked;
+  const isLocked = form.isLocked || pmLocked;
   const isRejected = form.status === "Rejected";
 
   const validation = validateWelder(
@@ -263,8 +267,9 @@ export function FieldWeldDetailPanel({
           </button>
         </div>
       </div>
+      <PmWriteLockBanner />
 
-      {isLocked && (
+      {form.isLocked && (
         <div className="mx-4 mt-3 px-3 py-2 rounded border border-slate-300 bg-slate-100 flex items-center gap-2 flex-shrink-0">
           <Lock className="w-3.5 h-3.5 text-slate-600 flex-shrink-0" />
           <p className="text-xs text-slate-600">
@@ -702,13 +707,16 @@ export function FieldWeldDetailPanel({
         </div>
       </div>
 
-      {!isLocked && (
+      {!form.isLocked && (
         <div className="px-5 py-4 border-t border-slate-200 flex flex-col gap-3 flex-shrink-0">
+          {form.status === "Completed" && (
+            <Qc13PdfButton joint={form} />
+          )}
           {weld.status === "Completed" && !weld.rtNo && (
             <Button
               variant="outline"
               onClick={handleSendToNDE}
-              disabled={isSending}
+              disabled={isSending || pmLocked}
               className="h-9 text-xs gap-2 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
             >
               <Scan className="h-4 w-4" />
@@ -718,7 +726,7 @@ export function FieldWeldDetailPanel({
           <div className="flex items-center gap-3">
             <Button
               onClick={handleSave}
-              disabled={!validation.isValid || showRootCapError}
+              disabled={!validation.isValid || showRootCapError || pmLocked}
               className={cn(
                 "flex-1 h-9 text-xs font-medium gap-2",
                 saved

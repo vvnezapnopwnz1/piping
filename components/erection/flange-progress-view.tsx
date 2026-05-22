@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { useScopeLock } from "@/lib/scope-lock"
 
 import { FlangeProgressDetailPanel } from "./flange-progress-detail-panel"
 
@@ -108,6 +109,7 @@ export function FlangeProgressView() {
   const getRecord = useFlangeBoltProgressStore((state) => state.getRecord)
 
   const [search, setSearch] = useState("")
+  const scope = useScopeLock()
   const [selectedJointId, setSelectedJointId] = useState<string | null>(null)
   const [panelOpen, setPanelOpen] = useState(false)
 
@@ -159,6 +161,13 @@ export function FlangeProgressView() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     return rows.filter((row) => {
+      if (
+        !scope.isInScope(
+          (row.joint as { pdsAreaCode?: string }).pdsAreaCode,
+        )
+      ) {
+        return false
+      }
       if (spoolFilter && row.joint.spoolNo !== spoolFilter) return false
       if (activeFilter !== "All" && row.status !== activeFilter) return false
       if (q) {
@@ -167,7 +176,7 @@ export function FlangeProgressView() {
       }
       return true
     })
-  }, [rows, activeFilter, search, spoolFilter])
+  }, [rows, activeFilter, search, spoolFilter, scope])
 
   function handleFilterChange(f: FlangeFilter) {
     setActiveFilter(f)

@@ -296,6 +296,25 @@ export const REWORK_CODES: ReworkCode[] = [
   },
 ]
 
+// ─── Defect Codes (NDE finding taxonomy — distinct from Rework Codes) ────────
+
+export interface DefectCode {
+  code: string
+  shortName: string
+  description: string
+  severity: "Minor" | "Major" | "Critical"
+}
+
+export const DEFECT_CODES: DefectCode[] = [
+  { code: "POR", shortName: "Porosity", description: "Gas pockets or voids in weld metal — root, cap, or fill", severity: "Major" },
+  { code: "CRK", shortName: "Crack", description: "Fracture in weld or HAZ — longitudinal, transverse, or branching", severity: "Critical" },
+  { code: "LOF", shortName: "Lack of Fusion", description: "No metallurgical bond between weld passes or weld and base metal", severity: "Major" },
+  { code: "SLG", shortName: "Slag inclusion", description: "Non-metallic solid trapped in weld metal between passes", severity: "Major" },
+  { code: "UNC", shortName: "Undercut", description: "Groove melted into base metal not filled by weld metal", severity: "Minor" },
+  { code: "INC", shortName: "Incomplete Penetration", description: "Weld metal does not extend through full joint thickness", severity: "Major" },
+  { code: "OTH", shortName: "Other", description: "Free-text defect not in standard taxonomy — inspector remarks required", severity: "Major" },
+]
+
 // ─── Joint Categories X / Y / Z (§3.13) ─────────────────────────────────────
 
 export interface JointCategory {

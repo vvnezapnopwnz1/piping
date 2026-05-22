@@ -28,6 +28,7 @@ import {
   Combine,
   CheckCircle2,
   Bolt,
+  Flame,
   Inbox,
   GitBranch,
   Send,
@@ -154,6 +155,11 @@ export const navigationConfig: NavSection[] = [
                 icon: ShieldCheck,
               },
               {
+                title: 'PWHT Release',
+                href: '/fabrication/pwht-release',
+                icon: Flame,
+              },
+              {
                 title: 'Paint',
                 href: '/fabrication/paint',
                 icon: Paintbrush,
@@ -212,6 +218,11 @@ export const navigationConfig: NavSection[] = [
                 icon: Anchor,
               },
               {
+                title: 'Field QC Release',
+                href: '/erection/field-qc-release',
+                icon: ClipboardCheck,
+              },
+              {
                 title: 'RFT',
                 href: '/erection/rft',
                 icon: CheckCircle2,
@@ -239,6 +250,18 @@ export const navigationConfig: NavSection[] = [
         title: 'NDE Module',
         href: '/nde',
         icon: Scan,
+        children: [
+          {
+            title: 'Batch Management',
+            href: '/nde',
+            icon: Scan,
+          },
+          {
+            title: 'Dashboard',
+            href: '/nde/dashboard',
+            icon: Activity,
+          },
+        ],
       },
     ],
   },

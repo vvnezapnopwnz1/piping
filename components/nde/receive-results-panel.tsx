@@ -32,14 +32,15 @@ import {
 } from "@/components/ui/table";
 import {
   useBatchesStore,
-  useWeldsStore,
-  useErectionStore,
   useNotificationsStore,
   type NdeBatch,
   type NdeBatchWeld,
   type NdeWeldResult,
 } from "@/store";
+import { DefectCodeSelect } from "@/components/nde/defect-code-select";
+import { PmWriteLockBanner } from "@/components/pm-write-lock-banner";
 import { REWORK_CODES } from "@/lib/engineering-references";
+import { usePmWriteLock } from "@/lib/pm-write-lock";
 import {
   formatNdeCleanNotificationDescription,
   formatNdeCleanNotificationTitle,
@@ -58,6 +59,8 @@ interface ReceiveResultsPanelProps {
 type WeldDecision = {
   result: NdeWeldResult;
   reworkCode?: string;
+  defectCode?: string;
+  defectLocation?: string;
   remarks?: string;
 };
 
@@ -69,6 +72,7 @@ export function ReceiveResultsPanel({
 }: ReceiveResultsPanelProps) {
   const receiveResultsAction = useBatchesStore((s) => s.receiveResults);
   const pushNotification = useNotificationsStore((s) => s.pushNotification);
+  const { locked: pmLocked } = usePmWriteLock();
 
   const [decisions, setDecisions] = useState<Record<string, WeldDecision>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -106,7 +110,7 @@ export function ReceiveResultsPanel({
     welds.every((w) => {
       const d = getDecision(w.id);
       if (d.result === "Rejected") {
-        return !!d.reworkCode;
+        return !!d.reworkCode && !!d.defectCode && !!d.defectLocation?.trim();
       }
       return true;
     });
@@ -124,6 +128,8 @@ export function ReceiveResultsPanel({
         weldId: w.id,
         result: d.result,
         reworkCode: d.result === "Rejected" ? d.reworkCode : undefined,
+        defectCode: d.result === "Rejected" ? d.defectCode : undefined,
+        defectLocation: d.result === "Rejected" ? d.defectLocation : undefined,
         remarks:
           d.result === "Rejected"
             ? d.remarks || codeEntry?.description || "Rejected during NDE"
@@ -134,31 +140,9 @@ export function ReceiveResultsPanel({
 
     receiveResultsAction(batch.id, results);
 
-    // Cascade rejected welds to welds-store
     const rejectedWelds = welds.filter(
       (w) => getDecision(w.id).result === "Rejected",
     );
-    const markWeldForRework = useWeldsStore.getState().markForRework;
-    for (const w of rejectedWelds) {
-      const d = getDecision(w.id);
-      markWeldForRework(w.id, d.remarks || "Marked for rework from NDE batch");
-    }
-
-    const allShopWelds = useWeldsStore.getState().welds;
-    const allFieldWelds = useErectionStore.getState().fieldWelds;
-    const setTracerSelections = useBatchesStore.getState().setTracerSelections;
-    const currentBatch = useBatchesStore.getState().getById(batch.id);
-    for (const rejected of rejectedWelds) {
-      const inStore = currentBatch?.welds.find((w) => w.id === rejected.id);
-      const welder = inStore?.welder ?? rejected.welder;
-      const sourceRows =
-        batch.source === "field" ? allFieldWelds : allShopWelds;
-      const candidates = sourceRows
-        .filter((w) => w.welderCode === welder && w.id !== rejected.id)
-        .slice(0, 2)
-        .map((w) => w.id);
-      setTracerSelections(batch.id, rejected.id, candidates, "NDE-INS-04");
-    }
 
     if (rejectedCount > 0) {
       const rejectTitle = formatNdeRejectNotificationTitle(
@@ -205,10 +189,11 @@ export function ReceiveResultsPanel({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-[540px]">
+      <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-[640px]">
         {batch ? (
           <>
             <SheetHeader className="gap-3 border-b px-6 py-5">
+              <PmWriteLockBanner />
               <div className="space-y-2">
                 <SheetTitle className="font-mono text-xl tracking-tight text-slate-900">
                   Receive Results
@@ -228,6 +213,8 @@ export function ReceiveResultsPanel({
                       <TableHead className="text-xs">Joint</TableHead>
                       <TableHead className="text-xs">Result</TableHead>
                       <TableHead className="text-xs">Rework code</TableHead>
+                      <TableHead className="text-xs">Defect code</TableHead>
+                      <TableHead className="text-xs">Location of defect</TableHead>
                       <TableHead className="text-xs">Remarks</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -327,6 +314,38 @@ export function ReceiveResultsPanel({
                           </TableCell>
                           <TableCell>
                             {isRejected ? (
+                              <DefectCodeSelect
+                                value={d.defectCode}
+                                onValueChange={(val) =>
+                                  updateDecision(w.id, { defectCode: val })
+                                }
+                              />
+                            ) : (
+                              <span className="text-xs text-muted-foreground">
+                                —
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {isRejected ? (
+                              <Input
+                                placeholder="root pass, 3 o'clock…"
+                                value={d.defectLocation ?? ""}
+                                onChange={(e) =>
+                                  updateDecision(w.id, {
+                                    defectLocation: e.target.value,
+                                  })
+                                }
+                                className="h-7 text-xs w-[180px]"
+                              />
+                            ) : (
+                              <span className="text-xs text-muted-foreground">
+                                —
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {isRejected ? (
                               <Input
                                 placeholder="Optional remarks"
                                 value={d.remarks ?? ""}
@@ -377,7 +396,7 @@ export function ReceiveResultsPanel({
                   </Button>
                   <Button
                     size="sm"
-                    disabled={!canSubmit}
+                    disabled={!canSubmit || pmLocked}
                     onClick={handleSubmit}
                   >
                     {isSubmitting

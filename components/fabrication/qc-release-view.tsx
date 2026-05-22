@@ -15,6 +15,7 @@ import {
   type QCReleaseRecord,
 } from "@/lib/spool-data";
 import { cn } from "@/lib/utils";
+import { useScopeLock } from "@/lib/scope-lock";
 
 import { Input } from "@/components/ui/input";
 import {
@@ -124,6 +125,7 @@ export function QCReleaseView() {
   const searchParams = useSearchParams();
   const stages = useSpoolStages();
   const qcRecords = useQCReleaseStore((s) => s.records);
+  const scope = useScopeLock();
 
   const [search, setSearch] = useState("");
 
@@ -147,6 +149,13 @@ export function QCReleaseView() {
         return { spoolNo, stage, record };
       })
       .filter((row) => {
+        if (
+          !scope.isInScope(
+            (row as { pdsAreaCode?: string }).pdsAreaCode,
+          )
+        ) {
+          return false;
+        }
         if (activeStatus === "Awaiting" && row.stage !== "Fabricated") return false;
         if (activeStatus === "Released" && row.stage !== "QC Release") return false;
         if (search) {
@@ -157,7 +166,7 @@ export function QCReleaseView() {
       })
       .sort((a, b) => a.spoolNo.localeCompare(b.spoolNo));
     return all;
-  }, [stages, qcMap, activeStatus, search]);
+  }, [stages, qcMap, activeStatus, search, scope]);
 
   const counts = useMemo(() => {
     let awaiting = 0;

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { ChangeEvent, ReactNode } from "react";
-import { AlertTriangle, CheckCircle2, Lock, Save, Scan, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Eye, Lock, Save, Scan, X } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -10,6 +10,7 @@ import { useBatchesStore, useWeldsStore } from "@/store";
 import { determineNDEMethods } from "@/lib/welder-qualifications";
 
 import { CreateBatchDialog } from "@/components/nde/create-batch-dialog";
+import { JointHistoryPanel } from "@/components/nde/joint-history-panel";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +26,9 @@ import { cn } from "@/lib/utils";
 import type { WeldJoint, WeldStatus } from "@/lib/weld-data";
 import { validateWelder } from "@/lib/welder-qualifications";
 import { useActiveWelderQualifications } from "@/store/admin-store";
+import { usePmWriteLock } from "@/lib/pm-write-lock";
+import { PmWriteLockBanner } from "@/components/pm-write-lock-banner";
+import { Qc13PdfButton } from "@/components/fabrication/qc13-pdf-button";
 
 interface WeldDetailPanelProps {
   joint: WeldJoint | null;
@@ -122,10 +126,12 @@ export function WeldDetailPanel({
   const [saved, setSaved] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [preselectedIds, setPreselectedIds] = useState<string[]>([]);
+  const [ndeHistoryOpen, setNdeHistoryOpen] = useState(false);
 
   const allWelds = useWeldsStore((s) => s.welds);
   const batches = useBatchesStore((s) => s.batches);
   const activeWelders = useActiveWelderQualifications();
+  const { locked: pmLocked } = usePmWriteLock();
 
   const weldsInNonClosedBatches = useMemo(() => {
     const ids = new Set<string>();
@@ -193,7 +199,7 @@ export function WeldDetailPanel({
     );
   }
 
-  const isLocked = form.isLocked;
+  const isLocked = form.isLocked || pmLocked;
   const isRejected = form.status === "Rejected";
 
   const validation = validateWelder(
@@ -251,7 +257,8 @@ export function WeldDetailPanel({
         </div>
       </div>
 
-      {isLocked && (
+      <PmWriteLockBanner />
+      {form.isLocked && (
         <div className="mx-4 mt-3 px-3 py-2 rounded border border-slate-300 bg-slate-100 flex items-center gap-2 flex-shrink-0">
           <Lock className="w-3.5 h-3.5 text-slate-600 flex-shrink-0" />
           <p className="text-xs text-slate-600">
@@ -562,6 +569,24 @@ export function WeldDetailPanel({
 
       {!isLocked && (
         <div className="px-5 py-4 border-t border-slate-200 flex flex-col gap-3 flex-shrink-0">
+          {joint.status === "Completed" && (
+            <Qc13PdfButton joint={joint} />
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setNdeHistoryOpen(true)}
+            className="h-9 text-xs gap-2"
+          >
+            <Eye className="h-4 w-4" />
+            NDE Examination History
+          </Button>
+          {joint.parentJointId && (
+            <p className="text-[11px] text-muted-foreground">
+              Rework from{" "}
+              <span className="font-mono text-orange-700">{joint.parentJointId}</span>
+            </p>
+          )}
           {joint.status === "Completed" && !joint.rtNo && (
             <div className="flex flex-col gap-2">
               <Button
@@ -633,6 +658,11 @@ export function WeldDetailPanel({
         source="shop"
         preselectedWeldIds={preselectedIds}
         defaultMethod={determineNDEMethods(joint).primary}
+      />
+      <JointHistoryPanel
+        jointNo={ndeHistoryOpen ? joint.jointNo : null}
+        open={ndeHistoryOpen}
+        onOpenChange={setNdeHistoryOpen}
       />
     </aside>
   );

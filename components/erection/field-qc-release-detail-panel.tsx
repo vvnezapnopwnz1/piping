@@ -4,20 +4,21 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-import {
-  useQCReleaseStore,
-  useNotificationsStore,
-  useSpoolStages,
-} from "@/store";
+import { useNotificationsStore } from "@/store";
+import { useFieldQCReleaseStore } from "@/store/field-qc-release-store";
+import { useSpoolErectionStages } from "@/store/erection-rollup";
 import {
   QC_CHECKLIST,
   QC_INSPECTORS,
-  STAGE_COLOR,
   type QCChecklistEntry,
   type QCChecklistKey,
   type QCChecklistStatus,
   type QCReleaseRecord,
 } from "@/lib/spool-data";
+import {
+  ERECTION_STAGE_COLOR,
+  type SpoolErectionStage,
+} from "@/lib/erection-stage";
 import { cn } from "@/lib/utils";
 import { usePmWriteLock } from "@/lib/pm-write-lock";
 import { PmWriteLockBanner } from "@/components/pm-write-lock-banner";
@@ -41,7 +42,7 @@ import {
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 
-interface QCReleaseDetailPanelProps {
+interface FieldQCReleaseDetailPanelProps {
   spoolNo: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -57,15 +58,19 @@ const STATUS_OPTIONS: QCChecklistStatus[] = [
 function StatusSegmented({
   value,
   onChange,
+  disabled,
 }: {
   value: QCChecklistStatus;
   onChange: (v: QCChecklistStatus) => void;
+  disabled?: boolean;
 }) {
   return (
     <div className="inline-flex rounded-md border overflow-hidden">
       {STATUS_OPTIONS.map((s) => (
         <button
           key={s}
+          type="button"
+          disabled={disabled}
           onClick={() => onChange(s)}
           className={cn(
             "px-2 py-1 text-[10px] font-medium transition-colors",
@@ -74,6 +79,7 @@ function StatusSegmented({
                 ? "bg-red-600 text-white"
                 : "bg-sky-600 text-white"
               : "bg-white text-slate-600 hover:bg-slate-50",
+            disabled && "opacity-50 cursor-not-allowed",
           )}
         >
           {s === "Pass with remark" ? "Remark" : s}
@@ -93,19 +99,21 @@ function buildEmptyRecord(spoolNo: string): QCReleaseRecord {
   };
 }
 
-export function QCReleaseDetailPanel({
+export function FieldQCReleaseDetailPanel({
   spoolNo,
   open,
   onOpenChange,
-}: QCReleaseDetailPanelProps) {
+}: FieldQCReleaseDetailPanelProps) {
   const router = useRouter();
-  const storeRecord = useQCReleaseStore((s) =>
+  const storeRecord = useFieldQCReleaseStore((s) =>
     spoolNo ? s.getRecord(spoolNo) : undefined,
   );
-  const stages = useSpoolStages();
-  const stage = spoolNo
-    ? (stages.get(spoolNo) ?? "Not Started")
-    : "Not Started";
+  const erectionStages = useSpoolErectionStages();
+  const stage: SpoolErectionStage =
+    spoolNo
+      ? (erectionStages.find((s) => s.spoolNo === spoolNo)?.stage ??
+        "Awaiting Release")
+      : "Awaiting Release";
 
   const [form, setForm] = useState<QCReleaseRecord | null>(null);
   const [inspector, setInspector] = useState<string>(QC_INSPECTORS[0]);
@@ -126,7 +134,7 @@ export function QCReleaseDetailPanel({
     }
   }, [storeRecord, spoolNo]);
 
-  const colors = STAGE_COLOR[stage];
+  const colors = ERECTION_STAGE_COLOR[stage];
 
   const hasFail = form?.entries.some((e) => e.status === "Fail") ?? false;
 
@@ -180,7 +188,7 @@ export function QCReleaseDetailPanel({
     setForm((prev) => {
       if (!prev) return prev;
       const entries = prev.entries.map((e) =>
-        e.key === key ? { ...e, ...patch } : e
+        e.key === key ? { ...e, ...patch } : e,
       );
       return { ...prev, entries };
     });
@@ -190,7 +198,7 @@ export function QCReleaseDetailPanel({
     if (!form) return;
     setIsSaving(true);
     await new Promise((r) => setTimeout(r, 700));
-    const upsertEntryAction = useQCReleaseStore.getState().upsertEntry;
+    const upsertEntryAction = useFieldQCReleaseStore.getState().upsertEntry;
     for (const entry of form.entries) {
       upsertEntryAction(form.spoolNo, entry.key, {
         status: entry.status,
@@ -206,7 +214,7 @@ export function QCReleaseDetailPanel({
     setIsSigning(true);
     await new Promise((r) => setTimeout(r, 700));
 
-    const upsertEntryAction = useQCReleaseStore.getState().upsertEntry;
+    const upsertEntryAction = useFieldQCReleaseStore.getState().upsertEntry;
     for (const entry of form.entries) {
       upsertEntryAction(form.spoolNo, entry.key, {
         status: entry.status,
@@ -214,41 +222,42 @@ export function QCReleaseDetailPanel({
       });
     }
 
-    useQCReleaseStore.getState().signOffQCRelease(form.spoolNo, inspector);
+    useFieldQCReleaseStore.getState().signOffFieldQCRelease(form.spoolNo, inspector);
 
     setIsSigning(false);
     onOpenChange(false);
 
-    toast.success(`QC Release signed for ${form.spoolNo}`);
+    toast.success(`Field QC Release signed for ${form.spoolNo}`);
 
-    const pushNotification = useNotificationsStore.getState().pushNotification;
-    pushNotification({
-      severity: "info",
+    useNotificationsStore.getState().pushNotification({
+      severity: "success",
       category: "weld_progress",
-      title: `${form.spoolNo}: QC Release complete`,
-      description: `Advanced to Released by ${inspector}`,
-      href: "/fabrication/qc-release",
+      title: `${form.spoolNo}: field QC released`,
+      description: "Ready for RFT auto-gate",
+      href: "/erection/rft",
     });
 
-    router.replace("/fabrication/qc-release?status=Awaiting");
+    router.replace("/erection/field-qc-release?status=Released");
   };
 
   async function handleReject() {
     if (!form || !rejectReason.trim() || !hasFail) return;
     setIsSigning(true);
     await new Promise((r) => setTimeout(r, 700));
-    useQCReleaseStore.getState().failQCRelease(form.spoolNo, inspector, rejectReason);
+    useFieldQCReleaseStore
+      .getState()
+      .failFieldQCRelease(form.spoolNo, inspector, rejectReason);
     setIsSigning(false);
     onOpenChange(false);
-    toast.error(`${form.spoolNo} sent back to Weld Progress for rework`);
+    toast.error(`${form.spoolNo} sent back to Supported for rework`);
     useNotificationsStore.getState().pushNotification({
       severity: "warning",
       category: "weld_progress",
-      title: `${form.spoolNo}: QC Release rejected`,
-      description: `Routed back to Weld Progress. Reason: ${rejectReason}`,
-      href: "/fabrication/weld-progress",
+      title: `${form.spoolNo}: Field QC rejected`,
+      description: `Routed back to Welded/Bolted. Reason: ${rejectReason}`,
+      href: "/erection/welded-bolted",
     });
-    router.replace("/fabrication/qc-release?status=Awaiting");
+    router.replace("/erection/field-qc-release?status=Awaiting");
   }
 
   return (
@@ -290,6 +299,7 @@ export function QCReleaseDetailPanel({
                 </div>
                 <StatusSegmented
                   value={entry.status}
+                  disabled={pmLocked}
                   onChange={(v) =>
                     updateEntry(item.key, {
                       status: v,
@@ -303,6 +313,7 @@ export function QCReleaseDetailPanel({
                       placeholder="Enter remark…"
                       className="text-xs min-h-[60px]"
                       value={entry.remark ?? ""}
+                      disabled={pmLocked}
                       onChange={(e) =>
                         updateEntry(item.key, { remark: e.target.value })
                       }
@@ -320,7 +331,11 @@ export function QCReleaseDetailPanel({
         <SheetFooter className="shrink-0 flex-col gap-3 border-t pt-4">
           <div className="flex items-center gap-2">
             <Label className="text-xs text-slate-600 shrink-0">Inspector</Label>
-            <Select value={inspector} onValueChange={setInspector}>
+            <Select
+              value={inspector}
+              onValueChange={setInspector}
+              disabled={pmLocked}
+            >
               <SelectTrigger className="h-8 text-xs w-[180px]">
                 <SelectValue />
               </SelectTrigger>
@@ -341,12 +356,12 @@ export function QCReleaseDetailPanel({
           {hasFail && (
             <div className="space-y-2">
               <Label className="text-xs text-red-700">
-                Reject reason (sent to Weld Progress)
+                Reject reason (sent back to Supported)
               </Label>
               <Textarea
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="Welder did not address visual defect on root pass..."
+                placeholder="Field NDE incomplete on root pass..."
                 className="text-xs min-h-[60px]"
                 disabled={pmLocked}
               />

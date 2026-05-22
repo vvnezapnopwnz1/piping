@@ -20,6 +20,9 @@ import {
   type WeldedBoltedRecord,
 } from "@/lib/erection-stage";
 import { cn } from "@/lib/utils";
+import { usePmWriteLock } from "@/lib/pm-write-lock";
+import { PmWriteLockBanner } from "@/components/pm-write-lock-banner";
+import { W24PdfButton } from "./w24-pdf-button";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -80,6 +83,7 @@ export function WeldedBoltedDetailPanel({
   const [form, setForm] = useState<WeldedBoltedRecord | null>(null);
   const [confirmedBy, setConfirmedBy] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { locked: pmLocked } = usePmWriteLock();
 
   const spoolFieldWelds = useMemo(() => {
     if (!spoolNo) return [];
@@ -237,6 +241,7 @@ export function WeldedBoltedDetailPanel({
                   : `Joints in progress — ${pendingWeld + pendingBolt} remaining.`}
           </SheetDescription>
         </SheetHeader>
+        <PmWriteLockBanner />
 
         <div className="flex-1 space-y-5 overflow-auto py-4">
           {/* Erected summary bridge */}
@@ -498,10 +503,11 @@ export function WeldedBoltedDetailPanel({
         </div>
 
         {isReady && (
-          <SheetFooter className="shrink-0 border-t pt-4">
+          <SheetFooter className="shrink-0 flex-col gap-2 border-t pt-4">
+            <W24PdfButton spoolNo={form.spoolNo} w24FormNo={form.w24FormNo} />
             <Button
               onClick={handleSubmit}
-              disabled={!validation.ok || isSubmitting}
+              disabled={!validation.ok || isSubmitting || pmLocked}
               className="w-full"
             >
               {isSubmitting ? "Confirming&hellip;" : "Confirm Welded/Bolted"}

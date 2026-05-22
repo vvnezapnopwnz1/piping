@@ -31,7 +31,8 @@ on operational context, competitive framing, or per-role capability scope.
 | -------- | ---- | ---------------- |
 | Presentation findings | `docs/research/presentation_findings.md` | All **10** Easy Piping sales/training decks read sequentially (#1 PSMS overview → #10 Painting). Cross-cutting findings CC-1…CC-23 (RFT formula, punch X/Y/Z gates, Generate Request pattern, role hierarchy, SpoolGen/Marian data flow, competitive positioning). Module-specific gaps per deck. |
 | Role matrices | `docs/role_matrix/*.md` | Per-role function inventories with ✅ live / ⚠ partial / 📋 planned / ❌ missing tags: `qc_engineer`, `nde_inspector`, `project_manager`, `spooling_team`, `subcontractor`, `system_admin` (+ approach notes in `chat_gpt_on_role_matrix_aproach.md`). Ground truth for **what to build next** — triage consolidated in each matrix's gap table. |
-| Roadmap v3 | `docs/roadmap_v3.md` | Module-by-module delivery order (Phase 0 Admin → … → Phase 7 polish). Replaces capability-first v2 sequencing. **Current focus after Phase 1:** Phase 2 Fabrication polish + Phase 3 NDE depth. |
+| Roadmap v3 | `docs/roadmap_v3.md` | Module-by-module delivery order (Phase 0 Admin → … → Phase 7 polish). Replaces capability-first v2 sequencing. **Current focus after Phase 4:** Phase 5 Spool Tracking. |
+| Phase implementation plans | `docs/superpowers/plans/2026-05-22-phase{2,3,4}-*.md` | Agent execution plans for Fabrication hardening, NDE flagship, Erection reuse (archived reference). |
 | Archived phase prompts | `docs/prompts/archive/` | Completed track prompts (A*, G*, I*, N*, etc.) moved out of `docs/prompts/` root during docs housekeeping. |
 
 **Recent merge milestones (not yet in older agent context):**
@@ -40,6 +41,9 @@ on operational context, competitive framing, or per-role capability scope.
 - **I8 + I9a/b/c** (2026-05-19) — Field flange bolt progress (`/erection/flange-progress`); I4 Confirm gated on all flange bolts Verified; RFT eligibility includes `flangeRollup.allVerified`; NC chip on Field MC; expanded flange-bolt seed coverage.
 - **Phase 0 Admin** (2026-05-22) — All 9 roadmap slices merged: project definition, system referential, WPS / welder qual / NDE matrix / PDS areas / heat registry / rework codes / joint categories / teams CRUD in `admin-store` v3.
 - **Phase 1 Spooling** (2026-05-22) — Roadmap slices 1.1–1.7: `spooling-store` v2 (ISO state machine, eng/spl transmittals), live Engineering Transmittals Accept, ISO Workflow checkout/check/hold, outbound Spooling Transmittal compose+send, revision cascade dialog, home KPI dashboard. Legacy demo import retained under ISO Workflow → Demo Import tab.
+- **Phase 2 Fabrication** (2026-05-23) — Cross-cutting nits introduced: `lib/pm-write-lock.ts`, `lib/scope-lock.ts`, `lib/heat-validator.ts` (PML hard block). PWHT release queue `/fabrication/pwht-release` + `pwht-store`. QC checklist Fail/Reject-to-Rework + "NDE complete" item. Welder qual chips on shop weld table; QC13 PDF stub. Scope lock + PM write-lock on fab screens.
+- **Phase 3 NDE** (2026-05-23) — `lib/nde-cascade.ts` + extended `batches-store` receiveResults: defect codes (POR/CRK/LOF/SLG/UNC/INC/OTH), per-weld Reject with location, auto `-R1` joint, T1/T1-1/T2-1 tracers, Penalty Shoot (4 rejects or 2nd-level tracer → SS). `joint-history-panel`, `nde-dashboard` at `/nde/dashboard`, penalty-shoot banner, Issue Examination PDF stub. Field batches cascade via `erection-store.createR1FieldWeld`.
+- **Phase 4 Erection** (2026-05-23) — Reuse Phase 2–3 on field: welder qual table chips, field PWHT in unified queue, Field QC Release `/erection/field-qc-release` + RFT gate, PM write-lock + scope lock on all erection panels, QC13 on field welds, W24 PDF stub on To Site/Erected/W-B.
 
 ---
 
@@ -82,7 +86,7 @@ Color tokens (Tailwind classes):
 
 ---
 
-## File structure — current state (verified 2026-05-22)
+## File structure — current state (verified 2026-05-23)
 
 ```
 app/
@@ -92,9 +96,11 @@ app/
     material-check/page.tsx             # Material Check (G2) ✅
     paint/page.tsx                        # Paint dispatch & sign-off (G4) ✅
     qc-release/page.tsx                 # QC Release (G3) ✅
+    pwht-release/page.tsx               # ✅ Phase 2.3 — PWHT release queue (shop + field welds)
     weld-progress/page.tsx              # Weld Progress + CRUD ✅
     laydown/page.tsx                      # Laydown yard placement & release (G5) ✅
   nde/page.tsx                          # NDE Batch Management ✅
+  nde/dashboard/page.tsx                # ✅ Phase 3 — NDE KPI dashboard (acceptance, rejections, penalty shoot)
   tracking/page.tsx                     # Spool Tracking ✅
   erection/
     dashboard/page.tsx                  # Erection Dashboard ✅
@@ -105,6 +111,7 @@ app/
     erected/page.tsx                    # I3
     welded-bolted/page.tsx              # I4 (I9b flange gate)
     supported/page.tsx                  # I5
+    field-qc-release/page.tsx           # ✅ Phase 4.5 — field 4-item QC checklist before RFT
     rft/page.tsx                        # I6
   testpack/
     page.tsx                            # ⚠ shell only — needs overview/landing
@@ -149,21 +156,33 @@ components/
     paint-detail-panel.tsx                # Paint dispatch / sign-off Sheet (G4)
     laydown-view.tsx                      # Laydown list (G5)
     laydown-detail-panel.tsx              # Place on yard / release Sheet (G5)
+    pwht-release-view.tsx                 # Phase 2.3
+    pwht-release-detail-panel.tsx
+    qc13-pdf-button.tsx                   # Phase 2 — Daily Progress Report PDF stub
   fabrication-dashboard.tsx             # ← reference dashboard pattern
   weld-table.tsx                        # ← reference table pattern
   weld-detail-panel.tsx                 # ← reference side panel pattern
   filter-sidebar.tsx
   status-badge.tsx                      # ← always use this
+  pm-write-lock-banner.tsx              # ✅ Phase 2 — PM read-only banner (reuse Phases 3–4)
   nde/
-    batch-management-view.tsx
+    batch-management-view.tsx           # scope lock on batch list (Phase 3)
     batch-detail-panel.tsx
     create-batch-dialog.tsx             # ✅ N1 — 2-step Create Batch wizard
-    receive-results-panel.tsx           # ✅ N2 — per-weld Receive Results sheet
+    receive-results-panel.tsx           # ✅ Phase 3 — defect code + location; cascade on Reject
+    defect-code-select.tsx              # Phase 3.1
+    joint-history-panel.tsx             # Phase 3.5 — per-joint examination timeline
+    nde-dashboard.tsx                   # Phase 3 — dedicated dashboard component
+    penalty-shoot-banner.tsx            # Phase 3.4
+    issue-examination-pdf-button.tsx      # Phase 7 defer stub (demo PDF)
   erection/
     erection-status-badge.tsx
     field-filter-sidebar.tsx
     field-weld-table.tsx
-    field-weld-detail-panel.tsx         # ✅ store-backed after E2.1
+    field-weld-detail-panel.tsx         # ✅ welder qual + PM lock + QC13 PDF (Phase 4)
+    field-qc-release-view.tsx           # Phase 4.5
+    field-qc-release-detail-panel.tsx
+    w24-pdf-button.tsx                  # Phase 4 — W24 stub on To Site / Erected / W-B
     to-site-view.tsx                    # To Site list (I2)
     to-site-detail-panel.tsx            # W-24 receipt Sheet (I2)
     flange-progress-view.tsx            # ✅ Field flange bolt progress (I8)
@@ -233,7 +252,8 @@ store/                                  # Zustand stores
   erected-store.ts / welded-bolted-store.ts / supports-store.ts / rft-store.ts  # I3–I6
   field-material-check-store.ts         # I7
   flange-bolt-progress-store.ts         # I8 field flange bolts — persisted
-  paint-store.ts / laydown-store.ts / qc-release-store.ts / spools-store.ts  # G2–G5
+  paint-store.ts / laydown-store.ts / qc-release-store.ts / pwht-store.ts / spools-store.ts  # G2–G5 + Phase 2 PWHT
+  field-qc-release-store.ts             # Phase 4.5 — field QC sign-off before RFT
   flange-store.ts                       # testpack §19 browse / Y-Z reinstatement
   spooling-store.ts                     # Phase 1 — ISO lifecycle + eng/spl transmittals (persist v2); legacy import rows preserved
   iso-rollup.ts                         # E2.5 ISO weld watcher (no persist)
@@ -251,7 +271,12 @@ lib/
   testpack-seed.ts                      # 18 ISOs / 6 test packs seed for testpack-store
   pressure-test-data.ts                 # activity tallies
   flange-data.ts                        # bolted-flange joints
-  engineering-references.ts             # B2 read-only refs: WPS, NDE matrix, REWORK_CODES (RW-001..RW-010), Joint Categories
+  engineering-references.ts             # WPS, NDE matrix, REWORK_CODES, DEFECT_CODES (Phase 3)
+  heat-validator.ts                     # Phase 2 — PML hard block for heat numbers
+  pm-write-lock.ts                      # Phase 2 — PM role read-only gate
+  scope-lock.ts                         # Phase 2 — subcontractor PDS area filter (CC-4)
+  nde-cascade.ts                        # Phase 3 — pure rejection → R1 / tracer / penalty shoot
+  nde-status.ts                         # Tracer levels T1/T1-1/T2-1, joint code mapping
   utils.ts                              # cn() helper
 
 config/
@@ -302,11 +327,23 @@ with a unique localStorage key, exports a main hook and a KPI hook.
 
 ### `batches-store.ts`
 
-- 6 seed batches across lifecycle stages
-- Actions: `createBatch`, `issueBatch`, `receiveResults`, `markForRework`, `closeBatch`
-- `markForRework` **cascades to welds-store** — the domino effect from the hero flow
-- After N2 merge: `receiveResults` is per-weld (Accepted / Rejected + RW-NNN code from `REWORK_CODES`); the panel that calls it also cascades to welds-store on Rejected
+- 6 seed batches across lifecycle stages; `source: 'shop' | 'field'` on each batch
+- Actions: `createBatch`, `issueBatch`, `receiveResults`, `markForRework`, `closeBatch`, `setTracerSelections`
+- **Phase 3:** `receiveResults` calls `lib/nde-cascade.processRejections` — on Reject: defect code + location required; auto-creates `-R1` in `welds-store` or `erection-store`; assigns T1/T1-1 tracers; Penalty Shoot flips remaining welds to SS + welder SS status
+- `markForRework` still cascades rejected parent weld back to fabrication/field progress
 - Persist key: `pipeqc-batches`
+
+### `pwht-store.ts` (Phase 2)
+
+- Per-weld PWHT release records (`source: 'shop' | 'field'`)
+- Actions: `releasePwht`, `getRelease`, `resetDemo`
+- Persist key: `pipeqc-pwht-v1`
+
+### `field-qc-release-store.ts` (Phase 4)
+
+- Field-side 4-item QC checklist per spool (mirrors `qc-release-store` pattern)
+- Gates `isSpoolRFTEligible()` — RFT requires field QC sign-off when spool has field joints
+- Persist key: `pipeqc-field-qc-release`
 
 ### `admin-store.ts` (Phase 0 complete — slices 0.1–0.9)
 
@@ -320,7 +357,7 @@ with a unique localStorage key, exports a main hook and a KPI hook.
 ### `erection-store.ts` (E2.1)
 
 - Field welds, persisted; mirrors welds-store shape
-- Actions: `updateFieldWeld`, `setErectionStatus`, `setRootPercent`, `setCapPercent`, `setForemanConfirmed`, `bulkUpdateErectionStatus`, `resetErection`
+- Actions: `updateFieldWeld`, `setErectionStatus`, `setRootPercent`, `setCapPercent`, `setForemanConfirmed`, `bulkUpdateErectionStatus`, `createR1FieldWeld` (Phase 3/4 NDE cascade), `resetErection`
 - KPI hook: `useErectionKPIs()` — consumed by the live erection dashboard (I1)
 - Persist key: `pipeqc-erection`
 
@@ -367,9 +404,14 @@ with a unique localStorage key, exports a main hook and a KPI hook.
 - Persist key: `pipeqc-spooling-module` (version **2** with migrate from v1)
 - Barrel export: `ISORecord` exported from `@/store` as `SpoolingISORecord` (avoids clash with testpack `ISORecord`)
 
+### Cross-cutting hooks (Phase 2+, reused in 3–4)
+
+- **`usePmWriteLock()`** — `project_manager` role cannot mutate progress entry screens; `<PmWriteLockBanner />` on fab/NDE/erection panels
+- **`useScopeLock()`** — `subcontractor` role filtered by `pipeqc-active-sub` + PDS area matrix from `admin-store`; wired on weld tables, NDE batch list, erection lists, fab QC/MC views
+
 ### ⚠ Remaining store gaps
 
-- None blocking demo hero flow; deepest gaps are NDE penalty-shoot/tracer depth (Phase 3) and Spooling SpoolGen/Marian integrations (Phase 7 defer)
+- None blocking vertical demo through Fab → NDE cascade → Erection → RFT. Deepest deferrals: real NDE/welder **reports** (Phase 7), SpoolGen/Marian (Phase 7), Spool Tracking depth (Phase 5)
 
 ---
 
@@ -407,11 +449,11 @@ Page numbers below refer to the Easy Piping User Manual PDF (156 pp).
 | §4            | Access Rights                         | ⚠ shell `/admin/access-rights` — scope-lock **configured** via PDS×subcontractor matrix (0.5), full role matrix editor deferred                                                                                                                                  |
 | §5            | Import settings (NDE matrix, PMC)     | ⚠ shell `/admin/import-settings` — live CRUD covers matrix + PML without Excel; bulk import deferred Phase 7                                                                                                                                                        |
 | §6            | Spooling (Ident Code, Marian, Browse) | ✅ **Phase 1 substantial** — sidebar Home / Engineering Transmittals / ISO Workflow / Spooling Transmittal; eng handoff Accept, ISO checkout + multi-round check + holds, outbound batch, revision cascade, home KPIs. Legacy demo import under ISO Workflow. Deferred: SpoolGen parser, Marian CSV, Browser (Phase 7). See `spooling_team.md` |
-| §7            | Fabrication module (Start Fab → QC)   | Fabrication module (§7) — Weld Progress + Dashboard funnel + Material Check + QC Release + Paint + Laydown (G1+G2+G1.1+G3+G4+G5+G6); sidebar realigned to manual §7 peer sections (Spool Fabrication / Welding); shop-only filter on `/fabrication/weld-progress` |
+| §7            | Fabrication module (Start Fab → QC)   | ✅ **Phase 2 complete** — G1–G6 + PWHT release + PML heat hard block + welder qual chips + QC Fail/rework + PM/scope locks; sidebar §7 peer sections; shop-only filter on weld-progress |
 | §9            | Fabrication reports                   | not built                                                                                                                                                                                                                                                         |
 | §10           | Spool Tracking + Dashboard            | ✅ /tracking                                                                                                                                                                                                                                                      |
-| §11           | NDE Management (batch lifecycle)      | ✅ /nde — N1 Create Batch wizard + N2 per-weld Receive Results merged                                                                                                                                                                                             |
-| §12           | Erection module                       | ✅ substantial — I1–I10: full spool-erection pipeline (To Site → Field MC → Erected → W/B → Supported → RFT), Site Weld Progress, Field Flange Progress (I8), sidebar §12 peer sections (I10); I9b gates on flange verification + RFT                                                                                                                                 |
+| §11           | NDE Management (batch lifecycle)      | ✅ /nde + `/nde/dashboard` — per-weld Accept/Reject with defect codes, R1 auto-joint, tracer T1/T1-1/T2-1, Penalty Shoot behavior, joint examination history; Issue Examination PDF stub (Phase 7 polish)                                                                                                                                 |
+| §12           | Erection module                       | ✅ **Phase 4 complete** on cross-cutting reuse — I1–I10 pipeline + Field QC Release + field PWHT + scope/PM locks + W24/QC13 PDF stubs; NDE field cascade verified via shared NDE module                                                                                                                                                                                  |
 | §13           | Erection reports                      | not built                                                                                                                                                                                                                                                         |
 | §14–§15       | Testpack management + Preparation     | partially — Explorer + Pressure Test A1–A6 prep/progress screens merged                                                                                                                                                                                           |
 | §16           | **Pressure Test (5 activities × 2)**  | ✅ homepage + 8 sub-screens merged (A1 line-check, A2 item-clearance, A4 blinding, A5 testing, A6 reinst.)                                                                                                                                                        |
@@ -452,15 +494,15 @@ Workflow gating (from §18.2 "Release Tracking"):
 > Legacy capability tracks (A / G / I / N / …) remain documented in the
 > merge log below and in `docs/prompts/archive/`.
 
-Snapshot **2026-05-22**:
+Snapshot **2026-05-23**:
 
 | Phase | Module | Status | Next gaps (see role matrix + roadmap) |
 | ----- | ------ | ------ | ------------------------------------- |
 | **0** | Admin | ✅ **Phase 0 complete** — 9/9 slices in `admin-store` v3 | Access Rights editor, Import Settings Excel, remaining §3 placeholder groups |
-| **1** | Spooling | ✅ **Phase 1 complete** — slices 1.1–1.7 live | SpoolGen parser, Marian CSV, Browser, S-curve chart (Phase 7); scope-lock UI filter (reuse CC-4 in Phase 2+) |
-| **2** | Fabrication | ✅ substantial — G1–G6 complete | Welder qual soft alert, PML validation depth, PWHT flow |
-| **3** | NDE | ⚠ partial — N1–N2 merged | Per-weld dialog polish, tracer, penalty shoot, reports |
-| **4** | Erection | ✅ substantial — I1–I10 + E2.x | Reuse Phase 3 NDE upgrades for field welds; PM write-lock |
+| **1** | Spooling | ✅ **Phase 1 complete** — slices 1.1–1.7 live | SpoolGen parser, Marian CSV, Browser, S-curve chart (Phase 7); scope-lock UI on spooling lists (optional) |
+| **2** | Fabrication | ✅ **Phase 2 complete** — G1–G6 + hardening 2.1–2.4 | Real report generation (Phase 7); Marian/SpoolGen defer |
+| **3** | NDE | ✅ **Phase 3 complete** — cascade + tracer + penalty shoot + dashboard | 8 NDE reports + welder monitoring reports (Phase 7 Track C) |
+| **4** | Erection | ✅ **Phase 4 complete** — I1–I10 + cross-cutting reuse 4.1–4.6 | Erection reports §13 (Phase 7) |
 | **5** | Spool Tracking | ⚠ shell `/tracking` | Yard map, movement audit, inconsistency flags |
 | **6** | Test Pack | ✅ substantial — A1–A6 + Explorer gates | Testpack Builder, dossier PDF, client examination |
 | **7** | Reports + polish | ⚠ shell `/reports` | Real report generation, notifications upgrade |
@@ -468,8 +510,12 @@ Snapshot **2026-05-22**:
 **Completed legacy tracks (no longer "next"):** Track A (Pressure Test §16),
 Track G (Fabrication funnel §7), Track I (Erection §12 + §19.2.1 field flanges).
 
-**Hero demo flow** still valid end-to-end: Home → Weld Progress → NDE cascade →
-Fabrication dashboard → Erection dashboard → (optional) Pressure Test storyline.
+**Extended vertical demo** (Phases 1–4): Spooling Accept → shop weld + MC + QC → NDE batch →
+Reject → `-R1` + Penalty Shoot → laydown → To Site → field weld + field MC → field NDE →
+Field QC Release → RFT → (optional) Pressure Test storyline.
+
+**Hero demo flow** still valid: Home → Weld Progress → NDE cascade → Fabrication dashboard →
+Erection dashboard.
 
 When starting a new agent session: read this file → `roadmap_v3.md` current
 phase → the relevant `docs/role_matrix/<role>.md` for function-level gaps.
@@ -495,6 +541,9 @@ NDE **§11** · Erection **§12–§13** · Test Pack **§14–§20** · Trackin
 
 ## Merge log
 
+- **2026-05-23: Phase 2 (Fabrication hardening)** — `lib/heat-validator.ts` HARD BLOCK on shop + field material check against active PML; `lib/pm-write-lock.ts` + `components/pm-write-lock-banner.tsx`; `lib/scope-lock.ts` on fab weld table, material check, QC release views; `/fabrication/pwht-release` + `store/pwht-store.ts`; QC checklist Fail/Reject-to-Rework + "NDE complete" label; welder qual mismatch chips on `weld-table`; `qc13-pdf-button` on completed shop welds; `jspdf` dependency added.
+- **2026-05-23: Phase 3 (NDE flagship)** — `DEFECT_CODES` in `engineering-references.ts`; `lib/nde-cascade.ts` + extended `receiveResults` in `batches-store` (R1 joint, tracers T1/T1-1/T2-1, Penalty Shoot SS flip); `defect-code-select`, `penalty-shoot-banner`, `joint-history-panel`, `nde-dashboard`, `/nde/dashboard`; `createR1FieldWeld` in `erection-store` for `source: 'field'` batches; PM write-lock on NDE create/receive panels; scope lock on batch list.
+- **2026-05-23: Phase 4 (Erection hardening)** — Field weld table welder qual chip; PWHT queue unifies shop + field (`source` on `PwhtReleaseRecord`); Field QC Release at `/erection/field-qc-release` + `field-qc-release-store` with RFT gate; PM write-lock + scope lock on all Erection panels/lists; QC13 on field welds; W24 PDF stub on To Site / Erected / Welded-Bolted; field NDE cascade via `createR1FieldWeld`.
 - **E2.1** — Erection store (`store/erection-store.ts`) created and wired.
   Field weld edits now persist to localStorage (`pipeqc-erection` key).
   `resetAll()` re-seeds from `lib/erection-weld-data.ts`.
@@ -547,7 +596,9 @@ NDE **§11** · Erection **§12–§13** · Test Pack **§14–§20** · Trackin
 - **Two flange domains:** testpack browse uses `store/flange-store.ts`; erection field bolts use `store/flange-bolt-progress-store.ts` (I8/I9b).
 - RFT formula (from presentation #7): `ISO_RFT = QC_RELEASED ∧ ISO_COMPLETE ∧ LINE_CHECK_DONE ∧ (all Cat-X cleared)`; PipeQC implements spool-level RFT via supported sign-off + flange verification (I9b) + testpack bridge (`recordSpoolRFT`).
 - Punch categories X/Y/Z are **sequencer gates** (X blocks testing, Y blocks pre-comm, Z blocks closeout) — not decorative tags (CC-20).
-- NDE includes manual-facing state vocabulary and tracer demo behavior; full Penalty Shoot / auto-allocation depth deferred to Phase 3 roadmap.
+- NDE Penalty Shoot + tracer second-level cascade live (Phase 3); real 8 NDE management reports still Phase 7.
+- Fabrication PWHT release queue and field QC release gate RFT (Phases 2 + 4).
+- PM write-lock and subcontractor scope lock wired on Fab, NDE, and Erection progress screens (Phases 2–4).
 - Fabrication QC Release, Sent to Paint, Painted, and Laydown are wired (Track G complete); sidebar matches §7 peer sections (G6).
 - Erection sidebar matches §12 peer sections (I10); Field Material Check is a documented standalone-screen deviation from strict manual tile order.
 - Admin Phase 0 covers the 9 referentials required before Spooling/Fab/NDE demos; Excel import templates remain Phase 7.

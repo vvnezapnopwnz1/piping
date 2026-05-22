@@ -2,6 +2,7 @@
 
 import { create } from "zustand"
 import { persist, createJSONStorage } from "zustand/middleware"
+import { buildRnJointNo, buildRnWeldId } from "@/lib/nde-cascade"
 import { FIELD_WELD_DATA, type FieldWeldJoint } from "@/lib/erection-weld-data"
 
 /**
@@ -23,6 +24,11 @@ interface ErectionState {
 
   // Mutations
   updateFieldWeld: (id: string, updates: Partial<FieldWeldJoint>) => void
+  createR1FieldWeld: (
+    parent: FieldWeldJoint,
+    defectCode?: string,
+    defectLocation?: string,
+  ) => void
   setErectionStatus: (id: string, status: FieldWeldJoint["erectionStatus"]) => void
   setRootPercent: (id: string, pct: number) => void
   setCapPercent: (id: string, pct: number) => void
@@ -54,6 +60,27 @@ export const useErectionStore = create<ErectionState>()(
             w.id === id ? { ...w, ...updates } : w
           ),
         })),
+
+      createR1FieldWeld: (parent, defectCode, defectLocation) =>
+        set((state) => {
+          const newJointNo = buildRnJointNo(parent.jointNo)
+          const newId = buildRnWeldId(parent.id)
+          if (state.fieldWelds.some((w) => w.id === newId)) return state
+          const r1: FieldWeldJoint = {
+            ...parent,
+            id: newId,
+            jointNo: newJointNo,
+            status: "Rework",
+            rtResult: undefined,
+            rtNo: undefined,
+            isLocked: false,
+            erectionStatus: "Not Started",
+            remarks: defectCode
+              ? `R1 created from ${parent.jointNo}: ${defectCode}${defectLocation ? " @ " + defectLocation : ""}`
+              : `R1 created from ${parent.jointNo}`,
+          }
+          return { fieldWelds: [...state.fieldWelds, r1] }
+        }),
 
       setErectionStatus: (id, status) =>
         set((state) => ({

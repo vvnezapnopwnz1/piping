@@ -3,6 +3,7 @@
 import type { ChangeEvent } from "react";
 import { useState } from "react";
 import {
+  AlertTriangle,
   ChevronDown,
   ChevronUp,
   ChevronsUpDown,
@@ -11,6 +12,9 @@ import {
   Pencil,
   Search,
 } from "lucide-react";
+import { validateWelder } from "@/lib/welder-qualifications";
+import { useActiveWelderQualifications } from "@/store/admin-store";
+import { useScopeLock } from "@/lib/scope-lock";
 
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
@@ -36,6 +40,8 @@ export function WeldTable({
   const [showCompleted, setShowCompleted] = useState(true);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
+  const activeWelders = useActiveWelderQualifications();
+  const scope = useScopeLock();
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -52,6 +58,9 @@ export function WeldTable({
 
   const filtered = data
     .filter((row) => {
+      if (!scope.isInScope((row as WeldJoint & { pdsAreaCode?: string }).pdsAreaCode)) {
+        return false;
+      }
       if (!showCompleted && row.status === "Completed") return false;
       if (!search) return true;
 
@@ -211,8 +220,26 @@ export function WeldTable({
                     </span>
                   </td>
                   <td className="px-2 py-2 whitespace-nowrap">
-                    <span className="text-xs text-slate-700 font-mono">
+                    <span className="inline-flex items-center text-xs text-slate-700 font-mono">
                       {row.welderCode}
+                      {(() => {
+                        const v = validateWelder(
+                          row.welderCode,
+                          row.wpsNo,
+                          row.materialType,
+                          row.diaInch,
+                          activeWelders,
+                        );
+                        if (!v.isValid && row.welderCode) {
+                          return (
+                            <span className="inline-flex items-center gap-1 ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-800 border border-amber-200">
+                              <AlertTriangle className="h-2.5 w-2.5" />
+                              WPS
+                            </span>
+                          );
+                        }
+                        return null;
+                      })()}
                     </span>
                   </td>
                   <td className="px-2 py-2 whitespace-nowrap">

@@ -5,12 +5,13 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
-import { useSpoolStages, useSpoolsStore } from "@/store";
+import { useSpoolErectionStages } from "@/store/erection-rollup";
+import { useFieldQCReleaseStore } from "@/store/field-qc-release-store";
 import {
-  STAGE_COLOR,
-  type SpoolFabStage,
-  type MaterialCheckRecord,
-} from "@/lib/spool-data";
+  ERECTION_STAGE_COLOR,
+  type SpoolErectionStage,
+} from "@/lib/erection-stage";
+import type { QCReleaseRecord } from "@/lib/spool-data";
 import { cn } from "@/lib/utils";
 import { useScopeLock } from "@/lib/scope-lock";
 
@@ -24,7 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { MaterialCheckDetailPanel } from "./material-check-detail-panel";
+import { FieldQCReleaseDetailPanel } from "./field-qc-release-detail-panel";
 
 function RelativeDate({ isoDate }: { isoDate: string }) {
   const [relative, setRelative] = useState<string | null>(null);
@@ -49,15 +50,30 @@ function RelativeDate({ isoDate }: { isoDate: string }) {
   );
 }
 
-type MCStatus = "All" | "Pending" | "Approved" | "NC";
+type QCStatus = "All" | "Awaiting" | "Released";
 
-function deriveMCStatus(rec: MaterialCheckRecord): Exclude<MCStatus, "All"> {
-  if (rec.pieces.some((p) => p.status === "Non-conformance")) return "NC";
-  if (rec.signedOffDate) return "Approved";
-  return "Pending";
+const QC_STATUSES: QCStatus[] = ["All", "Awaiting", "Released"];
+
+const QUEUE_STAGES: SpoolErectionStage[] = [
+  "Supported",
+  "Field QC Released",
+];
+
+function deriveQCProgress(record: QCReleaseRecord | undefined): {
+  passed: number;
+  remark: number;
+  text: string;
+} {
+  if (!record) return { passed: 0, remark: 0, text: "0/4" };
+  const entries = record.entries;
+  const passed = entries.filter(
+    (e) => e.status === "Pass" || e.status === "Pass with remark",
+  ).length;
+  const remark = entries.filter((e) => e.status === "Pass with remark").length;
+  let text = `${passed}/4 passed`;
+  if (remark > 0) text += ` · ${remark} remark`;
+  return { passed, remark, text };
 }
-
-const MC_STATUSES: MCStatus[] = ["All", "Pending", "Approved", "NC"];
 
 function StatusChip({
   status,
@@ -65,13 +81,14 @@ function StatusChip({
   active,
   onClick,
 }: {
-  status: MCStatus;
+  status: QCStatus;
   count: number;
   active: boolean;
   onClick: () => void;
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={cn(
         "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
@@ -80,7 +97,7 @@ function StatusChip({
           : "bg-white text-slate-600 border-slate-200 hover:border-slate-300",
       )}
     >
-      {status}
+      {status === "Awaiting" ? "Awaiting Release" : status}
       <span
         className={cn(
           "inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full text-[10px] font-semibold",
@@ -93,8 +110,8 @@ function StatusChip({
   );
 }
 
-function StagePill({ stage }: { stage: SpoolFabStage }) {
-  const colors = STAGE_COLOR[stage];
+function StagePill({ stage }: { stage: SpoolErectionStage }) {
+  const colors = ERECTION_STAGE_COLOR[stage];
   return (
     <span
       className={cn(
@@ -109,11 +126,11 @@ function StagePill({ stage }: { stage: SpoolFabStage }) {
   );
 }
 
-export function MaterialCheckView() {
+export function FieldQCReleaseView() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const stages = useSpoolStages();
-  const records = useSpoolsStore((s) => s.records);
+  const stages = useSpoolErectionStages();
+  const qcRecords = useFieldQCReleaseStore((s) => s.records);
   const scope = useScopeLock();
 
   const [search, setSearch] = useState("");
@@ -121,89 +138,102 @@ export function MaterialCheckView() {
   const urlStatusRaw = searchParams.get("status");
   const urlSpool = searchParams.get("spool");
 
-  const activeStatus: MCStatus =
-    urlStatusRaw && MC_STATUSES.includes(urlStatusRaw as MCStatus)
-      ? (urlStatusRaw as MCStatus)
-      : "All";
+  const activeStatus: QCStatus =
+    urlStatusRaw && QC_STATUSES.includes(urlStatusRaw as QCStatus)
+      ? (urlStatusRaw as QCStatus)
+      : "Awaiting";
 
-  const counts = useMemo(() => {
-    const c: Record<MCStatus, number> = {
-      All: records.length,
-      Pending: 0,
-      Approved: 0,
-      NC: 0,
-    };
-    for (const rec of records) {
-      const status = deriveMCStatus(rec);
-      c[status]++;
-    }
-    return c;
-  }, [records]);
+  const qcMap = useMemo(() => {
+    return new Map<string, QCReleaseRecord>(qcRecords.map((r) => [r.spoolNo, r]));
+  }, [qcRecords]);
 
   const rows = useMemo(() => {
-    const filtered = records.filter((rec) => {
-      if (
-        !scope.isInScope(
-          (rec as MaterialCheckRecord & { pdsAreaCode?: string }).pdsAreaCode,
-        )
-      ) {
-        return false;
-      }
-      const status = deriveMCStatus(rec);
-      if (activeStatus !== "All" && status !== activeStatus) return false;
-      if (search) {
-        const term = search.toLowerCase();
-        const hay = [rec.spoolNo, ...rec.pieces.map((p) => p.heatNumber)]
-          .join(" ")
-          .toLowerCase();
-        if (!hay.includes(term)) return false;
-      }
-      return true;
-    });
-    return filtered.map((rec) => {
-      const stage = stages.get(rec.spoolNo) ?? "Not Started";
-      return { spoolNo: rec.spoolNo, stage, record: rec };
-    });
-  }, [records, stages, activeStatus, search, scope]);
+    const all = stages
+      .filter((s) => QUEUE_STAGES.includes(s.stage))
+      .map(({ spoolNo, stage }) => {
+        const record = qcMap.get(spoolNo);
+        return { spoolNo, stage, record };
+      })
+      .filter((row) => {
+        if (
+          !scope.isInScope(
+            (row as { pdsAreaCode?: string }).pdsAreaCode,
+          )
+        ) {
+          return false;
+        }
+        if (activeStatus === "Awaiting" && row.stage !== "Supported") return false;
+        if (activeStatus === "Released" && row.stage !== "Field QC Released")
+          return false;
+        if (search) {
+          const term = search.toLowerCase();
+          if (!row.spoolNo.toLowerCase().includes(term)) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => a.spoolNo.localeCompare(b.spoolNo));
+    return all;
+  }, [stages, qcMap, activeStatus, search, scope]);
 
-  const setStatus = (status: MCStatus) => {
+  const counts = useMemo(() => {
+    let awaiting = 0;
+    let released = 0;
+    for (const { stage } of stages) {
+      if (stage === "Supported") awaiting++;
+      else if (stage === "Field QC Released") released++;
+    }
+    return {
+      All: awaiting + released,
+      Awaiting: awaiting,
+      Released: released,
+    };
+  }, [stages]);
+
+  const setStatus = (status: QCStatus) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (status === "All") {
+    if (status === "Awaiting") {
       params.delete("status");
     } else {
       params.set("status", status);
     }
-    router.replace(`/fabrication/material-check?${params.toString()}`);
+    router.replace(`/erection/field-qc-release?${params.toString()}`);
   };
 
   const openSpool = (spoolNo: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("spool", spoolNo);
-    if (!params.has("status") && activeStatus !== "All") {
+    if (!params.has("status") && activeStatus !== "Awaiting") {
       params.set("status", activeStatus);
     }
-    router.replace(`/fabrication/material-check?${params.toString()}`);
+    router.replace(`/erection/field-qc-release?${params.toString()}`);
   };
 
   const closePanel = () => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("spool");
-    router.replace(`/fabrication/material-check?${params.toString()}`);
+    router.replace(`/erection/field-qc-release?${params.toString()}`);
   };
 
   const selectedSpool = urlSpool ?? null;
 
+  const emptyText =
+    activeStatus === "Awaiting"
+      ? "No spools awaiting field QC release."
+      : activeStatus === "Released"
+        ? "No spools field-QC released yet."
+        : "No Supported or Field QC Released spools.";
+
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] min-h-[720px] gap-4 overflow-hidden">
       <div className="shrink-0 px-6 pt-6 pb-2">
-        <h1 className="text-lg font-semibold text-slate-900">Material Check</h1>
+        <h1 className="text-lg font-semibold text-slate-900">Field QC Release</h1>
         <p className="text-sm text-slate-500">
-          Verify heat numbers and mill certificates before welding
+          Final field inspection checklist before RFT auto-gate
         </p>
       </div>
 
       <div className="shrink-0 px-6 flex items-center gap-3">
-        {MC_STATUSES.map((s) => (
+        {QC_STATUSES.map((s) => (
           <StatusChip
             key={s}
             status={s}
@@ -218,7 +248,7 @@ export function MaterialCheckView() {
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input
-            placeholder="Search spool or heat number…"
+            placeholder="Search spool…"
             className="pl-9"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -229,7 +259,7 @@ export function MaterialCheckView() {
       <div className="flex-1 min-h-0 px-6 pb-6 overflow-auto">
         {rows.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-slate-500">
-            <p className="text-sm">No spools at this status.</p>
+            <p className="text-sm">{emptyText}</p>
           </div>
         ) : (
           <Table>
@@ -237,16 +267,15 @@ export function MaterialCheckView() {
               <TableRow>
                 <TableHead>Spool No</TableHead>
                 <TableHead>Stage</TableHead>
-                <TableHead>Pieces</TableHead>
+                <TableHead>Checklist progress</TableHead>
                 <TableHead>Inspector</TableHead>
-                <TableHead>Signed off</TableHead>
+                <TableHead>Released</TableHead>
                 <TableHead className="w-10" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows.map(({ spoolNo, stage, record }) => {
-                const nc = record.nonConformanceCount;
-                const total = record.pieces.length;
+                const progress = deriveQCProgress(record);
                 return (
                   <TableRow
                     key={spoolNo}
@@ -259,19 +288,14 @@ export function MaterialCheckView() {
                     <TableCell>
                       <StagePill stage={stage} />
                     </TableCell>
-                    <TableCell className="text-sm">
-                      <span
-                        className={cn(nc > 0 && "text-red-600 font-medium")}
-                      >
-                        {total} piece{total === 1 ? "" : "s"}
-                        {nc > 0 ? ` · ${nc} NC` : ""}
-                      </span>
+                    <TableCell className="text-sm text-slate-600">
+                      {progress.text}
                     </TableCell>
                     <TableCell className="text-sm text-slate-600">
-                      {record.inspector ?? "—"}
+                      {record?.inspector ?? "—"}
                     </TableCell>
                     <TableCell className="text-sm text-slate-600">
-                      {record.signedOffDate ? (
+                      {record?.signedOffDate ? (
                         <RelativeDate isoDate={record.signedOffDate} />
                       ) : (
                         "—"
@@ -286,7 +310,7 @@ export function MaterialCheckView() {
         )}
       </div>
 
-      <MaterialCheckDetailPanel
+      <FieldQCReleaseDetailPanel
         spoolNo={selectedSpool}
         open={!!selectedSpool}
         onOpenChange={(open) => {

@@ -50,6 +50,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { IssueExaminationPdfButton } from "@/components/nde/issue-examination-pdf-button";
+import { JointHistoryPanel } from "@/components/nde/joint-history-panel";
+import { PenaltyShootBanner } from "@/components/nde/penalty-shoot-banner";
 import { ReceiveResultsPanel } from "@/components/nde/receive-results-panel";
 import {
   useBatchesStore,
@@ -155,6 +158,7 @@ export function BatchDetailPanel({
   const [expandedWelds, setExpandedWelds] = useState<string[]>([]);
   const [confirmReworkOpen, setConfirmReworkOpen] = useState(false);
   const [receivePanelOpen, setReceivePanelOpen] = useState(false);
+  const [historyJointNo, setHistoryJointNo] = useState<string | null>(null);
 
   const issueBatch = useBatchesStore((s) => s.issueBatch);
   const markForReworkBatch = useBatchesStore((s) => s.markForRework);
@@ -280,7 +284,8 @@ export function BatchDetailPanel({
                   </TabsList>
 
                   <TabsContent value="overview" className="space-y-4">
-                    {nde100Required ? (
+                    {batch && <PenaltyShootBanner batch={batch} />}
+                    {nde100Required && !batch?.history.some((h) => h.title === "PENALTY SHOOT triggered") ? (
                       <Card className="border-red-300 bg-red-50">
                         <CardContent className="p-4 text-sm text-red-800">
                           NDE 100 required for this welder group (4+ rejected
@@ -288,6 +293,11 @@ export function BatchDetailPanel({
                         </CardContent>
                       </Card>
                     ) : null}
+                    {batch && (batch.status === "Issued" || batch.status === "In Progress") && (
+                      <div className="flex justify-end">
+                        <IssueExaminationPdfButton batch={batch} />
+                      </div>
+                    )}
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <Card className="gap-4 py-5">
                         <CardHeader className="px-5 pb-0">
@@ -527,6 +537,26 @@ export function BatchDetailPanel({
                                   >
                                     <TableCell className="px-5 font-mono text-xs font-medium text-sky-700">
                                       {weld.jointNo}
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setHistoryJointNo(weld.jointNo);
+                                        }}
+                                        className="text-[10px] text-slate-500 hover:text-sky-700 underline ml-1"
+                                      >
+                                        history
+                                      </button>
+                                      {weld.category === "NDE100" && !weld.parentWeldId && (
+                                        <span className="ml-1.5 inline-flex items-center rounded border border-red-300 bg-red-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-red-700">
+                                          SS-PENALTY
+                                        </span>
+                                      )}
+                                      {weld.parentWeldId && (
+                                        <span className="ml-1.5 inline-flex items-center rounded border border-orange-300 bg-orange-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-orange-700">
+                                          R1
+                                        </span>
+                                      )}
                                     </TableCell>
                                     <TableCell className="text-sm text-slate-900">
                                       {weld.spoolNo}
@@ -735,6 +765,12 @@ export function BatchDetailPanel({
         onSubmitted={() => {
           // Batch detail panel auto-refreshes from store selectors
         }}
+      />
+
+      <JointHistoryPanel
+        jointNo={historyJointNo}
+        open={!!historyJointNo}
+        onOpenChange={(o) => !o && setHistoryJointNo(null)}
       />
     </>
   );

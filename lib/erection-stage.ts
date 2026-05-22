@@ -8,6 +8,7 @@ export type SpoolErectionStage =
   | "Erected"
   | "Welded/Bolted"
   | "Supported"
+  | "Field QC Released"
   | "RFT"
 
 export const ERECTION_STAGE_ORDER: SpoolErectionStage[] = [
@@ -17,6 +18,7 @@ export const ERECTION_STAGE_ORDER: SpoolErectionStage[] = [
   "Erected",
   "Welded/Bolted",
   "Supported",
+  "Field QC Released",
   "RFT",
 ]
 
@@ -53,6 +55,11 @@ export const ERECTION_STAGE_COLOR: Record<
     bg: "bg-emerald-50",
     text: "text-emerald-700",
     rail: "bg-emerald-500",
+  },
+  "Field QC Released": {
+    bg: "bg-teal-50",
+    text: "text-teal-700",
+    rail: "bg-teal-500",
   },
   RFT: {
     bg: "bg-emerald-50",
@@ -131,13 +138,15 @@ export function isSpoolRFTEligible(
   weldedBoltedRecord?: WeldedBoltedRecord,
   supportedRecord?: SupportedRecord,
   flangeRollup?: SpoolFlangeBoltRollup,
+  fieldQcReleased = false,
 ): boolean {
   return (
     toSiteRecord?.spoolNo === spoolNo &&
     erectedRecord?.spoolNo === spoolNo &&
     weldedBoltedRecord?.spoolNo === spoolNo &&
     supportedRecord?.spoolNo === spoolNo &&
-    (!flangeRollup || flangeRollup.totalBolts === 0 || flangeRollup.allVerified)
+    (!flangeRollup || flangeRollup.totalBolts === 0 || flangeRollup.allVerified) &&
+    fieldQcReleased
   )
 }
 
@@ -402,6 +411,7 @@ export function deriveSpoolErectionStage(
   supportedRecord?: SupportedRecord,
   rftRecord?: RFTRecord,
   fieldMCRollup?: SpoolFieldMCRollup,
+  fieldQcSignedOff?: boolean,
 ): SpoolErectionStage {
   if (rftRecord?.spoolNo === spoolNo) return "RFT"
   const statuses = fieldWelds
@@ -424,6 +434,7 @@ export function deriveSpoolErectionStage(
   }
 
   if (supportedRecord) {
+    if (fieldQcSignedOff) return "Field QC Released"
     return "Supported"
   }
 

@@ -21,6 +21,8 @@ export interface WeldJoint {
   pwhtRequired?: boolean
   pwhtDate?: string
   remarks?: string
+  parentJointId?: string
+  ndeCategory?: "NDE10" | "NDE20" | "NDE100"
 }
 
 export const WELD_DATA: WeldJoint[] = [

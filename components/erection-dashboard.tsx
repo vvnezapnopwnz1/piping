@@ -333,6 +333,7 @@ function ErectionFunnelSection({
             stage === "Erected" ||
             stage === "Welded/Bolted" ||
             stage === "Supported" ||
+            stage === "Field QC Released" ||
             stage === "RFT";
           const tileTitle =
             stage === "Awaiting Release"
@@ -353,6 +354,8 @@ function ErectionFunnelSection({
                     ? "/erection/welded-bolted"
                     : stage === "Supported"
                       ? "/erection/supported"
+                      : stage === "Field QC Released"
+                        ? "/erection/field-qc-release"
                       : stage === "RFT"
                         ? "/erection/rft"
                         : stage === "Field Material Check"

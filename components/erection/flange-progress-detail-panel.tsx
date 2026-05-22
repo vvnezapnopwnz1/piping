@@ -16,6 +16,8 @@ import {
 } from "@/lib/erection-stage";
 import { QC_INSPECTORS } from "@/lib/spool-data";
 import { cn } from "@/lib/utils";
+import { usePmWriteLock } from "@/lib/pm-write-lock";
+import { PmWriteLockBanner } from "@/components/pm-write-lock-banner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -83,6 +85,7 @@ export function FlangeProgressDetailPanel({
   const [remark, setRemark] = useState<string>("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { locked: pmLocked } = usePmWriteLock();
 
   const today = useMemo(() => new Date().toISOString().split("T")[0], []);
 
@@ -244,6 +247,7 @@ export function FlangeProgressDetailPanel({
                   : "Awaiting torque assignment by QC."}
           </SheetDescription>
         </SheetHeader>
+        <PmWriteLockBanner />
 
         <div className="flex-1 space-y-5 overflow-auto py-4">
           {/* Bridge card */}
@@ -541,7 +545,7 @@ export function FlangeProgressDetailPanel({
               <>
                 <Button
                   onClick={handleAssign}
-                  disabled={!assignValid || isSubmitting}
+                  disabled={!assignValid || isSubmitting || pmLocked}
                   className="w-full"
                 >
                   {isSubmitting ? "Assigning…" : "Assign torque"}
@@ -557,7 +561,7 @@ export function FlangeProgressDetailPanel({
               <>
                 <Button
                   onClick={handleRecordBoltUp}
-                  disabled={!recordValid || isSubmitting}
+                  disabled={!recordValid || isSubmitting || pmLocked}
                   className="w-full"
                 >
                   {isSubmitting ? "Recording…" : "Record bolt-up"}
@@ -581,7 +585,7 @@ export function FlangeProgressDetailPanel({
               <>
                 <Button
                   onClick={handleVerify}
-                  disabled={!verifyValid || isSubmitting}
+                  disabled={!verifyValid || isSubmitting || pmLocked}
                   className="w-full"
                 >
                   {isSubmitting ? "Verifying…" : "Verify torque"}

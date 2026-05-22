@@ -261,7 +261,11 @@ export function deriveFabStage(
 // QC Release data model (G3)
 // ---------------------------------------------------------------------------
 
-export type QCChecklistKey = "dimensional" | "visual" | "documentation" | "traceability"
+export type QCChecklistKey =
+  | "dimensional"
+  | "visual"
+  | "nde_complete"
+  | "traceability"
 
 export interface QCChecklistItem {
   key: QCChecklistKey
@@ -272,11 +276,11 @@ export interface QCChecklistItem {
 export const QC_CHECKLIST: QCChecklistItem[] = [
   { key: "dimensional", label: "Dimensional check", description: "Length, flange face, bolt-hole orientation against ISO" },
   { key: "visual", label: "Visual inspection", description: "Surface defects, weld spatter, alignment" },
-  { key: "documentation", label: "Documentation review", description: "WPS, welder logs, NDE reports all on file" },
+  { key: "nde_complete", label: "NDE complete", description: "All required NDE batches accepted; no outstanding rejections" },
   { key: "traceability", label: "Heat-number traceability", description: "All pieces match the Material Check record" },
 ]
 
-export type QCChecklistStatus = "Pending" | "Pass" | "Pass with remark"
+export type QCChecklistStatus = "Pending" | "Pass" | "Pass with remark" | "Fail"
 
 export interface QCChecklistEntry {
   key: QCChecklistKey
@@ -286,9 +290,11 @@ export interface QCChecklistEntry {
 
 export interface QCReleaseRecord {
   spoolNo: string
-  entries: QCChecklistEntry[]   // length 4, one per QC_CHECKLIST item
-  inspector?: string             // set on sign-off
-  signedOffDate?: string         // ISO date — set on sign-off
+  entries: QCChecklistEntry[]
+  inspector?: string
+  signedOffDate?: string
+  failReason?: string
+  failedAt?: string
 }
 
 function makeQCRecord(
@@ -315,7 +321,7 @@ export const QC_RELEASE_SEED: QCReleaseRecord[] = [
     {
       dimensional: { status: "Pass" },
       visual: { status: "Pass" },
-      documentation: { status: "Pass" },
+      nde_complete: { status: "Pass" },
       traceability: { status: "Pass" },
     },
     { inspector: "QC-ENG-01", signedOffDate: "2025-05-12" },
@@ -325,7 +331,7 @@ export const QC_RELEASE_SEED: QCReleaseRecord[] = [
     {
       dimensional: { status: "Pass" },
       visual: { status: "Pass" },
-      documentation: { status: "Pass" },
+      nde_complete: { status: "Pass" },
       traceability: { status: "Pass" },
     },
     { inspector: "QC-ENG-02", signedOffDate: "2025-05-11" },
@@ -336,7 +342,7 @@ export const QC_RELEASE_SEED: QCReleaseRecord[] = [
     {
       dimensional: { status: "Pass with remark", remark: "0.3 mm out on flange face — within tolerance per spec 12-PIP-002" },
       visual: { status: "Pass" },
-      documentation: { status: "Pass" },
+      nde_complete: { status: "Pass" },
       traceability: { status: "Pass" },
     },
     { inspector: "QC-ENG-03", signedOffDate: "2025-05-10" },

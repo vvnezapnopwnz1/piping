@@ -17,6 +17,9 @@ import {
 } from "@/lib/erection-stage";
 import { QC_INSPECTORS } from "@/lib/spool-data";
 import { cn } from "@/lib/utils";
+import { useHeatNumberValidator } from "@/lib/heat-validator";
+import { usePmWriteLock } from "@/lib/pm-write-lock";
+import { PmWriteLockBanner } from "@/components/pm-write-lock-banner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -106,6 +109,26 @@ export function FieldMaterialCheckDetailPanel({
   const [remark, setRemark] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
+  const { locked: pmLocked } = usePmWriteLock();
+  const { validate: validateHeat, activeHeats } = useHeatNumberValidator();
+
+  const heatValidations = useMemo(() => {
+    const m = new Map<string, ReturnType<typeof validateHeat>>();
+    for (const joint of jointForms) {
+      for (const p of joint.pieces) {
+        if (p.heatNumber.trim()) {
+          m.set(`${joint.fieldJointId}-${p.id}`, validateHeat(p.heatNumber));
+        }
+      }
+    }
+    return m;
+  }, [jointForms, validateHeat]);
+
+  const blockedCount = useMemo(
+    () =>
+      Array.from(heatValidations.values()).filter((v) => !v.valid).length,
+    [heatValidations],
+  );
 
   useEffect(() => {
     if (!spoolNo) {
@@ -193,6 +216,12 @@ export function FieldMaterialCheckDetailPanel({
       }
     }
 
+    if (blockedCount > 0) {
+      return {
+        ok: false,
+        message: `${blockedCount} heat number${blockedCount === 1 ? "" : "s"} not in Project Piping Material List. Fix before sign-off.`,
+      };
+    }
     if (!wmcFormNo.trim()) {
       return { ok: false, message: "Enter the W-MC QC form number." };
     }
@@ -200,7 +229,7 @@ export function FieldMaterialCheckDetailPanel({
       return { ok: false, message: "Select the inspector." };
     }
     return { ok: true, message: "" };
-  }, [allSignedOff, jointForms, wmcFormNo, inspector]);
+  }, [allSignedOff, jointForms, wmcFormNo, inspector, blockedCount]);
 
   if (!spoolNo || jointForms.length === 0) {
     return (
@@ -331,6 +360,7 @@ export function FieldMaterialCheckDetailPanel({
                 : `${totalPieces} piece${totalPieces === 1 ? "" : "s"}${ncCount > 0 ? ` · ${ncCount} NC` : ""}${pendingCount > 0 ? ` · ${pendingCount} pending` : ""}`}
           </SheetDescription>
         </SheetHeader>
+        <PmWriteLockBanner />
 
         <div className="flex-1 space-y-5 overflow-auto py-4">
           {/* To Site bridge */}
@@ -438,15 +468,44 @@ export function FieldMaterialCheckDetailPanel({
                                 {piece.heatNumber || "—"}
                               </span>
                             ) : (
-                              <Input
-                                className="h-7 w-[120px] text-xs font-mono"
-                                value={piece.heatNumber}
-                                onChange={(e) =>
-                                  updatePiece(joint.fieldJointId, piece.id, {
-                                    heatNumber: e.target.value,
-                                  })
-                                }
-                              />
+                              <>
+                                <Input
+                                  className={cn(
+                                    "h-7 w-[120px] text-xs font-mono",
+                                    heatValidations.get(
+                                      `${joint.fieldJointId}-${piece.id}`,
+                                    )?.valid === false && piece.heatNumber.trim()
+                                      ? "border-red-400 bg-red-50"
+                                      : "",
+                                  )}
+                                  value={piece.heatNumber}
+                                  list={`pml-field-${joint.fieldJointId}-${piece.id}`}
+                                  onChange={(e) =>
+                                    updatePiece(joint.fieldJointId, piece.id, {
+                                      heatNumber: e.target.value,
+                                    })
+                                  }
+                                />
+                                <datalist
+                                  id={`pml-field-${joint.fieldJointId}-${piece.id}`}
+                                >
+                                  {activeHeats.slice(0, 50).map((h) => (
+                                    <option key={h} value={h} />
+                                  ))}
+                                </datalist>
+                                {piece.heatNumber.trim() &&
+                                  heatValidations.get(
+                                    `${joint.fieldJointId}-${piece.id}`,
+                                  )?.valid === false && (
+                                    <p className="mt-0.5 text-[10px] text-red-700 leading-tight">
+                                      {
+                                        heatValidations.get(
+                                          `${joint.fieldJointId}-${piece.id}`,
+                                        )?.message
+                                      }
+                                    </p>
+                                  )}
+                              </>
                             )}
                           </td>
                           <td className="whitespace-nowrap px-2 py-1.5">
@@ -653,7 +712,7 @@ export function FieldMaterialCheckDetailPanel({
               <Button
                 variant="outline"
                 onClick={handleSaveDraft}
-                disabled={isSaving || isSigning}
+                disabled={isSaving || isSigning || pmLocked}
                 className="w-full"
               >
                 {isSaving ? "Saving…" : "Save draft"}
@@ -662,7 +721,7 @@ export function FieldMaterialCheckDetailPanel({
             {allReady && (
               <Button
                 onClick={handleSignOff}
-                disabled={!validation.ok || isSigning}
+                disabled={!validation.ok || isSigning || pmLocked}
                 className="w-full"
               >
                 {isSigning ? "Signing off…" : "Sign off Field Material Check"}

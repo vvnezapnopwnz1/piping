@@ -5,6 +5,7 @@ import { create } from "zustand"
 import { persist, createJSONStorage } from "zustand/middleware"
 import { useWeldsStore } from "./welds-store"
 import { useErectionStore } from "./erection-store"
+import { buildRnJointNo, buildRnWeldId, processRejections } from "@/lib/nde-cascade"
 import type { TracerSelection } from "@/lib/nde-status"
 
 /**
@@ -53,6 +54,11 @@ export interface NdeBatchWeld {
   diaInch: string
   wpsNo: string
   photos: string[]
+  defectCode?: string
+  defectLocation?: string
+  category?: "NDE10" | "NDE20" | "NDE100"
+  parentWeldId?: string
+  isTracer?: boolean
 }
 
 export interface NdeBatchHistoryEvent {
@@ -99,6 +105,8 @@ export interface WeldResultInput {
   weldId: string
   result: NdeWeldResult
   reworkCode?: ReworkCode
+  defectCode?: string
+  defectLocation?: string
   remarks?: string
   inspector?: string
 }
@@ -118,6 +126,11 @@ interface BatchesState {
   createBatch: (input: CreateBatchInput) => NdeBatch
   issueBatch: (id: string, subcontractor: string, inspector?: string) => void
   receiveResults: (id: string, results: WeldResultInput[]) => void
+  triggerPenaltyShoot: (
+    batchId: string,
+    ssWeldIds: string[],
+    reason: "FOUR_REJECTIONS" | "SECOND_LEVEL_TRACER",
+  ) => void
   updateWeldResult: (
     batchId: string,
     weldId: string,
@@ -128,7 +141,13 @@ interface BatchesState {
   markForRework: (id: string) => void
   closeBatch: (id: string) => void
   deleteBatch: (id: string) => void
-  setTracerSelections: (batchId: string, sourceRejectedWeldId: string, tracerWeldIds: string[], selectedBy: string) => void
+  setTracerSelections: (
+    batchId: string,
+    sourceRejectedWeldId: string,
+    tracerWeldIds: string[],
+    selectedBy: string,
+    level?: TracerSelection["level"],
+  ) => void
   allocateWeldToNdeQueue: (weldId: string, source: "shop" | "field") => void
 
   // Demo helpers
@@ -384,7 +403,15 @@ export const useBatchesStore = create<BatchesState>()(
           ),
         })),
 
-      receiveResults: (id, results) =>
+      receiveResults: (id, results) => {
+        const batch = get().batches.find((b) => b.id === id)
+        if (!batch) return
+
+        const allShopWelds = useWeldsStore.getState().welds
+        const allFieldWelds = useErectionStore.getState().fieldWelds
+        const outcome = processRejections(batch, results, allShopWelds, allFieldWelds)
+        const timestamp = new Date().toISOString()
+
         set((state) => ({
           batches: state.batches.map((b) => {
             if (b.id !== id) return b
@@ -392,13 +419,15 @@ export const useBatchesStore = create<BatchesState>()(
               const r = results.find((res) => res.weldId === w.id)
               return r
                 ? {
-                  ...w,
-                  result: r.result,
-                  reworkCode: r.reworkCode,
-                  remarks: r.remarks,
-                  inspector: r.inspector ?? w.inspector,
-                  date: new Date().toISOString(),
-                }
+                    ...w,
+                    result: r.result,
+                    reworkCode: r.reworkCode,
+                    defectCode: r.defectCode,
+                    defectLocation: r.defectLocation,
+                    remarks: r.remarks,
+                    inspector: r.inspector ?? w.inspector,
+                    date: timestamp,
+                  }
                 : w
             })
             const rejected = updatedWelds.filter((w) => w.result === "Rejected").length
@@ -407,7 +436,7 @@ export const useBatchesStore = create<BatchesState>()(
               ...b,
               status: "Results Received" as NdeBatchStatus,
               welds: updatedWelds,
-              resultsReceivedDate: new Date().toISOString(),
+              resultsReceivedDate: timestamp,
               history: [
                 ...b.history,
                 {
@@ -415,8 +444,140 @@ export const useBatchesStore = create<BatchesState>()(
                   title: "Results received",
                   detail: `${accepted} Accepted, ${rejected} Rejected`,
                   actor: results[0]?.inspector ?? "NDE-INS",
-                  timestamp: new Date().toISOString(),
+                  timestamp,
                   status: "Results Received",
+                },
+              ],
+            }
+          }),
+        }))
+
+        const createR1Weld = useWeldsStore.getState().createR1Weld
+        const createR1FieldWeld = useErectionStore.getState().createR1FieldWeld
+        for (const r1 of outcome.r1JointsToCreate) {
+          const shopParent = allShopWelds.find((w) => w.id === r1.parentWeldId)
+          const fieldParent = allFieldWelds.find((w) => w.id === r1.parentWeldId)
+          const parent = shopParent ?? fieldParent
+          if (!parent) continue
+          if (fieldParent) {
+            createR1FieldWeld(fieldParent, r1.defectCode, r1.defectLocation)
+          } else {
+            createR1Weld(parent, r1.defectCode, r1.defectLocation)
+          }
+          const newWeldId = buildRnWeldId(r1.parentWeldId)
+          const newJointNo = buildRnJointNo(r1.parentJointNo)
+          set((state) => ({
+            batches: state.batches.map((b) =>
+              b.id === id
+                ? {
+                    ...b,
+                    welds: [
+                      ...b.welds,
+                      {
+                        id: newWeldId,
+                        jointNo: newJointNo,
+                        spoolNo: r1.spoolNo,
+                        isoNo: r1.isoNo,
+                        welder: r1.welder,
+                        dwirNo: r1.dwirNo,
+                        materialType: r1.materialType,
+                        diaInch: r1.diaInch,
+                        wpsNo: r1.wpsNo,
+                        result: "Pending" as NdeWeldResult,
+                        category: "NDE100" as const,
+                        parentWeldId: r1.parentWeldId,
+                        isTracer: false,
+                        photos: [],
+                      },
+                    ],
+                    history: [
+                      ...b.history,
+                      {
+                        id: nextHistoryId(),
+                        title: "R1 joint created",
+                        detail: `${newJointNo} added to NDE100 — defect ${r1.defectCode ?? "unknown"}`,
+                        actor: "SYSTEM",
+                        timestamp,
+                        status: b.status,
+                      },
+                    ],
+                  }
+                : b,
+            ),
+          }))
+        }
+
+        for (const ta of outcome.tracerAssignments) {
+          if (ta.candidateWeldIds.length > 0) {
+            get().setTracerSelections(
+              id,
+              ta.sourceRejectedWeldId,
+              ta.candidateWeldIds,
+              "SYSTEM",
+              ta.level,
+            )
+          }
+        }
+
+        if (outcome.penaltyShootTriggered && outcome.penaltyShootReason) {
+          get().triggerPenaltyShoot(id, outcome.ssEligibleWeldIds, outcome.penaltyShootReason)
+        }
+
+        const markWeldForRework = useWeldsStore.getState().markForRework
+        for (const r of results.filter((res) => res.result === "Rejected")) {
+          markWeldForRework(
+            r.weldId,
+            r.remarks || `Rejected — ${r.defectCode ?? "no code"} @ ${r.defectLocation ?? "?"}`,
+          )
+        }
+      },
+
+      triggerPenaltyShoot: (batchId, ssWeldIds, reason) =>
+        set((state) => ({
+          batches: state.batches.map((b) => {
+            if (b.id !== batchId) return b
+            const allShopWelds = useWeldsStore.getState().welds
+            const allFieldWelds = useErectionStore.getState().fieldWelds
+            const sourceWelds = b.source === "field" ? allFieldWelds : allShopWelds
+            const inBatch = new Set(b.welds.map((w) => w.id))
+            const ssRowsToAdd: NdeBatchWeld[] = ssWeldIds
+              .filter((weldId) => !inBatch.has(weldId))
+              .flatMap((weldId) => {
+                const w = sourceWelds.find((sw) => sw.id === weldId)
+                if (!w) return []
+                const row: NdeBatchWeld = {
+                  id: w.id,
+                  jointNo: w.jointNo,
+                  spoolNo: w.spoolNo,
+                  isoNo: w.isoNo,
+                  welder: w.welderCode,
+                  dwirNo: w.dwirNo,
+                  materialType: w.materialType,
+                  diaInch: w.diaInch,
+                  wpsNo: w.wpsNo,
+                  result: "Pending",
+                  category: "NDE100",
+                  isTracer: false,
+                  photos: [],
+                }
+                return [row]
+              })
+            const reasonDetail =
+              reason === "FOUR_REJECTIONS"
+                ? "4+ rejections in batch"
+                : "2nd-level tracer detected"
+            return {
+              ...b,
+              welds: [...b.welds, ...ssRowsToAdd],
+              history: [
+                ...b.history,
+                {
+                  id: nextHistoryId(),
+                  title: "PENALTY SHOOT triggered",
+                  detail: `${reasonDetail} — ${ssRowsToAdd.length} additional welds flipped to SS for examination`,
+                  actor: "SYSTEM",
+                  timestamp: new Date().toISOString(),
+                  status: b.status,
                 },
               ],
             }
@@ -489,7 +650,7 @@ export const useBatchesStore = create<BatchesState>()(
           batches: state.batches.filter((b) => b.id !== id),
         })),
 
-      setTracerSelections: (batchId, sourceRejectedWeldId, tracerWeldIds, selectedBy) =>
+      setTracerSelections: (batchId, sourceRejectedWeldId, tracerWeldIds, selectedBy, forcedLevel) =>
         set((state) => ({
           batches: state.batches.map((batch) => {
             if (batch.id !== batchId) return batch
@@ -497,9 +658,24 @@ export const useBatchesStore = create<BatchesState>()(
             const existingForSource = new Set(
               next.filter((t) => t.sourceRejectedWeldId === sourceRejectedWeldId).map((t) => t.level)
             )
+            let tracerIndex = 0
             for (const tracerWeldId of tracerWeldIds) {
-              const level = existingForSource.has("T1") ? "T2" : "T1"
-              if (existingForSource.has(level)) continue
+              let level: TracerSelection["level"]
+              if (forcedLevel) {
+                if (tracerIndex === 0) {
+                  level = forcedLevel
+                } else if (forcedLevel === "T1" || forcedLevel === "T1-1") {
+                  level = forcedLevel === "T1" ? "T2" : "T1-2"
+                } else {
+                  level = forcedLevel
+                }
+              } else {
+                level = existingForSource.has("T1") ? "T2" : "T1"
+              }
+              if (existingForSource.has(level)) {
+                tracerIndex++
+                continue
+              }
               next.push({
                 sourceRejectedWeldId,
                 tracerWeldId,
@@ -508,9 +684,14 @@ export const useBatchesStore = create<BatchesState>()(
                 selectedBy,
               })
               existingForSource.add(level)
+              tracerIndex++
             }
+            const weldsWithTracers = batch.welds.map((w) =>
+              tracerWeldIds.includes(w.id) ? { ...w, isTracer: true } : w,
+            )
             return {
               ...batch,
+              welds: weldsWithTracers,
               tracerSelections: next,
               history: [
                 ...batch.history,
@@ -573,8 +754,25 @@ export const useBatchesStore = create<BatchesState>()(
     {
       name: "pipeqc-batches",
       storage: createJSONStorage(() => localStorage),
-      version: 3,
+      version: 4,
       skipHydration: true,
+      migrate: (persisted: unknown, version: number) => {
+        const state = persisted as { batches?: NdeBatch[] }
+        if (version < 4 && state?.batches) {
+          state.batches = state.batches.map((b) => ({
+            ...b,
+            welds: b.welds.map((w) => ({
+              ...w,
+              defectCode: w.defectCode,
+              defectLocation: w.defectLocation,
+              category: w.category ?? "NDE10",
+              parentWeldId: w.parentWeldId,
+              isTracer: w.isTracer ?? false,
+            })),
+          }))
+        }
+        return persisted
+      },
     }
   )
 )

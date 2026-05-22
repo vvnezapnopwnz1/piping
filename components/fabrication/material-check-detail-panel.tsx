@@ -13,6 +13,9 @@ import {
   type MaterialCheckStatus,
 } from "@/lib/spool-data";
 import { cn } from "@/lib/utils";
+import { useHeatNumberValidator } from "@/lib/heat-validator";
+import { usePmWriteLock } from "@/lib/pm-write-lock";
+import { PmWriteLockBanner } from "@/components/pm-write-lock-banner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -99,6 +102,8 @@ export function MaterialCheckDetailPanel({
   const [inspector, setInspector] = useState<string>(QC_INSPECTORS[0]);
   const [isSaving, setIsSaving] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
+  const { validate: validateHeat, activeHeats } = useHeatNumberValidator();
+  const { locked: pmLocked } = usePmWriteLock();
 
   useEffect(() => {
     if (storeRecord) {
@@ -111,6 +116,23 @@ export function MaterialCheckDetailPanel({
 
   const colors = STAGE_COLOR[stage];
 
+  const heatValidations = useMemo(() => {
+    if (!form) return new Map<string, ReturnType<typeof validateHeat>>();
+    const m = new Map<string, ReturnType<typeof validateHeat>>();
+    for (const p of form.pieces) {
+      if (p.heatNumber.trim()) {
+        m.set(p.id, validateHeat(p.heatNumber));
+      }
+    }
+    return m;
+  }, [form, validateHeat]);
+
+  const blockedCount = useMemo(
+    () =>
+      Array.from(heatValidations.values()).filter((v) => !v.valid).length,
+    [heatValidations],
+  );
+
   const validation = useMemo(() => {
     if (!form) return { ok: false, message: "" };
     const clearedCount = form.pieces.filter(
@@ -119,6 +141,12 @@ export function MaterialCheckDetailPanel({
     const ncMissingRemark = form.pieces.some(
       (p) => p.status === "Non-conformance" && !p.ncRemark?.trim(),
     );
+    if (blockedCount > 0) {
+      return {
+        ok: false,
+        message: `${blockedCount} heat number${blockedCount === 1 ? "" : "s"} not in Project Piping Material List. Fix before sign-off.`,
+      };
+    }
     if (clearedCount === 0) {
       return {
         ok: false,
@@ -132,7 +160,7 @@ export function MaterialCheckDetailPanel({
       };
     }
     return { ok: true, message: "" };
-  }, [form]);
+  }, [form, blockedCount]);
 
   if (!spoolNo || !form) {
     return (
@@ -239,6 +267,7 @@ export function MaterialCheckDetailPanel({
             {pendingCount > 0 ? ` · ${pendingCount} pending` : ""}
           </SheetDescription>
         </SheetHeader>
+        <PmWriteLockBanner />
 
         <div className="flex-1 min-h-0 overflow-auto py-4">
           <Table>
@@ -259,13 +288,31 @@ export function MaterialCheckDetailPanel({
                 <TableRow key={piece.id}>
                   <TableCell>
                     <Input
-                      className="h-8 text-xs font-mono"
+                      className={cn(
+                        "h-8 text-xs font-mono",
+                        heatValidations.get(piece.id)?.valid === false &&
+                          piece.heatNumber.trim()
+                          ? "border-red-400 bg-red-50"
+                          : "",
+                      )}
                       value={piece.heatNumber}
-                      disabled={piece.status !== "Pending"}
+                      disabled={piece.status !== "Pending" || pmLocked}
+                      list={`pml-${piece.id}`}
                       onChange={(e) =>
                         updatePiece(piece.id, { heatNumber: e.target.value })
                       }
                     />
+                    <datalist id={`pml-${piece.id}`}>
+                      {activeHeats.slice(0, 50).map((h) => (
+                        <option key={h} value={h} />
+                      ))}
+                    </datalist>
+                    {piece.heatNumber.trim() &&
+                      heatValidations.get(piece.id)?.valid === false && (
+                        <p className="mt-1 text-[10px] text-red-700 leading-tight">
+                          {heatValidations.get(piece.id)?.message}
+                        </p>
+                      )}
                   </TableCell>
                   <TableCell>
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-700">
@@ -339,14 +386,14 @@ export function MaterialCheckDetailPanel({
               variant="outline"
               size="sm"
               onClick={handleSaveDraft}
-              disabled={isSaving || isSigning}
+              disabled={isSaving || isSigning || pmLocked}
             >
               {isSaving ? "Saving…" : "Save draft"}
             </Button>
             <Button
               size="sm"
               onClick={handleSignOff}
-              disabled={!validation.ok || isSaving || isSigning}
+              disabled={!validation.ok || isSaving || isSigning || pmLocked}
             >
               {isSigning ? "Signing off…" : "Sign off"}
             </Button>

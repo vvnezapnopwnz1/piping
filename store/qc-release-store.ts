@@ -18,6 +18,7 @@ interface QCReleaseState {
   // Mutations
   upsertEntry: (spoolNo: string, key: QCChecklistKey, patch: Partial<QCChecklistEntry>) => void
   signOffQCRelease: (spoolNo: string, inspector: string) => void
+  failQCRelease: (spoolNo: string, inspector: string, reason: string) => void
   resetQCRelease: () => void
 }
 
@@ -65,18 +66,48 @@ export const useQCReleaseStore = create<QCReleaseState>()(
               ...r,
               inspector,
               signedOffDate: new Date().toISOString().split("T")[0],
+              failReason: undefined,
+              failedAt: undefined,
             }
           })
           return { records: next }
         }),
+
+      failQCRelease: (spoolNo, inspector, reason) =>
+        set((state) => ({
+          records: state.records.map((r) =>
+            r.spoolNo === spoolNo
+              ? {
+                  ...r,
+                  inspector,
+                  signedOffDate: undefined,
+                  failReason: reason,
+                  failedAt: new Date().toISOString(),
+                }
+              : r,
+          ),
+        })),
 
       resetQCRelease: () => set({ records: JSON.parse(JSON.stringify(QC_RELEASE_SEED)) }),
     }),
     {
       name: "pipeqc-qc-release",
       storage: createJSONStorage(() => localStorage),
-      version: 1,
-      migrate: () => undefined,
+      version: 2,
+      migrate: (persisted: unknown, version: number) => {
+        const state = persisted as { records?: QCReleaseRecord[] }
+        if (version < 2 && state?.records) {
+          state.records = state.records.map((rec) => ({
+            ...rec,
+            entries: rec.entries.map((e) =>
+              (e.key as string) === "documentation"
+                ? { ...e, key: "nde_complete" as QCChecklistKey }
+                : e,
+            ),
+          }))
+        }
+        return persisted
+      },
     }
   )
 )

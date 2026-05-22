@@ -11,6 +11,7 @@ import {
 } from "@/store";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useScopeLock } from "@/lib/scope-lock";
 import { FieldMaterialCheckDetailPanel } from "./field-material-check-detail-panel";
 
 type MCStatus =
@@ -91,6 +92,7 @@ export function FieldMaterialCheckView() {
   const toSiteRecords = useToSiteStore((state) => state.records);
   const mcRecords = useFieldMaterialCheckStore((state) => state.records);
   const fieldWelds = useErectionStore((state) => state.fieldWelds);
+  const scope = useScopeLock();
   const [search, setSearch] = useState("");
 
   const urlStatus = searchParams.get("status");
@@ -179,6 +181,13 @@ export function FieldMaterialCheckView() {
         };
       })
       .filter((row) => {
+        if (
+          !scope.isInScope(
+            (row as { pdsAreaCode?: string }).pdsAreaCode,
+          )
+        ) {
+          return false;
+        }
         if (activeStatus !== "All" && row.status !== activeStatus) {
           return false;
         }
@@ -190,7 +199,7 @@ export function FieldMaterialCheckView() {
         }
         return true;
       });
-  }, [activeStatus, fieldWelds, mcBySpool, search, toSiteMap]);
+  }, [activeStatus, fieldWelds, mcBySpool, search, toSiteMap, scope]);
 
   const counts = useMemo(() => {
     const counts: Record<MCStatus, number> = {

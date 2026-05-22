@@ -3,6 +3,7 @@
 import { useMemo } from "react"
 import { create } from "zustand"
 import { persist, createJSONStorage } from "zustand/middleware"
+import { buildRnJointNo, buildRnWeldId } from "@/lib/nde-cascade"
 import { WELD_DATA, type WeldJoint, type WeldStatus } from "@/lib/weld-data"
 
 /**
@@ -26,6 +27,11 @@ interface WeldsState {
   updateWeld: (id: string, updates: Partial<WeldJoint>) => void
   updateStatus: (id: string, status: WeldStatus) => void
   markForRework: (id: string, reason: string) => void
+  createR1Weld: (
+    parent: WeldJoint,
+    defectCode: string | undefined,
+    defectLocation: string | undefined,
+  ) => void
   markAccepted: (id: string, rtNo?: string) => void
   markRejected: (id: string, reason: string) => void
   lockWeld: (id: string) => void
@@ -76,6 +82,28 @@ export const useWeldsStore = create<WeldsState>()(
               : w
           ),
         })),
+
+      createR1Weld: (parent, defectCode, defectLocation) =>
+        set((state) => {
+          const newJointNo = buildRnJointNo(parent.jointNo)
+          const newId = buildRnWeldId(parent.id)
+          if (state.welds.some((w) => w.id === newId)) return state
+          const r1: WeldJoint = {
+            ...parent,
+            id: newId,
+            jointNo: newJointNo,
+            status: "Rework",
+            rtResult: undefined,
+            rtNo: undefined,
+            isLocked: false,
+            parentJointId: parent.id,
+            ndeCategory: "NDE100",
+            remarks: defectCode
+              ? `R1 created from ${parent.jointNo}: ${defectCode}${defectLocation ? " @ " + defectLocation : ""}`
+              : `R1 created from ${parent.jointNo}`,
+          }
+          return { welds: [...state.welds, r1] }
+        }),
 
       markAccepted: (id, rtNo) =>
         set((state) => ({
@@ -140,7 +168,18 @@ export const useWeldsStore = create<WeldsState>()(
     {
       name: "pipeqc-welds",
       storage: createJSONStorage(() => localStorage),
-      version: 1,
+      version: 2,
+      migrate: (persisted: unknown, version: number) => {
+        if (version < 2 && persisted && typeof persisted === "object" && "welds" in persisted) {
+          const state = persisted as { welds: WeldJoint[] }
+          state.welds = state.welds.map((w) => ({
+            ...w,
+            parentJointId: w.parentJointId,
+            ndeCategory: w.ndeCategory,
+          }))
+        }
+        return persisted
+      },
     }
   )
 )

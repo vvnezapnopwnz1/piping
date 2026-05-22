@@ -41,6 +41,8 @@ import {
 } from "@/store";
 import type { WeldJoint } from "@/lib/weld-data";
 import { cn } from "@/lib/utils";
+import { usePmWriteLock } from "@/lib/pm-write-lock";
+import { PmWriteLockBanner } from "@/components/pm-write-lock-banner";
 
 interface CreateBatchDialogProps {
   open: boolean;
@@ -70,6 +72,7 @@ export function CreateBatchDialog({
   preselectedWeldIds = [],
   defaultMethod,
 }: CreateBatchDialogProps) {
+  const { locked: pmLocked } = usePmWriteLock();
   const [step, setStep] = useState<1 | 2>(1);
 
   const [method, setMethod] = useState<NdeMethod>(defaultMethod ?? "RT");
@@ -293,7 +296,8 @@ export function CreateBatchDialog({
       }}
     >
       <DialogContent className="sm:max-w-[780px] gap-0 p-0 overflow-hidden">
-        <DialogHeader className="px-6 py-5 border-b">
+        <DialogHeader className="px-6 py-5 border-b space-y-3">
+          <PmWriteLockBanner />
           <DialogTitle>Create new NDE batch</DialogTitle>
           <DialogDescription>
             {step === 1
@@ -517,7 +521,7 @@ export function CreateBatchDialog({
             </Button>
           ) : (
             <Button
-              disabled={selectedWelds.length === 0}
+              disabled={selectedWelds.length === 0 || pmLocked}
               onClick={handleCreate}
             >
               Create batch ({selectedWelds.length})
