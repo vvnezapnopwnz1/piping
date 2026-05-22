@@ -11,6 +11,14 @@ import {
   REINSTATEMENT_TEAMS,
   JOINTER_LIST,
 } from "@/lib/testpack-seed"
+import {
+  WELDER_QUALIFICATIONS,
+  type WelderQualification as LibWelderQualification,
+} from "@/lib/welder-qualifications"
+import {
+  NDE_MATRIX,
+  type NDEMatrixRecord,
+} from "@/lib/engineering-references"
 
 export type TeamType = "lineCheck" | "blinding" | "finishing" | "reinstatement" | "jointer"
 
@@ -42,6 +50,34 @@ export interface Subcontractor {
   active: boolean
   createdAt: string
 }
+
+export interface ProjectDefinition {
+  activityCode: string
+  projectTitle: string
+  owner: string
+  contractor: string
+  ownerLogoUrl: string
+  contractorLogoUrl: string
+  maxTransitTimeDays: number
+  updatedAt: string
+}
+
+export type SysRefSlice = "materialTypes" | "filmQty" | "utCalc" | "torquing"
+
+export interface SysRefEntry {
+  code: string
+  description: string
+  active: boolean
+  createdAt: string
+}
+
+export type SystemReferentials = Record<SysRefSlice, SysRefEntry[]>
+
+export interface WelderQualification extends LibWelderQualification {
+  active: boolean
+}
+
+export type NDEMatrixRule = NDEMatrixRecord
 
 const ALPHA_NAMES = ["Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel"]
 
@@ -144,9 +180,77 @@ const SEED_SUBCONTRACTORS: Subcontractor[] = [
   },
 ]
 
+const SEED_PROJECT_DEFINITION: ProjectDefinition = {
+  activityCode: "PQ-001",
+  projectTitle: "PipeQC Demo Project",
+  owner: "EasyPlant Owner",
+  contractor: "Main EPC Contractor",
+  ownerLogoUrl: "",
+  contractorLogoUrl: "",
+  maxTransitTimeDays: 14,
+  updatedAt: new Date().toISOString(),
+}
+
+function entry(code: string, description: string): SysRefEntry {
+  return {
+    code,
+    description,
+    active: true,
+    createdAt: new Date().toISOString(),
+  }
+}
+
+const SEED_SYSTEM_REFERENTIALS: SystemReferentials = {
+  materialTypes: [
+    entry("CS-A106B", "Carbon Steel A106 Gr. B"),
+    entry("SS-316L", "Stainless Steel 316L"),
+    entry("CS-P91", "CrMo alloy A335 P91"),
+    entry("LTCS-A333", "Low-Temp Carbon Steel A333 Gr. 6"),
+  ],
+  filmQty: [
+    entry("DN-25-50", "Diameter DN 25–50 — 1 film per joint"),
+    entry("DN-80-150", "Diameter DN 80–150 — 2 films per joint"),
+    entry("DN-200-300", "Diameter DN 200–300 — 3 films per joint"),
+    entry("DN-350-600", "Diameter DN 350–600 — 4 films per joint"),
+  ],
+  utCalc: [
+    entry("UT-CARBON-A", "Coefficient 1.00 — carbon steel < DN 200"),
+    entry("UT-CARBON-B", "Coefficient 1.15 — carbon steel ≥ DN 200"),
+    entry("UT-ALLOY", "Coefficient 1.30 — alloy / P91 (any DN)"),
+  ],
+  torquing: [
+    entry("TRQ-LR", "Lubricated flange — refer torque table A1"),
+    entry("TRQ-DRY", "Dry flange — refer torque table A2"),
+    entry("TRQ-HT", "Hot-bolted / live service — table A3"),
+  ],
+}
+
+function seedWelderQualifications(): WelderQualification[] {
+  return WELDER_QUALIFICATIONS.map((w) => ({ ...w, active: true }))
+}
+
+function seedNdeMatrix(): NDEMatrixRule[] {
+  return NDE_MATRIX.map((r) => ({ ...r }))
+}
+
+function nextNdeMatrixId(rules: NDEMatrixRule[]): string {
+  const usedNumbers = rules
+    .map((r) => {
+      const m = /^NDE-MTX-(\d+)$/.exec(r.id)
+      return m ? Number(m[1]) : 0
+    })
+    .filter((n) => n > 0)
+  const max = usedNumbers.length === 0 ? 0 : Math.max(...usedNumbers)
+  return `NDE-MTX-${String(max + 1).padStart(3, "0")}`
+}
+
 interface AdminState {
   teams: Team[]
   subcontractors: Subcontractor[]
+  projectDefinition: ProjectDefinition
+  systemReferentials: SystemReferentials
+  welderQualifications: WelderQualification[]
+  ndeMatrix: NDEMatrixRule[]
 
   getTeamsByType: (type: TeamType) => Team[]
   getActiveTeamsByType: (type: TeamType) => Team[]
@@ -156,6 +260,24 @@ interface AdminState {
   addSubcontractor: (payload: Omit<Subcontractor, "createdAt" | "active">) => void
   toggleSubcontractorActive: (code: string) => void
 
+  setProjectDefinition: (payload: Omit<ProjectDefinition, "updatedAt">) => void
+
+  addSysRefEntry: (
+    slice: SysRefSlice,
+    payload: { code: string; description: string }
+  ) => void
+  toggleSysRefEntryActive: (slice: SysRefSlice, code: string) => void
+
+  addWelderQualification: (
+    payload: Omit<WelderQualification, "active">
+  ) => void
+  updateWelderExpiry: (welderCode: string, expiryIso: string) => void
+  toggleWelderActive: (welderCode: string) => void
+
+  addNdeRule: (payload: Omit<NDEMatrixRule, "id">) => void
+  updateNdeRule: (id: string, patch: Omit<NDEMatrixRule, "id">) => void
+  deleteNdeRule: (id: string) => void
+
   resetAdmin: () => void
 }
 
@@ -164,6 +286,10 @@ export const useAdminStore = create<AdminState>()(
     (set, get) => ({
       teams: seedTeams(),
       subcontractors: SEED_SUBCONTRACTORS,
+      projectDefinition: SEED_PROJECT_DEFINITION,
+      systemReferentials: SEED_SYSTEM_REFERENTIALS,
+      welderQualifications: seedWelderQualifications(),
+      ndeMatrix: seedNdeMatrix(),
 
       getTeamsByType: (type: TeamType) => {
         return get().teams.filter((t) => t.type === type)
@@ -207,16 +333,122 @@ export const useAdminStore = create<AdminState>()(
         }))
       },
 
+      setProjectDefinition: (payload) => {
+        set({
+          projectDefinition: {
+            ...payload,
+            updatedAt: new Date().toISOString(),
+          },
+        })
+      },
+
+      addSysRefEntry: (slice, payload) => {
+        const newEntry: SysRefEntry = {
+          code: payload.code,
+          description: payload.description,
+          active: true,
+          createdAt: new Date().toISOString(),
+        }
+        set((s) => ({
+          systemReferentials: {
+            ...s.systemReferentials,
+            [slice]: [...s.systemReferentials[slice], newEntry],
+          },
+        }))
+      },
+
+      toggleSysRefEntryActive: (slice, code) => {
+        set((s) => ({
+          systemReferentials: {
+            ...s.systemReferentials,
+            [slice]: s.systemReferentials[slice].map((e) =>
+              e.code === code ? { ...e, active: !e.active } : e
+            ),
+          },
+        }))
+      },
+
+      addWelderQualification: (payload) => {
+        const welder: WelderQualification = {
+          ...payload,
+          active: true,
+        }
+        set((s) => ({
+          welderQualifications: [...s.welderQualifications, welder],
+        }))
+      },
+
+      updateWelderExpiry: (welderCode, expiryIso) => {
+        set((s) => ({
+          welderQualifications: s.welderQualifications.map((w) =>
+            w.welderCode === welderCode
+              ? { ...w, qualificationExpiresOn: expiryIso }
+              : w
+          ),
+        }))
+      },
+
+      toggleWelderActive: (welderCode) => {
+        set((s) => ({
+          welderQualifications: s.welderQualifications.map((w) =>
+            w.welderCode === welderCode ? { ...w, active: !w.active } : w
+          ),
+        }))
+      },
+
+      addNdeRule: (payload) => {
+        set((s) => {
+          const id = nextNdeMatrixId(s.ndeMatrix)
+          return {
+            ndeMatrix: [...s.ndeMatrix, { id, ...payload }],
+          }
+        })
+      },
+
+      updateNdeRule: (id, patch) => {
+        set((s) => ({
+          ndeMatrix: s.ndeMatrix.map((r) =>
+            r.id === id ? { id, ...patch } : r
+          ),
+        }))
+      },
+
+      deleteNdeRule: (id) => {
+        set((s) => ({
+          ndeMatrix: s.ndeMatrix.filter((r) => r.id !== id),
+        }))
+      },
+
       resetAdmin: () => {
         set({
           teams: seedTeams(),
           subcontractors: SEED_SUBCONTRACTORS,
+          projectDefinition: SEED_PROJECT_DEFINITION,
+          systemReferentials: SEED_SYSTEM_REFERENTIALS,
+          welderQualifications: seedWelderQualifications(),
+          ndeMatrix: seedNdeMatrix(),
         })
       },
     }),
     {
       name: "pipeqc-admin",
-      version: 1,
+      version: 2,
+      migrate: (persistedState, version) => {
+        const state = (persistedState ?? {}) as Partial<AdminState>
+        if (version < 2) {
+          return {
+            ...state,
+            projectDefinition:
+              state.projectDefinition ?? SEED_PROJECT_DEFINITION,
+            systemReferentials:
+              state.systemReferentials ?? SEED_SYSTEM_REFERENTIALS,
+            welderQualifications:
+              state.welderQualifications ?? seedWelderQualifications(),
+            ndeMatrix: state.ndeMatrix ?? seedNdeMatrix(),
+          } as AdminState
+        }
+        return state as AdminState
+      },
     }
   )
 )
@@ -233,4 +465,9 @@ export function useAllTeams(type: TeamType) {
 
 export function useSubcontractors() {
   return useAdminStore((s) => s.subcontractors)
+}
+
+export function useActiveWelderQualifications(): WelderQualification[] {
+  const welders = useAdminStore((s) => s.welderQualifications)
+  return useMemo(() => welders.filter((w) => w.active), [welders])
 }

@@ -1,33 +1,5 @@
-import {
-  AdminDemoTable,
-  AdminPageHeader,
-} from "@/components/admin/admin-module-ui";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-
-const references = [
-  {
-    title: "Material Type",
-    description: "Types of materials used across projects.",
-  },
-  {
-    title: "Film Quantity per Diameter",
-    description: "RT film quantity matrix by diameter and thickness.",
-  },
-  {
-    title: "UT Calculation",
-    description: "UT coefficients by diameter and rating.",
-  },
-  {
-    title: "Torquing Requirement",
-    description: "Torquing method used by flange management.",
-  },
-];
+import { AdminPageHeader } from "@/components/admin/admin-module-ui";
+import { SystemReferentialCard } from "@/components/admin/system-referential-card";
 
 export default function SystemReferentialPage() {
   return (
@@ -38,31 +10,34 @@ export default function SystemReferentialPage() {
       />
 
       <div className="grid gap-4 md:grid-cols-2">
-        {references.map((reference) => (
-          <Card key={reference.title} className="border-slate-200">
-            <CardHeader>
-              <CardTitle className="text-base">{reference.title}</CardTitle>
-              <CardDescription>{reference.description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <AdminDemoTable
-                columns={["Code", "Description", "Status"]}
-                rows={[
-                  {
-                    Code: "REF-001",
-                    Description: reference.description,
-                    Status: "Demo",
-                  },
-                  {
-                    Code: "REF-002",
-                    Description: "Additional placeholder row",
-                    Status: "Demo",
-                  },
-                ]}
-              />
-            </CardContent>
-          </Card>
-        ))}
+        <SystemReferentialCard
+          slice="materialTypes"
+          title="Material Type"
+          description="Types of materials used across projects."
+          codePlaceholder="e.g. CS-A106B"
+          descriptionPlaceholder="Carbon Steel A106 Gr. B"
+        />
+        <SystemReferentialCard
+          slice="filmQty"
+          title="Film Quantity per Diameter"
+          description="RT film quantity matrix by diameter and thickness."
+          codePlaceholder="e.g. DN-25-50"
+          descriptionPlaceholder="Diameter range — films per joint"
+        />
+        <SystemReferentialCard
+          slice="utCalc"
+          title="UT Calculation"
+          description="UT coefficients by diameter and rating."
+          codePlaceholder="e.g. UT-CARBON-A"
+          descriptionPlaceholder="Coefficient — applicable range"
+        />
+        <SystemReferentialCard
+          slice="torquing"
+          title="Torquing Requirement"
+          description="Torquing method used by flange management."
+          codePlaceholder="e.g. TRQ-LR"
+          descriptionPlaceholder="Torque table / method"
+        />
       </div>
     </div>
   );

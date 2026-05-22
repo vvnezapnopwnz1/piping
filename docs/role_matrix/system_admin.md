@@ -146,12 +146,12 @@ sampling на 1000+ welds. Ошибка в scope lock = subcontractor видит
    PDS area. Только subcontractor list CRUD реально работает.
 
 5. **⚠ Project Referential — WPS & Welder Qualification group** — WPS list
-   + Welder Qualification records. `<WpsTab />` и `<WelderQualificationsTab
-   />` существуют и рендерятся в General tab через `<AdminTabs />`. WPS Tab
-   — читает из static `lib/engineering-references` данных, нет store write.
-   Welder Qualifications Tab — читает из `WELDER_QUALIFICATIONS` lib
-   constant, тоже read-only display (нет Add welder form, нет Edit expiry).
-   Реальный add/expire workflow отсутствует.
+   - Welder Qualification records. `<WpsTab />` и `<WelderQualificationsTab
+/>` существуют и рендерятся в General tab через `<AdminTabs />`. WPS Tab
+     — читает из static `lib/engineering-references` данных, нет store write.
+     Welder Qualifications Tab — читает из `WELDER_QUALIFICATIONS` lib
+     constant, тоже read-only display (нет Add welder form, нет Edit expiry).
+     Реальный add/expire workflow отсутствует.
 
 6. **⚠ Project Referential — NDE Matrix & Rework Codes** — NDE Matrix
    (service class × weld type → method + sampling %) + Rework Code list.
@@ -245,58 +245,59 @@ sampling на 1000+ welds. Ошибка в scope lock = subcontractor видит
 shell / placeholder. Это системная картина: Admin module был спроектирован
 как IA backbone (navigation, page titles, section groupings, referential
 inventory display) и получил два полноценных CRUD-capable tabs (Subcontractors
-+ Teams), остальное — static display или disabled placeholders. Этого
-достаточно для демонстрации структуры и domain knowledge, но недостаточно
-для operational use. Весь module живёт в **Track A — Admin IA / Referentials
-build-out**: при правильной приоритизации этот track закроет 12 из 16
-функций роли за один цикл. B12 (scope lock setup UI) частично пересекается
-с **Track J — Roles / Access / Subcontractor Scope**. B15 (NDE Matrix
-amendment) — **Track N** candidate. B16 (archive) — **Track A** closeout
-phase.
+
+- Teams), остальное — static display или disabled placeholders. Этого
+  достаточно для демонстрации структуры и domain knowledge, но недостаточно
+  для operational use. Весь module живёт в **Track A — Admin IA / Referentials
+  build-out**: при правильной приоритизации этот track закроет 12 из 16
+  функций роли за один цикл. B12 (scope lock setup UI) частично пересекается
+  с **Track J — Roles / Access / Subcontractor Scope**. B15 (NDE Matrix
+  amendment) — **Track N** candidate. B16 (archive) — **Track A** closeout
+  phase.
 
 **Gap triage (consolidated):**
 
-| #   | Function                            | St  | Pr  | Decision      | Track    |
-| --- | ----------------------------------- | --- | --- | ------------- | -------- |
-| B1  | Project Definition form + persist   | ⚠   | P1  | build         | Track A  |
-| B2  | Active project select / switch      | ⚠   | P2  | build         | Track A  |
-| B3  | System Referential CRUD             | 📋  | P2  | build         | Track A  |
-| B4  | Proj Ref General — PDS area assign  | ⚠   | P1  | build         | Track A  |
-| B5  | WPS + Welder Qual CRUD (add/edit)   | ⚠   | P1  | build         | Track A  |
-| B6  | NDE Matrix CRUD (sampling % edit)   | ⚠   | P0  | build         | Track A  |
-| B7  | Spooling refs CRUD (Piping Mat List) | ⚠  | P1  | build         | Track A  |
-| B8  | Fabrication refs CRUD (Joint Cat)   | ⚠   | P2  | build         | Track A  |
-| B9  | Testpack team refs CRUD             | 📋  | P1  | build         | Track A  |
-| B10 | Spool Tracking refs (Devices/PDA)   | 📋  | P2  | defer         | Track A  |
-| B11 | User CRUD + role assignment form    | ⚠   | P1  | build         | Track J  |
-| B12 | Scope lock setup (user→sub mapping) | ⚠   | P0  | build         | Track J  |
-| B13 | Import core templates (upload+parse) | 📋 | P1  | build         | Track A  |
-| B14 | Import spooling templates (ZIP)     | 📋  | P2  | defer         | Track A  |
-| B15 | NDE Matrix amendment + audit trail  | ❌  | P2  | build         | Track N  |
-| B16 | Project archive / close-out export  | ❌  | P3  | defer         | Track A  |
+| #   | Function                             | St  | Pr  | Decision | Track   |
+| --- | ------------------------------------ | --- | --- | -------- | ------- |
+| B1  | Project Definition form + persist    | ⚠   | P1  | build    | Track A |
+| B2  | Active project select / switch       | ⚠   | P2  | build    | Track A |
+| B3  | System Referential CRUD              | 📋  | P2  | build    | Track A |
+| B4  | Proj Ref General — PDS area assign   | ⚠   | P1  | build    | Track A |
+| B5  | WPS + Welder Qual CRUD (add/edit)    | ⚠   | P1  | build    | Track A |
+| B6  | NDE Matrix CRUD (sampling % edit)    | ⚠   | P0  | build    | Track A |
+| B7  | Spooling refs CRUD (Piping Mat List) | ⚠   | P1  | build    | Track A |
+| B8  | Fabrication refs CRUD (Joint Cat)    | ⚠   | P2  | build    | Track A |
+| B9  | Testpack team refs CRUD              | 📋  | P1  | build    | Track A |
+| B10 | Spool Tracking refs (Devices/PDA)    | 📋  | P2  | defer    | Track A |
+| B11 | User CRUD + role assignment form     | ⚠   | P1  | build    | Track J |
+| B12 | Scope lock setup (user→sub mapping)  | ⚠   | P0  | build    | Track J |
+| B13 | Import core templates (upload+parse) | 📋  | P1  | build    | Track A |
+| B14 | Import spooling templates (ZIP)      | 📋  | P2  | defer    | Track A |
+| B15 | NDE Matrix amendment + audit trail   | ❌  | P2  | build    | Track N |
+| B16 | Project archive / close-out export   | ❌  | P3  | defer    | Track A |
 
 ---
 
 ### C. Function → Screen → Interaction
 
-| #   | St  | Функция                          | Экран                               | Что нажимает / делает                                                                                                                                                                                                                                                                     |
-| --- | --- | -------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| B1  | ⚠   | Project Definition setup         | `/admin/project-definition`         | Открывает страницу → форма с полями (Activity Code, Project Title, Owner, Contractor, Owner Logo upload, Contractor Logo upload, Max Transit Time days) → Fill + Save (~700ms) → toast _"Project saved"_ → row появляется в project table. **Сейчас:** поля — visual placeholders, Save disabled. |
-| B2  | ⚠   | Active project switch            | `/admin/project-definition`         | В project table → row с кнопкой "Set Active" → click → активный project record переключается → banner в шапке показывает активный activity code. **Сейчас:** table static, кнопки нет.                                                                                                    |
-| B3  | 📋  | System Referential CRUD          | `/admin/system-referential`         | Открывает card (напр. "Material Type") → "Add" кнопка → inline form row: Code + Description → Save → row в table. Edit row: inline edit. Delete: confirmation dialog. **Сейчас:** static demo table, нет Add/Edit/Delete.                                                                |
-| B4  | ⚠   | PDS Area / Subcontractor assign  | `/admin/project-referential` → General tab | В General tab → "PDS Area / Subcontractor" card → table: PDS Area ID × Subcontractor columns → Admin assigns sub per area → Save. При изменении — scope lock recalculates. **Сейчас:** tab label exists в ReferentialGroup, нет интерактивной таблицы.                       |
-| B5  | ⚠   | WPS + Welder Qualification CRUD  | `/admin/project-referential` → General tab → WPS / Welder Qual sub-tabs | WPS tab: Add row (code + description + material type + thickness range + position) → Save → store update. Welder Qual tab: Add welder (ID + name + qualified WPS list checkboxes + expiry date) → Save. Edit: expiry date renewal. Deactivate button. **Сейчас:** read-only display from lib constant. |
-| B6  | ⚠   | NDE Matrix edit                  | `/admin/project-referential` → General tab → NDE Matrix sub-tab | Matrix table: rows = Service Class × Weld Type, columns = RT / UT / PT / MT % inputs → click cell → inline number input → Tab через cells → Save All → store update + audit entry. **Сейчас:** read-only matrix render from static constant.                      |
-| B7  | ⚠   | Spooling refs — Piping Mat List  | `/admin/project-referential` → Spooling tab | "Project Piping Material List" card → table (Heat # / Material / Grade / Mill Cert Ref) → Add row + CSV import shortcut → Save. Each saved heat # available in QC material check validation. **Сейчас:** ReferentialGroup label only — no table, no Add.                  |
-| B8  | ⚠   | Fabrication refs                 | `/admin/project-referential` → Fabrication tab | Joint Category: `<JointCategoriesTab />` renders read-only from lib. Jointer List / Location / Unit Classification: ReferentialGroup labels only. Target: Add/Edit CRUD per item. **Сейчас:** JointCategories read-only; others are labels only.                         |
-| B9  | 📋  | Testpack team refs CRUD          | `/admin/project-referential` → Testpack tab | 4 team lists (Blinding / Finishing / Reinstatement / Line Checker): each → card → team member rows → Add member (name + role + contact) → Save → store → available in testpack module dropdowns. System/Sub-System hierarchy: tree editor. **Сейчас:** ReferentialGroup labels only. |
-| B10 | 📋  | Spool Tracking refs              | `/admin/project-referential` → Spool Tracking tab | Devices: barcode scanner / RFID list → Add device (ID + type + location). PDA Users: planned role. **Сейчас:** ReferentialGroup labels only. Low priority — Track A deferred phase.                                                                                   |
-| B11 | ⚠   | User CRUD + role assignment      | `/admin/access-rights`              | Users table → "Add User" button → dialog: username + email + project role select (dropdown) + optional subcontractor ID (if role = subcontractor) → Save → user appears in table. Edit: role change. Deactivate: soft-delete (не delete — audit trail). **Сейчас:** static mapping table, нет form.  |
-| B12 | ⚠   | Subcontractor scope lock setup   | `/admin/access-rights`              | Раздел "Scope Lock" → table: User × Subcontractor ID × PDS Areas assigned → Admin maps sub user → sub ID → area set → Save → runtime scope lock active. **Сейчас:** amber card с text description, нет UI для настройки mapping.                                                   |
-| B13 | 📋  | Import core templates            | `/admin/import-settings`            | Card "Project Piping Material List" → "Select file" → file chooser (`.xlsx`) → client-side validation (required columns check) → preview table (first 10 rows) → "Import" → progress bar → "Imported N rows, K errors" → error details expandable. **Сейчас:** disabled Upload button. |
-| B14 | 📋  | Import spooling templates        | `/admin/import-settings`            | Card "Spooling Images ZIP" → "Select file" → file chooser (`.zip`) → upload → server extracts (spool_id.png per entry) → stores image refs per spool. Spooling Material Type / Class Material: analogous Excel flow. **Сейчас:** disabled Upload button. Deferred — binary upload complexity. |
-| B15 | ❌  | NDE Matrix amendment + audit     | (no screen — planned `/admin/nde-matrix-audit` or modal in B6) | Admin opens NDE Matrix (B6) → edits sampling % → before Save: system shows diff preview _"Class 1 RT: 20% → 25%"_ → confirms with mandatory audit note field (reason: "Client letter REV-3") → Save → audit entry created with timestamp + user + before/after values + reason. Ongoing batches flag if affected. **NOT IMPLEMENTED.** |
-| B16 | ❌  | Project archive / close-out      | (no screen — planned `/admin/project-archive`) | In project table → row → "Archive" action → confirmation dialog → project enters read-only mode for all roles → export button: _"Download project dossier (ZIP)"_ — NDE history + QC release records + test pack records. System Admin only. **NOT IMPLEMENTED.** |
+| #   | St  | Функция                         | Экран                                                                   | Что нажимает / делает                                                                                                                                                                                                                                                                                                                  |
+| --- | --- | ------------------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| B1  | ⚠   | Project Definition setup        | `/admin/project-definition`                                             | Открывает страницу → форма с полями (Activity Code, Project Title, Owner, Contractor, Owner Logo upload, Contractor Logo upload, Max Transit Time days) → Fill + Save (~700ms) → toast _"Project saved"_ → row появляется в project table. **Сейчас:** поля — visual placeholders, Save disabled.                                      |
+| B2  | ⚠   | Active project switch           | `/admin/project-definition`                                             | В project table → row с кнопкой "Set Active" → click → активный project record переключается → banner в шапке показывает активный activity code. **Сейчас:** table static, кнопки нет.                                                                                                                                                 |
+| B3  | 📋  | System Referential CRUD         | `/admin/system-referential`                                             | Открывает card (напр. "Material Type") → "Add" кнопка → inline form row: Code + Description → Save → row в table. Edit row: inline edit. Delete: confirmation dialog. **Сейчас:** static demo table, нет Add/Edit/Delete.                                                                                                              |
+| B4  | ⚠   | PDS Area / Subcontractor assign | `/admin/project-referential` → General tab                              | В General tab → "PDS Area / Subcontractor" card → table: PDS Area ID × Subcontractor columns → Admin assigns sub per area → Save. При изменении — scope lock recalculates. **Сейчас:** tab label exists в ReferentialGroup, нет интерактивной таблицы.                                                                                 |
+| B5  | ⚠   | WPS + Welder Qualification CRUD | `/admin/project-referential` → General tab → WPS / Welder Qual sub-tabs | WPS tab: Add row (code + description + material type + thickness range + position) → Save → store update. Welder Qual tab: Add welder (ID + name + qualified WPS list checkboxes + expiry date) → Save. Edit: expiry date renewal. Deactivate button. **Сейчас:** read-only display from lib constant.                                 |
+| B6  | ⚠   | NDE Matrix edit                 | `/admin/project-referential` → General tab → NDE Matrix sub-tab         | Matrix table: rows = Service Class × Weld Type, columns = RT / UT / PT / MT % inputs → click cell → inline number input → Tab через cells → Save All → store update + audit entry. **Сейчас:** read-only matrix render from static constant.                                                                                           |
+| B7  | ⚠   | Spooling refs — Piping Mat List | `/admin/project-referential` → Spooling tab                             | "Project Piping Material List" card → table (Heat # / Material / Grade / Mill Cert Ref) → Add row + CSV import shortcut → Save. Each saved heat # available in QC material check validation. **Сейчас:** ReferentialGroup label only — no table, no Add.                                                                               |
+| B8  | ⚠   | Fabrication refs                | `/admin/project-referential` → Fabrication tab                          | Joint Category: `<JointCategoriesTab />` renders read-only from lib. Jointer List / Location / Unit Classification: ReferentialGroup labels only. Target: Add/Edit CRUD per item. **Сейчас:** JointCategories read-only; others are labels only.                                                                                       |
+| B9  | 📋  | Testpack team refs CRUD         | `/admin/project-referential` → Testpack tab                             | 4 team lists (Blinding / Finishing / Reinstatement / Line Checker): each → card → team member rows → Add member (name + role + contact) → Save → store → available in testpack module dropdowns. System/Sub-System hierarchy: tree editor. **Сейчас:** ReferentialGroup labels only.                                                   |
+| B10 | 📋  | Spool Tracking refs             | `/admin/project-referential` → Spool Tracking tab                       | Devices: barcode scanner / RFID list → Add device (ID + type + location). PDA Users: planned role. **Сейчас:** ReferentialGroup labels only. Low priority — Track A deferred phase.                                                                                                                                                    |
+| B11 | ⚠   | User CRUD + role assignment     | `/admin/access-rights`                                                  | Users table → "Add User" button → dialog: username + email + project role select (dropdown) + optional subcontractor ID (if role = subcontractor) → Save → user appears in table. Edit: role change. Deactivate: soft-delete (не delete — audit trail). **Сейчас:** static mapping table, нет form.                                    |
+| B12 | ⚠   | Subcontractor scope lock setup  | `/admin/access-rights`                                                  | Раздел "Scope Lock" → table: User × Subcontractor ID × PDS Areas assigned → Admin maps sub user → sub ID → area set → Save → runtime scope lock active. **Сейчас:** amber card с text description, нет UI для настройки mapping.                                                                                                       |
+| B13 | 📋  | Import core templates           | `/admin/import-settings`                                                | Card "Project Piping Material List" → "Select file" → file chooser (`.xlsx`) → client-side validation (required columns check) → preview table (first 10 rows) → "Import" → progress bar → "Imported N rows, K errors" → error details expandable. **Сейчас:** disabled Upload button.                                                 |
+| B14 | 📋  | Import spooling templates       | `/admin/import-settings`                                                | Card "Spooling Images ZIP" → "Select file" → file chooser (`.zip`) → upload → server extracts (spool_id.png per entry) → stores image refs per spool. Spooling Material Type / Class Material: analogous Excel flow. **Сейчас:** disabled Upload button. Deferred — binary upload complexity.                                          |
+| B15 | ❌  | NDE Matrix amendment + audit    | (no screen — planned `/admin/nde-matrix-audit` or modal in B6)          | Admin opens NDE Matrix (B6) → edits sampling % → before Save: system shows diff preview _"Class 1 RT: 20% → 25%"_ → confirms with mandatory audit note field (reason: "Client letter REV-3") → Save → audit entry created with timestamp + user + before/after values + reason. Ongoing batches flag if affected. **NOT IMPLEMENTED.** |
+| B16 | ❌  | Project archive / close-out     | (no screen — planned `/admin/project-archive`)                          | In project table → row → "Archive" action → confirmation dialog → project enters read-only mode for all roles → export button: _"Download project dossier (ZIP)"_ — NDE history + QC release records + test pack records. System Admin only. **NOT IMPLEMENTED.**                                                                      |
 
 ---
 
@@ -426,9 +427,9 @@ ID, ограничить PDS area scope (BV отвечает только за A
   Admin logs in on 2026-05-28 → dashboard banner _"2 welder qualifications
   expiring within 30 days"_. Opens Welder Qual tab → WLD-004 row with amber
   chip "Expires Jun 1" → Admin renews via extension dialog (new expiry date
-  + endorsement ref) → Save → amber chip clears. If Admin does NOT renew
-  and QC Engineer selects WLD-004 on weld entry after Jun 1 → soft alert
-  fires (B14 в QC Engineer matrix, Track N gap).
+  - endorsement ref) → Save → amber chip clears. If Admin does NOT renew
+    and QC Engineer selects WLD-004 on weld entry after Jun 1 → soft alert
+    fires (B14 в QC Engineer matrix, Track N gap).
 
 - **NDE Matrix import with service class not in referential**: Excel matrix
   contains "Class 4" row but Service Class list в System Referential не
@@ -447,5 +448,5 @@ ID, ограничить PDS area scope (BV отвечает только за A
   WPS = WPS-014, but WPS-014 not imported yet. System validation: _"WPS-014
   not found in project WPS list — import WPS list first"_. Enforces
   dependency order. If Admin skips this and QC Engineer tries to use WLD-009
-  + WPS-014 → weld entry dropdown doesn't show WPS-014 as option for WLD-009
-  (valid WPS filter based on qualifications).
+  - WPS-014 → weld entry dropdown doesn't show WPS-014 as option for WLD-009
+    (valid WPS filter based on qualifications).

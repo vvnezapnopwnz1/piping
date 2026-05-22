@@ -1,13 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { X } from "lucide-react";
 
 import { FieldFilterBar } from "@/components/erection/field-filter-sidebar";
 import { FieldWeldDetailPanel } from "@/components/erection/field-weld-detail-panel";
 import { FieldWeldTable } from "@/components/erection/field-weld-table";
 import { useErectionStore } from "@/store";
 import { cn } from "@/lib/utils";
-import { ERECTION_STATUS_OPTIONS } from "@/lib/erection-weld-data";
+import {
+  ERECTION_STATUS_OPTIONS,
+  type ErectionStatus,
+} from "@/lib/erection-weld-data";
 
 interface FilterState {
   pdsArea: string;
@@ -46,12 +51,29 @@ function parseDisplayDate(value: string) {
   return parsed;
 }
 
-export default function ErectionWeldProgressPage() {
+function isErectionStatus(value: string): value is ErectionStatus {
+  return (ERECTION_STATUS_OPTIONS as readonly string[]).includes(value);
+}
+
+function ErectionWeldProgressInner() {
   const fieldWelds = useErectionStore((s) => s.fieldWelds);
+  const searchParams = useSearchParams();
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [appliedFilters, setAppliedFilters] =
     useState<FilterState>(DEFAULT_FILTERS);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const status = searchParams.get("status");
+    if (status && isErectionStatus(status)) {
+      const next = {
+        ...DEFAULT_FILTERS,
+        erectionStatuses: [status],
+      };
+      setFilters(next);
+      setAppliedFilters(next);
+    }
+  }, [searchParams]);
 
   const handleApplyFilters = () => {
     setAppliedFilters({ ...filters });
@@ -64,7 +86,23 @@ export default function ErectionWeldProgressPage() {
     };
     setFilters(next);
     setAppliedFilters(next);
+    const params = new URLSearchParams(window.location.search);
+    if (status) {
+      params.set("status", status);
+    } else {
+      params.delete("status");
+    }
+    const qs = params.toString();
+    window.history.replaceState(
+      {},
+      "",
+      `/erection/weld-progress${qs ? `?${qs}` : ""}`,
+    );
   };
+
+  const urlStatus = searchParams.get("status");
+  const activeUrlStatus =
+    urlStatus && isErectionStatus(urlStatus) ? urlStatus : null;
 
   const filteredJoints = fieldWelds.filter((joint) => {
     if (
@@ -125,6 +163,29 @@ export default function ErectionWeldProgressPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] min-h-[720px] gap-1 overflow-hidden max-w-full">
+      {activeUrlStatus && (
+        <div className="flex items-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2">
+          <span className="text-xs text-slate-600">
+            Filtered by erection status:
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full border border-sky-300 bg-white px-2 py-0.5 text-xs font-medium text-sky-800">
+            {activeUrlStatus}
+            <button
+              type="button"
+              aria-label="Clear erection status filter"
+              className="rounded-full p-0.5 hover:bg-sky-100"
+              onClick={() => setErectionQuickFilter(null)}
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </span>
+          <span className="text-xs text-slate-500">
+            {filteredJoints.length} joint
+            {filteredJoints.length === 1 ? "" : "s"}
+          </span>
+        </div>
+      )}
+
       <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">
         <div className="flex flex-wrap items-center gap-2">
           <span className="mr-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -180,5 +241,13 @@ export default function ErectionWeldProgressPage() {
         />
       </div>
     </div>
+  );
+}
+
+export default function ErectionWeldProgressPage() {
+  return (
+    <Suspense fallback={null}>
+      <ErectionWeldProgressInner />
+    </Suspense>
   );
 }

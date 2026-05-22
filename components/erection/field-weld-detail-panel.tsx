@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { validateWelder } from "@/lib/welder-qualifications";
+import { useActiveWelderQualifications } from "@/store/admin-store";
 import type { FieldWeldJoint, ErectionStatus } from "@/lib/erection-weld-data";
 import {
   ERECTION_STATUS_OPTIONS,
@@ -114,6 +115,7 @@ export function FieldWeldDetailPanel({
   const weld = useErectionStore((s) =>
     s.fieldWelds.find((w) => w.id === selectedId),
   );
+  const activeWelders = useActiveWelderQualifications();
   const [form, setForm] = useState<FieldWeldJoint | null>(null);
   const [saved, setSaved] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -160,6 +162,7 @@ export function FieldWeldDetailPanel({
     form.wpsNo,
     form.materialType,
     form.diaInch,
+    activeWelders,
   );
 
   const rootCapSum = form.rootPercent + form.capPercent;

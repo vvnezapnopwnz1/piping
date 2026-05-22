@@ -1,12 +1,29 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { MoreHorizontal, Search } from "lucide-react";
 
-import { WELDER_QUALIFICATIONS } from "@/lib/welder-qualifications";
+import { AddWelderDialog } from "@/components/admin/add-welder-dialog";
+import { EditWelderExpiryDialog } from "@/components/admin/edit-welder-expiry-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { useAdminStore } from "@/store/admin-store";
 import { cn, formatDate } from "@/lib/utils";
 
 export function WelderQualificationsTab() {
+  const welders = useAdminStore((s) => s.welderQualifications);
+  const toggleWelderActive = useAdminStore((s) => s.toggleWelderActive);
+
+  const [search, setSearch] = useState("");
+  const [editingCode, setEditingCode] = useState<string | null>(null);
+
   const today = useMemo(() => new Date(), []);
   const currentQuarterStart = useMemo(() => {
     const q = Math.floor(today.getMonth() / 3);
@@ -18,162 +35,269 @@ export function WelderQualificationsTab() {
   }, [today]);
 
   const kpis = useMemo(() => {
-    const total = WELDER_QUALIFICATIONS.length;
+    const active = welders.filter((w) => w.active);
     const wpsSet = new Set<string>();
     let expiring = 0;
-
-    WELDER_QUALIFICATIONS.forEach((w) => {
+    active.forEach((w) => {
       w.qualifiedWPS.forEach((wps) => wpsSet.add(wps));
-      const expiry = new Date(w.qualificationExpiresOn);
-      if (expiry >= currentQuarterStart && expiry <= currentQuarterEnd) {
-        expiring++;
-      }
+      const exp = new Date(w.qualificationExpiresOn);
+      if (exp >= currentQuarterStart && exp <= currentQuarterEnd) expiring++;
     });
-
     return {
-      total,
+      total: welders.length,
+      active: active.length,
       distinctWps: wpsSet.size,
       expiring,
     };
-  }, [currentQuarterStart, currentQuarterEnd]);
+  }, [welders, currentQuarterStart, currentQuarterEnd]);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return welders;
+    const q = search.toLowerCase();
+    return welders.filter(
+      (w) =>
+        w.welderCode.toLowerCase().includes(q) ||
+        w.fullName.toLowerCase().includes(q) ||
+        w.qualifiedWPS.some((c) => c.toLowerCase().includes(q)) ||
+        w.qualifiedMaterials.some((m) => m.toLowerCase().includes(q)),
+    );
+  }, [welders, search]);
+
+  const editingWelder = useMemo(
+    () => welders.find((w) => w.welderCode === editingCode) ?? null,
+    [welders, editingCode],
+  );
 
   return (
     <div className="space-y-4">
-      {/* Header note */}
       <p className="text-sm text-slate-500">
-        Welder qualifications are derived from §3.6 records. Edit via the IDS
-        import flow.
+        Welder qualifications — §3.6 Project Referential. Source of truth for
+        smart validation in Weld Progress + Field Welds.
       </p>
 
-      {/* KPI strip */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs">
-          <span className="text-slate-500">Total welders:</span>
-          <span className="font-semibold text-slate-900">{kpis.total}</span>
-        </div>
-        <div className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs">
-          <span className="text-slate-500">Qualified WPS codes:</span>
-          <span className="font-semibold text-slate-900">
-            {kpis.distinctWps}
-          </span>
-        </div>
-        <div className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs">
-          <span className="text-slate-500">Expiring this quarter:</span>
-          <span className="font-semibold text-slate-900">
-            {kpis.expiring > 0 ? kpis.expiring : "—"}
-          </span>
-        </div>
+        <Kpi label="Total" value={kpis.total} />
+        <Kpi label="Active" value={kpis.active} valueClass="text-emerald-600" />
+        <Kpi label="Qualified WPS codes" value={kpis.distinctWps} />
+        <Kpi
+          label="Expiring this quarter"
+          value={kpis.expiring > 0 ? kpis.expiring : "—"}
+          valueClass={kpis.expiring > 0 ? "text-amber-600" : undefined}
+        />
       </div>
 
-      {/* Table */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search welders, WPS, materials…"
+            className="h-8 w-80 pl-8 text-xs"
+          />
+        </div>
+        <AddWelderDialog />
+      </div>
+
       <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
         <div className="overflow-auto">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 sticky top-0 z-10">
               <tr className="border-b border-slate-200">
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
-                  Welder Code
-                </th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
-                  Name
-                </th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
-                  Qualified WPS
-                </th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
-                  Qualification Date
-                </th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
-                  Expiry
-                </th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
-                  Status
-                </th>
+                <Th>Welder Code</Th>
+                <Th>Name</Th>
+                <Th>Qualified WPS</Th>
+                <Th>Materials</Th>
+                <Th>Expiry</Th>
+                <Th>Status</Th>
+                <Th className="w-10">Actions</Th>
               </tr>
             </thead>
             <tbody>
-              {WELDER_QUALIFICATIONS.map((w, i) => {
-                const isExpired = new Date(w.qualificationExpiresOn) < today;
+              {filtered.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="px-5 py-8 text-center text-sm text-slate-500"
+                  >
+                    No welders match the current search.
+                  </td>
+                </tr>
+              )}
+              {filtered.map((w, i) => {
+                const expiry = new Date(w.qualificationExpiresOn);
+                const isExpired = expiry < today;
+                const isExpiringSoon =
+                  !isExpired &&
+                  expiry.getTime() - today.getTime() <
+                    30 * 24 * 60 * 60 * 1000;
                 const visibleWps = w.qualifiedWPS.slice(0, 3);
-                const remaining = w.qualifiedWPS.length - 3;
-
+                const remainingWps = w.qualifiedWPS.length - 3;
                 return (
                   <tr
                     key={w.welderCode}
                     className={cn(
                       "border-b border-slate-100 transition-colors",
                       i % 2 === 0 ? "bg-white" : "bg-slate-50/50",
+                      !w.active && "opacity-60",
                     )}
                   >
-                    <td className="px-3 py-2 whitespace-nowrap font-mono text-xs text-slate-700">
+                    <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-slate-700">
                       {w.welderCode}
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-700">
+                    <td className="px-3 py-2 text-xs text-slate-700">
                       {w.fullName}
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap">
+                    <td className="px-3 py-2">
                       <div className="flex flex-wrap gap-1">
                         {visibleWps.map((wps) => (
                           <Badge
                             key={wps}
                             variant="outline"
-                            className="text-[10px] border-slate-200 text-slate-600 bg-slate-50"
+                            className="border-slate-200 bg-slate-50 text-[10px] text-slate-600"
                           >
                             {wps}
                           </Badge>
                         ))}
-                        {remaining > 0 && (
+                        {remainingWps > 0 && (
                           <Badge
                             variant="outline"
-                            className="text-[10px] border-slate-200 text-slate-500 bg-slate-50"
+                            className="border-slate-200 bg-slate-50 text-[10px] text-slate-500"
                           >
-                            +{remaining} more
+                            +{remainingWps} more
                           </Badge>
                         )}
                       </div>
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-500">
-                      {/* No qualification date in data — show creation placeholder or dash */}
-                      —
+                    <td className="px-3 py-2 text-xs text-slate-600">
+                      {w.qualifiedMaterials.join(", ")}
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-500">
-                      {formatDate(w.qualificationExpiresOn)}
+                    <td className="whitespace-nowrap px-3 py-2 text-xs">
+                      <span
+                        className={cn(
+                          isExpired
+                            ? "text-red-600 font-medium"
+                            : isExpiringSoon
+                              ? "text-amber-600"
+                              : "text-slate-500",
+                        )}
+                      >
+                        {formatDate(w.qualificationExpiresOn)}
+                      </span>
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap">
-                      {isExpired ? (
+                    <td className="whitespace-nowrap px-3 py-2">
+                      {!w.active ? (
                         <Badge
                           variant="outline"
-                          className="bg-red-50 text-red-700 border-red-200 text-xs"
+                          className="border-slate-300 bg-slate-100 text-xs text-slate-600"
+                        >
+                          Inactive
+                        </Badge>
+                      ) : isExpired ? (
+                        <Badge
+                          variant="outline"
+                          className="border-red-200 bg-red-50 text-xs text-red-700"
                         >
                           Expired
+                        </Badge>
+                      ) : isExpiringSoon ? (
+                        <Badge
+                          variant="outline"
+                          className="border-amber-200 bg-amber-50 text-xs text-amber-700"
+                        >
+                          Expiring soon
                         </Badge>
                       ) : (
                         <Badge
                           variant="outline"
-                          className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs"
+                          className="border-emerald-200 bg-emerald-50 text-xs text-emerald-700"
                         >
                           Valid
                         </Badge>
                       )}
                     </td>
+                    <td className="whitespace-nowrap px-3 py-2">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                          >
+                            <MoreHorizontal className="h-4 w-4 text-slate-500" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => setEditingCode(w.welderCode)}
+                          >
+                            Renew expiry…
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => toggleWelderActive(w.welderCode)}
+                          >
+                            {w.active ? "Deactivate" : "Reactivate"}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </td>
                   </tr>
                 );
               })}
-              {/* Empty-state padding if list is short */}
-              {WELDER_QUALIFICATIONS.length < 8 && (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-5 py-8 text-center text-sm text-slate-400"
-                  >
-                    End of list
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
       </div>
+
+      {editingWelder && (
+        <EditWelderExpiryDialog
+          open={editingCode !== null}
+          onOpenChange={(next) => {
+            if (!next) setEditingCode(null);
+          }}
+          welderCode={editingWelder.welderCode}
+          welderName={editingWelder.fullName}
+          initialExpiry={editingWelder.qualificationExpiresOn}
+        />
+      )}
+    </div>
+  );
+}
+
+function Th({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <th
+      className={cn(
+        "whitespace-nowrap px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-600",
+        className,
+      )}
+    >
+      {children}
+    </th>
+  );
+}
+
+function Kpi({
+  label,
+  value,
+  valueClass,
+}: {
+  label: string;
+  value: number | string;
+  valueClass?: string;
+}) {
+  return (
+    <div className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs">
+      <span className="text-slate-500">{label}:</span>
+      <span className={cn("font-semibold text-slate-900", valueClass)}>
+        {value}
+      </span>
     </div>
   );
 }

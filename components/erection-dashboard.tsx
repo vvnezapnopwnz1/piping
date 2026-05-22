@@ -56,14 +56,38 @@ import {
   useSpoolErectionStageCounts,
   useSpoolReadiness,
   useFleetFlangeBoltCounts,
+  useErectionKPIs,
 } from "@/store";
 import {
   ERECTION_STAGE_COLOR,
   ERECTION_STAGE_ORDER,
+  type SpoolErectionStage,
 } from "@/lib/erection-stage";
+import type { ErectionStatus } from "@/lib/erection-weld-data";
 import { cn } from "@/lib/utils";
 
-// Mock data
+/** Live field-joint counts shown on matching spool pipeline tiles. */
+const SPOOL_STAGE_FIELD_JOINTS: Partial<
+  Record<SpoolErectionStage, (kpis: ReturnType<typeof useErectionKPIs>) => number>
+> = {
+  "To Site": (k) => k.toSite,
+  Erected: (k) => k.erected,
+  "Welded/Bolted": (k) => k.welded + k.bolted,
+  Supported: (k) => k.supported,
+  RFT: (k) => k.rft,
+};
+
+const SPOOL_STAGE_WELD_DRILL: Partial<
+  Record<SpoolErectionStage, ErectionStatus | ErectionStatus[]>
+> = {
+  "To Site": "To Site",
+  Erected: "Erected",
+  "Welded/Bolted": ["Welded", "Bolted"],
+  Supported: "Supported",
+  RFT: "RFT",
+};
+
+// TODO: historical aggregation — weekly trend has no time-series store yet
 const SPOOL_ERECTION_DATA = [
   { week: "W1", toSite: 180, erected: 145, welded: 92, supported: 68, rft: 45 },
   {
@@ -196,39 +220,61 @@ function ErectionFunnelSection({
 }) {
   const router = useRouter();
   const counts = useSpoolErectionStageCounts();
+  const kpis = useErectionKPIs();
 
   const totalSpools = ERECTION_STAGE_ORDER.reduce((s, st) => s + counts[st], 0);
-  const awaitingRelease = counts["Awaiting Release"];
-  const activeInErection =
-    counts["To Site"] +
-    counts["Field Material Check"] +
-    counts["Erected"] +
-    counts["Welded/Bolted"] +
-    counts["Supported"];
-  const rftCount = counts["RFT"];
+  const jointsInProgress = kpis.total - kpis.rft - kpis.notStarted;
+
+  const openWeldProgress = (status: ErectionStatus) => {
+    router.push(
+      `/erection/weld-progress?status=${encodeURIComponent(status)}`,
+    );
+  };
+
+  const kpiCellClass =
+    "flex min-h-[5.75rem] w-full flex-col justify-between rounded-md border border-slate-200/80 bg-white p-3";
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 rounded-lg border bg-slate-50 p-3">
-        <div>
-          <p className="text-xs text-slate-500">Total spools</p>
-          <p className="text-2xl font-semibold text-slate-900">{totalSpools}</p>
-        </div>
-        <div>
-          <p className="text-xs text-slate-500">Awaiting Release</p>
-          <p className="text-2xl font-semibold text-slate-600">
-            {awaitingRelease}
+      <div className="grid auto-rows-fr grid-cols-2 gap-3 md:grid-cols-4 rounded-lg border bg-slate-50 p-3">
+        <div className={kpiCellClass}>
+          <p className="text-xs text-slate-500">Total field joints</p>
+          <p className="text-2xl font-semibold text-slate-900">{kpis.total}</p>
+          <p className="text-[10px] leading-snug text-slate-500">
+            Foreman {kpis.foremanConfirmedCount}/{kpis.total} · {totalSpools}{" "}
+            spools
           </p>
         </div>
-        <div>
-          <p className="text-xs text-slate-500">Active in erection</p>
+        <div className={kpiCellClass}>
+          <p className="text-xs text-slate-500">To Site</p>
+          <p className="text-2xl font-semibold text-sky-700">{kpis.toSite}</p>
+          <button
+            type="button"
+            className="w-fit text-left text-[10px] text-sky-600 hover:underline"
+            onClick={() => openWeldProgress("To Site")}
+          >
+            View joints →
+          </button>
+        </div>
+        <div className={kpiCellClass}>
+          <p className="text-xs text-slate-500">In progress</p>
           <p className="text-2xl font-semibold text-sky-700">
-            {activeInErection}
+            {jointsInProgress}
+          </p>
+          <p className="text-[10px] leading-snug text-slate-500">
+            Weld avg {kpis.weldProgressPercent}%
           </p>
         </div>
-        <div>
+        <div className={kpiCellClass}>
           <p className="text-xs text-slate-500">RFT</p>
-          <p className="text-2xl font-semibold text-emerald-700">{rftCount}</p>
+          <p className="text-2xl font-semibold text-emerald-700">{kpis.rft}</p>
+          <button
+            type="button"
+            className="w-fit text-left text-[10px] text-emerald-700 hover:underline"
+            onClick={() => openWeldProgress("RFT")}
+          >
+            View joints →
+          </button>
         </div>
       </div>
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -272,10 +318,14 @@ function ErectionFunnelSection({
           </p>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
+      <div className="grid auto-rows-fr grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
         {ERECTION_STAGE_ORDER.map((stage) => {
-          const count = counts[stage];
+          const spoolCount = counts[stage];
+          const jointFn = SPOOL_STAGE_FIELD_JOINTS[stage];
+          const jointCount = jointFn ? jointFn(kpis) : null;
+          const displayCount = jointCount ?? spoolCount;
           const colors = ERECTION_STAGE_COLOR[stage];
+          const weldDrill = SPOOL_STAGE_WELD_DRILL[stage];
           const isClickable =
             stage === "Awaiting Release" ||
             stage === "To Site" ||
@@ -284,16 +334,14 @@ function ErectionFunnelSection({
             stage === "Welded/Bolted" ||
             stage === "Supported" ||
             stage === "RFT";
-          const helper =
-            stage === "Awaiting Release"
-              ? `${count} spool${count === 1 ? "" : "s"} not yet released`
-              : `${count} spool${count === 1 ? "" : "s"}`;
           const tileTitle =
             stage === "Awaiting Release"
               ? "Go to Laydown"
               : stage === "RFT"
                 ? "View RFT list"
-                : undefined;
+                : jointCount != null
+                  ? "Open stage screen · use “View joints” for weld-progress filter"
+                  : undefined;
           const href =
             stage === "Awaiting Release"
               ? "/fabrication/laydown"
@@ -314,7 +362,18 @@ function ErectionFunnelSection({
           return (
             <div
               key={stage}
-              className={isClickable ? "cursor-pointer" : "cursor-not-allowed"}
+              role={isClickable ? "button" : undefined}
+              aria-label={
+                jointCount != null
+                  ? `${stage}: ${jointCount} field joints, ${spoolCount} spools`
+                  : `${stage}: ${spoolCount} spools`
+              }
+              className={cn(
+                "flex h-full min-h-[9.5rem] w-full",
+                isClickable
+                  ? "cursor-pointer transition hover:shadow-md"
+                  : "cursor-not-allowed",
+              )}
               title={tileTitle}
               onClick={() => {
                 if (href) {
@@ -322,26 +381,80 @@ function ErectionFunnelSection({
                 }
               }}
             >
-              <Card className="relative overflow-hidden border bg-white">
+              <Card className="relative flex h-full w-full flex-col overflow-hidden border bg-white">
                 <div
                   className={cn("absolute inset-y-0 left-0 w-1", colors.rail)}
                 />
-                <CardContent className="flex min-h-28 flex-col justify-between gap-3 p-4">
-                  <Badge
-                    variant="secondary"
-                    className={cn(
-                      "w-fit border-transparent text-[10px] uppercase tracking-wider",
-                      colors.bg,
-                      colors.text,
-                    )}
-                  >
-                    {stage}
-                  </Badge>
-                  <div className="space-y-1">
-                    <div className="text-3xl font-semibold text-slate-900">
-                      {count}
+                <CardContent className="flex h-full flex-1 flex-col gap-3 p-4">
+                  <div className="min-h-[2.25rem] shrink-0">
+                    <Badge
+                      variant="secondary"
+                      className={cn(
+                        "max-w-full whitespace-normal border-transparent text-[10px] uppercase leading-tight tracking-wider",
+                        colors.bg,
+                        colors.text,
+                      )}
+                    >
+                      {stage}
+                    </Badge>
+                  </div>
+                  <div className="flex flex-1 flex-col justify-between gap-2">
+                    <div className="space-y-1">
+                      <div className="text-3xl font-semibold leading-none text-slate-900">
+                        {displayCount}
+                      </div>
+                      <p className="line-clamp-2 text-xs leading-snug text-slate-500">
+                        {jointCount != null ? (
+                          <>
+                            {jointCount} joint{jointCount === 1 ? "" : "s"} ·{" "}
+                            {spoolCount} spool{spoolCount === 1 ? "" : "s"}
+                          </>
+                        ) : stage === "Awaiting Release" ? (
+                          `${spoolCount} spool${spoolCount === 1 ? "" : "s"} not yet released`
+                        ) : (
+                          `${spoolCount} spool${spoolCount === 1 ? "" : "s"}`
+                        )}
+                      </p>
                     </div>
-                    <p className="text-xs text-slate-500">{helper}</p>
+                    <div className="mt-auto min-h-[2.75rem] text-xs leading-snug">
+                      {weldDrill ? (
+                        Array.isArray(weldDrill) ? (
+                          <div className="flex flex-col gap-0.5">
+                            {weldDrill.map((status) => (
+                              <button
+                                key={status}
+                                type="button"
+                                className="w-fit text-left text-sky-600 hover:underline"
+                                aria-label={`View ${status === "Welded" ? kpis.welded : kpis.bolted} ${status} field welds`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openWeldProgress(status);
+                                }}
+                              >
+                                {status === "Welded" ? kpis.welded : kpis.bolted}{" "}
+                                {status} →
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            className="text-sky-600 hover:underline"
+                            aria-label={`View ${jointCount} ${weldDrill} field welds`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openWeldProgress(weldDrill);
+                            }}
+                          >
+                            View joints →
+                          </button>
+                        )
+                      ) : (
+                        <span className="invisible select-none" aria-hidden>
+                          View joints →
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -397,6 +510,7 @@ function FlangeBoltKPICard() {
 
 export function ErectionDashboard() {
   const router = useRouter();
+  const kpis = useErectionKPIs();
   const readiness = useSpoolReadiness();
   const readyCount = readiness.filter(
     (s) => s.status === "Ready for delivery",
@@ -800,13 +914,22 @@ export function ErectionDashboard() {
                     <TrendingUp className="h-4 w-4 text-emerald-600 inline" />
                   </TableCell>
                 </TableRow>
-                <TableRow>
+                <TableRow
+                  className="cursor-pointer hover:bg-slate-50"
+                  onClick={() =>
+                    router.push(
+                      `/erection/weld-progress?status=${encodeURIComponent("Welded")}`,
+                    )
+                  }
+                >
                   <TableCell className="font-medium">
                     Field joints welded
                   </TableCell>
-                  <TableCell className="text-right">124</TableCell>
-                  <TableCell className="text-right">138</TableCell>
-                  <TableCell className="text-right font-medium">142</TableCell>
+                  <TableCell className="text-right text-slate-400">—</TableCell>
+                  <TableCell className="text-right text-slate-400">—</TableCell>
+                  <TableCell className="text-right font-medium text-sky-700">
+                    {kpis.welded} live
+                  </TableCell>
                   <TableCell className="text-center">
                     <TrendingUp className="h-4 w-4 text-emerald-600 inline" />
                   </TableCell>
@@ -889,17 +1012,18 @@ export function ErectionDashboard() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground font-medium">
-                  Avg field welder output
+                  Avg weld completion (live)
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl font-bold">14.2</span>
-                  <span className="text-xs text-muted-foreground">DI/day</span>
+                  <span className="text-2xl font-bold">
+                    {kpis.weldProgressPercent}%
+                  </span>
                 </div>
               </div>
-              <div className="flex items-center gap-1 text-emerald-600 text-xs font-medium">
-                <TrendingUp className="h-3 w-3" />
-                Up from 12.8 DI/day
-              </div>
+              <Progress value={kpis.weldProgressPercent} className="h-2" />
+              <p className="text-xs text-muted-foreground">
+                {kpis.foremanConfirmedCount}/{kpis.total} foreman confirmed
+              </p>
             </div>
           </CardContent>
         </Card>

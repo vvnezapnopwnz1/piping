@@ -71,9 +71,9 @@ export const INITIAL_NOTIFICATIONS: Notification[] = [
     id: "n-001",
     severity: "error",
     category: "nde_result",
-    title: "BTH-2025-0156: 1 weld rejected by Bureau Veritas",
+    title: "BTH-2025-0156: 1 weld rejected — TP-205 RFT blocked",
     description:
-      "J-1028 (PL-FU300-007-A): Undercut on external bead, depth 1.2mm. Awaiting your disposition.",
+      "J-1028 (PL-FU300-007-A) · TP-205 — Undercut on external bead, depth 1.2mm. Awaiting disposition.",
     href: "/nde",
     timestamp: hoursAgo(2),
     read: false,
@@ -118,9 +118,9 @@ export const INITIAL_NOTIFICATIONS: Notification[] = [
     id: "n-005",
     severity: "success",
     category: "nde_result",
-    title: "BTH-2025-0148 closed — 100% acceptance",
+    title: "BTH-2025-0148: closed clean",
     description:
-      "All 4 welds accepted by Bureau Veritas. Spools released for paint.",
+      "All 4 welds accepted by Bureau Veritas. Batch ready for close-out.",
     href: "/nde",
     timestamp: daysAgo(1),
     read: true,
@@ -150,7 +150,28 @@ export const INITIAL_NOTIFICATIONS: Notification[] = [
   },
 ]
 
-let manualIdCounter = INITIAL_NOTIFICATIONS.length
+const NOTIFICATION_ID_RE = /^n-(\d+)$/
+
+function dedupeNotificationsById(
+  notifications: Notification[],
+): Notification[] {
+  const seen = new Set<string>()
+  return notifications.filter((n) => {
+    if (seen.has(n.id)) return false
+    seen.add(n.id)
+    return true
+  })
+}
+
+/** Next id from existing list — survives persist rehydrate (module counter does not). */
+function allocNotificationId(notifications: Notification[]): string {
+  let max = INITIAL_NOTIFICATIONS.length
+  for (const n of notifications) {
+    const m = NOTIFICATION_ID_RE.exec(n.id)
+    if (m) max = Math.max(max, parseInt(m[1], 10))
+  }
+  return `n-${String(max + 1).padStart(3, "0")}`
+}
 
 export const useNotificationsStore = create<NotificationsState>()(
   persist(
@@ -158,16 +179,23 @@ export const useNotificationsStore = create<NotificationsState>()(
       notifications: INITIAL_NOTIFICATIONS,
 
       pushNotification: (n) => {
-        manualIdCounter++
-        const notification: Notification = {
-          id: `n-${String(manualIdCounter).padStart(3, "0")}`,
-          timestamp: n.timestamp ?? new Date().toISOString(),
-          read: false,
-          ...n,
-        }
-        set((state) => ({
-          notifications: [notification, ...state.notifications],
-        }))
+        let notification!: Notification
+        set((state) => {
+          const id = allocNotificationId(state.notifications)
+          notification = {
+            id,
+            timestamp: n.timestamp ?? new Date().toISOString(),
+            read: false,
+            ...n,
+          }
+          const rest = state.notifications.filter((item) => item.id !== id)
+          return {
+            notifications: dedupeNotificationsById([
+              notification,
+              ...rest,
+            ]),
+          }
+        })
         return notification
       },
 
@@ -190,15 +218,10 @@ export const useNotificationsStore = create<NotificationsState>()(
 
       clearAll: () => set({ notifications: [] }),
 
-      resetDemo: () => {
-        manualIdCounter = INITIAL_NOTIFICATIONS.length
-        set({ notifications: INITIAL_NOTIFICATIONS })
-      },
+      resetDemo: () => set({ notifications: INITIAL_NOTIFICATIONS }),
 
-      hydrateDemoScenario: () => {
-        manualIdCounter = INITIAL_NOTIFICATIONS.length
-        set({ notifications: INITIAL_NOTIFICATIONS })
-      },
+      hydrateDemoScenario: () =>
+        set({ notifications: INITIAL_NOTIFICATIONS }),
 
       getUnreadCount: () =>
         get().notifications.filter((n) => !n.read).length,
@@ -206,7 +229,15 @@ export const useNotificationsStore = create<NotificationsState>()(
     {
       name: "pipeqc-notifications",
       storage: createJSONStorage(() => localStorage),
-      version: 1,
+      version: 2,
+      migrate: (persisted, version) => {
+        const state = persisted as { notifications?: Notification[] }
+        if (!state?.notifications) return persisted as NotificationsState
+        if (version < 2) {
+          state.notifications = dedupeNotificationsById(state.notifications)
+        }
+        return state as NotificationsState
+      },
     }
   )
 )
@@ -217,7 +248,7 @@ export const useNotificationsStore = create<NotificationsState>()(
 
 export const useUnreadNotifications = () => {
   const notifications = useNotificationsStore((s) => s.notifications)
-  return notifications.filter((n) => !n.read)
+  return dedupeNotificationsById(notifications).filter((n) => !n.read)
 }
 
 export const useNotificationsCount = () => {

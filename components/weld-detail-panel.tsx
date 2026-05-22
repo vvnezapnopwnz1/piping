@@ -24,6 +24,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { WeldJoint, WeldStatus } from "@/lib/weld-data";
 import { validateWelder } from "@/lib/welder-qualifications";
+import { useActiveWelderQualifications } from "@/store/admin-store";
 
 interface WeldDetailPanelProps {
   joint: WeldJoint | null;
@@ -124,6 +125,7 @@ export function WeldDetailPanel({
 
   const allWelds = useWeldsStore((s) => s.welds);
   const batches = useBatchesStore((s) => s.batches);
+  const activeWelders = useActiveWelderQualifications();
 
   const weldsInNonClosedBatches = useMemo(() => {
     const ids = new Set<string>();
@@ -199,6 +201,7 @@ export function WeldDetailPanel({
     form.wpsNo,
     form.materialType,
     form.diaInch,
+    activeWelders,
   );
 
   const update = (field: keyof WeldJoint, value: string | boolean) => {

@@ -179,15 +179,14 @@ export function validateWelder(
   welderCode: string,
   wps: string,
   materialType: string,
-  diaInch: string
+  diaInch: string,
+  welders: WelderQualification[] = WELDER_QUALIFICATIONS
 ): { isValid: true } | { isValid: false; message: string; reason: string } {
   if (!welderCode || !wps || !materialType) {
     return { isValid: true } // Don't validate incomplete forms
   }
 
-  const welder = WELDER_QUALIFICATIONS.find(
-    (w) => w.welderCode === welderCode
-  )
+  const welder = welders.find((w) => w.welderCode === welderCode)
 
   if (!welder) {
     return {

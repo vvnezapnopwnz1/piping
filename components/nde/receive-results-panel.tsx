@@ -40,6 +40,12 @@ import {
   type NdeWeldResult,
 } from "@/store";
 import { REWORK_CODES } from "@/lib/engineering-references";
+import {
+  formatNdeCleanNotificationDescription,
+  formatNdeCleanNotificationTitle,
+  formatNdeRejectNotificationDescription,
+  formatNdeRejectNotificationTitle,
+} from "@/lib/nde-notifications";
 import { cn } from "@/lib/utils";
 
 interface ReceiveResultsPanelProps {
@@ -155,21 +161,34 @@ export function ReceiveResultsPanel({
     }
 
     if (rejectedCount > 0) {
+      const rejectTitle = formatNdeRejectNotificationTitle(
+        batch.batchNo,
+        rejectedCount,
+        rejectedWelds,
+      );
       pushNotification({
         severity: "warning",
         category: "nde_result",
-        title: `${batch.batchNo}: ${rejectedCount} weld${rejectedCount === 1 ? "" : "s"} rejected — rework cascaded to fabrication`,
-        description: rejectedWelds
-          .map((w) => `${w.jointNo} (${w.spoolNo})`)
-          .join(", "),
+        title: rejectTitle,
+        description: formatNdeRejectNotificationDescription(rejectedWelds),
         href: "/nde",
         actorLabel: batch.subcontractor,
       });
-      toast.success(
-        `${batch.batchNo}: ${rejectedCount} rejected — rework cascaded`,
-      );
+      toast.warning(rejectTitle);
     } else {
-      toast.success(`${batch.batchNo}: all welds accepted`);
+      const cleanTitle = formatNdeCleanNotificationTitle(batch.batchNo);
+      pushNotification({
+        severity: "success",
+        category: "nde_result",
+        title: cleanTitle,
+        description: formatNdeCleanNotificationDescription(
+          welds.length,
+          batch.subcontractor,
+        ),
+        href: "/nde",
+        actorLabel: batch.subcontractor,
+      });
+      toast.success(cleanTitle);
     }
 
     setIsSubmitting(false);

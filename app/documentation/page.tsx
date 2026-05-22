@@ -315,10 +315,13 @@ const mergedTracks = [
   ["N1", "Create Batch wizard"],
   ["N2", "Per-weld Receive Results"],
   ["N3", "Source filter (Shop/Field) on NDE batches"],
+  [
+    "N4",
+    "Enriched NDE notifications — reject: testpack RFT blocked; clean: closed clean",
+  ],
 ];
 
 const nextTracks = [
-  ["N4", "Enhanced NDE notifications"],
   ["B3", "Systems/Subsystems + Material Class admin tabs"],
   ["Track H", "Testpack Builder (§15) — assemble ISOs into test packs"],
   ["§19.2", "Flange torquing progress — assign jointer + record torque pass"],
