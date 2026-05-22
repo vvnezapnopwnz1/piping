@@ -11,10 +11,12 @@ import { WpsTab } from "@/components/admin/wps-tab";
 import { NdeMatrixTab } from "@/components/admin/nde-matrix-tab";
 import { ReworkCodesTab } from "@/components/admin/rework-codes-tab";
 import { JointCategoriesTab } from "@/components/admin/joint-categories-tab";
+import { PdsAreaTab } from "@/components/admin/pds-area-tab";
 
 const TAB_VALUES = [
   "teams",
   "subcontractors",
+  "pds-areas",
   "welder-qualifications",
   "wps",
   "nde-matrix",
@@ -56,6 +58,7 @@ export function AdminTabs() {
       <TabsList className="overflow-x-auto whitespace-nowrap w-full">
         <TabsTrigger value="teams">Teams</TabsTrigger>
         <TabsTrigger value="subcontractors">Subcontractors</TabsTrigger>
+        <TabsTrigger value="pds-areas">PDS Areas</TabsTrigger>
         <TabsTrigger value="welder-qualifications">
           Welder Qualifications
         </TabsTrigger>
@@ -69,6 +72,9 @@ export function AdminTabs() {
       </TabsContent>
       <TabsContent value="subcontractors" className="mt-4">
         <SubcontractorsTab />
+      </TabsContent>
+      <TabsContent value="pds-areas" className="mt-4">
+        <PdsAreaTab />
       </TabsContent>
       <TabsContent value="welder-qualifications" className="mt-4">
         <WelderQualificationsTab />

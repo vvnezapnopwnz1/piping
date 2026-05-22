@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { AdminTabs } from "../admin-tabs";
+import { PipingMaterialListTab } from "@/components/admin/piping-material-list-tab";
 import {
   AdminPageHeader,
   ReferentialGroup,
@@ -87,12 +88,13 @@ export default function ProjectReferentialPage() {
             <AdminTabs />
           </Suspense>
         </TabsContent>
-        <TabsContent value="spooling" className="mt-4">
+        <TabsContent value="spooling" className="mt-4 space-y-4">
           <ReferentialGroup
             title="Spooling"
             description="Spooling and material master data."
             items={groups.spooling}
           />
+          <PipingMaterialListTab />
         </TabsContent>
         <TabsContent value="fabrication" className="mt-4">
           <ReferentialGroup

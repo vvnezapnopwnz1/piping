@@ -1,10 +1,18 @@
 "use client"
 
-import { JOINT_CATEGORIES } from "@/lib/engineering-references"
+import { useState } from "react"
+import { Pencil } from "lucide-react"
+
+import { EditJointCategoryDialog } from "@/components/admin/edit-joint-category-dialog"
+import { useAdminStore, type JointCategoryRecord } from "@/store/admin-store"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-const CODE_STYLES: Record<string, { bg: string; text: string; border: string; pillBg: string }> = {
+const CODE_STYLES: Record<
+  string,
+  { bg: string; text: string; border: string; pillBg: string }
+> = {
   X: {
     bg: "bg-red-50",
     text: "text-red-700",
@@ -26,25 +34,27 @@ const CODE_STYLES: Record<string, { bg: string; text: string; border: string; pi
 }
 
 export function JointCategoriesTab() {
+  const jointCategories = useAdminStore((s) => s.jointCategories)
+  const [editing, setEditing] = useState<JointCategoryRecord | null>(null)
+
   return (
     <div className="space-y-4">
-      {/* Header note */}
       <p className="text-sm text-slate-500">
-        Punch item categories — §3.13. These categories determine when an item
-        must be resolved relative to hydrotest.
+        Punch item categories — §3.13. X / Y / Z codes are fixed; edit
+        description and examples per project.
       </p>
 
-      {/* KPI strip */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs">
           <span className="text-slate-500">Categories:</span>
-          <span className="font-semibold text-slate-900">3</span>
+          <span className="font-semibold text-slate-900">
+            {jointCategories.length}
+          </span>
         </div>
       </div>
 
-      {/* Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {JOINT_CATEGORIES.map((cat) => {
+        {jointCategories.map((cat) => {
           const style = CODE_STYLES[cat.code]
           return (
             <div
@@ -55,7 +65,6 @@ export function JointCategoriesTab() {
                 style.border
               )}
             >
-              {/* Big code */}
               <div className="flex items-center justify-between">
                 <span
                   className={cn(
@@ -65,19 +74,25 @@ export function JointCategoriesTab() {
                 >
                   {cat.code}
                 </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 gap-1 text-xs"
+                  onClick={() => setEditing(cat)}
+                >
+                  <Pencil className="h-3 w-3" />
+                  Edit
+                </Button>
               </div>
 
-              {/* Name */}
               <h3 className={cn("text-lg font-semibold", style.text)}>
                 {cat.name}
               </h3>
 
-              {/* Description */}
               <p className="text-sm text-slate-700 leading-relaxed">
                 {cat.description}
               </p>
 
-              {/* Examples */}
               <div>
                 <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
                   Examples
@@ -91,15 +106,15 @@ export function JointCategoriesTab() {
                 </ul>
               </div>
 
-              {/* Resolution required */}
               <div>
                 <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1">
                   Resolution required
                 </p>
-                <p className="text-xs text-slate-700">{cat.resolutionRequired}</p>
+                <p className="text-xs text-slate-700">
+                  {cat.resolutionRequired}
+                </p>
               </div>
 
-              {/* Enforced in */}
               <div>
                 <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
                   Enforced in
@@ -121,12 +136,13 @@ export function JointCategoriesTab() {
         })}
       </div>
 
-      {/* Footer note */}
-      <p className="text-sm text-slate-500 pt-2">
-        In this demo, Category X blocks the Blinding eligibility gate; Category
-        Y appears in Reinstatement Preparation only after testingDoneDate is
-        set; Category Z appears only after preCommDate is set.
-      </p>
+      <EditJointCategoryDialog
+        category={editing}
+        open={!!editing}
+        onOpenChange={(next) => {
+          if (!next) setEditing(null)
+        }}
+      />
     </div>
   )
 }

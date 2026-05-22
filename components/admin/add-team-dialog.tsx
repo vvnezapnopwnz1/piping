@@ -33,9 +33,13 @@ const TEAM_TYPES: TeamType[] = [
   "jointer",
 ]
 
-export function AddTeamDialog() {
+interface AddTeamDialogProps {
+  defaultType?: TeamType
+}
+
+export function AddTeamDialog({ defaultType }: AddTeamDialogProps = {}) {
   const [open, setOpen] = useState(false)
-  const [type, setType] = useState<TeamType | "">("")
+  const [type, setType] = useState<TeamType | "">(defaultType ?? "")
   const [code, setCode] = useState("")
   const [name, setName] = useState("")
   const [codeError, setCodeError] = useState("")
@@ -49,7 +53,7 @@ export function AddTeamDialog() {
   const existingCodes = useMemo(() => new Set(teams.map((t) => t.code)), [teams])
 
   const resetForm = () => {
-    setType("")
+    setType(defaultType ?? "")
     setCode("")
     setName("")
     setCodeError("")
@@ -57,6 +61,7 @@ export function AddTeamDialog() {
 
   const handleOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen)
+    if (nextOpen && defaultType) setType(defaultType)
     if (!nextOpen) resetForm()
   }
 
@@ -116,28 +121,29 @@ export function AddTeamDialog() {
         </DialogHeader>
 
         <div className="grid gap-4 py-2">
-          {/* Type */}
-          <div className="grid gap-1.5">
-            <Label htmlFor="team-type">Type</Label>
-            <Select
-              value={type}
-              onValueChange={(v) => {
-                setType(v as TeamType)
-                if (v === "jointer") setName("")
-              }}
-            >
-              <SelectTrigger id="team-type" className="w-full">
-                <SelectValue placeholder="Select team type" />
-              </SelectTrigger>
-              <SelectContent>
-                {TEAM_TYPES.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {getTeamTypeLabel(t)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {!defaultType && (
+            <div className="grid gap-1.5">
+              <Label htmlFor="team-type">Type</Label>
+              <Select
+                value={type}
+                onValueChange={(v) => {
+                  setType(v as TeamType)
+                  if (v === "jointer") setName("")
+                }}
+              >
+                <SelectTrigger id="team-type" className="w-full">
+                  <SelectValue placeholder="Select team type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TEAM_TYPES.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {getTeamTypeLabel(t)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Code */}
           <div className="grid gap-1.5">

@@ -1,234 +1,210 @@
-"use client";
+"use client"
 
-import { useState, useMemo } from "react";
-import { MoreHorizontal, Search } from "lucide-react";
+import { useMemo, useState } from "react"
+import { ChevronDown, MoreHorizontal } from "lucide-react"
+import { toast } from "sonner"
 
 import {
   useAdminStore,
   type TeamType,
   getTeamTypeLabel,
-} from "@/store/admin-store";
-import { AddTeamDialog } from "./add-team-dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+} from "@/store/admin-store"
+import { AddTeamDialog } from "./add-team-dialog"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { cn, formatDate } from "@/lib/utils";
+} from "@/components/ui/dropdown-menu"
+import { cn, formatDate } from "@/lib/utils"
 
-const TYPE_OPTIONS: (TeamType | "all")[] = [
-  "all",
-  "lineCheck",
-  "blinding",
-  "finishing",
-  "reinstatement",
-  "jointer",
-];
-
-const TYPE_LABELS: Record<TeamType | "all", string> = {
-  all: "All",
-  lineCheck: "Line Check",
-  blinding: "Blinding",
-  finishing: "Finishing",
-  reinstatement: "Reinstatement",
-  jointer: "Jointer",
-};
+const TEAM_SECTIONS: { type: TeamType; title: string }[] = [
+  { type: "lineCheck", title: "Line Check Teams" },
+  { type: "blinding", title: "Blinding Teams" },
+  { type: "finishing", title: "Finishing Teams" },
+  { type: "reinstatement", title: "Reinstatement Teams" },
+  { type: "jointer", title: "Jointer List" },
+]
 
 export function TeamsTab() {
-  const teams = useAdminStore((s) => s.teams);
-  const toggleTeamActive = useAdminStore((s) => s.toggleTeamActive);
+  const teams = useAdminStore((s) => s.teams)
+  const toggleTeamActive = useAdminStore((s) => s.toggleTeamActive)
 
-  const [filterType, setFilterType] = useState<TeamType | "all">("all");
-  const [search, setSearch] = useState("");
+  const [openSections, setOpenSections] = useState<Record<TeamType, boolean>>({
+    lineCheck: true,
+    blinding: true,
+    finishing: true,
+    reinstatement: true,
+    jointer: true,
+  })
 
-  const activeCounts = useMemo(() => {
-    const counts: Record<TeamType, number> = {
-      lineCheck: 0,
-      blinding: 0,
-      finishing: 0,
-      reinstatement: 0,
-      jointer: 0,
-    };
-    teams.forEach((t) => {
-      if (t.active) counts[t.type]++;
-    });
-    return counts;
-  }, [teams]);
+  const kpis = useMemo(() => {
+    const total = teams.length
+    const active = teams.filter((t) => t.active).length
+    return { total, active }
+  }, [teams])
 
-  const filtered = useMemo(() => {
-    let rows = [...teams];
-    if (filterType !== "all") {
-      rows = rows.filter((t) => t.type === filterType);
-    }
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      rows = rows.filter(
-        (t) =>
-          t.code.toLowerCase().includes(q) || t.name.toLowerCase().includes(q),
-      );
-    }
-    return rows;
-  }, [teams, filterType, search]);
+  const handleToggle = async (code: string, name: string) => {
+    await new Promise((r) => setTimeout(r, 400 + Math.random() * 200))
+    toggleTeamActive(code)
+    toast.success(`${name} updated`)
+  }
 
   return (
     <div className="space-y-4">
-      {/* KPI strip */}
+      <p className="text-sm text-slate-500">
+        Testpack team references — line check, blinding, finishing,
+        reinstatement, and jointer lists.
+      </p>
+
       <div className="flex flex-wrap items-center gap-3">
-        {(
-          [
-            "lineCheck",
-            "blinding",
-            "finishing",
-            "reinstatement",
-            "jointer",
-          ] as TeamType[]
-        ).map((type) => (
-          <div
-            key={type}
-            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs"
-          >
-            <span className="text-slate-500">{getTeamTypeLabel(type)}:</span>
-            <span className="font-semibold text-slate-900">
-              {activeCounts[type]}
-            </span>
-          </div>
-        ))}
+        <div className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs">
+          <span className="text-slate-500">Total Members:</span>
+          <span className="font-semibold text-slate-900">{kpis.total}</span>
+        </div>
+        <div className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs">
+          <span className="text-slate-500">Active:</span>
+          <span className="font-semibold text-emerald-600">{kpis.active}</span>
+        </div>
       </div>
 
-      {/* Filter row */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-1">
-          {TYPE_OPTIONS.map((type) => (
-            <Button
+      <div className="space-y-3">
+        {TEAM_SECTIONS.map(({ type, title }) => {
+          const sectionTeams = teams.filter((t) => t.type === type)
+          const isOpen = openSections[type]
+
+          return (
+            <Collapsible
               key={type}
-              variant={filterType === type ? "default" : "outline"}
-              size="sm"
-              onClick={() => setFilterType(type)}
-              className={cn(
-                "h-7 text-xs",
-                filterType === type
-                  ? "bg-sky-600 hover:bg-sky-700 text-white"
-                  : "text-slate-600",
-              )}
+              open={isOpen}
+              onOpenChange={(next) =>
+                setOpenSections((s) => ({ ...s, [type]: next }))
+              }
+              className="rounded-xl border border-slate-200 bg-white overflow-hidden"
             >
-              {TYPE_LABELS[type]}
-            </Button>
-          ))}
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search code or name…"
-              className="h-8 w-56 pl-8 text-xs"
-            />
-          </div>
-          <AddTeamDialog />
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-        <div className="overflow-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 sticky top-0 z-10">
-              <tr className="border-b border-slate-200">
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
-                  Code
-                </th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
-                  Name
-                </th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
-                  Type
-                </th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
-                  Status
-                </th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
-                  Created
-                </th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap w-10">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-5 py-8 text-center text-sm text-slate-500"
+              <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-200">
+                <CollapsibleTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 text-sm font-semibold text-slate-800"
                   >
-                    No teams match the current filters.
-                  </td>
-                </tr>
-              )}
-              {filtered.map((team, i) => (
-                <tr
-                  key={team.code}
-                  className={cn(
-                    "border-b border-slate-100 transition-colors",
-                    i % 2 === 0 ? "bg-white" : "bg-slate-50/50",
-                  )}
-                >
-                  <td className="px-3 py-2 whitespace-nowrap font-mono text-xs text-slate-700">
-                    {team.code}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-700">
-                    {team.name}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-600">
-                    {getTeamTypeLabel(team.type)}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap">
-                    {team.active ? (
-                      <Badge
-                        variant="outline"
-                        className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs"
-                      >
-                        Active
-                      </Badge>
-                    ) : (
-                      <Badge
-                        variant="outline"
-                        className="bg-slate-100 text-slate-600 border-slate-300 text-xs"
-                      >
-                        Inactive
-                      </Badge>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-500">
-                    {formatDate(team.createdAt)}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
-                          <MoreHorizontal className="h-4 w-4 text-slate-500" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => toggleTeamActive(team.code)}
+                    <ChevronDown
+                      className={cn(
+                        "h-4 w-4 text-slate-500 transition-transform",
+                        isOpen && "rotate-180"
+                      )}
+                    />
+                    {title}
+                    <span className="text-xs font-normal text-slate-500">
+                      ({sectionTeams.filter((t) => t.active).length} active)
+                    </span>
+                  </button>
+                </CollapsibleTrigger>
+                <AddTeamDialog defaultType={type} />
+              </div>
+              <CollapsibleContent>
+                <div className="overflow-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50/80">
+                      <tr className="border-b border-slate-100">
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600 uppercase">
+                          Code
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600 uppercase">
+                          Name
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600 uppercase">
+                          Status
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600 uppercase">
+                          Created
+                        </th>
+                        <th className="px-3 py-2 w-10" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sectionTeams.length === 0 && (
+                        <tr>
+                          <td
+                            colSpan={5}
+                            className="px-5 py-6 text-center text-sm text-slate-500"
+                          >
+                            No members in {getTeamTypeLabel(type)}.
+                          </td>
+                        </tr>
+                      )}
+                      {sectionTeams.map((team, i) => (
+                        <tr
+                          key={team.code}
+                          className={cn(
+                            "border-b border-slate-100",
+                            i % 2 === 0 ? "bg-white" : "bg-slate-50/30",
+                            !team.active && "opacity-60"
+                          )}
                         >
-                          {team.active ? "Deactivate" : "Reactivate"}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                          <td className="px-3 py-2 font-mono text-xs">
+                            {team.code}
+                          </td>
+                          <td className="px-3 py-2 text-xs">{team.name}</td>
+                          <td className="px-3 py-2">
+                            {team.active ? (
+                              <Badge
+                                variant="outline"
+                                className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs"
+                              >
+                                Active
+                              </Badge>
+                            ) : (
+                              <Badge
+                                variant="outline"
+                                className="bg-slate-100 text-slate-600 border-slate-300 text-xs"
+                              >
+                                Inactive
+                              </Badge>
+                            )}
+                          </td>
+                          <td className="px-3 py-2 text-xs text-slate-500">
+                            {formatDate(team.createdAt)}
+                          </td>
+                          <td className="px-3 py-2">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                >
+                                  <MoreHorizontal className="h-4 w-4 text-slate-500" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleToggle(team.code, team.name)
+                                  }
+                                >
+                                  {team.active ? "Deactivate" : "Reactivate"}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )
+        })}
       </div>
     </div>
-  );
+  )
 }

@@ -98,7 +98,7 @@ app/
     explorer/page.tsx                   # ✅ Testpack Explorer (3 levels × 4 tabs)
   flange/page.tsx                       # ✅ Flange Browse + Detail Panel
   admin/page.tsx                        # ✅ Project Referential shell (B1+B2)
-  admin/admin-tabs.tsx                  # ✅ 7-tab admin shell with ?tab= URL sync
+  admin/admin-tabs.tsx                  # ✅ 8-tab admin shell with ?tab= URL sync
   spooling/page.tsx                     # ⚠ placeholder (header only)
   reports/page.tsx                      # ⚠ placeholder (header only)
   documentation/page.tsx                # ✅ 4-tab devlog (Overview / What works / Modules / Tracks & Stories)
@@ -132,15 +132,20 @@ components/
     to-site-detail-panel.tsx            # W-24 receipt Sheet (I2)
   erection-dashboard.tsx                # ✅ live KPIs + clickable funnel (I1 + I2)
   admin/
-    teams-tab.tsx
+    teams-tab.tsx                       # ✅ 5 collapsible team sections (B9)
     subcontractors-tab.tsx
+    pds-area-tab.tsx                    # ✅ PDS × subcontractor matrix (B4)
     welder-qualifications-tab.tsx
-    wps-tab.tsx
+    wps-tab.tsx                         # ✅ store-backed WPS CRUD (B5)
     nde-matrix-tab.tsx
-    rework-codes-tab.tsx
-    joint-categories-tab.tsx
+    rework-codes-tab.tsx                # ✅ store-backed CRUD (B8)
+    joint-categories-tab.tsx            # ✅ edit description/examples (B8)
+    piping-material-list-tab.tsx        # ✅ heat registry (B7)
     add-team-dialog.tsx
     add-subcontractor-dialog.tsx
+    add-wps-dialog.tsx
+    add-rework-code-dialog.tsx
+    edit-joint-category-dialog.tsx
   spool-tracking-dashboard.tsx
   testpack/
     pressure-test-homepage.tsx          # 480 LOC
@@ -171,7 +176,7 @@ store/                                  # Zustand stores
   notifications-store.ts
   demo-store.ts                         # resetAll() cascades to every store
   testpack-store.ts                     # testpack readiness + line check + item-clearance + blinding + testing + reinstatement (Track A)
-  admin-store.ts                        # teams + subcontractors (B1)
+  admin-store.ts                        # Phase 0 complete — persist v3 (B1–B9 slices)
   erection-store.ts                     # field welds (E2.1) — persisted, mirrors welds-store shape
   to-site-store.ts                      # site receipt confirmation (I2) — persisted
   paint-store.ts                          # paint dispatch & sign-off (G4)
@@ -248,13 +253,12 @@ with a unique localStorage key, exports a main hook and a KPI hook.
 - After N2 merge: `receiveResults` is per-weld (Accepted / Rejected + RW-NNN code from `REWORK_CODES`); the panel that calls it also cascades to welds-store on Rejected
 - Persist key: `pipeqc-batches`
 
-### `admin-store.ts` (B1)
+### `admin-store.ts` (Phase 0 — B1–B9)
 
-- Teams + subcontractors with `addTeam`, `addSubcontractor`, `toggleSubcontractorActive`
-- Hooks: `useTeams()`, `useSubcontractors()`, plus filter helpers
-- Track A team-pickers (Line Check / Item Clearance / Blinding / Reinstatement) read from this store
-- N1 Create Batch wizard reads subcontractors from here
-- Persist key: `pipeqc-admin`
+- Slices: `teams`, `subcontractors`, `projectDefinition`, `systemReferentials`, `welderQualifications`, `ndeMatrix`, `wpsList`, `pdsAreas`, `pipingMaterialList`, `reworkCodes`, `jointCategories`
+- WPS: `addWps`, `updateWps`, `supersededWps` · PDS: `addPdsArea`, `assignPdsArea`, `togglePdsAreaActive` · Heat: `addHeatRecord`, `toggleHeatRecordActive` · Rework: full CRUD · Joint categories: edit-only `updateJointCategory`
+- Hooks: `useTeams()`, `useSubcontractors()`, `useActiveWelderQualifications()`, `useActivePipingMaterialList()`
+- Persist key: `pipeqc-admin`, **version 3** (migrate seeds v3 slices for older localStorage)
 
 ### `erection-store.ts` (E2.1)
 

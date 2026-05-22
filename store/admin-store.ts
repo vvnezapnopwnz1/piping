@@ -17,8 +17,14 @@ import {
 } from "@/lib/welder-qualifications"
 import {
   NDE_MATRIX,
+  WPS_LIST,
+  REWORK_CODES,
+  JOINT_CATEGORIES,
   type NDEMatrixRecord,
+  type WPSRecord,
 } from "@/lib/engineering-references"
+
+export type { WPSRecord }
 
 export type TeamType = "lineCheck" | "blinding" | "finishing" | "reinstatement" | "jointer"
 
@@ -78,6 +84,49 @@ export interface WelderQualification extends LibWelderQualification {
 }
 
 export type NDEMatrixRule = NDEMatrixRecord
+
+export interface PdsArea {
+  code: string
+  name: string
+  assignedSubCode: string | null
+  active: boolean
+  createdAt: string
+}
+
+export interface HeatRecord {
+  heatNo: string
+  material: string
+  grade: string
+  millCertRef: string
+  supplier: string
+  active: boolean
+  createdAt: string
+}
+
+export interface ReworkCodeRecord {
+  code: string
+  shortName: string
+  description: string
+  category:
+    | "Surface defect"
+    | "Internal defect"
+    | "Geometry"
+    | "Material"
+    | "Procedure"
+  severity: "Minor" | "Major" | "Critical"
+  defaultAction: string
+  active: boolean
+  createdAt: string
+}
+
+export interface JointCategoryRecord {
+  code: "X" | "Y" | "Z"
+  name: string
+  description: string
+  examples: string[]
+  resolutionRequired: string
+  enforcedIn: string[]
+}
 
 const ALPHA_NAMES = ["Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel"]
 
@@ -233,6 +282,99 @@ function seedNdeMatrix(): NDEMatrixRule[] {
   return NDE_MATRIX.map((r) => ({ ...r }))
 }
 
+function seedWpsList(): WPSRecord[] {
+  return WPS_LIST.map((w) => ({ ...w }))
+}
+
+function seedPdsAreas(): PdsArea[] {
+  const now = new Date().toISOString()
+  const areas: Omit<PdsArea, "createdAt">[] = [
+    { code: "PR-01", name: "Process Area 01", assignedSubCode: "SUB-001", active: true },
+    { code: "CA-02", name: "Catalyst Area 02", assignedSubCode: "SUB-001", active: true },
+    { code: "RA-01", name: "Reactor Area 01", assignedSubCode: "SUB-002", active: true },
+    { code: "VS-01", name: "Vessel Area 01", assignedSubCode: "SUB-002", active: true },
+    { code: "UB-03", name: "Utility Block 03", assignedSubCode: null, active: true },
+    { code: "HX-02", name: "Heat Exchanger Area 02", assignedSubCode: null, active: true },
+  ]
+  return areas.map((a) => ({ ...a, createdAt: now }))
+}
+
+function seedPipingMaterialList(): HeatRecord[] {
+  const now = new Date().toISOString()
+  const rows: Omit<HeatRecord, "active" | "createdAt">[] = [
+    {
+      heatNo: "HT-2024-001",
+      material: "CS-A106B",
+      grade: "Grade B",
+      millCertRef: "CERT-2024-0012",
+      supplier: "Gulf Steel Trading",
+    },
+    {
+      heatNo: "HT-2024-002",
+      material: "CS-A106B",
+      grade: "Grade B",
+      millCertRef: "CERT-2024-0018",
+      supplier: "Arabian Pipe Mills",
+    },
+    {
+      heatNo: "HT-2024-003",
+      material: "SS-316L",
+      grade: "316L",
+      millCertRef: "CERT-2024-0024",
+      supplier: "Stainless Gulf LLC",
+    },
+    {
+      heatNo: "HT-2024-004",
+      material: "SS-316L",
+      grade: "316L",
+      millCertRef: "CERT-2024-0031",
+      supplier: "Euro Alloy Supply",
+    },
+    {
+      heatNo: "HT-2024-005",
+      material: "CS-P91",
+      grade: "P91",
+      millCertRef: "CERT-2024-0040",
+      supplier: "HighTemp Metals Co.",
+    },
+    {
+      heatNo: "HT-2024-006",
+      material: "LTCS-A333",
+      grade: "Gr. 6",
+      millCertRef: "CERT-2024-0047",
+      supplier: "Cryo Pipe Industries",
+    },
+    {
+      heatNo: "HT-2024-007",
+      material: "CS-A106B",
+      grade: "Grade B",
+      millCertRef: "CERT-2024-0052",
+      supplier: "Gulf Steel Trading",
+    },
+    {
+      heatNo: "HT-2024-008",
+      material: "LTCS-A333",
+      grade: "Gr. 6",
+      millCertRef: "CERT-2024-0059",
+      supplier: "Northern Alloy Works",
+    },
+  ]
+  return rows.map((r) => ({ ...r, active: true, createdAt: now }))
+}
+
+function seedReworkCodes(): ReworkCodeRecord[] {
+  const now = new Date().toISOString()
+  return REWORK_CODES.map((r) => ({
+    ...r,
+    active: true,
+    createdAt: now,
+  }))
+}
+
+function seedJointCategories(): JointCategoryRecord[] {
+  return JOINT_CATEGORIES.map((c) => ({ ...c }))
+}
+
 function nextNdeMatrixId(rules: NDEMatrixRule[]): string {
   const usedNumbers = rules
     .map((r) => {
@@ -251,6 +393,11 @@ interface AdminState {
   systemReferentials: SystemReferentials
   welderQualifications: WelderQualification[]
   ndeMatrix: NDEMatrixRule[]
+  wpsList: WPSRecord[]
+  pdsAreas: PdsArea[]
+  pipingMaterialList: HeatRecord[]
+  reworkCodes: ReworkCodeRecord[]
+  jointCategories: JointCategoryRecord[]
 
   getTeamsByType: (type: TeamType) => Team[]
   getActiveTeamsByType: (type: TeamType) => Team[]
@@ -278,6 +425,37 @@ interface AdminState {
   updateNdeRule: (id: string, patch: Omit<NDEMatrixRule, "id">) => void
   deleteNdeRule: (id: string) => void
 
+  addWps: (
+    payload: Omit<WPSRecord, "approvedDate" | "status"> & {
+      approvedDate?: string
+    }
+  ) => void
+  updateWps: (code: string, patch: Partial<Omit<WPSRecord, "code">>) => void
+  supersededWps: (code: string) => void
+
+  addPdsArea: (payload: { code: string; name: string }) => void
+  assignPdsArea: (areaCode: string, subCode: string | null) => void
+  togglePdsAreaActive: (areaCode: string) => void
+
+  addHeatRecord: (payload: Omit<HeatRecord, "active" | "createdAt">) => void
+  toggleHeatRecordActive: (heatNo: string) => void
+
+  addReworkCode: (
+    payload: Omit<ReworkCodeRecord, "active" | "createdAt">
+  ) => void
+  updateReworkCode: (
+    code: string,
+    patch: Partial<
+      Omit<ReworkCodeRecord, "code" | "active" | "createdAt">
+    >
+  ) => void
+  toggleReworkCodeActive: (code: string) => void
+
+  updateJointCategory: (
+    code: "X" | "Y" | "Z",
+    patch: { description?: string; examples?: string[] }
+  ) => void
+
   resetAdmin: () => void
 }
 
@@ -290,6 +468,11 @@ export const useAdminStore = create<AdminState>()(
       systemReferentials: SEED_SYSTEM_REFERENTIALS,
       welderQualifications: seedWelderQualifications(),
       ndeMatrix: seedNdeMatrix(),
+      wpsList: seedWpsList(),
+      pdsAreas: seedPdsAreas(),
+      pipingMaterialList: seedPipingMaterialList(),
+      reworkCodes: seedReworkCodes(),
+      jointCategories: seedJointCategories(),
 
       getTeamsByType: (type: TeamType) => {
         return get().teams.filter((t) => t.type === type)
@@ -419,6 +602,110 @@ export const useAdminStore = create<AdminState>()(
         }))
       },
 
+      addWps: (payload) => {
+        const record: WPSRecord = {
+          ...payload,
+          approvedDate:
+            payload.approvedDate ?? new Date().toISOString().slice(0, 10),
+          status: "Active",
+        }
+        set((s) => ({ wpsList: [...s.wpsList, record] }))
+      },
+
+      updateWps: (code, patch) => {
+        set((s) => ({
+          wpsList: s.wpsList.map((w) =>
+            w.code === code ? { ...w, ...patch } : w
+          ),
+        }))
+      },
+
+      supersededWps: (code) => {
+        set((s) => ({
+          wpsList: s.wpsList.map((w) =>
+            w.code === code ? { ...w, status: "Superseded" as const } : w
+          ),
+        }))
+      },
+
+      addPdsArea: (payload) => {
+        const area: PdsArea = {
+          ...payload,
+          assignedSubCode: null,
+          active: true,
+          createdAt: new Date().toISOString(),
+        }
+        set((s) => ({ pdsAreas: [...s.pdsAreas, area] }))
+      },
+
+      assignPdsArea: (areaCode, subCode) => {
+        set((s) => ({
+          pdsAreas: s.pdsAreas.map((a) =>
+            a.code === areaCode ? { ...a, assignedSubCode: subCode } : a
+          ),
+        }))
+      },
+
+      togglePdsAreaActive: (areaCode) => {
+        set((s) => ({
+          pdsAreas: s.pdsAreas.map((a) =>
+            a.code === areaCode ? { ...a, active: !a.active } : a
+          ),
+        }))
+      },
+
+      addHeatRecord: (payload) => {
+        const record: HeatRecord = {
+          ...payload,
+          active: true,
+          createdAt: new Date().toISOString(),
+        }
+        set((s) => ({
+          pipingMaterialList: [...s.pipingMaterialList, record],
+        }))
+      },
+
+      toggleHeatRecordActive: (heatNo) => {
+        set((s) => ({
+          pipingMaterialList: s.pipingMaterialList.map((h) =>
+            h.heatNo === heatNo ? { ...h, active: !h.active } : h
+          ),
+        }))
+      },
+
+      addReworkCode: (payload) => {
+        const record: ReworkCodeRecord = {
+          ...payload,
+          active: true,
+          createdAt: new Date().toISOString(),
+        }
+        set((s) => ({ reworkCodes: [...s.reworkCodes, record] }))
+      },
+
+      updateReworkCode: (code, patch) => {
+        set((s) => ({
+          reworkCodes: s.reworkCodes.map((r) =>
+            r.code === code ? { ...r, ...patch } : r
+          ),
+        }))
+      },
+
+      toggleReworkCodeActive: (code) => {
+        set((s) => ({
+          reworkCodes: s.reworkCodes.map((r) =>
+            r.code === code ? { ...r, active: !r.active } : r
+          ),
+        }))
+      },
+
+      updateJointCategory: (code, patch) => {
+        set((s) => ({
+          jointCategories: s.jointCategories.map((c) =>
+            c.code === code ? { ...c, ...patch } : c
+          ),
+        }))
+      },
+
       resetAdmin: () => {
         set({
           teams: seedTeams(),
@@ -427,16 +714,21 @@ export const useAdminStore = create<AdminState>()(
           systemReferentials: SEED_SYSTEM_REFERENTIALS,
           welderQualifications: seedWelderQualifications(),
           ndeMatrix: seedNdeMatrix(),
+          wpsList: seedWpsList(),
+          pdsAreas: seedPdsAreas(),
+          pipingMaterialList: seedPipingMaterialList(),
+          reworkCodes: seedReworkCodes(),
+          jointCategories: seedJointCategories(),
         })
       },
     }),
     {
       name: "pipeqc-admin",
-      version: 2,
+      version: 3,
       migrate: (persistedState, version) => {
-        const state = (persistedState ?? {}) as Partial<AdminState>
+        let state = (persistedState ?? {}) as Partial<AdminState>
         if (version < 2) {
-          return {
+          state = {
             ...state,
             projectDefinition:
               state.projectDefinition ?? SEED_PROJECT_DEFINITION,
@@ -445,7 +737,18 @@ export const useAdminStore = create<AdminState>()(
             welderQualifications:
               state.welderQualifications ?? seedWelderQualifications(),
             ndeMatrix: state.ndeMatrix ?? seedNdeMatrix(),
-          } as AdminState
+          }
+        }
+        if (version < 3) {
+          state = {
+            ...state,
+            wpsList: state.wpsList ?? seedWpsList(),
+            pdsAreas: state.pdsAreas ?? seedPdsAreas(),
+            pipingMaterialList:
+              state.pipingMaterialList ?? seedPipingMaterialList(),
+            reworkCodes: state.reworkCodes ?? seedReworkCodes(),
+            jointCategories: state.jointCategories ?? seedJointCategories(),
+          }
         }
         return state as AdminState
       },
@@ -470,4 +773,9 @@ export function useSubcontractors() {
 export function useActiveWelderQualifications(): WelderQualification[] {
   const welders = useAdminStore((s) => s.welderQualifications)
   return useMemo(() => welders.filter((w) => w.active), [welders])
+}
+
+export function useActivePipingMaterialList(): HeatRecord[] {
+  const list = useAdminStore((s) => s.pipingMaterialList)
+  return useMemo(() => list.filter((h) => h.active), [list])
 }
