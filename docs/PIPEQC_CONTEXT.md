@@ -19,6 +19,27 @@ The Easy Piping User Manual (TechnipFMC, 156 pages) is the source of truth
 for all domain logic. When in doubt about a workflow, terminology, or UI
 expectation, refer to the manual — not to your training data.
 
+Supplementary domain research (presentations, role matrices) lives under
+`docs/research/` and `docs/role_matrix/` — use when the manual is silent
+on operational context, competitive framing, or per-role capability scope.
+
+---
+
+## Domain research & planning (2026-05-19 — 2026-05-22)
+
+| Artifact | Path | What it captures |
+| -------- | ---- | ---------------- |
+| Presentation findings | `docs/research/presentation_findings.md` | All **10** Easy Piping sales/training decks read sequentially (#1 PSMS overview → #10 Painting). Cross-cutting findings CC-1…CC-23 (RFT formula, punch X/Y/Z gates, Generate Request pattern, role hierarchy, SpoolGen/Marian data flow, competitive positioning). Module-specific gaps per deck. |
+| Role matrices | `docs/role_matrix/*.md` | Per-role function inventories with ✅ live / ⚠ partial / 📋 planned / ❌ missing tags: `qc_engineer`, `nde_inspector`, `project_manager`, `spooling_team`, `subcontractor`, `system_admin` (+ approach notes in `chat_gpt_on_role_matrix_aproach.md`). Ground truth for **what to build next** — triage consolidated in each matrix's gap table. |
+| Roadmap v3 | `docs/roadmap_v3.md` | Module-by-module delivery order (Phase 0 Admin → … → Phase 7 polish). Replaces capability-first v2 sequencing. **Current focus after Phase 0:** Phase 1 Spooling. |
+| Archived phase prompts | `docs/prompts/archive/` | Completed track prompts (A*, G*, I*, N*, etc.) moved out of `docs/prompts/` root during docs housekeeping. |
+
+**Recent merge milestones (not yet in older agent context):**
+
+- **G6 / I10** (2026-05-20) — Fabrication + Erection sidebar trees realigned to manual §7 / §12 peer sections; recursive `sidebar-nav.tsx`.
+- **I8 + I9a/b/c** (2026-05-19) — Field flange bolt progress (`/erection/flange-progress`); I4 Confirm gated on all flange bolts Verified; RFT eligibility includes `flangeRollup.allVerified`; NC chip on Field MC; expanded flange-bolt seed coverage.
+- **Phase 0 Admin** (2026-05-22) — All 9 roadmap slices merged: project definition, system referential, WPS / welder qual / NDE matrix / PDS areas / heat registry / rework codes / joint categories / teams CRUD in `admin-store` v3.
+
 ---
 
 ## Tech stack
@@ -60,7 +81,7 @@ Color tokens (Tailwind classes):
 
 ---
 
-## File structure — current state (verified 2026-05-16)
+## File structure — current state (verified 2026-05-22)
 
 ```
 app/
@@ -78,6 +99,12 @@ app/
     dashboard/page.tsx                  # Erection Dashboard ✅
     to-site/page.tsx                    # To Site receipt confirmation (I2) ✅
     weld-progress/page.tsx              # Site Weld Progress ✅
+    flange-progress/page.tsx            # ✅ Field Flange Bolt Progress (I8)
+    material-check/page.tsx             # Field Material Check (I7)
+    erected/page.tsx                    # I3
+    welded-bolted/page.tsx              # I4 (I9b flange gate)
+    supported/page.tsx                  # I5
+    rft/page.tsx                        # I6
   testpack/
     page.tsx                            # ⚠ shell only — needs overview/landing
     pressure-test/page.tsx              # ✅ Pressure Test Homepage (sum view)
@@ -97,9 +124,17 @@ app/
     pressure-test/reinstatement/progress/page.tsx     # Reinstatement Progress (A6)
     explorer/page.tsx                   # ✅ Testpack Explorer (3 levels × 4 tabs)
   flange/page.tsx                       # ✅ Flange Browse + Detail Panel
-  admin/page.tsx                        # ✅ Project Referential shell (B1+B2)
-  admin/admin-tabs.tsx                  # ✅ 8-tab admin shell with ?tab= URL sync
-  spooling/page.tsx                     # ⚠ placeholder (header only)
+  admin/page.tsx                        # ✅ Admin overview (5 sub-module cards)
+  admin/project-definition/page.tsx     # ✅ Phase 0.1 — project definition form (store-backed)
+  admin/system-referential/page.tsx     # ✅ Phase 0.7 — 4 system-ref cards + inline add
+  admin/project-referential/page.tsx    # ✅ Phase 0 — <AdminTabs /> + Piping Material List tab
+  admin/access-rights/page.tsx          # ⚠ shell — role/scope UI scaffold
+  admin/import-settings/page.tsx        # ⚠ shell — Excel import templates (Phase 7 defer)
+  admin/admin-tabs.tsx                  # ✅ 8-tab referential CRUD with ?tab= URL sync
+  spooling/page.tsx                     # ✅ IA1 home hub (links to 3 sub-routes)
+  spooling/engineering-transmittals/      # ⚠ placeholder
+  spooling/iso-workflow/                # ⚠ placeholder (+ demo import elsewhere)
+  spooling/spooling-transmittal/          # ⚠ placeholder
   reports/page.tsx                      # ⚠ placeholder (header only)
   documentation/page.tsx                # ✅ 4-tab devlog (Overview / What works / Modules / Tracks & Stories)
   settings/                             # ⚠ placeholder
@@ -130,7 +165,9 @@ components/
     field-weld-detail-panel.tsx         # ✅ store-backed after E2.1
     to-site-view.tsx                    # To Site list (I2)
     to-site-detail-panel.tsx            # W-24 receipt Sheet (I2)
-  erection-dashboard.tsx                # ✅ live KPIs + clickable funnel (I1 + I2)
+    flange-progress-view.tsx            # ✅ Field flange bolt progress (I8)
+    flange-progress-detail-panel.tsx    # assign / record / verify torque per joint
+  erection-dashboard.tsx                # ✅ live KPIs + clickable funnel (I1 + I2) + flange aux KPI (I8)
   admin/
     teams-tab.tsx                       # ✅ 5 collapsible team sections (B9)
     subcontractors-tab.tsx
@@ -178,14 +215,18 @@ store/                                  # Zustand stores
   testpack-store.ts                     # testpack readiness + line check + item-clearance + blinding + testing + reinstatement (Track A)
   admin-store.ts                        # Phase 0 complete — persist v3 (B1–B9 slices)
   erection-store.ts                     # field welds (E2.1) — persisted, mirrors welds-store shape
-  to-site-store.ts                      # site receipt confirmation (I2) — persisted
-  paint-store.ts                          # paint dispatch & sign-off (G4)
-  laydown-store.ts                        # yard placement & release (G5)
+  to-site-store.ts                      # site receipt (I2)
+  erected-store.ts / welded-bolted-store.ts / supports-store.ts / rft-store.ts  # I3–I6
+  field-material-check-store.ts         # I7
+  flange-bolt-progress-store.ts         # I8 field flange bolts — persisted
+  paint-store.ts / laydown-store.ts / qc-release-store.ts / spools-store.ts  # G2–G5
+  flange-store.ts                       # testpack §19 browse / Y-Z reinstatement
+  spooling-store.ts                     # IA1 demo import + revision state
+  iso-rollup.ts                         # E2.5 ISO weld watcher (no persist)
+  erection-rollup.ts                    # spool stages + I6 RFT watcher + I8 flange rollups
+  spool-stage.ts                        # G1 fabrication funnel selectors
   index.ts
-  flange-store.ts                       # ✅ shared persisted flange joints
-  # ⚠ Flange screens currently read straight from lib/flange-data.ts;
-  # mutations (assign jointer, mark torque progress) are not yet wired to a store.
-  # ⚠ Pressure-test activity tallies are derived from testpack-store — no separate store.
+  # Pressure-test activity tallies are derived from testpack-store — no separate store.
 
 lib/
   weld-data.ts                          # 15 seed weld joints
@@ -253,12 +294,14 @@ with a unique localStorage key, exports a main hook and a KPI hook.
 - After N2 merge: `receiveResults` is per-weld (Accepted / Rejected + RW-NNN code from `REWORK_CODES`); the panel that calls it also cascades to welds-store on Rejected
 - Persist key: `pipeqc-batches`
 
-### `admin-store.ts` (Phase 0 — B1–B9)
+### `admin-store.ts` (Phase 0 complete — slices 0.1–0.9)
 
 - Slices: `teams`, `subcontractors`, `projectDefinition`, `systemReferentials`, `welderQualifications`, `ndeMatrix`, `wpsList`, `pdsAreas`, `pipingMaterialList`, `reworkCodes`, `jointCategories`
-- WPS: `addWps`, `updateWps`, `supersededWps` · PDS: `addPdsArea`, `assignPdsArea`, `togglePdsAreaActive` · Heat: `addHeatRecord`, `toggleHeatRecordActive` · Rework: full CRUD · Joint categories: edit-only `updateJointCategory`
-- Hooks: `useTeams()`, `useSubcontractors()`, `useActiveWelderQualifications()`, `useActivePipingMaterialList()`
-- Persist key: `pipeqc-admin`, **version 3** (migrate seeds v3 slices for older localStorage)
+- CRUD highlights: WPS `addWps` / `updateWps` / `supersededWps` · Welder qual add/edit/deactivate · NDE matrix add/edit/delete · PDS `addPdsArea` / `assignPdsArea` / `togglePdsAreaActive` · Heat registry `addHeatRecord` / `toggleHeatRecordActive` · Rework full CRUD · Joint categories edit-only · Teams add/edit/deactivate
+- Hooks: `useTeams()`, `useSubcontractors()`, `useActiveWelderQualifications()`, `useActivePipingMaterialList()`, `useProjectDefinition()`
+- UI: 8 tabs in `<AdminTabs />` on `/admin/project-referential`; heat registry in `PipingMaterialListTab` on same page; project definition on `/admin/project-definition`; system referential on `/admin/system-referential`
+- Persist key: `pipeqc-admin`, **version 3** (migrates older localStorage to seeded v3 slices)
+- **Deferred (Phase 7):** Access Rights scope-lock editor, Import Settings Excel templates, project archive — see `system_admin.md` gap table
 
 ### `erection-store.ts` (E2.1)
 
@@ -289,9 +332,21 @@ with a unique localStorage key, exports a main hook and a KPI hook.
 - `demoMode: boolean` (shows DEMO MODE badge in top nav)
 - `resetAll()` — cascading reset across all stores (re-hydrates seed data)
 
-### ⚠ Remaining missing stores
+### `flange-bolt-progress-store.ts` (I8)
 
-- `flange-store` — bolted joint torquing progress, jointer assignments (Track §19; flange browse currently reads `lib/flange-data.ts` directly, no mutations)
+- Per field-joint torque records (`FlangeBoltProgressRecord`); seed `FLANGE_BOLT_SEED` in `lib/erection-stage.ts`
+- Actions: `assignTorque`, `recordBolting`, `verifyBolting`, `getRecord`
+- Consumed by `/erection/flange-progress`, `useSpoolFlangeBoltRollup()` in `erection-rollup.ts`, I4 Confirm gate (I9b), `isSpoolRFTEligible` (I9b)
+- Persist key: `pipeqc-flange-bolt-progress`
+
+### `flange-store.ts` (testpack §19 browse)
+
+- Shared persisted testpack-side flange joints; Y/Z reinstatement reads categories from here
+- `/flange` browse + detail mutations wired; distinct from erection field flange bolts (I8)
+
+### ⚠ Remaining store gaps
+
+- None blocking demo hero flow; deepest gaps are NDE penalty-shoot/tracer depth and Spooling transmittal workflows (see `roadmap_v3.md` Phase 1+)
 
 ---
 
@@ -324,27 +379,28 @@ Page numbers below refer to the Easy Piping User Manual PDF (156 pp).
 
 | Manual §      | Topic                                 | PipeQC status                                                                                                                                                                                                                                                     |
 | ------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| §1–§2         | Project definition + System ref       | not built                                                                                                                                                                                                                                                         |
-| §3 (3.1–3.26) | **Project Referential** — 26 entities | B1 merged: Teams, Subcontractors, Welder Qualifications tabs in /admin; Team pickers read from admin store                                                                                                                                                        |
-| §5            | Import settings (NDE matrix, PMC)     | not built                                                                                                                                                                                                                                                         |
-| §6            | Spooling (Ident Code, Marian, Browse) | not built (placeholder /spooling)                                                                                                                                                                                                                                 |
+| §1–§2         | Project definition + System ref       | ✅ Phase 0.1 + 0.7 — `/admin/project-definition`, `/admin/system-referential` (store-backed CRUD on 4 system-ref cards)                                                                                                                                           |
+| §3 (3.1–3.26) | **Project Referential** — 26 entities | ✅ Phase 0 core — 8 CRUD tabs + heat registry on `/admin/project-referential`; team pickers site-wide read `admin-store`. Remaining §3 items (systems, line service, devices, …) still shell/grouped placeholders on same page |
+| §4            | Access Rights                         | ⚠ shell `/admin/access-rights` — scope-lock **configured** via PDS×subcontractor matrix (0.5), full role matrix editor deferred                                                                                                                                  |
+| §5            | Import settings (NDE matrix, PMC)     | ⚠ shell `/admin/import-settings` — live CRUD covers matrix + PML without Excel; bulk import deferred Phase 7                                                                                                                                                        |
+| §6            | Spooling (Ident Code, Marian, Browse) | ⚠ partial — IA1 sidebar (Home / Engineering In / ISO Workflow / Spooling Out) + `spooling-store` demo import; 3 sub-routes placeholder. See `spooling_team.md` + Phase 1 in `roadmap_v3.md`                                                                       |
 | §7            | Fabrication module (Start Fab → QC)   | Fabrication module (§7) — Weld Progress + Dashboard funnel + Material Check + QC Release + Paint + Laydown (G1+G2+G1.1+G3+G4+G5+G6); sidebar realigned to manual §7 peer sections (Spool Fabrication / Welding); shop-only filter on `/fabrication/weld-progress` |
 | §9            | Fabrication reports                   | not built                                                                                                                                                                                                                                                         |
 | §10           | Spool Tracking + Dashboard            | ✅ /tracking                                                                                                                                                                                                                                                      |
 | §11           | NDE Management (batch lifecycle)      | ✅ /nde — N1 Create Batch wizard + N2 per-weld Receive Results merged                                                                                                                                                                                             |
-| §12           | Erection module                       | ✅ /erection — field-weld page (E2.1) + To Site receipt screen (I2) + live dashboard funnel (I1)                                                                                                                                                                  |
+| §12           | Erection module                       | ✅ substantial — I1–I10: full spool-erection pipeline (To Site → Field MC → Erected → W/B → Supported → RFT), Site Weld Progress, Field Flange Progress (I8), sidebar §12 peer sections (I10); I9b gates on flange verification + RFT                                                                                                                                 |
 | §13           | Erection reports                      | not built                                                                                                                                                                                                                                                         |
 | §14–§15       | Testpack management + Preparation     | partially — Explorer + Pressure Test A1–A6 prep/progress screens merged                                                                                                                                                                                           |
 | §16           | **Pressure Test (5 activities × 2)**  | ✅ homepage + 8 sub-screens merged (A1 line-check, A2 item-clearance, A4 blinding, A5 testing, A6 reinst.)                                                                                                                                                        |
 | §17           | Testpack homepage (bar graph)         | ✅ /testpack/pressure-test                                                                                                                                                                                                                                        |
 | §18           | Testpack Explorer (3 levels × 4 tabs) | ✅ /testpack/explorer — Release Tracking tab now wired to live `useTestpackStore` data for TP-201..TP-206                                                                                                                                                         |
-| §19           | Flange management (browse + progress) | ✅ browse; §19.2.1 Field flange bolt progress (I8) — assign + record + verify per joint; gate-widening deferred to I9                                                                                                                                             |
+| §19           | Flange management (browse + progress) | ✅ `/flange` browse (testpack joints, `flange-store`) + `/erection/flange-progress` (field bolts, I8); I9b: I4 Confirm + RFT require all flange bolts Verified                                                                                                                                                                    |
 | §20           | Testpack reports                      | not built                                                                                                                                                                                                                                                         |
 
-### §16 Pressure Test — full sub-screen list (still to build)
+### §16 Pressure Test — merged sub-screen reference
 
-Each activity has two screens: **Preparation** (assign workload to a team)
-and **Progress** (record completion).
+**Status: merged (Track A complete).** Each activity has two screens:
+**Preparation** (assign workload to a team) and **Progress** (record completion).
 
 | Activity                 | Preparation §16.x | Progress §16.x    | Team referential                        |
 | ------------------------ | ----------------- | ----------------- | --------------------------------------- |
@@ -367,116 +423,50 @@ Workflow gating (from §18.2 "Release Tracking"):
 
 ---
 
-## Work tracks — what to do next
+## Module status & what to do next
 
-The remaining work splits naturally into 5 tracks. **Track A is the highest
-demo-value because it completes the hero pressure-test storyline.**
+> **Authoritative sequencing:** `docs/roadmap_v3.md` (module-by-module).
+> Legacy capability tracks (A / G / I / N / …) remain documented in the
+> merge log below and in `docs/prompts/archive/`.
 
-### Track A — Pressure Test workflow (§16) ⭐ recommended next
+Snapshot **2026-05-22**:
 
-Goal: turn the existing static homepage into a clickable hero flow.
+| Phase | Module | Status | Next gaps (see role matrix + roadmap) |
+| ----- | ------ | ------ | ------------------------------------- |
+| **0** | Admin | ✅ **Phase 0 complete** — 9/9 slices in `admin-store` v3 | Access Rights editor, Import Settings Excel, remaining §3 placeholder groups |
+| **1** | Spooling | ⚠ partial — IA1 nav + demo store | Transmittal receipt, checkout, multi-round check, holds, outbound batch (Phase 1.1–1.7) |
+| **2** | Fabrication | ✅ substantial — G1–G6 complete | Welder qual soft alert, PML validation depth, PWHT flow |
+| **3** | NDE | ⚠ partial — N1–N2 merged | Per-weld dialog polish, tracer, penalty shoot, reports |
+| **4** | Erection | ✅ substantial — I1–I10 + E2.x | Reuse Phase 3 NDE upgrades for field welds; PM write-lock |
+| **5** | Spool Tracking | ⚠ shell `/tracking` | Yard map, movement audit, inconsistency flags |
+| **6** | Test Pack | ✅ substantial — A1–A6 + Explorer gates | Testpack Builder, dossier PDF, client examination |
+| **7** | Reports + polish | ⚠ shell `/reports` | Real report generation, notifications upgrade |
 
-1. Add `testpack-store` with: testpack[], readiness gates, line-check /
-   item-clearance / blinding / testing / reinstatement statuses, cascading
-   `markX` actions.
-2. Build 9 sub-screens under `/testpack/pressure-test/{activity}/{prep|progress}`
-   following `weld-table` density and `release-work-dialog` UI conventions.
-3. From homepage barchart, make the "ready" / "ongoing" numbers clickable —
-   navigate to the relevant Preparation or Progress screen with filter applied.
-4. Wire `iso-level-view` "Send for line check" → real store mutation +
-   toast + 600ms delay (matches WLD-099 pattern).
-5. Add 2 home-page notifications driving the storyline ("3 ISOs ready for
-   line check", "Test pack TP-205 ready for blinding").
+**Completed legacy tracks (no longer "next"):** Track A (Pressure Test §16),
+Track G (Fabrication funnel §7), Track I (Erection §12 + §19.2.1 field flanges).
 
-**Demo beat:** "...and here's what happens after fabrication and erection —
-test packs flow through line check, item clearance, blinding, hydrotest,
-reinstatement. Each gated by the previous activity."
+**Hero demo flow** still valid end-to-end: Home → Weld Progress → NDE cascade →
+Fabrication dashboard → Erection dashboard → (optional) Pressure Test storyline.
 
-### Track B — Admin / Project Referential (§3)
-
-**B1 merged:** Tabbed admin shell with 3 referential tabs — Teams (read+add), Subcontractors (read+add), Welder Qualifications (read-only). A new `store/admin-store.ts` persists teams and subcontractors; Track A team-pickers now read from this store instead of hardcoded seed constants. Adding a team in admin makes it appear in all downstream pickers on next mount. Reset Demo also resets admin store.
-
-**B2 merged:** 4 read-only engineering reference tabs added — WPS List (§3.5), NDE Matrix (§3.9), Rework Codes (§3.10), Joint Categories X/Y/Z (§3.13). Static data lives in `lib/engineering-references.ts`; no store, no mutations. Admin shell now has 7 tabs total. URL sync (`?tab=`) covers all 7.
-
-Remaining B3 tabs: Systems/Subsystems, Material Class, and other minor referentials (§3.12, §3.19–§3.20).
-
-Single-screen tabbed UI covering 26 referentials (read-only is fine for demo).
-Reuse `weld-table` pattern; one tab per referential.
-**Demo value:** medium. Shows breadth + setup story. **Build time:** ~1 day.
-
-Recommended tab order (lump rarely-used ones in "Other"):
-
-1. Subcontractors (§3.1) — 4–6 seed rows
-2. Welder Qualifications (§3.6) — reuse `lib/welder-qualifications.ts`
-3. WPS List (§3.5)
-4. NDE Matrix (§3.9) — diameter × thickness × method
-5. Rework Codes (§3.10)
-6. Systems / Subsystems (§3.19–§3.20)
-7. Line Checker / Blinding / Finishing / Reinstatement / Jointer teams
-   (§3.15–§3.21) — needed for Track A team-pickers
-8. Project Piping Material Class (§3.12)
-9. Joint Categories X/Y/Z (§3.13)
-10. Other (Area, PDS Area, Location, Pressure unit, Line service, …)
-
-### Track C — Reports (§9, §13, §20)
-
-Replace `/reports` placeholder with a table of downloadable reports:
-
-- Fabrication progress (§9)
-- Erection progress (§13)
-- Testpack readiness (§20)
-- NDE summary, Welder performance, Joint history
-
-Each row: title, last generated date, file size, format pill (xlsx/pdf),
-"Download" button (toast "Generating…" → toast "Downloaded mock.xlsx").
-**Build time:** half a day. Pure shell screen — fakes a download.
-
-### Track D — Spooling (§6)
-
-Replace `/spooling` placeholder with:
-
-- Browse Latest / Browse History tabs (§6.5)
-- Manual revision management screen (§6.5.3)
-- Ident Code table (§6.2)
-- Bolting Report import button (§6.3) — fake import dialog
-
-**Build time:** 1 day. Lower demo priority unless audience cares about
-spool fabrication preparation.
-
-### Track E — Demo polish (non-code)
-
-- Pitch deck (problem → product → tech → ask)
-- Demo script + rehearsal (target: 8–10 min, hits hero flow + Track A)
-- Vercel deployment (verify localStorage persistence across page reloads)
-- Reset-to-seed sanity check before each rehearsal
-
----
-
-## Recommended sequencing
-
-For a demo on day 7:
-
-| Day | Track                         | Why                                   |
-| --- | ----------------------------- | ------------------------------------- |
-| 1–3 | **Track A** Pressure Test     | Highest demo value, closes the loop   |
-| 4   | **Track B** Admin referential | Shows breadth, supports Track A teams |
-| 5   | **Track C** Reports           | Fast win, fills "reports" gap         |
-| 6   | **Track E** Pitch + script    | Rehearse                              |
-| 7   | Buffer / **Track D** if time  | Vercel deploy + final rehearsal       |
-
-If time-boxed harder, skip Track D entirely. Track A + B + C + E covers
-the manual's complete demo surface.
+When starting a new agent session: read this file → `roadmap_v3.md` current
+phase → the relevant `docs/role_matrix/<role>.md` for function-level gaps.
 
 ---
 
 ## Source documents
 
-- `docs/Easy Piping User Manual.pdf` — 156-page TechnipFMC manual (truth)
-- `docs/PIPEQC_CONTEXT.md` — this file
-- For Track A: **§16** (the 5 activities) and **§17** (homepage description).
-- For Track B: **§3** (26 referentials, page 17–38).
-- For Track C: **§9, §13, §20** (each is short).
-- For Track D: **§6** (page 45–63).
+| Document | Use when |
+| -------- | -------- |
+| `docs/Easy Piping User Manual.pdf` | Canonical workflow, terminology, screen expectations (156 pp) |
+| `docs/PIPEQC_CONTEXT.md` | This file — stack, stores, merge log, module snapshot |
+| `docs/roadmap_v3.md` | **What to build next** — phase order + slice checklist |
+| `docs/research/presentation_findings.md` | Domain insights from 10 TechnipFMC decks (CC-1…CC-23, per-module gaps) |
+| `docs/role_matrix/*.md` | Per-role ✅/⚠/📋/❌ function inventory + gap triage |
+| `docs/prompts/archive/` | Historical implementation prompts for merged tracks |
+| `docs/tracks/gapmap_and_roadmap.md` | Earlier gap map (superseded for sequencing by v3; still useful for IDs) |
+
+Manual § pointers: Admin **§1–§5** · Spooling **§6** · Fabrication **§7, §9** ·
+NDE **§11** · Erection **§12–§13** · Test Pack **§14–§20** · Tracking **§10**.
 
 ---
 
@@ -513,10 +503,26 @@ the manual's complete demo surface.
 - **I10** — Erection module sidebar realignment to manual §12 structure + recursive sidebar renderer. `config/navigation.ts` Erection `children` restructured into nested sections matching manual §12 peer sections (§12.1 Spool Erection, §12.3 Welding, §12.4 Flange): Dashboard at top level, then `Spool Erection` subsection with six stages (To Site → Field Material Check → Erected → Welded/Bolted → Supported → RFT), then `Welding` subsection with Site Weld Progress, then `Flange` subsection with Flange Progress. The invented `ERECTION ANALYTICS` top-level group retired; Site Weld Progress moved back into Erection. `components/pipeqc/sidebar-nav.tsx` upgraded with recursive `NavTreeItem` / `NavTreeSubItem` renderers supporting arbitrary nesting depth via `isPathUnderItem()` helper, preserving active-state highlighting and collapsible behavior at every level. Routes unchanged (`/erection/weld-progress`, `/erection/flange-progress`, etc.); role visibility unchanged; no store/seed/component changes. Manual cross-reference §12 row updated to reflect peer-section structure with Field Material Check as documented standalone-screen deviation.
 - **G6** — Fabrication module sidebar realignment to manual §7 structure, mirroring I10. `config/navigation.ts` Fabrication `children` restructured into nested sections matching manual §7 peer tiles (§7.1 Spool Fabrication, §7.3 Welding): Dashboard at top level, then `Spool Fabrication` subsection with four stages (Material Check → QC Release → Paint → Laydown), then `Welding` subsection with `Shop Weld Progress` (renamed from "Weld Progress" to match Erection's "Site Weld Progress" symmetry). `app/fabrication/weld-progress/page.tsx` gains a defensive shop-only filter using `jointNo` naming convention (`FJ-` prefix = field) and a visible "Shop joints only" badge. Routes unchanged (`/fabrication/weld-progress`, etc.); no store/seed/component changes. Manual cross-reference §7 row updated.
 
-## Manual-alignment notes (2026-05-17)
+- **I8** — Field Flange Bolt Progress (§19.2.1). New `store/flange-bolt-progress-store.ts` + `FLANGE_BOLT_SEED`; route `/erection/flange-progress` with list (`All / Assigned / Bolted / Verified` chips, `?status=` + `?spool=` URL sync) and detail Sheet (assign torque + method, record bolting W-19, verify with tool ref). `computeSpoolFlangeBoltRollup()` in `lib/erection-stage.ts`; `useSpoolFlangeBoltRollup()` in `erection-rollup.ts`. Erection dashboard aux KPI card for flange verification backlog. I4 panel shows read-only `FlangeBoltAuditCard` (display-only in I8; gate widening deferred to I9).
+
+- **I9a** — Seed coverage + Field MC NC chip. Expanded `FIELD_WELD_DATA` flange-bolt joints for demo spools; `field-material-check-view.tsx` surfaces `Non-conformance` filter chip when any piece has NC status.
+
+- **I9b** — Cross-stage flange gates. `welded-bolted-detail-panel.tsx` blocks Confirm until `flangeRollup.allVerified`; `isSpoolRFTEligible()` requires verified flange bolts in addition to supported sign-off; matching `FLANGE_BOLT_SEED` verified records for Confirmed spools in seed data.
+
+- **I9c** — Site Weld Progress filter parity. `/erection/weld-progress` gains the same status chip row + URL sync pattern as other I-screens (supersedes I9.4/I9.5 sidebar experiments — fully retired by I10).
+
+- **Phase 0 Admin (2026-05-22)** — Roadmap v3 Phase 0 closure. `admin-store` v3: slices 0.2 WPS CRUD, 0.5 PDS×subcontractor matrix tab, 0.6 piping material / heat registry, 0.8 rework + joint category CRUD, completing 0.1/0.3/0.4/0.7/0.9 from prior work. Eight referential tabs in `<AdminTabs />` + `PipingMaterialListTab` on project-referential page. Prompts archived to `docs/prompts/archive/`; active remaining-work prompt: `docs/prompts/PipeQC_Phase0_Admin_Remaining.md` → **superseded/complete**.
+
+- **Docs housekeeping (2026-05-22)** — `roadmap_v3.md` added; legacy track prompts moved to `docs/prompts/archive/`; role matrices + presentation findings referenced from this context file.
+
+## Manual-alignment notes (2026-05-22)
 
 - Testpack Release Tracking gates 1–3 are derived from live data (weld/flange/NDE), no longer hardcoded green.
 - Reinstatement is based on flange joints categories Y/Z (after test / after pre-commissioning).
-- Flange state is persisted in shared `store/flange-store.ts`.
-- NDE includes manual-facing state vocabulary and tracer demo behavior, while full auto-allocation remains simplified.
-- Fabrication QC Release, Sent to Paint, Painted, Final QC, and Laydown are all now wired (Track G complete).
+- **Two flange domains:** testpack browse uses `store/flange-store.ts`; erection field bolts use `store/flange-bolt-progress-store.ts` (I8/I9b).
+- RFT formula (from presentation #7): `ISO_RFT = QC_RELEASED ∧ ISO_COMPLETE ∧ LINE_CHECK_DONE ∧ (all Cat-X cleared)`; PipeQC implements spool-level RFT via supported sign-off + flange verification (I9b) + testpack bridge (`recordSpoolRFT`).
+- Punch categories X/Y/Z are **sequencer gates** (X blocks testing, Y blocks pre-comm, Z blocks closeout) — not decorative tags (CC-20).
+- NDE includes manual-facing state vocabulary and tracer demo behavior; full Penalty Shoot / auto-allocation depth deferred to Phase 3 roadmap.
+- Fabrication QC Release, Sent to Paint, Painted, and Laydown are wired (Track G complete); sidebar matches §7 peer sections (G6).
+- Erection sidebar matches §12 peer sections (I10); Field Material Check is a documented standalone-screen deviation from strict manual tile order.
+- Admin Phase 0 covers the 9 referentials required before Spooling/Fab/NDE demos; Excel import templates remain Phase 7.

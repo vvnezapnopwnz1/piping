@@ -70,15 +70,15 @@ Phase 7: Cross-cutting polish (Reports, PDF forms, notifications, edge cases)
 
 ## 3. Текущее состояние модулей (что уже live на main)
 
-Снимок на 2026-05-21 по `docs/PIPEQC_CONTEXT.md` merge log:
+Снимок на 2026-05-22 по `docs/PIPEQC_CONTEXT.md` merge log:
 
 | Модуль | Текущий статус | Что merged | Что осталось |
 | --- | --- | --- | --- |
-| **Admin** | ⚠ partial — B1+B2 read-only | Teams / Subcontractors / Welder Qualifications tabs (CRUD на 3 из 7); WPS / NDE Matrix / Rework Codes / Joint Categories read-only display | 14 функций из system_admin matrix остаются partial / planned / missing. **В работе у другого агента (concurrent).** |
+| **Admin** | ✅ Phase 0 complete | 9 slices: project definition, system referential, WPS / welder qual / NDE matrix / PDS areas / heat registry / rework / joint categories / teams — `admin-store` v3, 8 tabs + PML | Access Rights editor, Import Settings Excel, remaining §3 placeholder groups (Phase 7) |
 | **Spooling** | ⚠ partial — D + IA1 | `<SpoolingView>` с demo import + validation/revision panels; sidebar restructure (Home / Engineering In / ISO Workflow / Spooling Out); persisted store | 7 из 12 функций missing (transmittal receipt, checkout, multi-round check, holds, outbound batch, real SpoolGen parser, Marian, Browser, S-curve dashboard) |
 | **Fabrication** | ✅ substantial — F1-F3 + G1-G6 | Weld Progress, Dashboard funnel (live KPIs), Material Check, QC Release, Paint, Laydown — Track G complete (7/7 stages live); sidebar realigned to §7 peer sections; shop-only filter on weld-progress | Welder qualification soft alert (B14), Heat number → PML validation (B2 deeper), PWHT release flow (B13), explicit 4-item QC release checklist (B3) |
 | **NDE** | ⚠ partial — N1-N3 | Create Batch wizard; per-weld Receive Results (но bulk-accept behaviour); source filter Shop/Field; basic batch list | Real per-weld Accept/Reject dialog с defect codes (B3), Rework cascade R1/R2/R3 (B5), Tracer T1/T1-1/T2-1 (B6), Penalty Shoot (B6), Examination History timeline (B14), Issue Examination PDF (B8), 8 NDE reports (B10), 4 welder monitoring reports (B11), dedicated /nde/dashboard (B12) |
-| **Erection** | ✅ substantial — E2.1-E2.5 + I1-I7 | Erection store persistence; field-weld page; live dashboard funnel; To Site receipt; Erected; Welded/Bolted; Supported; RFT auto-derivation; Field Material Check; Send Field Weld to NDE | Reuse Phase 3 NDE upgrade для field welds; scope lock applied; PM write-lock applied |
+| **Erection** | ✅ substantial — E2.1-E2.5 + I1-I10 | Full spool-erection pipeline; I8 field flange progress; I9b flange gates on W/B + RFT; I10 sidebar §12 alignment; Field Material Check; Send Field Weld to NDE | Reuse Phase 3 NDE upgrade для field welds; scope lock applied; PM write-lock applied |
 | **Spool Tracking** | ✅ shell — /tracking exists | Базовая страница `/tracking` существует, но это shell без deep dashboard | Yard / shop map view (B4 deeper), inconsistency flags + transit-out, movement audit log, scope lock applied, barcode export Zebra (defer) |
 | **Test Pack** | ✅ substantial — A1-A6 | Pressure Test homepage + 8 sub-screens: Line Check (prep+progress), Item Clearance (prep+progress), Blinding (prep+progress), Testing & Pre-comm, Reinstatement; Explorer live gates (release tracking); flange Y/Z reinstatement | Testpack Builder (H1 — manual ISO selection), Flange Torquing → RFT linkage (H2), Dossier Handover PDF (H4), Client examination coordination (H5), Release Tracking drill-down extension к gates 1-3 stubs (H6) |
 | **Reports** | ✅ shell — C1 | `/reports` shell с 12 mock rows | Real generation (8 NDE + 4 welder monitoring); per-welder/per-sub acceptance rate (C3); dedicated NDE dashboard (C4); spooling reports (C5); PM weekly fab summary (C6) |
@@ -91,7 +91,7 @@ Summary: 3 модуля substantial (Fab / Erection / Test Pack), 2 partial
 
 ## 4. Phases
 
-### Phase 0 — Admin Setup (concurrent, в работе у другого агента)
+### Phase 0 — Admin Setup ✅ complete (2026-05-22)
 
 **Бизнес-контекст.** "Перед стройкой нужно сказать системе: какой
 проект, какие сварочные процедуры (WPS) разрешены, какие сварщики
