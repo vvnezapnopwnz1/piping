@@ -31,8 +31,9 @@ on operational context, competitive framing, or per-role capability scope.
 | -------- | ---- | ---------------- |
 | Presentation findings | `docs/research/presentation_findings.md` | All **10** Easy Piping sales/training decks read sequentially (#1 PSMS overview → #10 Painting). Cross-cutting findings CC-1…CC-23 (RFT formula, punch X/Y/Z gates, Generate Request pattern, role hierarchy, SpoolGen/Marian data flow, competitive positioning). Module-specific gaps per deck. |
 | Role matrices | `docs/role_matrix/*.md` | Per-role function inventories with ✅ live / ⚠ partial / 📋 planned / ❌ missing tags: `qc_engineer`, `nde_inspector`, `project_manager`, `spooling_team`, `subcontractor`, `system_admin` (+ approach notes in `chat_gpt_on_role_matrix_aproach.md`). Ground truth for **what to build next** — triage consolidated in each matrix's gap table. |
-| Roadmap v3 | `docs/roadmap_v3.md` | Module-by-module delivery order (Phase 0 Admin → … → Phase 7 polish). Replaces capability-first v2 sequencing. **Current focus after Phase 4:** Phase 5 Spool Tracking. |
-| Phase implementation plans | `docs/superpowers/plans/2026-05-22-phase{2,3,4}-*.md` | Agent execution plans for Fabrication hardening, NDE flagship, Erection reuse (archived reference). |
+| Roadmap v3 | `docs/roadmap_v3.md` | Module-by-module delivery order (Phase 0 Admin → … → Phase 7 polish). Replaces capability-first v2 sequencing. **Phases 0–6 complete; current focus: Phase 7 polish (Reports, PDF, notifications).** |
+| Phase implementation plans | `docs/superpowers/plans/2026-05-22-phase{2,3,4}-*.md`, `2026-05-23-phase{5,6}-*.md` | Agent execution plans for Phases 2–6 (Fabrication → Test Pack). |
+| Pipeline construction guide | `docs/pipeline_construction_guide.md` | End-to-end production chain narrative (Admin → Test Pack) aligned with roadmap v3. |
 | Archived phase prompts | `docs/prompts/archive/` | Completed track prompts (A*, G*, I*, N*, etc.) moved out of `docs/prompts/` root during docs housekeeping. |
 
 **Recent merge milestones (not yet in older agent context):**
@@ -44,6 +45,8 @@ on operational context, competitive framing, or per-role capability scope.
 - **Phase 2 Fabrication** (2026-05-23) — Cross-cutting nits introduced: `lib/pm-write-lock.ts`, `lib/scope-lock.ts`, `lib/heat-validator.ts` (PML hard block). PWHT release queue `/fabrication/pwht-release` + `pwht-store`. QC checklist Fail/Reject-to-Rework + "NDE complete" item. Welder qual chips on shop weld table; QC13 PDF stub. Scope lock + PM write-lock on fab screens.
 - **Phase 3 NDE** (2026-05-23) — `lib/nde-cascade.ts` + extended `batches-store` receiveResults: defect codes (POR/CRK/LOF/SLG/UNC/INC/OTH), per-weld Reject with location, auto `-R1` joint, T1/T1-1/T2-1 tracers, Penalty Shoot (4 rejects or 2nd-level tracer → SS). `joint-history-panel`, `nde-dashboard` at `/nde/dashboard`, penalty-shoot banner, Issue Examination PDF stub. Field batches cascade via `erection-store.createR1FieldWeld`.
 - **Phase 4 Erection** (2026-05-23) — Reuse Phase 2–3 on field: welder qual table chips, field PWHT in unified queue, Field QC Release `/erection/field-qc-release` + RFT gate, PM write-lock + scope lock on all erection panels, QC13 on field welds, W24 PDF stub on To Site/Erected/W-B.
+- **Phase 5 Spool Tracking** (2026-05-23) — Live `/tracking` dashboard derived from laydown/to-site/erection stores + append-only `spool-tracking-store`; KPI strip, capacity map, inconsistency/transit-out panels, manual relocate Sheet; `/tracking/data-analysis` 4-tab IA; `/tracking/print-barcodes` Excel basket (`xlsx`); CC-11 active spool chip; scope lock + PM write-lock.
+- **Phase 6 Test Pack** (2026-05-23) — `/testpack/builder` + `TestpackBuilderSheet`; live General/Iso tabs via `StatusCodeBadge` + `fabStageToStatusCode`; `testpack-store` v6 (`createTestpack`, client witness); activity feed on pressure-test homepage; real `.xlsx` release worklist; print routes for 4 prep request types; flange gate → `/flange?testpack=`; PM write-lock + scope lock on all prep/progress views.
 
 ---
 
@@ -59,6 +62,8 @@ on operational context, competitive framing, or per-role capability scope.
 | Charts     | `recharts`                            |                                      |
 | State      | `zustand@5.0.13` + persist middleware | localStorage backed                  |
 | Toasts     | `sonner`                              | Already wired                        |
+| PDF stubs  | `jspdf`                               | Phase 2 QC13 / W24 / NDE Issue Examination |
+| Excel export | `xlsx`                              | Phase 5 barcode basket + Phase 6 release worklist |
 
 Do **not** add new dependencies without confirming with the user first.
 
@@ -86,7 +91,7 @@ Color tokens (Tailwind classes):
 
 ---
 
-## File structure — current state (verified 2026-05-23)
+## File structure — current state (verified 2026-05-23, Phases 0–6)
 
 ```
 app/
@@ -101,7 +106,9 @@ app/
     laydown/page.tsx                      # Laydown yard placement & release (G5) ✅
   nde/page.tsx                          # NDE Batch Management ✅
   nde/dashboard/page.tsx                # ✅ Phase 3 — NDE KPI dashboard (acceptance, rejections, penalty shoot)
-  tracking/page.tsx                     # Spool Tracking ✅
+  tracking/page.tsx                     # ✅ Phase 5 — live Spool Tracking dashboard (KPI + map + table + panels)
+  tracking/data-analysis/page.tsx       # ✅ Phase 5 — 4-tab Data Analysis IA
+  tracking/print-barcodes/page.tsx      # ✅ Phase 5 — Excel-then-Zebra barcode basket
   erection/
     dashboard/page.tsx                  # Erection Dashboard ✅
     to-site/page.tsx                    # To Site receipt confirmation (I2) ✅
@@ -114,8 +121,14 @@ app/
     field-qc-release/page.tsx           # ✅ Phase 4.5 — field 4-item QC checklist before RFT
     rft/page.tsx                        # I6
   testpack/
-    page.tsx                            # ⚠ shell only — needs overview/landing
-    pressure-test/page.tsx              # ✅ Pressure Test Homepage (sum view)
+    page.tsx                            # ✅ landing — Builder / Explorer / Pressure Test tiles
+    builder/page.tsx                    # ✅ Phase 6 — manual TP assembly from unassigned ISOs
+    print/
+      line-check/[requestId]/page.tsx   # ✅ Phase 6 — print-stylesheet work order (CC-17)
+      item-clearance/[requestId]/page.tsx
+      blinding/[requestId]/page.tsx
+      reinstatement/[requestId]/page.tsx
+    pressure-test/page.tsx              # ✅ Pressure Test Homepage + activity feed (Phase 6)
     pressure-test/line-check/page.tsx   # redirect → /testpack/pressure-test
     pressure-test/line-check/preparation/page.tsx  # Line Check Preparation (A1)
     pressure-test/line-check/progress/page.tsx     # Line Check Progress (A1)
@@ -164,7 +177,8 @@ components/
   weld-detail-panel.tsx                 # ← reference side panel pattern
   filter-sidebar.tsx
   status-badge.tsx                      # ← always use this
-  pm-write-lock-banner.tsx              # ✅ Phase 2 — PM read-only banner (reuse Phases 3–4)
+  shared/status-code-badge.tsx          # ✅ Phase 6 — CC-19 numeric code + tooltip + RAG (Iso/Spool tabs)
+  pm-write-lock-banner.tsx              # ✅ Phase 2 — PM read-only banner (reuse Phases 3–6)
   nde/
     batch-management-view.tsx           # scope lock on batch list (Phase 3)
     batch-detail-panel.tsx
@@ -203,12 +217,31 @@ components/
     add-wps-dialog.tsx
     add-rework-code-dialog.tsx
     edit-joint-category-dialog.tsx
-  spool-tracking-dashboard.tsx
+  spool-tracking-dashboard.tsx          # ✅ Phase 5 — orchestrates tracking/* subcomponents (was mock-only)
+  tracking/
+    tracking-kpi-strip.tsx              # Phase 5
+    tracking-location-map.tsx
+    tracking-spool-table.tsx
+    tracking-detail-panel.tsx           # manual relocate + audit history
+    tracking-inconsistency-panel.tsx
+    tracking-transit-out-panel.tsx
+    tracking-data-analysis-tabs.tsx     # 4-tab wrapper
+    tracking-data-analysis-{location,design-area,consolidation}-tab.tsx
+    tracking-barcode-basket-view.tsx    # Excel export basket
+    tracking-scan-trend.tsx             # demo-data cosmetic
+    tracking-pda-card.tsx               # demo-data cosmetic
+    active-spool-chip.tsx               # CC-11
+    use-tracking-rows.ts                # enriched row derivation hook
   testpack/
-    pressure-test-homepage.tsx          # 480 LOC
-    testpack-explorer.tsx               # 1455 LOC (largest screen)
-    iso-level-view.tsx                  # drill-down ISO panel
-    release-work-dialog.tsx             # work-release modal
+    pressure-test-homepage.tsx          # + TestpackActivityFeed (Phase 6)
+    testpack-explorer.tsx               # live General tab + Release Tracking (largest screen)
+    testpack-builder-sheet.tsx          # Phase 6
+    testpack-builder-iso-picker.tsx
+    testpack-activity-feed.tsx          # Phase 6 CC-23
+    testpack-workflow-guards.tsx        # PM lock + scope chip wrapper
+    client-examination-panel.tsx        # Phase 6 slice 6.4
+    iso-level-view.tsx                  # live spool status codes (Phase 6)
+    release-work-dialog.tsx             # real .xlsx export (Phase 6)
     line-check/
       preparation-view.tsx              # Line Check Preparation UI (A1)
       progress-view.tsx                 # Line Check Progress UI (A1)
@@ -245,7 +278,8 @@ store/                                  # Zustand stores
   batches-store.ts                      # NDE batches (6 seed)
   notifications-store.ts
   demo-store.ts                         # resetAll() cascades to every store
-  testpack-store.ts                     # testpack readiness + line check + item-clearance + blinding + testing + reinstatement (Track A)
+  testpack-store.ts                     # Phase 6 v6 — workflows + createTestpack / Builder / client witness
+  spool-tracking-store.ts               # Phase 5 — append-only LocationEvent[] + manualRelocate
   admin-store.ts                        # Phase 0 complete — persist v3 (B1–B9 slices)
   erection-store.ts                     # field welds (E2.1) — persisted, mirrors welds-store shape
   to-site-store.ts                      # site receipt (I2)
@@ -277,6 +311,7 @@ lib/
   scope-lock.ts                         # Phase 2 — subcontractor PDS area filter (CC-4)
   nde-cascade.ts                        # Phase 3 — pure rejection → R1 / tracer / penalty shoot
   nde-status.ts                         # Tracer levels T1/T1-1/T2-1, joint code mapping
+  spool-tracking.ts                     # Phase 5 — deriveCurrentLocation, isActive, transit-out, inconsistency flags
   utils.ts                              # cn() helper
 
 config/
@@ -367,11 +402,20 @@ with a unique localStorage key, exports a main hook and a KPI hook.
 - Actions: `markReceived`, `getRecord`, `resetToSite`
 - Persist key: `pipeqc-to-site`
 
-### `testpack-store.ts` (Track A)
+### `testpack-store.ts` (Track A + Phase 6)
 
 - 6 seed test packs (TP-201..TP-206), 18 ISOs, line-check / item-clearance / blinding / testing / reinstatement workflow state
-- Cascading status transitions match §18 Release Tracking gates
-- Persist key: `pipeqc-testpack`
+- **Phase 6:** `TestPackRecord` extended (`rev`, `testMedium`, `testPlannedDate`, `volumeM3`, `clientWitness`); actions `createTestpack`, `updateTestpackGeneral`, `assignIsoToTestpack`, `recordClientExamination`
+- Cascading status transitions match §18 Release Tracking gates; `useFlangeStore` integration for Y/Z reinstatement
+- Persist key: `pipeqc-testpack`, **version 6**
+
+### `spool-tracking-store.ts` (Phase 5)
+
+- Append-only `LocationEvent[]` per spool (`IN` / `OUT` / `MANUAL`); seeded from `LAYDOWN_SEED` + `TO_SITE_SEED`
+- Actions: `recordMovement`, `manualRelocate`, `getEventsForSpool`, `resetTracking`
+- Pure derivation in `lib/spool-tracking.ts` (`deriveCurrentLocation`, `deriveIsActive`, `deriveTransitOutFlag`, `deriveInconsistencyFlag`)
+- Consumed by `/tracking`, `/tracking/data-analysis`, transit-out notifications (`category: tracking`)
+- Persist key: `pipeqc-spool-tracking`, version 1
 
 ### `notifications-store.ts`
 
@@ -404,14 +448,14 @@ with a unique localStorage key, exports a main hook and a KPI hook.
 - Persist key: `pipeqc-spooling-module` (version **2** with migrate from v1)
 - Barrel export: `ISORecord` exported from `@/store` as `SpoolingISORecord` (avoids clash with testpack `ISORecord`)
 
-### Cross-cutting hooks (Phase 2+, reused in 3–4)
+### Cross-cutting hooks (Phase 2+, reused in 3–6)
 
-- **`usePmWriteLock()`** — `project_manager` role cannot mutate progress entry screens; `<PmWriteLockBanner />` on fab/NDE/erection panels
-- **`useScopeLock()`** — `subcontractor` role filtered by `pipeqc-active-sub` + PDS area matrix from `admin-store`; wired on weld tables, NDE batch list, erection lists, fab QC/MC views
+- **`usePmWriteLock()`** — `project_manager` role cannot mutate progress entry screens; `<PmWriteLockBanner />` on fab/NDE/erection/**tracking/testpack** panels
+- **`useScopeLock()`** — `subcontractor` role filtered by `pipeqc-active-sub` + PDS area matrix from `admin-store`; wired on weld tables, NDE batch list, erection lists, fab QC/MC views, **tracking dashboard**, **testpack prep/progress**
 
 ### ⚠ Remaining store gaps
 
-- None blocking vertical demo through Fab → NDE cascade → Erection → RFT. Deepest deferrals: real NDE/welder **reports** (Phase 7), SpoolGen/Marian (Phase 7), Spool Tracking depth (Phase 5)
+- None blocking full vertical demo through Admin → Spooling → Fab → NDE → Erection → Tracking → Test Pack → RFT. Deepest deferrals: real NDE/welder **reports** (Phase 7), Dossier Handover PDF (Phase 7), SpoolGen/Marian (Phase 7), punch-code referential in Admin (Phase 7), PDA scan ingestion (Phase 7)
 
 ---
 
@@ -451,14 +495,14 @@ Page numbers below refer to the Easy Piping User Manual PDF (156 pp).
 | §6            | Spooling (Ident Code, Marian, Browse) | ✅ **Phase 1 substantial** — sidebar Home / Engineering Transmittals / ISO Workflow / Spooling Transmittal; eng handoff Accept, ISO checkout + multi-round check + holds, outbound batch, revision cascade, home KPIs. Legacy demo import under ISO Workflow. Deferred: SpoolGen parser, Marian CSV, Browser (Phase 7). See `spooling_team.md` |
 | §7            | Fabrication module (Start Fab → QC)   | ✅ **Phase 2 complete** — G1–G6 + PWHT release + PML heat hard block + welder qual chips + QC Fail/rework + PM/scope locks; sidebar §7 peer sections; shop-only filter on weld-progress |
 | §9            | Fabrication reports                   | not built                                                                                                                                                                                                                                                         |
-| §10           | Spool Tracking + Dashboard            | ✅ /tracking                                                                                                                                                                                                                                                      |
+| §10           | Spool Tracking + Dashboard            | ✅ **Phase 5 complete** — live `/tracking` dashboard + `/tracking/data-analysis` (4-tab IA) + `/tracking/print-barcodes` Excel basket; movement audit via append-only events; CC-11 active spool; transit-out from `projectDefinition.maxTransitTime` |
 | §11           | NDE Management (batch lifecycle)      | ✅ /nde + `/nde/dashboard` — per-weld Accept/Reject with defect codes, R1 auto-joint, tracer T1/T1-1/T2-1, Penalty Shoot behavior, joint examination history; Issue Examination PDF stub (Phase 7 polish)                                                                                                                                 |
 | §12           | Erection module                       | ✅ **Phase 4 complete** on cross-cutting reuse — I1–I10 pipeline + Field QC Release + field PWHT + scope/PM locks + W24/QC13 PDF stubs; NDE field cascade verified via shared NDE module                                                                                                                                                                                  |
 | §13           | Erection reports                      | not built                                                                                                                                                                                                                                                         |
-| §14–§15       | Testpack management + Preparation     | partially — Explorer + Pressure Test A1–A6 prep/progress screens merged                                                                                                                                                                                           |
+| §14–§15       | Testpack management + Preparation     | ✅ **Phase 6** — Builder (`/testpack/builder`), live General tab metadata, print-stylesheet Generate Request on 4 prep types                                                                                                                                      |
 | §16           | **Pressure Test (5 activities × 2)**  | ✅ homepage + 8 sub-screens merged (A1 line-check, A2 item-clearance, A4 blinding, A5 testing, A6 reinst.)                                                                                                                                                        |
-| §17           | Testpack homepage (bar graph)         | ✅ /testpack/pressure-test                                                                                                                                                                                                                                        |
-| §18           | Testpack Explorer (3 levels × 4 tabs) | ✅ /testpack/explorer — Release Tracking tab now wired to live `useTestpackStore` data for TP-201..TP-206                                                                                                                                                         |
+| §17           | Testpack homepage (bar graph)         | ✅ /testpack/pressure-test + activity feed (CC-23)                                                                                                                                                                                                                |
+| §18           | Testpack Explorer (3 levels × 4 tabs) | ✅ /testpack/explorer — live General + Iso spool status (`StatusCodeBadge`); Release Tracking gates from `useTestpackStore`; flange drill-down → `/flange?testpack=`                                                                                               |
 | §19           | Flange management (browse + progress) | ✅ `/flange` browse (testpack joints, `flange-store`) + `/erection/flange-progress` (field bolts, I8); I9b: I4 Confirm + RFT require all flange bolts Verified                                                                                                                                                                    |
 | §20           | Testpack reports                      | not built                                                                                                                                                                                                                                                         |
 
@@ -503,16 +547,17 @@ Snapshot **2026-05-23**:
 | **2** | Fabrication | ✅ **Phase 2 complete** — G1–G6 + hardening 2.1–2.4 | Real report generation (Phase 7); Marian/SpoolGen defer |
 | **3** | NDE | ✅ **Phase 3 complete** — cascade + tracer + penalty shoot + dashboard | 8 NDE reports + welder monitoring reports (Phase 7 Track C) |
 | **4** | Erection | ✅ **Phase 4 complete** — I1–I10 + cross-cutting reuse 4.1–4.6 | Erection reports §13 (Phase 7) |
-| **5** | Spool Tracking | ⚠ shell `/tracking` | Yard map, movement audit, inconsistency flags |
-| **6** | Test Pack | ✅ substantial — A1–A6 + Explorer gates | Testpack Builder, dossier PDF, client examination |
+| **5** | Spool Tracking | ✅ **Phase 5 complete** — live dashboard, 4-tab Data Analysis, barcode Excel basket | PDA ingestion, Kalipso sync, `pdsAreaCode` on spools (Phase 7) |
+| **6** | Test Pack | ✅ **Phase 6 complete** — Builder, live General/Iso tabs, XLSX export, PM lock | Dossier PDF (Phase 7), punch-code referential in Admin (Phase 7) |
 | **7** | Reports + polish | ⚠ shell `/reports` | Real report generation, notifications upgrade |
 
 **Completed legacy tracks (no longer "next"):** Track A (Pressure Test §16),
 Track G (Fabrication funnel §7), Track I (Erection §12 + §19.2.1 field flanges).
 
-**Extended vertical demo** (Phases 1–4): Spooling Accept → shop weld + MC + QC → NDE batch →
-Reject → `-R1` + Penalty Shoot → laydown → To Site → field weld + field MC → field NDE →
-Field QC Release → RFT → (optional) Pressure Test storyline.
+**Extended vertical demo** (Phases 0–6): Admin referentials → Spooling Accept → shop weld + MC + QC →
+NDE batch → Reject → `-R1` + Penalty Shoot → laydown → **Tracking relocate / transit-out alert** →
+To Site → field weld + field MC → field NDE → Field QC Release → RFT → **Testpack Builder** →
+Line Check → Item Clearance → Blinding → Testing → Reinstatement → Ready For Test.
 
 **Hero demo flow** still valid: Home → Weld Progress → NDE cascade → Fabrication dashboard →
 Erection dashboard.
@@ -543,6 +588,8 @@ NDE **§11** · Erection **§12–§13** · Test Pack **§14–§20** · Trackin
 
 - **2026-05-23: Phase 2 (Fabrication hardening)** — `lib/heat-validator.ts` HARD BLOCK on shop + field material check against active PML; `lib/pm-write-lock.ts` + `components/pm-write-lock-banner.tsx`; `lib/scope-lock.ts` on fab weld table, material check, QC release views; `/fabrication/pwht-release` + `store/pwht-store.ts`; QC checklist Fail/Reject-to-Rework + "NDE complete" label; welder qual mismatch chips on `weld-table`; `qc13-pdf-button` on completed shop welds; `jspdf` dependency added.
 - **2026-05-23: Phase 3 (NDE flagship)** — `DEFECT_CODES` in `engineering-references.ts`; `lib/nde-cascade.ts` + extended `receiveResults` in `batches-store` (R1 joint, tracers T1/T1-1/T2-1, Penalty Shoot SS flip); `defect-code-select`, `penalty-shoot-banner`, `joint-history-panel`, `nde-dashboard`, `/nde/dashboard`; `createR1FieldWeld` in `erection-store` for `source: 'field'` batches; PM write-lock on NDE create/receive panels; scope lock on batch list.
+- **2026-05-23: Phase 6 (Test Pack)** — `TestPackRecord` extended (rev, medium, planned date, client witness); `store/testpack-store.ts` v6 with `createTestpack` / Builder actions; `/testpack/builder` + `TestpackBuilderSheet`; live General tab + iso spool status via `StatusCodeBadge` + `fabStageToStatusCode`; flange gate navigates to `/flange?testpack=`; `TestpackActivityFeed` on pressure-test homepage; release worklist real `.xlsx` export; Client Examination panel; print routes for 4 prep request types; PM write-lock + scope chip on all testpack prep/progress views; `category: testpack` notifications.
+- **2026-05-23: Phase 5 (Spool Tracking)** — `lib/spool-tracking.ts` + `store/spool-tracking-store.ts` (append-only `LocationEvent[]`, seeded from laydown + to-site); live `/tracking` dashboard (KPI strip, capacity map, spool table, inconsistency + transit-out panels); manual relocate Sheet with audit history; CC-11 active spool derivation; `/tracking/data-analysis` 4-tab IA; `/tracking/print-barcodes` Excel export (`xlsx`) for Zebra workflow; scope lock + PM write-lock; transit-out notifications (`category: tracking`).
 - **2026-05-23: Phase 4 (Erection hardening)** — Field weld table welder qual chip; PWHT queue unifies shop + field (`source` on `PwhtReleaseRecord`); Field QC Release at `/erection/field-qc-release` + `field-qc-release-store` with RFT gate; PM write-lock + scope lock on all Erection panels/lists; QC13 on field welds; W24 PDF stub on To Site / Erected / Welded-Bolted; field NDE cascade via `createR1FieldWeld`.
 - **E2.1** — Erection store (`store/erection-store.ts`) created and wired.
   Field weld edits now persist to localStorage (`pipeqc-erection` key).

@@ -14,6 +14,7 @@ import {
   FlaskConical,
   FolderTree,
   Gauge,
+  Pencil,
   Search,
   Shield,
   Wrench,
@@ -51,6 +52,11 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IsoLevelView } from "@/components/testpack/iso-level-view";
 import { ReleaseWorkDialog } from "@/components/testpack/release-work-dialog";
+import { TestpackBuilderSheet } from "@/components/testpack/testpack-builder-sheet";
+import { ClientExaminationPanel } from "@/components/testpack/client-examination-panel";
+import { PmWriteLockBanner } from "@/components/pm-write-lock-banner";
+import { usePmWriteLock } from "@/lib/pm-write-lock";
+import { useScopeLock } from "@/lib/scope-lock";
 import { cn } from "@/lib/utils";
 import {
   systems,
@@ -181,17 +187,19 @@ function makeSyntheticTestpack(
     location: tp.location,
     areaClassification: tp.areaClassification,
     subcontractor: "Primary Fabricator",
-    revNo: "Rev 1",
-    unitOfTime: "24 h",
+    revNo: tp.rev,
+    unitOfTime: tp.unitOfTime,
     priority: tp.priority,
-    testMedium: "Hydro",
-    testPressure: "20.0 bar",
-    volume: "2.0 m\u00b3",
+    testMedium: tp.testMedium,
+    testPressure: tp.testPressureBar
+      ? `${tp.testPressureBar} bar`
+      : "20.0 bar",
+    volume: tp.volumeM3 ? `${tp.volumeM3} m\u00b3` : "2.0 m\u00b3",
     totalIsos: tp.isoIds.length,
     totalSpools: tp.isoIds.length * 2,
     totalWeldJoints: tp.isoIds.length * 4,
     totalFlangeJoints: tp.isoIds.length,
-    testPlannedDate: "2025-12-01",
+    testPlannedDate: tp.testPlannedDate ?? "2025-12-01",
     readiness: 0,
     status,
     releaseTracking: {
@@ -427,14 +435,30 @@ function SubsystemTable({
 }
 
 function TestpackGeneral({ testpack }: { testpack: Testpack }) {
+  const liveTp = useTestpackStore((s) =>
+    s.testPacks.find((tp) => tp.id === testpack.id),
+  );
+  const rev = liveTp?.rev ?? testpack.revNo;
+  const plannedDate = liveTp?.testPlannedDate ?? testpack.testPlannedDate;
+  const medium = liveTp?.testMedium ?? testpack.testMedium;
+  const unitOfTime = liveTp?.unitOfTime ?? testpack.unitOfTime;
+  const volume =
+    liveTp?.volumeM3 != null
+      ? `${liveTp.volumeM3} m³`
+      : testpack.volume;
+  const pressure =
+    liveTp?.testPressureBar != null
+      ? `${liveTp.testPressureBar} bar`
+      : testpack.testPressure;
+
   const fields: { label: string; value: React.ReactNode }[] = [
     { label: "Subsystem No", value: testpack.subsystemId },
     { label: "Test Pack No", value: testpack.id },
     { label: "Test Pack Location", value: testpack.location },
-    { label: "Rev Number", value: testpack.revNo },
+    { label: "Rev Number", value: rev },
     {
       label: "Test Planned Date",
-      value: format(new Date(testpack.testPlannedDate), "dd MMM yyyy"),
+      value: format(new Date(plannedDate), "dd MMM yyyy"),
     },
     {
       label: "Test Pack Priority",
@@ -455,21 +479,19 @@ function TestpackGeneral({ testpack }: { testpack: Testpack }) {
         <Badge
           variant="outline"
           className={cn(
-            testpack.testMedium === "Hydro" &&
-              "border-sky-300 bg-sky-100 text-sky-800",
-            testpack.testMedium === "Pneumatic" &&
+            medium === "Hydro" && "border-sky-300 bg-sky-100 text-sky-800",
+            medium === "Pneumatic" &&
               "border-violet-300 bg-violet-100 text-violet-800",
-            testpack.testMedium === "Vacuum" &&
-              "border-cyan-300 bg-cyan-100 text-cyan-800",
+            medium === "Vacuum" && "border-cyan-300 bg-cyan-100 text-cyan-800",
           )}
         >
-          {testpack.testMedium}
+          {medium}
         </Badge>
       ),
     },
-    { label: "Test Pressure", value: testpack.testPressure },
-    { label: "Unit of time", value: testpack.unitOfTime },
-    { label: "Volume", value: testpack.volume },
+    { label: "Test Pressure", value: pressure },
+    { label: "Unit of time", value: unitOfTime },
+    { label: "Volume", value: volume },
     { label: "Total ISOs in pack", value: testpack.totalIsos },
     { label: "Total spools", value: testpack.totalSpools },
     { label: "Total weld joints", value: testpack.totalWeldJoints },
@@ -684,7 +706,7 @@ function LiveReleaseTracking({ testpackId }: { testpackId: string }) {
             ? "green"
             : "red",
       clickable: true,
-      getUrl: () => "/flange",
+      getUrl: () => `/flange?testpack=${testpackId}`,
     },
     {
       index: 3,
@@ -1005,6 +1027,7 @@ function OperationsTab({ testpack }: { testpack: Testpack }) {
   const { milestones, itemsYCleared, itemsZCleared } = testpack.operations;
 
   return (
+    <div className="space-y-4">
     <Card className="gap-4 py-5">
       <CardHeader className="px-5 pb-0">
         <CardTitle className="text-sm font-medium">
@@ -1126,6 +1149,8 @@ function OperationsTab({ testpack }: { testpack: Testpack }) {
         </div>
       </CardContent>
     </Card>
+    <ClientExaminationPanel testpackId={testpack.id} />
+    </div>
   );
 }
 
@@ -1283,6 +1308,9 @@ export function TestpackExplorer() {
   const [releaseDialogItems, setReleaseDialogItems] = useState<
     ReleaseWorkItem[]
   >([]);
+  const [builderTp, setBuilderTp] = useState<TestPackRecord | null>(null);
+  const scope = useScopeLock();
+  const { locked: pmLocked } = usePmWriteLock();
 
   const openReleaseWorkList = (title: string, items: ReleaseWorkItem[]) => {
     setReleaseDialogTitle(title);
@@ -1450,6 +1478,7 @@ export function TestpackExplorer() {
     const synthetic = storeTestPacks
       .filter((tp) => tp.subsystem === selectedSubsystemId)
       .filter((tp) => !testpacks.some((st) => st.id === tp.id))
+      .filter((tp) => scope.isInScope(tp.pdsAreaCode))
       .map((tp) => makeSyntheticTestpack(tp, storeISOs));
 
     const combined = [...synthetic, ...staticList];
@@ -1463,6 +1492,7 @@ export function TestpackExplorer() {
     priorityFilter,
     storeTestPacks,
     storeISOs,
+    scope,
   ]);
 
   const selectedTestpack = useMemo(() => {
@@ -1507,10 +1537,19 @@ export function TestpackExplorer() {
   /*  Render helpers                                                    */
   /* ---------------------------------------------------------------- */
 
+  const liveTpForEdit = storeTestPacks.find(
+    (tp) => tp.id === selectedTestpackId,
+  );
+
   const filterBar = (
     <div className="sticky top-0 z-20 border-b bg-white/95 px-6 py-4 backdrop-blur supports-[backdrop-filter]:bg-white/85">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex flex-1 flex-wrap items-center gap-3">
+          {scope.active ? (
+            <Badge variant="outline" className="text-xs">
+              Scope: {scope.subCode}
+            </Badge>
+          ) : null}
           <div className="relative min-w-[260px] flex-1 xl:max-w-[320px]">
             <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
@@ -1731,8 +1770,24 @@ export function TestpackExplorer() {
               <Eye className="mr-1 h-4 w-4" />
               View Dossier
             </Button>
+            {liveTpForEdit ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setBuilderTp(liveTpForEdit)}
+                disabled={pmLocked}
+              >
+                <Pencil className="mr-1 h-3 w-3" /> Edit Test Pack
+              </Button>
+            ) : null}
           </div>
         </div>
+
+        {pmLocked ? (
+          <div className="mb-2">
+            <PmWriteLockBanner />
+          </div>
+        ) : null}
 
         <Tabs defaultValue="general" className="gap-4">
           <TabsList className="h-9">
@@ -1830,6 +1885,13 @@ export function TestpackExplorer() {
           title={releaseDialogTitle}
           items={releaseDialogItems}
         />
+        {builderTp ? (
+          <TestpackBuilderSheet
+            open
+            onClose={() => setBuilderTp(null)}
+            mode={{ kind: "edit", tp: builderTp }}
+          />
+        ) : null}
       </div>
     );
   }

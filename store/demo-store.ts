@@ -24,6 +24,7 @@ import { useFieldMaterialCheckStore } from "./field-material-check-store"
 import { useFlangeBoltProgressStore } from "./flange-bolt-progress-store"
 import { usePwhtStore } from "./pwht-store"
 import { useFieldQCReleaseStore } from "./field-qc-release-store"
+import { useSpoolTrackingStore } from "./spool-tracking-store"
 
 /**
  * Demo store — global demo-mode toggle and master reset.
@@ -80,6 +81,7 @@ export const useDemoStore = create<DemoState>()(
         useFlangeBoltProgressStore.getState().resetFlangeBoltProgress()
         useFlangeStore.getState().resetDemo()
         useSpoolingStore.getState().resetDemo()
+        useSpoolTrackingStore.getState().resetTracking()
         set({
           demoMode: true,
           lastResetAt: new Date().toISOString(),

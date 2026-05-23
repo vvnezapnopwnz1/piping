@@ -1,5 +1,6 @@
 "use client";
 
+import * as XLSX from "xlsx";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,6 +22,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { ReleaseWorkItem } from "@/lib/testpack-data";
+import { useScopeLock } from "@/lib/scope-lock";
+import { usePmWriteLock } from "@/lib/pm-write-lock";
 
 interface ReleaseWorkDialogProps {
   open: boolean;
@@ -35,22 +38,39 @@ export function ReleaseWorkDialog({
   title,
   items,
 }: ReleaseWorkDialogProps) {
+  const scope = useScopeLock();
+  const { locked: pmLocked } = usePmWriteLock();
+
+  const scopedItems = items.filter((row) =>
+    scope.isInScope((row as ReleaseWorkItem & { pdsAreaCode?: string }).pdsAreaCode),
+  );
+
   const handleExport = () => {
-    const header = "ID,Joint,ISO,Spool,Status\n";
-    const rows = items
-      .map(
-        (r) =>
-          `${r.id},${r.jointNo ?? ""},${r.isoNo},${r.spoolNo ?? ""},${r.status}`,
-      )
-      .join("\n");
-    const blob = new Blob([header + rows], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `release-work-${Date.now()}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("Work list exported");
+    const wb = XLSX.utils.book_new();
+    const rows = [
+      ["ID", "Joint", "ISO", "Spool", "Status"],
+      ...scopedItems.map((r) => [
+        r.id,
+        r.jointNo ?? "",
+        r.isoNo,
+        r.spoolNo ?? "",
+        r.status,
+      ]),
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws["!cols"] = [
+      { wch: 12 },
+      { wch: 14 },
+      { wch: 14 },
+      { wch: 14 },
+      { wch: 18 },
+    ];
+    XLSX.utils.book_append_sheet(wb, ws, "Release Work List");
+    XLSX.writeFile(
+      wb,
+      `release-work-${title.replace(/\s+/g, "_")}-${new Date().toISOString().slice(0, 10)}.xlsx`,
+    );
+    toast.success(`${scopedItems.length} row(s) exported`);
   };
 
   return (
@@ -59,7 +79,8 @@ export function ReleaseWorkDialog({
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            {items.length} item{items.length !== 1 ? "s" : ""} outstanding
+            {scopedItems.length} item{scopedItems.length !== 1 ? "s" : ""}{" "}
+            outstanding
           </DialogDescription>
         </DialogHeader>
         <div className="max-h-[320px] overflow-auto rounded-md border">
@@ -73,7 +94,7 @@ export function ReleaseWorkDialog({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.length === 0 ? (
+              {scopedItems.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={4}
@@ -83,7 +104,7 @@ export function ReleaseWorkDialog({
                   </TableCell>
                 </TableRow>
               ) : (
-                items.map((row) => (
+                scopedItems.map((row) => (
                   <TableRow key={row.id}>
                     <TableCell className="font-mono text-xs">
                       {row.jointNo ?? row.id}
@@ -103,11 +124,11 @@ export function ReleaseWorkDialog({
           </Button>
           <Button
             className="gap-2"
-            disabled={items.length === 0}
+            disabled={pmLocked || scopedItems.length === 0}
             onClick={handleExport}
           >
             <Download className="h-4 w-4" />
-            Export
+            Export to Excel
           </Button>
         </DialogFooter>
       </DialogContent>

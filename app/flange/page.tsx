@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { FlangeBrowse } from "@/components/flange/flange-browse";
 
 export default function FlangePage() {
@@ -12,7 +13,9 @@ export default function FlangePage() {
           execution per Easy Piping §19.2.1.
         </p>
       </div>
-      <FlangeBrowse />
+      <Suspense fallback={<div className="text-sm text-muted-foreground">Loading flange browser…</div>}>
+        <FlangeBrowse />
+      </Suspense>
     </div>
   );
 }

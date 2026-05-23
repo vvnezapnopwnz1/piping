@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { format } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -22,24 +22,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { StatusCodeBadge } from "@/components/shared/status-code-badge";
 import { cn } from "@/lib/utils";
 import {
-  STATUS_CODE_TOOLTIPS,
+  fabStageToStatusCode,
+  statusCodeToLabel,
   type Iso,
   type Testpack,
 } from "@/lib/testpack-data";
-
-function spoolDotColor(statusCode: number) {
-  if (statusCode === 12) return "bg-emerald-500";
-  if (statusCode === 8) return "bg-amber-500";
-  return "bg-red-500";
-}
+import { SEED_ISO_SPOOLS } from "@/lib/testpack-seed";
+import { useTestpackStore } from "@/store/testpack-store";
+import { useErectedStore } from "@/store/erected-store";
+import { useSpoolStages } from "@/store/spool-stage";
 
 function IsometricStatusPanel({ iso }: { iso: Iso }) {
   const s = iso.isometricStatus;
@@ -106,13 +100,46 @@ function IsometricStatusPanel({ iso }: { iso: Iso }) {
 }
 
 function SpoolStatusGrid({ iso }: { iso: Iso }) {
+  const stages = useSpoolStages();
+  const erectedRecords = useErectedStore((s) => s.records);
+  const storeIsos = useTestpackStore((s) => s.isos);
+
+  const rows = useMemo(() => {
+    const isoRecord = storeIsos.find((i) => i.id === iso.isoNo);
+    const spoolIds =
+      SEED_ISO_SPOOLS.find((e) => e.isoId === iso.isoNo)?.spoolIds ??
+      iso.spools.map((s) => s.spoolNo);
+
+    if (spoolIds.length === 0) return iso.spools;
+
+    return spoolIds.map((spoolNo) => {
+      const isRft = isoRecord?.spoolsRFT.includes(spoolNo) ?? false;
+      const isErected = erectedRecords.some((r) => r.spoolNo === spoolNo);
+      const fabStage = stages.get(spoolNo);
+      const statusCode = fabStageToStatusCode(fabStage, isErected, isRft);
+      return {
+        spoolNo,
+        status: statusCodeToLabel(statusCode),
+        statusCode,
+        stageLabel: fabStage ?? "—",
+      };
+    });
+  }, [iso.isoNo, iso.spools, stages, erectedRecords, storeIsos]);
+
+  type SpoolRow = {
+    spoolNo: string;
+    status: string;
+    statusCode: number;
+    stageLabel?: string;
+  };
+  const displayRows: SpoolRow[] = rows;
+
   return (
     <Card className="overflow-hidden">
       <CardHeader className="border-b pb-4">
         <CardTitle className="text-sm font-medium">Spool status</CardTitle>
         <CardDescription>
-          Color coding: green = Ready For Test, amber = In Progress, red = Not
-          Ready
+          Live derivation from fabrication and erection stores
         </CardDescription>
       </CardHeader>
       <div className="px-0">
@@ -123,6 +150,9 @@ function SpoolStatusGrid({ iso }: { iso: Iso }) {
                 Spool No
               </TableHead>
               <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Fab stage
+              </TableHead>
+              <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Status
               </TableHead>
               <TableHead className="px-6 text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -131,36 +161,22 @@ function SpoolStatusGrid({ iso }: { iso: Iso }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {iso.spools.map((spool) => (
+            {displayRows.map((spool) => (
               <TableRow key={spool.spoolNo}>
                 <TableCell className="px-6 font-mono text-xs font-medium text-sky-700">
                   {spool.spoolNo}
                 </TableCell>
+                <TableCell className="text-sm text-slate-700">
+                  {spool.stageLabel ?? "—"}
+                </TableCell>
                 <TableCell className="text-sm text-slate-900">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={cn(
-                        "h-2.5 w-2.5 rounded-full",
-                        spoolDotColor(spool.statusCode),
-                      )}
-                    />
-                    {spool.status}
-                  </div>
+                  {spool.status}
                 </TableCell>
                 <TableCell className="px-6">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Badge variant="outline" className="font-mono text-xs">
-                          {spool.statusCode}
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {STATUS_CODE_TOOLTIPS[spool.statusCode] ??
-                          `Status code ${spool.statusCode}`}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <StatusCodeBadge
+                    code={spool.statusCode}
+                    label={spool.status}
+                  />
                 </TableCell>
               </TableRow>
             ))}
@@ -208,7 +224,7 @@ export function IsoLevelView({
             size="icon"
             disabled={!hasPrev}
             onClick={onPrevIso}
-            aria-label="Previous isometric"
+            aria-label="Previous ISO"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -217,7 +233,7 @@ export function IsoLevelView({
             size="icon"
             disabled={!hasNext}
             onClick={onNextIso}
-            aria-label="Next isometric"
+            aria-label="Next ISO"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -227,10 +243,10 @@ export function IsoLevelView({
       <Tabs defaultValue="spool-status" className="gap-4">
         <TabsList className="h-9">
           <TabsTrigger value="spool-status" className="text-xs">
-            Spool Status
+            Spool status
           </TabsTrigger>
           <TabsTrigger value="isometric-status" className="text-xs">
-            Isometric Status
+            Isometric status
           </TabsTrigger>
         </TabsList>
         <TabsContent value="spool-status">

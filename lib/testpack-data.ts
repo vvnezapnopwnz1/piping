@@ -1,3 +1,5 @@
+import type { SpoolFabStage } from "@/lib/spool-data";
+
 export type Priority = "High" | "Medium" | "Low";
 export type TestMedium = "Hydro" | "Pneumatic" | "Vacuum";
 export type TestpackStatus =
@@ -52,10 +54,51 @@ export type ReleaseTrackingKey =
   | "isosReadyForTest";
 
 export const STATUS_CODE_TOOLTIPS: Record<number, string> = {
+  2: "Not Started — no construction activity",
   4: "Not Ready — construction incomplete",
+  6: "To Site — spool delivered",
   8: "In Progress — work ongoing",
+  10: "Welded/Bolted — joints complete",
   12: "Ready For Test — cleared for pressure test",
+  14: "Line Check Done — punch items pending",
+  16: "Blinding Complete — testing eligible",
+  18: "Testing In Progress",
+  20: "Tested & Reinstated",
 };
+
+export type StatusTone = "red" | "amber" | "emerald" | "sky" | "slate";
+
+export const STATUS_CODE_TONES: Record<number, StatusTone> = {
+  2: "slate",
+  4: "red",
+  6: "sky",
+  8: "amber",
+  10: "sky",
+  12: "emerald",
+  14: "amber",
+  16: "sky",
+  18: "amber",
+  20: "emerald",
+};
+
+export function fabStageToStatusCode(
+  stage: SpoolFabStage | undefined,
+  isErected: boolean,
+  isRft: boolean,
+): number {
+  if (isRft) return 12;
+  if (isErected) return 10;
+  if (!stage || stage === "Not Started") return 4;
+  if (stage === "Painted" || stage === "QC Release" || stage === "Fabricated")
+    return 8;
+  return 6;
+}
+
+export function statusCodeToLabel(code: number): Spool["status"] {
+  if (code === 12) return "Ready For Test";
+  if (code === 8 || code === 10 || code === 6) return "In Progress";
+  return "Not Ready";
+}
 
 export function attachIsoStatus(iso: Omit<Iso, "isometricStatus"> & { isometricStatus?: IsoStatus }): Iso {
   if (iso.isometricStatus) {

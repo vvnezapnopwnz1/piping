@@ -79,6 +79,16 @@ export interface ISORecord {
   punchItemIds: string[]
 }
 
+export type TestMedium = "Hydro" | "Pneumatic" | "Vacuum"
+
+export interface ClientWitnessRecord {
+  present: boolean
+  date?: string
+  signerName?: string
+  recordedBy?: string
+  recordedAt?: string
+}
+
 export interface TestPackRecord {
   id: string
   no: string
@@ -96,6 +106,25 @@ export interface TestPackRecord {
   testingStartDate?: string
   testingDoneDate?: string
   preCommDate?: string
+  rev: string
+  testPlannedDate?: string
+  testMedium: TestMedium
+  unitOfTime: string
+  volumeM3?: number
+  testPressureBar?: number
+  pdsAreaCode?: string
+  clientWitness?: ClientWitnessRecord
+  createdAt?: string
+  createdBy?: string
+}
+
+const DEFAULT_TP_GENERAL = {
+  rev: "Rev 1",
+  testPlannedDate: "2025-12-01",
+  testMedium: "Hydro" as TestMedium,
+  unitOfTime: "24 h",
+  volumeM3: 2.0,
+  testPressureBar: 20.0,
 }
 
 export const LINE_CHECKER_TEAMS = ["LC-01", "LC-02", "LC-03", "LC-04"]
@@ -153,6 +182,7 @@ export const SEED_TEST_PACKS: TestPackRecord[] = [
     isoIds: ["ISO-1001", "ISO-1002", "ISO-1003", "ISO-1020"],
     readyForTest: false,
     blindingStatus: "NotEligible",
+    ...DEFAULT_TP_GENERAL,
   },
   {
     id: "TP-202",
@@ -165,6 +195,7 @@ export const SEED_TEST_PACKS: TestPackRecord[] = [
     isoIds: ["ISO-1005", "ISO-1006", "ISO-1007"],
     readyForTest: false,
     blindingStatus: "NotEligible",
+    ...DEFAULT_TP_GENERAL,
   },
   {
     id: "TP-203",
@@ -177,6 +208,7 @@ export const SEED_TEST_PACKS: TestPackRecord[] = [
     isoIds: ["ISO-1008", "ISO-1009", "ISO-1010"],
     readyForTest: false,
     blindingStatus: "NotEligible",
+    ...DEFAULT_TP_GENERAL,
   },
   {
     id: "TP-204",
@@ -189,6 +221,7 @@ export const SEED_TEST_PACKS: TestPackRecord[] = [
     isoIds: ["ISO-1011", "ISO-1012", "ISO-1019"],
     readyForTest: false,
     blindingStatus: "NotEligible",
+    ...DEFAULT_TP_GENERAL,
   },
   {
     id: "TP-205",
@@ -201,6 +234,7 @@ export const SEED_TEST_PACKS: TestPackRecord[] = [
     isoIds: ["ISO-1004", "ISO-1013", "ISO-1014", "ISO-1015", "ISO-1016"],
     readyForTest: false,
     blindingStatus: "NotEligible",
+    ...DEFAULT_TP_GENERAL,
   },
   {
     id: "TP-206",
@@ -213,6 +247,7 @@ export const SEED_TEST_PACKS: TestPackRecord[] = [
     isoIds: [],
     readyForTest: true,
     blindingStatus: "NotEligible",
+    ...DEFAULT_TP_GENERAL,
   },
 ]
 

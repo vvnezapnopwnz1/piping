@@ -38,6 +38,10 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import {
+  TestpackWorkflowGuards,
+  useTestpackWorkflowLocks,
+} from "@/components/testpack/testpack-workflow-guards";
 
 function SortIcon({
   active,
@@ -83,6 +87,7 @@ interface PunchItemFormRow {
 }
 
 export function ProgressView() {
+  const { pmLocked } = useTestpackWorkflowLocks();
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestFilter = searchParams.get("request") ?? "";
@@ -311,6 +316,7 @@ export function ProgressView() {
         <ArrowLeft className="h-3.5 w-3.5" />
         Back to Pressure Test
       </Link>
+      <TestpackWorkflowGuards />
       <div className="flex h-full gap-4 overflow-hidden">
         {/* Main */}
         <div className="flex-1 flex flex-col h-full overflow-hidden rounded-xl border border-slate-200 bg-white">
@@ -851,7 +857,7 @@ export function ProgressView() {
               </Button>
               <Button
                 size="sm"
-                disabled={isDateInvalid || isSaving}
+                disabled={isDateInvalid || isSaving || pmLocked}
                 onClick={handleSave}
                 className="h-8 text-xs gap-1.5"
               >

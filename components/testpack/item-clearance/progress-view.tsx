@@ -37,6 +37,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import {
+  TestpackWorkflowGuards,
+  useTestpackWorkflowLocks,
+} from "@/components/testpack/testpack-workflow-guards";
 
 function SortIcon({
   active,
@@ -71,6 +75,7 @@ function CategoryBadge({ category }: { category: PunchCategory }) {
 }
 
 export function ProgressView() {
+  const { pmLocked } = useTestpackWorkflowLocks();
   const searchParams = useSearchParams();
   const requestFilter = searchParams.get("request") ?? "";
   const teamFilter = searchParams.get("team") ?? "";
@@ -279,6 +284,7 @@ export function ProgressView() {
         <ArrowLeft className="h-3.5 w-3.5" />
         Back to Pressure Test
       </Link>
+      <TestpackWorkflowGuards />
       <div className="flex h-full gap-4 overflow-hidden">
         {/* Main */}
         <div className="flex-1 flex flex-col h-full overflow-hidden rounded-xl border border-slate-200 bg-white">
@@ -574,7 +580,7 @@ export function ProgressView() {
               </span>
               <Button
                 size="sm"
-                disabled={isClearing}
+                disabled={isClearing || pmLocked}
                 onClick={handleMarkCleared}
                 className="h-8 text-xs gap-1.5"
               >

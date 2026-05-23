@@ -24,8 +24,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  TestpackWorkflowGuards,
+  useTestpackWorkflowLocks,
+} from "@/components/testpack/testpack-workflow-guards";
 
 export function ProgressView() {
+  const { pmLocked } = useTestpackWorkflowLocks();
   const searchParams = useSearchParams();
   const requestFilter = searchParams.get("request") ?? "all";
 
@@ -104,6 +109,7 @@ export function ProgressView() {
         <ArrowLeft className="h-3.5 w-3.5" />
         Back to Pressure Test
       </Link>
+      <TestpackWorkflowGuards />
 
       <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
         <div className="text-sm font-semibold">Flange reinstatement progress</div>
@@ -167,7 +173,7 @@ export function ProgressView() {
             <Input value={reportNo} onChange={(e) => setReportNo(e.target.value)} placeholder="Report number" className="h-8 text-xs" />
             <Input value={tagNo} onChange={(e) => setTagNo(e.target.value)} placeholder="Tag number" className="h-8 text-xs" />
           </div>
-          <Button className="h-8" onClick={save} disabled={!selectedId || !jointer || !reportNo || !tagNo}>Save reinstatement</Button>
+          <Button className="h-8" onClick={save} disabled={!selectedId || !jointer || !reportNo || !tagNo || pmLocked}>Save reinstatement</Button>
         </div>
       </div>
     </div>

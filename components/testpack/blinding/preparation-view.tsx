@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   Check,
+  FileText,
   ChevronDown,
   ChevronUp,
   ChevronsUpDown,
@@ -32,6 +33,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import {
+  TestpackWorkflowGuards,
+  useTestpackWorkflowLocks,
+} from "@/components/testpack/testpack-workflow-guards";
 
 interface FilterState {
   testPack: string;
@@ -61,6 +66,8 @@ export function PreparationView() {
 
   const testPacks = useTestpackStore((s) => s.testPacks);
   const assignBlinding = useTestpackStore((s) => s.assignBlinding);
+  const blindingRequests = useTestpackStore((s) => s.blindingRequests);
+  const { pmLocked } = useTestpackWorkflowLocks();
   const kpis = useBlindingKPIs();
   const blindingTeams = useTeams("blinding");
 
@@ -220,6 +227,7 @@ export function PreparationView() {
         <ArrowLeft className="h-3.5 w-3.5" />
         Back to Pressure Test
       </Link>
+      <TestpackWorkflowGuards />
       <div className="flex h-full gap-4 overflow-hidden">
         {/* Sidebar */}
         <aside className="w-[240px] flex-shrink-0 rounded-xl border border-slate-200 bg-slate-50 flex flex-col h-full overflow-y-auto">
@@ -590,7 +598,7 @@ export function PreparationView() {
                 <Button
                   size="sm"
                   onClick={handleAssign}
-                  disabled={!selectedTeam || isAssigning}
+                  disabled={!selectedTeam || isAssigning || pmLocked}
                   className="bg-violet-600 hover:bg-violet-700 text-white"
                 >
                   {isAssigning ? (
@@ -610,6 +618,34 @@ export function PreparationView() {
           )}
         </div>
       </div>
+
+      {blindingRequests.length > 0 ? (
+        <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-600">
+            Recent blinding requests
+          </p>
+          <ul className="space-y-2">
+            {blindingRequests.map((r) => (
+              <li
+                key={r.id}
+                className="flex items-center justify-between text-sm"
+              >
+                <span className="font-mono text-sky-700">{r.id}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    window.open(`/testpack/print/blinding/${r.id}`, "_blank")
+                  }
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  Generate Request PDF
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </>
   );
 }

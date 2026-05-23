@@ -414,3 +414,5 @@ docs/marker-output/images/Easy_Piping_User_Manual.pdf-0156-02.png
 docs/marker-output/images/Easy_Piping_User_Manual.pdf-0156-04.png
 docs/marker-output/images/Easy_Piping_User_Manual.pdf-0156-06.png
 .vercel
+
+package-lock.json

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Check, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 import { useFlangeStore, useTeams, useTestpackStore } from "@/store";
@@ -25,6 +25,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  TestpackWorkflowGuards,
+  useTestpackWorkflowLocks,
+} from "@/components/testpack/testpack-workflow-guards";
 
 export function PreparationView() {
   const router = useRouter();
@@ -34,6 +38,8 @@ export function PreparationView() {
   const testPacks = useTestpackStore((s) => s.testPacks);
   const joints = useFlangeStore((s) => s.joints);
   const assignReinstatement = useTestpackStore((s) => s.assignReinstatement);
+  const reinstatementRequests = useTestpackStore((s) => s.reinstatementRequests);
+  const { pmLocked } = useTestpackWorkflowLocks();
   const teams = useTeams("reinstatement");
 
   const [search, setSearch] = useState("");
@@ -110,6 +116,7 @@ export function PreparationView() {
         <ArrowLeft className="h-3.5 w-3.5" />
         Back to Pressure Test
       </Link>
+      <TestpackWorkflowGuards />
 
       <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
         <div className="text-sm font-semibold">Flange reinstatement</div>
@@ -167,9 +174,46 @@ export function PreparationView() {
               ))}
             </SelectContent>
           </Select>
-          <Button className="h-8" onClick={handleAssign} disabled={!team || selectedIds.size === 0}>Assign</Button>
+          <Button
+            className="h-8"
+            onClick={handleAssign}
+            disabled={!team || selectedIds.size === 0 || pmLocked}
+          >
+            Assign
+          </Button>
         </div>
       </div>
+
+      {reinstatementRequests.length > 0 ? (
+        <div className="rounded-lg border border-slate-200 bg-white p-4">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-600">
+            Recent reinstatement requests
+          </p>
+          <ul className="space-y-2">
+            {reinstatementRequests.map((r) => (
+              <li
+                key={r.id}
+                className="flex items-center justify-between text-sm"
+              >
+                <span className="font-mono text-sky-700">{r.id}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    window.open(
+                      `/testpack/print/reinstatement/${r.id}`,
+                      "_blank",
+                    )
+                  }
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  Generate Request PDF
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </div>
   );
 }

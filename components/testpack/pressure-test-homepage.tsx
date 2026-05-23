@@ -64,6 +64,8 @@ import {
   useTestingKPIs,
   useReinstatementKPIs,
 } from "@/store";
+import { TestpackActivityFeed } from "@/components/testpack/testpack-activity-feed";
+import { useScopeLock } from "@/lib/scope-lock";
 
 // Icon map
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -419,6 +421,7 @@ function AlertRow({ alert }: { alert: Alert }) {
 }
 
 export function PressureTestHomepage() {
+  const scope = useScopeLock();
   const [timeScale, setTimeScale] = useState("30D");
   const [system, setSystem] = useState("all");
   const [location, setLocation] = useState("all");
@@ -441,6 +444,11 @@ export function PressureTestHomepage() {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
+          {scope.active ? (
+            <Badge variant="outline" className="text-xs">
+              Scope: {scope.subCode}
+            </Badge>
+          ) : null}
           <span className="text-xs text-muted-foreground">
             Last sync: 8 min ago
           </span>
@@ -647,11 +655,15 @@ export function PressureTestHomepage() {
         </Card>
       </div>
 
-      {/* 5 Activity cards */}
-      <div className="space-y-4">
-        {PRESSURE_TEST_ACTIVITIES.map((activity) => (
-          <ActivityCard key={activity.id} activity={activity} />
-        ))}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
+        <div className="space-y-4 xl:col-span-3">
+          {PRESSURE_TEST_ACTIVITIES.map((activity) => (
+            <ActivityCard key={activity.id} activity={activity} />
+          ))}
+        </div>
+        <div className="xl:col-span-2">
+          <TestpackActivityFeed />
+        </div>
       </div>
 
       {/* Critical Alerts */}

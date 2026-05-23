@@ -30,6 +30,10 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import {
+  TestpackWorkflowGuards,
+  useTestpackWorkflowLocks,
+} from "@/components/testpack/testpack-workflow-guards";
 
 function SortIcon({
   active,
@@ -64,6 +68,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export function ProgressView() {
+  const { pmLocked } = useTestpackWorkflowLocks();
   const searchParams = useSearchParams();
   const requestFilter = searchParams.get("request") ?? "";
   const teamFilter = searchParams.get("team") ?? "";
@@ -219,6 +224,7 @@ export function ProgressView() {
         <ArrowLeft className="h-3.5 w-3.5" />
         Back to Pressure Test
       </Link>
+      <TestpackWorkflowGuards />
       <div className="flex h-full gap-4 overflow-hidden">
         {/* Main */}
         <div className="flex-1 flex flex-col h-full overflow-hidden rounded-xl border border-slate-200 bg-white">
@@ -505,7 +511,7 @@ export function ProgressView() {
             <div className="px-5 py-3 border-t border-slate-200 flex-shrink-0 bg-slate-50">
               <Button
                 className="w-full bg-violet-600 hover:bg-violet-700 text-white"
-                disabled={!blindingDate || isSaving}
+                disabled={!blindingDate || isSaving || pmLocked}
                 onClick={handleSave}
               >
                 {isSaving ? (

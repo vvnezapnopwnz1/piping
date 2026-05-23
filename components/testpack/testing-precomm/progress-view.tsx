@@ -27,6 +27,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import {
+  TestpackWorkflowGuards,
+  useTestpackWorkflowLocks,
+} from "@/components/testpack/testpack-workflow-guards";
 
 function SortIcon({
   active,
@@ -55,6 +59,7 @@ function formatDate(dateStr: string | undefined) {
 }
 
 export function ProgressView() {
+  const { pmLocked } = useTestpackWorkflowLocks();
   const searchParams = useSearchParams();
   const testpackParam = searchParams.get("testpack") ?? "";
 
@@ -222,6 +227,7 @@ export function ProgressView() {
         <ArrowLeft className="h-3.5 w-3.5" />
         Back to Pressure Test
       </Link>
+      <TestpackWorkflowGuards />
       <div className="flex h-full gap-4 overflow-hidden">
         {/* Main */}
         <div className="flex-1 flex flex-col h-full overflow-hidden rounded-xl border border-slate-200 bg-white">
@@ -502,7 +508,7 @@ export function ProgressView() {
             <div className="px-5 py-3 border-t border-slate-200 flex-shrink-0 bg-slate-50">
               <Button
                 className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
-                disabled={isSaving}
+                disabled={isSaving || pmLocked}
                 onClick={handleSave}
               >
                 {isSaving ? (

@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ChevronDown, ChevronRight, Search } from "lucide-react";
 
 import { FlangeDetailPanel } from "@/components/flange/flange-detail-panel";
@@ -47,6 +48,8 @@ function boltingBadge(status: BoltingStatus) {
 }
 
 export function FlangeBrowse() {
+  const searchParams = useSearchParams();
+  const testpackFilter = searchParams.get("testpack");
   const joints = useFlangeStore((s) => s.joints);
   const updateJoint = useFlangeStore((s) => s.updateJoint);
   const [search, setSearch] = useState("");
@@ -67,6 +70,12 @@ export function FlangeBrowse() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return joints.filter((j) => {
+      if (
+        testpackFilter &&
+        j.testPackId !== testpackFilter &&
+        j.testpackId !== testpackFilter
+      )
+        return false;
       if (pdsArea !== "All Areas" && j.pdsArea !== pdsArea) return false;
       if (lineNo !== "All Lines" && j.lineNo !== lineNo) return false;
       if (isoNo !== "All ISOs" && j.isoNo !== isoNo) return false;
@@ -93,6 +102,7 @@ export function FlangeBrowse() {
   }, [
     joints,
     search,
+    testpackFilter,
     pdsArea,
     lineNo,
     isoNo,

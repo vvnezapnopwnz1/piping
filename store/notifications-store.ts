@@ -28,6 +28,7 @@ export type NotificationCategory =
   | "rework"
   | "tracking"
   | "erection"
+  | "testpack"
   | "system"
 
 export interface Notification {

@@ -15,6 +15,8 @@ import {
   type ReinstatementRequest,
   type ISORecord,
   type TestPackRecord,
+  type TestMedium,
+  type ClientWitnessRecord,
   SEED_TEST_PACKS,
   SEED_ISOS,
   SEED_CHECKING_REQUESTS,
@@ -31,7 +33,20 @@ import {
 } from "@/lib/testpack-seed"
 import { useFlangeStore } from "./flange-store"
 
-export type { LineCheckStatus, BlindingStatus, PunchCategory, PunchItem, CheckingRequest, ClearanceRequest, BlindingRequest, ReinstatementRequest, ISORecord, TestPackRecord }
+export type {
+  LineCheckStatus,
+  BlindingStatus,
+  PunchCategory,
+  PunchItem,
+  CheckingRequest,
+  ClearanceRequest,
+  BlindingRequest,
+  ReinstatementRequest,
+  ISORecord,
+  TestPackRecord,
+  TestMedium,
+  ClientWitnessRecord,
+}
 
 export { LINE_CHECKER_TEAMS, FINISHING_TEAMS, BLINDING_TEAMS, REINSTATEMENT_TEAMS, JOINTER_LIST }
 
@@ -105,6 +120,44 @@ interface TestpackState {
 
   recordIsoWelded: (isoNo: string, source: "rollup" | "manual") => void
   recordSpoolRFT: (spoolNo: string) => void
+
+  getNextTpId: () => string
+  createTestpack: (payload: {
+    no?: string
+    subsystem: string
+    system: string
+    location: string
+    areaClassification: string
+    priority: "High" | "Medium" | "Low"
+    rev?: string
+    testPlannedDate?: string
+    testMedium?: TestMedium
+    unitOfTime?: string
+    volumeM3?: number
+    testPressureBar?: number
+    isoIds: string[]
+    createdBy: string
+  }) => Promise<{ id: string }>
+  updateTestpackGeneral: (
+    tpId: string,
+    patch: Partial<
+      Pick<
+        TestPackRecord,
+        | "rev"
+        | "testPlannedDate"
+        | "testMedium"
+        | "unitOfTime"
+        | "volumeM3"
+        | "testPressureBar"
+        | "priority"
+        | "location"
+        | "areaClassification"
+      >
+    >,
+  ) => void
+  assignIsoToTestpack: (tpId: string, isoId: string) => void
+  removeIsoFromTestpack: (tpId: string, isoId: string) => void
+  recordClientExamination: (tpId: string, payload: ClientWitnessRecord) => void
 
   // Demo helpers
   resetDemo: () => void
@@ -576,6 +629,132 @@ export const useTestpackStore = create<TestpackState>()(
         })
       },
 
+      getNextTpId: () => {
+        const ids = get().testPacks.map((tp) => {
+          const m = tp.id.match(/TP-(\d+)/)
+          return m ? parseInt(m[1], 10) : 0
+        })
+        const next = Math.max(200, ...ids) + 1
+        return `TP-${next}`
+      },
+
+      createTestpack: async (payload) => {
+        await delay()
+        const id = payload.no?.trim() || get().getNextTpId()
+        const newTp: TestPackRecord = {
+          id,
+          no: id,
+          subsystem: payload.subsystem,
+          system: payload.system,
+          location: payload.location,
+          areaClassification: payload.areaClassification,
+          priority: payload.priority,
+          isoIds: payload.isoIds,
+          readyForTest: false,
+          blindingStatus: "NotEligible",
+          rev: payload.rev ?? "Rev 1",
+          testPlannedDate: payload.testPlannedDate,
+          testMedium: payload.testMedium ?? "Hydro",
+          unitOfTime: payload.unitOfTime ?? "24 h",
+          volumeM3: payload.volumeM3,
+          testPressureBar: payload.testPressureBar,
+          createdAt: now(),
+          createdBy: payload.createdBy,
+        }
+        set((state) => {
+          const updatedIsos = state.isos.map((iso) =>
+            payload.isoIds.includes(iso.id) ? { ...iso, testpackId: id } : iso,
+          )
+          const nextState: TestpackState = {
+            ...state,
+            testPacks: [...state.testPacks, newTp],
+            isos: updatedIsos,
+          }
+          return {
+            testPacks: recomputeReadyForTest(
+              { ...nextState, testPacks: recomputeBlindingEligibility(nextState) },
+            ),
+            isos: updatedIsos,
+          }
+        })
+        return { id }
+      },
+
+      updateTestpackGeneral: (tpId, patch) => {
+        set((state) => ({
+          testPacks: state.testPacks.map((tp) =>
+            tp.id === tpId ? { ...tp, ...patch } : tp,
+          ),
+        }))
+      },
+
+      assignIsoToTestpack: (tpId, isoId) => {
+        set((state) => {
+          const updatedTps = state.testPacks.map((tp) => {
+            if (tp.id === tpId) {
+              return tp.isoIds.includes(isoId)
+                ? tp
+                : { ...tp, isoIds: [...tp.isoIds, isoId] }
+            }
+            if (tp.isoIds.includes(isoId)) {
+              return { ...tp, isoIds: tp.isoIds.filter((id) => id !== isoId) }
+            }
+            return tp
+          })
+          const updatedIsos = state.isos.map((iso) =>
+            iso.id === isoId ? { ...iso, testpackId: tpId } : iso,
+          )
+          const nextState: TestpackState = {
+            ...state,
+            isos: updatedIsos,
+            testPacks: updatedTps,
+          }
+          return {
+            isos: updatedIsos,
+            testPacks: recomputeReadyForTest({
+              ...nextState,
+              testPacks: recomputeBlindingEligibility(nextState),
+            }),
+          }
+        })
+      },
+
+      removeIsoFromTestpack: (tpId, isoId) => {
+        set((state) => {
+          const updatedTps = state.testPacks.map((tp) =>
+            tp.id === tpId
+              ? { ...tp, isoIds: tp.isoIds.filter((id) => id !== isoId) }
+              : tp,
+          )
+          const nextState: TestpackState = {
+            ...state,
+            testPacks: updatedTps,
+          }
+          return {
+            testPacks: recomputeReadyForTest({
+              ...nextState,
+              testPacks: recomputeBlindingEligibility(nextState),
+            }),
+          }
+        })
+      },
+
+      recordClientExamination: (tpId, payload) => {
+        set((state) => ({
+          testPacks: state.testPacks.map((tp) =>
+            tp.id === tpId
+              ? {
+                  ...tp,
+                  clientWitness: {
+                    ...payload,
+                    recordedAt: payload.recordedAt ?? now(),
+                  },
+                }
+              : tp,
+          ),
+        }))
+      },
+
       resetDemo: () => {
         punchItemCounter = SEED_PUNCH_ITEMS.length
         requestCounter = SEED_CHECKING_REQUESTS.length
@@ -613,9 +792,9 @@ export const useTestpackStore = create<TestpackState>()(
     {
       name: "pipeqc-testpack",
       storage: createJSONStorage(() => localStorage),
-      version: 5,
+      version: 6,
       migrate: (persistedState, version) => {
-        if (version < 5) {
+        if (version < 6) {
           return undefined as unknown as TestpackState
         }
         return persistedState as TestpackState

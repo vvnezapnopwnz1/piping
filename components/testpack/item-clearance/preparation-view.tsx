@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   Check,
+  FileText,
   ChevronDown,
   ChevronUp,
   ChevronsUpDown,
@@ -32,6 +33,10 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import {
+  TestpackWorkflowGuards,
+  useTestpackWorkflowLocks,
+} from "@/components/testpack/testpack-workflow-guards";
 
 interface FilterState {
   categories: PunchCategory[];
@@ -82,6 +87,8 @@ export function PreparationView() {
   const punchItems = useTestpackStore((s) => s.punchItems);
   const testPacks = useTestpackStore((s) => s.testPacks);
   const assignItemClearance = useTestpackStore((s) => s.assignItemClearance);
+  const clearanceRequests = useTestpackStore((s) => s.clearanceRequests);
+  const { pmLocked } = useTestpackWorkflowLocks();
   const kpis = useItemClearanceKPIs();
   const finishingTeams = useTeams("finishing");
 
@@ -264,6 +271,7 @@ export function PreparationView() {
         <ArrowLeft className="h-3.5 w-3.5" />
         Back to Pressure Test
       </Link>
+      <TestpackWorkflowGuards />
       <div className="flex h-full gap-4 overflow-hidden">
         {/* Sidebar */}
         <aside className="w-[240px] flex-shrink-0 rounded-xl border border-slate-200 bg-slate-50 flex flex-col h-full overflow-y-auto">
@@ -689,7 +697,7 @@ export function PreparationView() {
               </Select>
               <Button
                 size="sm"
-                disabled={!selectedTeam || isAssigning}
+                disabled={!selectedTeam || isAssigning || pmLocked}
                 onClick={handleAssign}
                 className="h-8 text-xs gap-1.5"
               >
@@ -704,6 +712,37 @@ export function PreparationView() {
           )}
         </div>
       </div>
+
+      {clearanceRequests.length > 0 ? (
+        <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-600">
+            Recent clearance requests
+          </p>
+          <ul className="space-y-2">
+            {clearanceRequests.map((r) => (
+              <li
+                key={r.id}
+                className="flex items-center justify-between text-sm"
+              >
+                <span className="font-mono text-sky-700">{r.id}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    window.open(
+                      `/testpack/print/item-clearance/${r.id}`,
+                      "_blank",
+                    )
+                  }
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  Generate Request PDF
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </>
   );
 }

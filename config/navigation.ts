@@ -32,6 +32,7 @@ import {
   Inbox,
   GitBranch,
   Send,
+  ListPlus,
 } from 'lucide-react'
 import type { Role } from '@/contexts/role-context'
 
@@ -245,6 +246,23 @@ export const navigationConfig: NavSection[] = [
         title: 'Tracking',
         href: '/tracking',
         icon: MapPin,
+        children: [
+          {
+            title: 'Dashboard',
+            href: '/tracking',
+            icon: LayoutDashboard,
+          },
+          {
+            title: 'Data Analysis',
+            href: '/tracking/data-analysis',
+            icon: Activity,
+          },
+          {
+            title: 'Print Barcodes',
+            href: '/tracking/print-barcodes',
+            icon: Scan,
+          },
+        ],
       },
       {
         title: 'NDE Module',
@@ -284,6 +302,11 @@ export const navigationConfig: NavSection[] = [
         href: '/testpack',
         icon: FlaskConical, // или TestTube2
         children: [
+          {
+            title: 'Builder',
+            href: '/testpack/builder',
+            icon: ListPlus,
+          },
           {
             title: 'Explorer',
             href: '/testpack/explorer',
