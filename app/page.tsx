@@ -3,10 +3,6 @@
 import Link from "next/link";
 import {
   AlertCircle,
-  AlertTriangle,
-  CheckCircle2,
-  Info,
-  ArrowRight,
   Scan,
   Wrench,
 } from "lucide-react";
@@ -17,43 +13,14 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { useUnreadNotifications } from "@/store/notifications-store";
+import { NotificationsFeed } from "@/components/notifications/notifications-feed";
 import { useWeldsKPIs } from "@/store/welds-store";
 import { useBatchesKPIs, useHydrateBatchesStore } from "@/store/batches-store";
-
-const severityConfig = {
-  error: {
-    icon: AlertCircle,
-    color: "text-red-600",
-    bg: "bg-red-50",
-    border: "border-red-200",
-  },
-  warning: {
-    icon: AlertTriangle,
-    color: "text-amber-600",
-    bg: "bg-amber-50",
-    border: "border-amber-200",
-  },
-  success: {
-    icon: CheckCircle2,
-    color: "text-emerald-600",
-    bg: "bg-emerald-50",
-    border: "border-emerald-200",
-  },
-  info: {
-    icon: Info,
-    color: "text-blue-600",
-    bg: "bg-blue-50",
-    border: "border-blue-200",
-  },
-} as const;
 
 export default function HomePage() {
   const hasHydrated = useHydrateBatchesStore();
   const kpis = useWeldsKPIs();
   const batchKpis = useBatchesKPIs();
-  const notifications = useUnreadNotifications();
 
   if (!hasHydrated) {
     return null;
@@ -133,47 +100,7 @@ export default function HomePage() {
         </Link>
       </section>
 
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          Notifications
-        </h2>
-
-        {notifications.length === 0 ? (
-          <div className="py-8 text-center text-sm text-muted-foreground">
-            All caught up — no unread notifications
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {notifications.map((n) => {
-              const config = severityConfig[n.severity];
-              const Icon = config.icon;
-              return (
-                <Link
-                  key={n.id}
-                  href={n.href ?? "#"}
-                  className={`flex items-start gap-3 rounded-lg border p-4 transition-shadow hover:shadow-sm ${config.bg} ${config.border}`}
-                >
-                  <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${config.color}`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">{n.title}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {n.description}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {n.actorLabel ? (
-                      <Badge variant="outline" className="text-xs">
-                        {n.actorLabel}
-                      </Badge>
-                    ) : null}
-                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </section>
+      <NotificationsFeed />
     </div>
   );
 }

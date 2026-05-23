@@ -1,12 +1,14 @@
-# PipeQC — Overview deck
+# PipeQC — Part 1: PSMS Overview
 
-> Первая обзорная презентация. Назначение — показать партнёру, что я **(а)** понимаю предметную область трубопроводного строительства и **(б)** понимаю, как наше приложение PipeQC ложится на эту предметную область — структурно (модули, экраны) и в динамике (ролевые сценарии, lifecycle).
+> **Структурный template** — следует pattern'у оригинальной Technip PSMS overview (40 слайдов, 5 секций: suite intro → industry process → product description → satellite tools → deployment / SOW).
 >
-> Глубина — **обзорная**. Подробные модульные deck'и (Spooling, Fabrication, NDE, Testpack) — отдельно, потом.
+> **Назначение** — обзорная презентация партнёру, чтобы показать (а) понимание индустрии трубопроводного строительства, (б) понимание собственного приложения PipeQC структурно и функционально, в привязке к рабочему lifecycle'у.
 >
-> Формат — один параграф = один слайд для Google Slides. Diagrams — mermaid (Google Slides рендер не поддерживает, но я скопирую как картинку через mermaid.live или просто перерисую блоками).
+> **Не копируем содержимое Easy Piping deck'ов** — только структурный pattern (TOC + section dividers + Features/Functions/Outputs + SOW matrix). Все факты, диаграммы, тексты — про PipeQC.
 >
-> Источники: [pipeline_construction_guide.md](../pipeline_construction_guide.md) (домен), [docs/role_matrix/](../role_matrix/) (роли), [docs/research/presentation_findings.md](../research/presentation_findings.md) (сравнение с Easy Piping), [config/navigation.ts](../../config/navigation.ts) (структура IA).
+> **Источники:** [pipeline_construction_guide.md](../pipeline_construction_guide.md), [docs/role_matrix/](../role_matrix/), [docs/research/presentation_findings.md](../research/presentation_findings.md), [config/navigation.ts](../../config/navigation.ts).
+>
+> **Использование:** каждый «## Slide N» — отдельный слайд в Google Slides. Mermaid рендерить через [mermaid.live](https://mermaid.live) → PNG/SVG.
 
 ---
 
@@ -14,663 +16,1263 @@
 
 > **Содержимое слайда:**
 
+# Piping Construction Management
+
+## PipeQC
+
+### Part 1 — PSMS Overview
+
+_2026 · Construction QA/QC platform for industrial piping projects_
+
+---
+
+## Slide 2 — Section divider · «PipeQC suite»
+
+> **Содержимое слайда (большое название секции):**
+
 # PipeQC
 
-**Construction QA/QC platform for industrial piping projects**
+### Presentation of the construction QC suite
 
-Overview deck · 2026
-
-_(подзаголовок) От ISO-чертежа до hydrotest — один цифровой паспорт на каждый шов и каждую катушку._
-
-> **Presenter note:** одна фраза-якорь. Здесь главная мысль всего продукта — управлять lifecycle'ом каждого weld'а и spool'а на стройке промышленного завода.
+_Section 1 / 5_
 
 ---
 
-## Slide 2 — Что мы вообще строим (контекст домена)
+## Slide 3 — Table of contents
 
 > **Содержимое слайда:**
 
-### Не магистральные трубопроводы. Трубы **внутри заводов**.
+# Table of contents
 
-PipeQC живёт в проектах:
+1. **PipeQC**
+   _Presentation of the construction QC suite_
 
-- Нефтеперерабатывающие заводы (НПЗ)
-- Газоперерабатывающие, LNG-терминалы
-- Химия, удобрения
-- Электростанции (ТЭЦ, АЭС)
-- Фарма, целлюлоза
+2. **Piping construction management**
+   _Process of piping construction · Spooling · Material run by spool · Methodology for operational procedure_
 
-**Масштаб одного проекта (типичный LNG / НПЗ):**
+3. **PipeQC description**
+   _Objectives · Architecture · Main organization · Navigation and homepage · Piping construction process · Features, functions and outputs_
 
-| Объект                | Длина труб | Сварных швов     | Длительность стройки |
-| --------------------- | ---------- | ---------------- | -------------------- |
-| Средний нефтехим. цех | 30–80 км   | 15 000 – 40 000  | 1.5 – 3 года         |
-| Крупный НПЗ / LNG     | 200–500 км | 80 000 – 200 000 | 3 – 6 лет            |
+4. **Satellite tools**
+   _Spool tracking · Mobile / PDA · Future integrations_
 
-> **Главный pain point заказчика:** каждый из этих десятков тысяч швов должен иметь паспорт — кто варил, какими электродами, по какому WPS, кто проверял, какой результат RT. Без программы — Excel-ад. PipeQC закрывает именно это.
+5. **PipeQC deployment**
+   _Modules — example of SOW · Roles × responsibilities_
 
 ---
 
-## Slide 3 — Цепочка участников проекта
+## Slide 4 — PipeQC suite
 
-> **Содержимое слайда:**
+> **Содержимое слайда — что мы есть:**
 
-```mermaid
-flowchart TB
-    Owner["🏢 Owner / Client<br/>Газпром, Aramco, QatarEnergy<br/>(заказывает завод)"]
-    EPC["🏗️ EPC Contractor<br/>Technip, JGC, КАЭР<br/>(проектирует + строит)"]
+### PipeQC — Presentation of the suite
 
-    Owner -->|контракт| EPC
-
-    EPC --> Eng["📐 Engineering"]
-    EPC --> Proc["📦 Procurement"]
-    EPC --> Const["🔧 Construction<br/>(fab + erection)"]
-    EPC --> QC["✅ QA/QC department"]
-
-    Const --> Sub1["Sub A<br/>(сварщики)"]
-    Const --> Sub2["Sub B<br/>(монтажники)"]
-    Const --> Sub3["Sub C<br/>(NDE-лаборатория<br/>BV / SGS / TÜV)"]
-
-    QC -.->|инспекторы<br/>смотрят за всеми| Sub1
-    QC -.->|инспекторы<br/>смотрят за всеми| Sub2
-    QC -.->|инспекторы<br/>смотрят за всеми| Sub3
-
-    style QC fill:#ffd966
-```
-
-> **Кому продаём:** **EPC contractor** — это наш заказчик. Внутри EPC главный пользователь — **QA/QC department** (жёлтым). PipeQC — это в первую очередь инструмент именно для них, плюс read-mostly мониторинг для PM и edit-доступ для subcontractor'ов в рамках их scope.
+- **PipeQC is a construction QA/QC platform** purpose-built for piping packages of industrial EPC projects (НПЗ, ГПЗ, LNG, химия, энергетика).
+- It is the overall system that **digitizes every fabrication and QC activity** on the piping scope — from ISO transmittal to hydrotest handover.
+- Single source of truth across **6 roles**: System Admin, Spooling Team, QC Engineer, NDE Inspector, Subcontractor, Project Manager.
+- Built for **EPC contractor's QA/QC department** as primary user — read-mostly for PM, edit-heavy for QC / NDE, scope-locked for Subcontractor.
+- PipeQC is in **active development** — core lifecycle is in place; deep domain logic (penalty shoot automation, scope lock, real reporting) is rolled out in named tracks (A / H / J / K / N / S).
 
 ---
 
-## Slide 4 — Производственный pipeline проекта (макро-карта)
+## Slide 5 — PipeQC suite · data exchanges
 
-> **Содержимое слайда:**
+> **Содержимое слайда (диаграмма + bullets):**
 
-### 8 фаз стройки. PipeQC живёт в фазах 3–7.
+### Interfaces with the construction data ecosystem
 
 ```mermaid
 flowchart LR
-    A["1. Engineering<br/>📐 ISO-чертежи"]
-    B["2. Procurement<br/>📦 закупка"]
-    C["3. Preparation<br/>📋 Spooling"]
-    D["4. Fabrication<br/>🏭 цех"]
-    E["5. Erection<br/>🏗️ монтаж"]
-    F["6. Testing<br/>💧 Hydrotest"]
-    G["7. Reinstatement<br/>🔧 финальная сборка"]
-    H["8. Commissioning<br/>🚀 пуск"]
+    A["3D Engineering model<br/>AVEVA / SmartPlant 3D"]
+    B["SpoolGen<br/>(ISOGEN output:<br/>weld.txt, trace.txt,<br/>bolt.txt, supp.txt)"]
+    C["SmartPlant Material<br/>(Marian — material<br/>availability by spool)"]
+    D["PipeQC<br/>(construction QC<br/>node)"]
+    E["Client reporting<br/>(weekly progress,<br/>dossier handover)"]
+    F["Subcontractor proprietary<br/>tools / labs<br/>(BV / SGS / TÜV exports)"]
+    G["Mobile / PDA<br/>(spool tracking,<br/>surveillance — planned)"]
 
-    A --> B --> C --> D --> E --> F --> G --> H
+    A --> B --> D
+    C --> D
+    D --> E
+    D <--> F
+    D <--> G
 
-    style C fill:#ffd966
-    style D fill:#ffd966
-    style E fill:#ffd966
-    style F fill:#ffd966
-    style G fill:#ffd966
+    style D fill:#fff2cc,stroke:#333,stroke-width:2px
 ```
 
-**До PipeQC:** Engineering и Procurement — это AVEVA, SmartPlant 3D, SAP. Это не наша зона.
-
-**После PipeQC:** Commissioning — отдельные SCADA / asset-management системы.
-
-**PipeQC = жёлтые блоки** = вся construction + testing pipeline = ~70% длительности проекта по времени.
+- **Upstream**: 3D design + SpoolGen output + SmartPlant Material (CSV import).
+- **Downstream**: client-facing reports, subcontractor exports, mobile sync.
+- **Customizable** for data exchange with client / subcontractor proprietary tools.
 
 ---
 
-## Slide 5 — От производственного pipeline к pipeline приложения
-
-> **Содержимое слайда — главный слайд презентации:**
-
-### Мы воспроизвели real-world pipeline в архитектуре приложения 1-в-1.
-
-```mermaid
-flowchart TB
-    subgraph REAL["🌍 Реальный мир — стройка"]
-        R1["Setup правил проекта<br/>(WPS, welders, NDE Matrix,<br/>subcontractors)"]
-        R2["ISO с engineering<br/>→ режут на spools"]
-        R3["Цеховая сварка spool'ов<br/>+ NDE + paint"]
-        R4["Монтаж spool'ов на площадке<br/>+ field welds + bolt-up"]
-        R5["Hydrotest + reinstatement"]
-        R1 --> R2 --> R3 --> R4 --> R5
-    end
-
-    subgraph APP["💻 PipeQC — модули"]
-        A1["SETUP<br/>/admin"]
-        A2["PREPARATION<br/>/spooling"]
-        A3["CONSTRUCTION<br/>/fabrication, /nde,<br/>/tracking"]
-        A4["CONSTRUCTION<br/>/erection"]
-        A5["TESTING<br/>/testpack, /flange"]
-        A1 --> A2 --> A3 --> A4 --> A5
-    end
-
-    R1 -.->|справочники<br/>задают правила| A1
-    R2 -.->|документооборот ISO| A2
-    R3 -.->|каждый шов = запись| A3
-    R4 -.->|катушка на площадке = запись| A4
-    R5 -.->|тест-пак = запись| A5
-
-    style A1 fill:#e8f4fd
-    style A2 fill:#e8f4fd
-    style A3 fill:#e8f4fd
-    style A4 fill:#e8f4fd
-    style A5 fill:#e8f4fd
-```
-
-> **Ключевое сообщение:** пользователь не учит «структуру приложения». Он работает в порядке, **в котором ему диктует физика стройки**. Слева в навигации — справочники проекта. Справа — финальная приёмка. Между — производство.
-
----
-
-## Slide 6 — IA приложения: 5 разделов навигации
+## Slide 6 — Section divider · «Piping construction management»
 
 > **Содержимое слайда:**
 
-### Левая боковая навигация — 5 секций в строгом порядке lifecycle:
+# Piping construction management
+
+### Process of piping construction · Spooling · Material run by spool · Methodology
+
+_Section 2 / 5_
+
+---
+
+## Slide 7 — Process of piping construction (data architecture)
+
+> **Содержимое слайда — флагманская диаграмма всей презентации:**
+
+### Where PipeQC sits in the data architecture
+
+```mermaid
+flowchart LR
+    subgraph ENG["📐 Engineering"]
+        E1["3D Model<br/>(AVEVA /<br/>SmartPlant 3D)"]
+        E2["ISOGEN<br/>(*.b, *.i, *.idf)"]
+    end
+
+    subgraph SPL["✂️ Spooling"]
+        SG["SpoolGen<br/>(*.b output)"]
+        SM["SmartPlant<br/>Material<br/>(Marian)"]
+    end
+
+    subgraph CORE["💻 PipeQC"]
+        EP[("ISO · Spool · Weld<br/>· Joint repository<br/><br/>Iso BOM<br/>Spool BOM<br/>Weight of Spool<br/>Material availability<br/>by Spool")]
+    end
+
+    subgraph SITE["🏗️ Site"]
+        S1["Working documents<br/>(Spool drawings,<br/>QC13, W24, MTO)"]
+        S2["CMC / Engineering<br/>(field engineering<br/>liaison)"]
+        S3["Daily reports:<br/>Spools (status + location)<br/>Welds<br/>NDE<br/>Surveillance<br/>Manhours"]
+    end
+
+    E1 --> E2 --> SG
+    SG --> EP
+    SM --> EP
+    EP --> S1
+    EP <--> S2
+    EP <--> S3
+
+    style EP fill:#fff2cc,stroke:#333,stroke-width:3px
+```
+
+**Каждая стрелка — реальный data exchange:**
+
+- `*.b / *.i / *.idf` (ISOGEN output) → SpoolGen режет ISO на spools
+- SpoolGen → PipeQC: ISO numbering, spool numbering, weld locations, pipe cuts (через `weld.txt`, `trace.txt`, `bolt.txt`, `supp.txt`)
+- SmartPlant Material → PipeQC: material availability by spool, weight of spool
+- PipeQC → Site: working documents (printed spool drawings, QC13 forms, MTO sheets)
+- Site → PipeQC: ежедневные отчёты — статус spool'а, прогресс welds, результаты NDE, manhours
+
+---
+
+## Slide 8 — Spooling · physics that defines the rules
+
+> **Содержимое слайда — три блока: транспорт / prefab / erection:**
+
+### 1️⃣ FIX SPOOLING OPTIONS — transportation constraints
+
+| Constraint              | Standard       | Notes               |
+| ----------------------- | -------------- | ------------------- |
+| Truck (normal)          | 12 × 2.4 × 3 m | hard physical limit |
+| Out-of-size road weight | varies         | project-specific    |
+| Bridges / culverts      | route survey   | NA on most sites    |
+| Tunnels                 | route survey   | NA on most sites    |
+| Overhead obstacles      | route survey   | NA on most sites    |
+| Gates                   | route survey   | NA on most sites    |
+
+### PREFAB SCOPE — maximize work in shop
+
+- ✅ No extra lengths on spools (exact cut)
+- ✅ No tack-welded flanges at shop
+- ✅ Small-bore spooled where possible
+- ✅ Shop welding of large-bore welded valves
+- ✅ Weldolets welded at shop
+- ✅ Supports welded to pipe at shop
+
+### 2️⃣ PERFORM ERECTION STUDIES → 3️⃣ SPOOLING
+
+**MAXIMIZE:** Shop welding · straight length pipes dragging on racks · 5G positions for field welds · rotation welding (shop + double/triple jointing at site) · pre-assembly welds noted as PAW
+
+**CONSIDER:** Accesses to field welds · 3D spool erection constraints · lifting methods and constraints
+
+**MINIMIZE:** Scaffolding (avoid additional rigs)
+
+**ERECTION:** weight of spool — no limit (defined by lifting capability per area)
+
+> **Why this is PipeQC's job:** every shop weld is recorded as **Shop Weld (SW)**, every field weld as **Field Weld (FW)**, every pre-assembly weld as **PAW**. PipeQC tracks the **prefab % per spool** and surfaces shop/field split on Fabrication and Erection dashboards. Bad spool boundaries → cost ×3–5 in the field.
+
+---
+
+## Slide 9 — Spooling · revision management by Spooling Team
+
+> **Содержимое слайда — выгоды + бенчмарк в одном слайде, как у Easy Piping:**
+
+### Spooling & revisions managed by a skilled team
+
+**Tooling chain:** `SmartPlant → SpoolGen → PipeQC` — single skilled team owns the loop.
+
+**Operational benefits of PipeQC-managed spooling:**
+
+| Benefit                                             | Что меняет это в проекте                            |
+| --------------------------------------------------- | --------------------------------------------------- |
+| **Electronic data generation & transfer**           | Нет paper-bottleneck'а между Engineering и Spooling |
+| **BOM by spool** (not by ISO)                       | Точный workfront forecast on 100% of material       |
+| **Constructability screening**                      | Spooler видит ошибки до резки металла               |
+| **Control of deviations** (modification impact)     | Revision cascade рассчитывается автоматически       |
+| **Control of priorities / schedule**                | Какие spools режем первыми → drives weekly program  |
+| **Less technical query from subcontractor**         | Sub видит свой scope в PipeQC без звонков           |
+| **Immediate update** + reliability + exhaustiveness | One source of truth, без Excel-расходящихся версий  |
+| **Homogeneity / consistency of documents**          | Все spool drawings из одного шаблона                |
+| **High quality and legibility**                     | Печать прямо из системы, не из Excel в PDF в почту  |
+| **Reduce spooling time and paper work**             | Sub-week per ISO вместо недель, бумаги почти нет    |
+
+**Real project benchmark (PMP, Technip EPC reference):**
+
+| Metric               | Total project | Largest single unit |
+| -------------------- | ------------: | ------------------: |
+| Spooled ISOs issued  |         5 003 |               2 447 |
+| Spools               |        23 168 |              12 105 |
+| Shop dia inch        |       325 970 |             158 599 |
+| Assembly dia inch    |        59 382 |              29 614 |
+| Field dia inch       |        30 599 |              11 886 |
+| **Total dia inch**   |   **415 951** |         **200 099** |
+| Prefab % of dia inch |           78% |                 79% |
+
+> **Что это значит для PipeQC:** приложение должно держать **десятки тысяч spools + сотни тысяч welds** в одном проекте без деградации UX. Это фактическая нагрузка одного среднего НПЗ.
+
+---
+
+## Slide 10 — Transportation & prefab scope
+
+> **Содержимое слайда:**
+
+### Physics that defines spool boundaries
+
+**Transportation constraints (typical):**
+
+| Aspect                       | Standard       | Notes                 |
+| ---------------------------- | -------------- | --------------------- |
+| Truck dimensions             | 12 × 2.4 × 3 m | hard physical limit   |
+| Road weight                  | varies         | site-specific         |
+| Bridges / culverts / tunnels | varies         | route survey required |
+
+**Prefab scope (maximize work in shop):**
+
+- ✅ No extra lengths on spools — exact cut
+- ✅ No tack-welded flanges at shop
+- ✅ Small-bore spooled when possible
+- ✅ Weldolets welded at shop
+- ✅ Supports welded to pipe at shop
+
+**Erection optimization (minimize field):**
+
+- Maximize: shop welding, automatic / rotation welding, pre-assembly welds (PAW)
+- Consider: field weld accessibility, 3D erection constraints, lifting methods
+- Minimize: scaffolding (avoid additional rigs)
+
+> **Why this matters for PipeQC:** every shop weld costs ×1, every field weld costs ×3–5. PipeQC tracks the **shop/field split per spool** and surfaces it on the Fabrication / Erection dashboards.
+
+---
+
+## Slide 11 — SmartPlant Material · run by spool
+
+> **Содержимое слайда:**
+
+### Material availability is calculated **per spool**, not per ISO
+
+- Spool BOMs are automatically generated by SpoolGen and loaded into Marian (SmartPlant Material).
+- SmartPlant Material **forecast runs** are executed **by spool** (not by ISO) — gives accurate work-front readiness per individual fab unit.
+- **Runs report** informs whether a spool is prefabricable now or gives the delivery date of the latest item.
+
+**Operational benefits (why run-by-spool matters):**
+
+- Significant **work-front increase** at beginning of prefabrication.
+- Improved **leveling** of prefabrication workload — minimizes peak manpower / shop facilities resource demand.
+- Allows **more prefabrication as per priority schedule** (urgent test packs first).
+- Accurate work-front forecast for **100% of material per spool** — no partial issuance, no man-hour losses, no traceability confusion.
+
+**Что приходит в PipeQC:** CSV from Marian with columns:
+
+```
+FAH CODE, Run Number, Run Date, Unit, Area, Line, Sheet,
+Iso No, Spool No, Issue Status, Weight,
+Completion Status, Completion Date
+```
+
+> Spooling Team ingests this CSV through `/spooling/iso-workflow` → spool record получает material readiness flag.
+
+---
+
+## Slide 12 — Methodology for operational procedure
+
+> **Содержимое слайда:**
+
+### Powerful management of piping construction — daily data flow
+
+```mermaid
+flowchart TB
+    subgraph PROJ["📋 Project setup phase"]
+        SG["SpoolGen<br/>(ISO breakdown)"]
+        SM["SmartPlant Material<br/>(BOM per spool)"]
+    end
+
+    subgraph DAILY["⚡ Daily operational phase"]
+        EP["PipeQC"]
+        SITE["Site<br/>(Fab + Erection)"]
+        PDA["PDA / mobile<br/>(spool tracking)"]
+    end
+
+    SG -->|spools + welds + joints| EP
+    SM -->|material availability| EP
+    EP <-->|Daily update:<br/>· spools status<br/>· welds (progress)<br/>· NDE results<br/>· manhours| SITE
+    EP <-->|Daily update with PDA:<br/>· spool location<br/>· QC surveillance| PDA
+
+    style EP fill:#fff2cc,stroke:#333,stroke-width:2px
+```
+
+**Что PipeQC делает с собранными данными:**
+
+- Selection of welds to be examined (NDE batch suggestions per Matrix)
+- **Penalty shoot** trigger after compounding rejections
+- **Tracer joint** management (T1 → T1-1 / T1-2 cascade)
+- RT film quantity estimations
+- Examination program issuance (Work Order PDFs to NDE labs)
+- Welder statistics + qualification expiry alerts
+- NDE backlog tracking + bottleneck identification
+- Revision management cascade
+- **RFT gate enforcement** before hydrotest
+
+---
+
+## Slide 13 — Section divider · «PipeQC description»
+
+> **Содержимое слайда:**
+
+# PipeQC description
+
+### Objectives · Architecture · Main organization · Navigation and homepage · Piping construction process · Features, functions and outputs
+
+_Section 3 / 5_
+
+---
+
+## Slide 14 — PipeQC objectives · construction supervision
+
+> **Содержимое слайда:**
+
+### Two parallel modes of construction supervision
+
+```mermaid
+flowchart LR
+    subgraph PULL["⬅️ PULL — Record facts"]
+        P1["Volume of work<br/>(bulk quantities,<br/>progress entry)"]
+        P2["Do what we can<br/>(every weld captured,<br/>every spool tracked)"]
+        P3["Corrective actions<br/>(rework, rejection<br/>cascade)"]
+    end
+
+    subgraph PUSH["➡️ PUSH — Plan ahead"]
+        Q1["Qualitative work sequence<br/>(RFT gate, priorities)"]
+        Q2["Do what we should do<br/>(prevent bottlenecks)"]
+        Q3["Preventive actions<br/>(welder qualification<br/>alerts, scope lock)"]
+    end
+
+    PULL -.->|Combined: ability to do construction| PUSH
+```
+
+- **PULL leg** — operational record-keeping: every action becomes a row in the system. QC / NDE / Subcontractor live here.
+- **PUSH leg** — forward planning: system enforces gates and surfaces what's blocking. PM lives here.
+- **Combined** = the ability to actually do construction without losing control or quality.
+
+---
+
+## Slide 15 — PipeQC objectives · life cycle management
+
+> **Содержимое слайда:**
+
+### A tool to manage the entire life cycle of piping construction activities
+
+**By monitoring and controlling step by step, each and every fabrication and QC activity in sequence.**
+
+### Improve the overall piping performance
+
+EPC and subcontractor(s) work in **close collaboration** through one shared data layer:
+
+- EPC sees full project state in real time
+- Subcontractor sees own scope only (scope lock)
+- QA/QC inspectors gate every release point
+- PM watches dashboards and drills into specific blockers
+
+### Enter the «construction cockpit»
+
+Different methods and tools are needed than for engineering or procurement. PipeQC supplies them:
+
+- Real-time progress dashboards
+- Live RFT pursuit for hydrotest planning
+- Welder performance trends
+- Auditable QC trail per joint / per spool
+
+---
+
+## Slide 16 — PipeQC architecture
+
+> **Содержимое слайда — центральный узел + спутники, как у Easy Piping:**
+
+### Cascading ISO · Spool · Weld Joint data repository
+
+**Convergence & Interoperability — the deepest level of itemization achieved**
+
+```mermaid
+flowchart TB
+    CORE[("🎯 PipeQC<br/><br/>ISO ⟶ Spool ⟶<br/>Weld Joint ⟶ Flange Joint<br/><br/>Data Management<br/>Production &<br/>Construction Status")]
+
+    DM1["Erection studies"]
+    DM2["Spooling"]
+    DM3["NDE Management"]
+    DM4["Prefabrication"]
+    DM5["Erection"]
+    DM6["Construction<br/>follow-up"]
+    DM7["Spool Tracking"]
+    DM8["Bolt Torquing /<br/>Flange Management"]
+    DM9["Test Pack<br/>preparation"]
+    DM10["QC Surveillance ⚪"]
+    DM11["3D Viewer ⚪"]
+
+    DM1 --- CORE
+    DM2 --- CORE
+    DM3 --- CORE
+    DM4 --- CORE
+    DM5 --- CORE
+    DM6 --- CORE
+    DM7 --- CORE
+    DM8 --- CORE
+    DM9 --- CORE
+    DM10 -.- CORE
+    DM11 -.- CORE
+
+    style CORE fill:#fff2cc,stroke:#333,stroke-width:3px
+    style DM10 fill:#e8e8e8,stroke-dasharray: 5 5
+    style DM11 fill:#e8e8e8,stroke-dasharray: 5 5
+```
+
+**Производственная архитектура — 4 слоя, одна база:**
+
+| Слой                   | Что лежит в этом слое                                                      |
+| ---------------------- | -------------------------------------------------------------------------- |
+| **ISO level (line)**   | Service class, fluid, pressure, paint system, NDE matrix per ISO           |
+| **Spool level**        | BOM, weight, material availability, status (Start Fab → Erected), location |
+| **Weld Joint level**   | Type (FW/SW/PAW), WPS, welder, root/cap %, NDE method, defects history     |
+| **Flange Joint level** | Bolt size, torque value, gasket type, blinding status, jointer code        |
+
+> Solid lines = active modules · Dashed ⚪ = planned (future tracks)
+>
+> **Самая глубокая itemization в индустрии:** каждый weld joint — first-class объект с собственной историей, паспортом, владельцем действия. Это и есть тот «cockpit» из slide 15.
+
+---
+
+## Slide 17 — PipeQC main organization
+
+> **Содержимое слайда:**
+
+### Organization based on site activities
+
+**Main functionalities (site-activity-based modules):**
+
+| Module                | Sub-sections                                                                                                            | Status |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------- | ------ |
+| **Setup / Admin**     | Project Definition · System Referential · Project Referential · Access Rights · Imports                                 | 🟡     |
+| **Preparation**       | Engineering Transmittals · ISO Workflow · Spooling Transmittal                                                          | 🟡     |
+| **Fabrication**       | Spool Fab (Material Check / QC Release / PWHT / Paint / Laydown) · Shop Weld Progress                                   | 🟢     |
+| **Erection**          | Spool Erection (To Site / Field Mat. Check / Erected / Welded-Bolted / Supported / Field QC / RFT) · Site Weld · Flange | 🟢     |
+| **NDE management**    | Batch Management · Dashboard                                                                                            | 🟡     |
+| **Test Pack**         | Builder · Explorer · Pressure Test                                                                                      | 🟢     |
+| **Flange Management** | Bolt torquing · Blinding / Reinstatement balance                                                                        | 🟢     |
+
+**Transversal functionalities:**
+
+| Transversal module         | Status                                                   |
+| -------------------------- | -------------------------------------------------------- |
+| Spool tracking             | 🟡 dashboard shell only — Track S                        |
+| Reports                    | 🟡 catalog + shell, downloads = mock — Track C           |
+| Planning, target and alert | ⚪ future track                                          |
+| Revision control           | ⚪ future track (folded into Track K)                    |
+| QC Surveillance (PDA)      | ⚪ future track — not Easy Piping parity, differentiator |
+
+🟢 working · 🟡 partial · ⚪ planned
+
+---
+
+## Slide 18 — PipeQC navigation & homepage (1/2)
+
+> **Содержимое слайда — UI walkthrough:**
+
+### Left navigation = lifecycle order
+
+```
+┌───────────────────────────┐
+│ Logo (back to project home)│
+├───────────────────────────┤
+│ SETUP                     │
+│  └─ Admin Module          │  ← System Admin / PM
+│                           │
+│ PREPARATION               │  ← Spooling Team / PM
+│  └─ Spooling              │
+│                           │
+│ CONSTRUCTION              │  ← QC Eng / NDE / Sub / PM
+│  ├─ Fabrication           │
+│  ├─ Erection              │
+│  ├─ Tracking              │
+│  └─ NDE Module            │
+│                           │
+│ TESTING                   │  ← QC Eng / PM / NDE
+│  ├─ Testpack              │
+│  └─ Flange Management     │
+│                           │
+│ REPORTS                   │  ← PM / QC Eng
+│                           │
+│ CONFIGURATION             │  ← all roles
+│  ├─ Settings              │
+│  └─ Documentation         │
+└───────────────────────────┘
+```
+
+**Top bar:** username · role · project · date · logout · change project · help.
+
+> **Design principle:** sections are ordered **top-to-bottom in lifecycle sequence**. No "Reports" at the top, no "Dashboard" in the middle. The menu **is** the project's progress map.
+
+---
+
+## Slide 19 — PipeQC navigation & homepage (2/2)
+
+> **Содержимое слайда — что на homepage:**
+
+### Homepage = the construction cockpit
+
+**Key elements (top to bottom):**
+
+- **Header strip** — project name, current user role chip, KPIs at a glance (Fab progress %, Erection %, RFT-ready test packs)
+- **Notifications feed** — sorted by severity (red → amber → blue); deep-link to problem screens (e.g. _"BTH-105: 3 welds rejected — TP-205 RFT blocked"_)
+- **Progress charts area** — fabrication, erection, pressure tests curves over time
+  - Toggle: by dia inch / by spool count / by weight
+  - Filters: WBU, material type, size range, from-date / to-date
+- **Schedule adherence area** — actual vs planned progress
+- **Spool tracking summary** — overall scanned % + last 7-day trend
+- **Construction surveillance** — quick-link panel (future track)
+
+> **Что отсюда видно для PM (Anna's morning):** open app → red notification visible immediately → click → already on the problem screen. **Goal: less than 30 seconds from app open to identifying today's blocker.**
+
+---
+
+## Slide 20 — Piping construction process (canonical workflow)
+
+> **Содержимое слайда — большая workflow-диаграмма:**
+
+### Full lifecycle workflow — what gets recorded at each stage
+
+```mermaid
+flowchart TB
+    subgraph PREP["📋 PREPARATION"]
+        P1["Spooling<br/>(SpoolGen ingestion)"]
+        P2["Material<br/>(Marian sync)"]
+        P3["Test pack builder"]
+    end
+
+    subgraph FAB["🏭 FABRICATION (Spool level)"]
+        F1["Fabrication start"]
+        F2["Material issued (MIR)"]
+        F3["Material allocation check"]
+        F4["Fabricated"]
+        F5["QC released"]
+        F6["Sent to paint"]
+        F7["Painted"]
+        F8["Final QC"]
+        F9["Laydown"]
+        F10["Sent to site"]
+    end
+
+    subgraph WELD["🔥 WELDING (Joint level)"]
+        W1["Cutting"]
+        W2["Bevelling"]
+        W3["Fit-up"]
+        W4["Preheat"]
+        W5["Welding"]
+        W6["PWHT"]
+        W7["Dimensional check"]
+        W8["Traceability check"]
+        W9["Grinding OF"]
+    end
+
+    subgraph NDE_BLOCK["🔬 NDE"]
+        N1["NDE program"]
+        N2["NDE results"]
+        N3["Pad test (if applicable)"]
+    end
+
+    subgraph ERECT["🏗️ ERECTION"]
+        E1["Erected"]
+        E2["Welded / bolted"]
+        E3["Supported"]
+        E4["Released for test (RFT)"]
+    end
+
+    subgraph TEST["💧 TESTING"]
+        T1["Line check"]
+        T2["Item clearance"]
+        T3["Blinding"]
+        T4["Pressure test"]
+        T5["Reinstatement Y"]
+        T6["Reinstatement Z"]
+        T7["Pre-commissioning"]
+    end
+
+    PREP --> FAB
+    FAB --> WELD
+    WELD --> NDE_BLOCK
+    NDE_BLOCK --> ERECT
+    ERECT --> TEST
+
+    style FAB fill:#fff2cc
+    style ERECT fill:#dae8fc
+    style NDE_BLOCK fill:#d5e8d4
+    style TEST fill:#ffe6cc
+```
+
+**Cross-cutting tracking layers** (visible at every stage):
+
+- Spool tracking (physical location)
+- Flange management (joint level + flange joint level)
+- Welders monitoring (qualification + performance)
+- Revision control (⚪ future)
+- Planning / targets / alerts (⚪ future)
+
+---
+
+## Slide 21 — Features, functions and outputs · Preparation
+
+> **Содержимое слайда:**
+
+### Main functionalities — Preparation module
+
+**Spooling status (PipeQC routes: `/spooling/iso-workflow`):**
+
+- All detailed characteristics of the work: joint sizes, joint types, material type, thickness, piping class, paint system, NDE & PWHT requirements
+- Quantity monitoring: spools count, welds count, weights, dia inch
+- Revision management: revision tracking, impact measurement, history records (all revisions + their progress kept in memory)
+
+**Material availability by spool (`/spooling/iso-workflow` → Material tab):**
+
+- Forecast date of material availability per spool
+- Construction priorities per spool
+
+**Progress monitoring (cross-module rollup):**
+
+- Spool progress: Start Fab → MIR → Material check → Fabricated → QC released → Paint → Final QC → Laydown → Site → Erected → Welded/Bolted → Supported → RFT
+- Weld progress: Cutting → Bevelling → Fit-up → Preheat → Welding → PWHT
+- Examination progress: NDE program → NDE results → traceability checks
+- Painting progress: Blasting → Primer → Intermediate → Final coats
+
+> **PipeQC status:** spooling shell built (`/spooling/*`), SpoolGen parser is demo-only. Real parser = part of **Track K** (Iso lifecycle / Spooling).
+
+---
+
+## Slide 22 — Features, functions and outputs · Welding & NDE management
+
+> **Содержимое слайда — 15 функций:**
+
+### Welding and NDE management functionalities
+
+1. **Daily progress reporting** — welder, WPS, root/cap % per joint
+2. **Welder statistics & performance analysis** — per-welder rejection rates, trends
+3. **Validation of welder's qualification** with selected WPS for every joint (soft alert when expired) ⚠️ Track N
+4. **Multiple welders for single joint** (root vs cap pass) ❌ Track N
+5. **Selection of weld to be examined** — progressive sampling per NDE Matrix; PipeQC suggests welds considering NDE % + priorities
+6. **Repair joint management** — auto-create R1/R2/R3 joints in NDE100 ❌ Track N
+7. **Penalty shoot management** — auto-trigger after 2nd-level tracer OR 4 rejections → flip remaining batch to SS ❌ Track N (flagship demo)
+8. **RT film quantity estimations** — report based on film qty per diameter referential
+9. **Work order for NDE and PWHT activities** — printable PDF with Request No
+10. **Repair % and types of defects monitoring**
+11. **NDT progress and backlogs**
+12. **PWHT progress and backlogs**
+13. **Material traceability records** — heat number tracking against Project Piping Material List
+14. **Spool Final QC clearance tracking** — auto-rollup when all joints released
+15. **Balance work and bottleneck identification** at every stage
+
+✅ live · ⚠️ partial · ❌ missing (assigned to track)
+
+> **PipeQC coverage today:** ~10/15 partial. Missing concentrated in NDE deep logic = **Track N** focus.
+
+---
+
+## Slide 23 — Features, functions and outputs · Construction & QC
+
+> **Содержимое слайда:**
+
+### Fabrication & Erection — site activities
+
+**Fabrication module (`/fabrication/*`):**
+
+- Spool fabrication sub-stages: Material Check · QC Release · PWHT Release · Paint · Laydown
+- Shop weld progress entry (welder, WPS, root/cap %, foreman confirm)
+- Material check sign-off per spool (heat numbers validation against Project Piping Material List ⚠️)
+- QC release sign-off per spool (4-item checklist: VT / dim / NDE / heat trace)
+- PWHT release per joint (for CrMo / heavy CS thickness) ⚠️ Track N
+
+**Erection module (`/erection/*`):**
+
+- Spool erection sub-stages: To Site · Field Material Check · Erected · Welded/Bolted · Supported · Field QC Release · RFT
+- Field weld progress (parallel to shop weld, but with field-specific position codes)
+- Flange progress (bolt torquing, gasket type, jointer code)
+- Field QC release (analogous to shop QC release)
+
+**Common across both:**
+
+- Multi-welder per joint (root + cap) ❌ Track N
+- WPS qualification validation soft alert at weld entry ⚠️ Track N
+- 4-item spool QC checklist with hard-stop on missing data
+
+---
+
+## Slide 24 — Features, functions and outputs · Spool tracking + Surveillance
+
+> **Содержимое слайда:**
+
+### Spool tracking module (`/tracking`)
+
+- Area mapping — locations grid with capacity vs current count
+- Barcode printing — Excel export to external Zebra software (industry-standard)
+- PDA synchronisation — daily sync of scan events
+- Data analysis — location vs status, inconsistency check (4 tabs: Spool / Location / Design Area / Consolidation Reports)
+- Spool location records — full history per spool, audit-preserving moves
+- Physical inventory count — by location
+- Spool status report analysis
+- Transport management — transit-out flag if scanned out + not scanned in >2 days
+- Trends and KPIs — area capacity, scan trend curves
+
+### Construction surveillance ⚪ future track
+
+- Checklists definition loaded in PDA — itemized inspection points
+- Observations recording with PDA (touch input)
+- PDA synchronisation
+- KPI and statistics — acceptance rate, level of supervision
+- Report of opened observations
+
+> **PipeQC status:** Spool tracking dashboard shell exists (`components/spool-tracking-dashboard.tsx`), data analysis tabs = **Track S**. Construction surveillance = not Easy Piping parity (they never finished) — **PipeQC differentiation opportunity** as future mobile-web track.
+
+---
+
+## Slide 25 — Features, functions and outputs · Flange management
+
+> **Содержимое слайда:**
+
+### Flange management module (`/flange`)
+
+- **Numbering and quantifying works** — every flange joint as first-class object
+- **Identify joints performed before vs after test** — drives requirement for permanent or temporary gasket
+- **Identify method of tightening required** — manual / hydraulic / stud tensioning
+- **Define torquing values** — per flange size × rating × material (from System Referential `Torquing Method`)
+- **Records execution progress and traceability** — jointer code, torque value applied, date
+- **Track bolt torquing on time** in accordance with Test Pack priorities
+- **Plan torquing / tensioning activity** — visible workfront for jointers
+- **Calculate estimations** — number of jointings forecast, manpower planning
+- **Edit torquing program** — printable schedule per shift / per crew
+- **Compile records** — full jointing history per test pack for handover dossier
+
+> **Critical safety feature: Blinding / Reinstatement balance.**
+> PipeQC enforces **count(blinds installed) == count(blinds removed)** before test pack can be marked complete. If a temporary blind is forgotten, the system flags it — preventing the catastrophic «plugged line at startup» scenario.
+
+---
+
+## Slide 26 — Features, functions and outputs · Test Pack
+
+> **Содержимое слайда:**
+
+### Test Pack preparation + Pressure Test (`/testpack/*`)
+
+**Test pack builder (`/testpack/builder`):**
+
+- Excel template export / fill / import
+- Manual add / modify
+- Spool selection by isometric (multi-select tree)
+- Summary panel at top
+- **Hard prerequisite:** System + Sub-system referentials (admin) must exist before import
+
+**Test pack explorer (`/testpack/explorer`):**
+
+- Test packs "Release For Test" tracking (8-gate RFT engine)
+- Test packs testing status
+- Completion of all construction activities (rollup)
+- Completion of all NDE and QC activities (rollup)
+- Isometric-at-spool-level browser (drill-down)
+
+**Pressure test workflow (`/testpack/pressure-test`):**
+
+- Line checking management (Punch List Cat X / Y / Z)
+- Item clearance management (Cat-X items blocking RFT)
+- Blinding management (temporary blinds tracking)
+- Reinstatement in connection with flange management (balance enforcement)
+- Testing & pre-commissioning progress entry
+
+> **Pitch moment:** PM cannot manually schedule hydrotest if RFT gate is not green. This is **by design** — defends against wishful planning. The gate engine is real and operational today.
+
+---
+
+## Slide 27 — Features, functions and outputs · Production planning
+
+> **Содержимое слайда:**
+
+### Production planning functionality ⚪ future track
+
+**Production activities scope:** Fabrication · NDE · PWHT · Painting · Erection.
+
+**Planned features:**
+
+- System set up with **erection sequence at spool level** (piping erection schedule) and **production capacity definitions** (per organization and resources)
+- Calculate **equivalent working quantities** of each production activity for «fair» dispatch across subcontractors
+- Display **remaining qualified workfront** for each activity
+- Display **current available qualified workfront** (resources + materials ready)
+- Issuance of the **weekly production schedule** for each production activity (list of spools and welds to complete next week)
+- Dispatch of work as per production organization + capacity
+
+> **Status:** ⚪ planned. This was the **«Production module»** that Easy Piping **never delivered** ("under development" marker in their decks 2017–2021). PipeQC differentiation opportunity for production / planning scope. Reasonable to defer — not blocking core demo flow.
+
+### 3D viewer ⚪ future track
+
+- 3D model used to **visualize PipeQC data**
+- Spool status + location from material availability up to «ready for test»
+- Test pack / system completion overlay
+- Visualization helps to **plan construction sequence** and qualify workfront
+
+---
+
+## Slide 28 — Section divider · «Satellite tools»
+
+> **Содержимое слайда:**
+
+# Satellite tools
+
+### 3D piping plan · Spool tracking architecture · Mobile / PDA · Construction surveillance
+
+_Section 4 / 5_
+
+---
+
+## Slide 29 — Satellite A · 3D viewer consolidating
+
+> **Содержимое слайда:**
+
+### A — 3D viewer consolidating data sources
+
+```mermaid
+flowchart LR
+    A["Engineering<br/>3D model<br/>(AVEVA / SmartPlant)"]
+    B["SpoolGen"]
+    C["SPMAT<br/>(material status)"]
+    D["PipeQC"]
+    E[("3D viewer<br/>consolidating<br/>spatial layer")]
+
+    A --> E
+    B --> E
+    C --> E
+    D --> E
+
+    E -.->|colored by status:<br/>NO MATERIAL · WELDING<br/>NDE · PAINT · ERECTED| F["Real-time spatial<br/>construction view"]
+
+    style E fill:#ffd966
+```
+
+- 3D model + SpoolGen geometry + SPMAT material status + PipeQC construction status → consolidated spatial view.
+- Color-coded by status: grey = no material, yellow = welding, orange = NDE, blue = paint, green = erected.
+- Goal: PM / Site Engineer sees **whole plant area** with status of every spool at a glance.
+
+> **PipeQC status:** ⚪ future track. 3D viewer integration depends on chosen 3D engine (potentially open-source: Three.js + IFC.js, or commercial like Navisworks API). Not a near-term track — but architecturally PipeQC's data model already supports the spatial coordinates field per spool (PDS Area).
+
+---
+
+## Slide 30 — Satellite B · Erection plan at spool level
+
+> **Содержимое слайда:**
+
+### B — Erection plan at spool level (3D + schedule)
+
+```
+Design Area S3CB
+────────────────────────────────────────
+                            October  November  December
+────────────────────────────────────────
+Spool SP-S3CB-001-A    ▓▓▓▓▓▓
+Spool SP-S3CB-001-B           ▓▓▓▓▓
+Spool SP-S3CB-002-A           ▓▓▓
+Spool SP-S3CB-002-B                ▓▓▓▓▓▓
+Spool SP-S3CB-003                      ▓▓▓
+...
+────────────────────────────────────────
+```
+
+- Each spool gets a planned erection date (from schedule).
+- 3D visualization shows what's planned this week / month — visible workfront.
+- **Production spool list for erection** is generated weekly per design area.
+
+### A + B = 3D piping plan, cascading the schedule down to foreman level
+
+- **Instructions to foremen** — per design area, weekly target sheets generated from PipeQC + planning data.
+- Each foreman gets a printable list: «this week, these spools, these welds, these field welds».
+- Closes the gap between project schedule (months out) and shop-floor reality (today + tomorrow).
+
+> **PipeQC status:** ⚪ future track (Planning, target, alert). Not in MVP roadmap.
+
+---
+
+## Slide 31 — Satellite · Spool tracking system architecture
+
+> **Содержимое слайда:**
+
+### Spool tracking architecture
+
+```mermaid
+flowchart LR
+    EP["PipeQC<br/>(spool list +<br/>statuses)"]
+    BL["Barcode label<br/>generation<br/>(Excel export)"]
+    BP["External barcode<br/>printing software<br/>(Zebra)"]
+    SP["Physical spools<br/>(barcode stickers)"]
+
+    EP -->|Spool batch<br/>export| BL
+    BL -->|.xlsx| BP
+    BP -->|printed labels| SP
+
+    SP -.->|scan events<br/>(PDA)| EP
+```
+
+- PipeQC **does not print barcodes itself** — exports an Excel list of spools to print, printing happens in external Zebra software (industry-standard for thermal label printers).
+- Each printed label gets stuck onto the physical spool.
+- Future: PDA scans the barcode → location update flows back to PipeQC.
+
+> **PipeQC status:** 🟡 partial. Excel export pattern (two-column basket UX) is the design intent — same pattern can power Test Pack Builder spool selection.
+
+---
+
+## Slide 32 — Satellite · Mobile / PDA application overview
+
+> **Содержимое слайда:**
+
+### Mobile application — spool tracking on the field
 
 ```
 ┌─────────────────────────────────────┐
-│  SETUP                              │
-│   └─ Admin Module                   │  ← System Admin / PM
-│       ├─ Project Definition         │
-│       ├─ System Referential         │
-│       ├─ Project Referential        │
-│       ├─ Access Rights              │
-│       └─ Import Settings            │
-│                                     │
-│  PREPARATION                        │
-│   └─ Spooling                       │  ← Spooling Team / PM
-│       ├─ Engineering Transmittals   │
-│       ├─ ISO Workflow               │
-│       └─ Spooling Transmittal       │
-│                                     │
-│  CONSTRUCTION                       │
-│   ├─ Fabrication                    │  ← QC Eng / Sub / PM
-│   │   ├─ Spool Fabrication          │
-│   │   │   ├─ Material Check         │
-│   │   │   ├─ QC Release             │
-│   │   │   ├─ PWHT Release           │
-│   │   │   ├─ Paint                  │
-│   │   │   └─ Laydown                │
-│   │   └─ Shop Weld Progress         │
-│   ├─ Erection                       │  ← QC Eng / Sub / PM
-│   │   ├─ Spool Erection (7 sub)     │
-│   │   ├─ Site Weld Progress         │
-│   │   └─ Flange Progress            │
-│   ├─ Tracking                       │  ← Sub / PM
-│   └─ NDE Module                     │  ← NDE Insp / QC Eng
-│                                     │
-│  TESTING                            │
-│   ├─ Testpack                       │  ← QC Eng / PM / NDE
-│   │   ├─ Builder                    │
-│   │   ├─ Explorer                   │
-│   │   └─ Pressure Test              │
-│   └─ Flange Management              │
-│                                     │
-│  REPORTS                            │  ← PM / QC Eng
-│                                     │
-│  CONFIGURATION                      │  ← все роли
-│   ├─ Settings                       │
-│   └─ Documentation                  │
+│  📱 PipeQC Mobile (planned)          │
+├─────────────────────────────────────┤
+│  Operator: Anas Shehada              │
+│  Role: Production Engineer           │
+│  Connected: ✅ MCL Link              │
+├─────────────────────────────────────┤
+│  Workflow status:                    │
+│   Last scan: SP-PG-001-A             │
+│   Location: Laydown Yard L-12        │
+│   Time: 09:42                        │
+├─────────────────────────────────────┤
+│  [ Scan barcode ]                    │
+│  [ Edit location (manual override) ] │
+│  [ Sync now ]                        │
 └─────────────────────────────────────┘
+
+Hardware (reference):
+  - Touch screen, rugged form factor
+  - 1D / 2D barcode scanning
+  - GPS, WWAN, WLAN, WPAN
+  - Examples: Motorola MC55, Zebra TC25
+
+Middleware: MCL Link connects PDA to PipeQC DB
+PDA fleet: 10 devices on benchmark PMP project
 ```
 
-> **Главное:** порядок секций сверху вниз — это **порядок lifecycle'а проекта**. Никаких "Reports" сверху, никакого "Dashboard" по середине. Меню — это карта прогресса стройки.
+**Key UX rules:**
+
+- Scan barcode → spool location updated.
+- Edit functionality allows operator to manually fix location if found wrong on field.
+- Each scan = new history record (audit-preserving, not destructive overwrite).
+- Sync = background; offline mode for areas without coverage.
+
+> **PipeQC status:** ⚪ future track. Mobile-web (PWA) implementation can serve the same purpose without proprietary hardware lock-in — modern Android phones with embedded scanners replace dedicated PDAs.
 
 ---
 
-## Slide 7 — SETUP. Сначала правила, потом игра. _(вторичная глубина)_
+## Slide 33 — Satellite · Construction surveillance
 
 > **Содержимое слайда:**
 
-### Admin module = «фундамент под фундаментом»
+### Construction surveillance ⚪ future track (Non-QCP recorded inspections)
 
-До того, как первый чертёж попадёт в систему, кто-то с ролью **System Admin** должен заполнить **справочники**. Иначе приложение «не знает», что хорошо, а что плохо.
+```
+Proactive construction management:
+  1. Quickly define subcontractor, discipline, location
+  2. Pick the checklist (from PDS Area referential)
+  3. Select the latest revision ISO / spool / joint from PipeQC
+  4. Validate or reject a checklist action
+```
 
-**5 подразделов Admin Module** (`/admin/*`):
+**Activities covered by surveillance checklists:**
 
-| Подраздел                     | Что задаём                                                                                                       | Аналогия                          |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| **1. Project Definition**     | Имя проекта, owner, contractor, лого, активный код, max transit time                                             | «Открываем казино»                |
-| **2. System Referential**     | Глобальные: марки сталей, film qty per diameter, UT-коэффициенты, torquing methods                               | «Правила игры в покер»            |
-| **3. Project Referential**    | Локальные (~30 справочников): subcontractors, PDS Areas, WPS, welder qualifications, **NDE Matrix**, rework code | «Бейджи дилеров казино»           |
-| **4. Access Rights**          | Кто какую роль на каком проекте имеет; **subcontractor scope lock**                                              | «Кому в какую комнату пускать»    |
-| **5. Import Settings**        | Excel-шаблоны для bulk-загрузки: Weld Thickness, NDE Matrix, Material List и т.д.                                | «Загрузка списков игроков скопом» |
+- Material allocation check
+- Cutting verification
+- Beveling check
+- Fit-up validation
+- Pre-heat verification
+- Post-weld visual
 
-> **Demo-нота:** в текущем приложении 2 справочника из 30 имеют CRUD (Subcontractors, Teams). Остальное — shell + demo data. **Это сознательное решение** — мы не строим вслепую 30 CRUD-форм; строим то, что нужно для основного demo flow. См. _Track A — Admin IA_ в [roadmap_v3](../roadmap_v3.md).
+**Data analysis output:**
+
+- Acceptance rate KPI per activity
+- Trend per ISO / spool / joint
+- Trend per inspector
+- Results plotted on weekly graph
+
+> **Important context:** Easy Piping marked Construction Surveillance as «under development» across 2017–2021 — **never delivered**. For PipeQC this is **not a parity gap** — it's a **whitespace opportunity**. If built, it should be designed as a PipeQC differentiator (mobile-web, modern UX), not copied from Easy Piping's PDA paradigm.
 
 ---
 
-## Slide 8 — PREPARATION (Spooling). Чертежи → задачи на цех.
+## Slide 34 — Satellite · Statistics & KPIs from surveillance
 
 > **Содержимое слайда:**
 
-### Превращаем engineering чертежи в физические задачи на сварку.
+### Statistics and Indicators — Construction surveillance module ⚪
 
-**ISO-чертёж** (изометрия) — это **одна линия трубы** от точки А до точки Б. На завод приходят 5 000 – 15 000 таких чертежей.
+**KPIs produced from surveillance data:**
 
-Линия 20 м не лезет в фуру. Её **режут на spools** (катушки ≤ 12 м), каждая катушка делается в цеху целиком.
+- **Defect quantity and frequency** — per activity, per subcontractor, per inspector
+- **Level of surveillance / supervision** — how many checks completed vs target
+- **Acceptance rate trend** — weekly + cumulative
+- **Inspector workload** — distribution of checklists per inspector
+
+**Report types:**
+
+- Surveillance activity results (PDA-driven)
+- Defect quantity + frequency analysis
+- Level-of-supervision report (per subcontractor / area)
+- Open observations register (active punch-style items)
 
 ```mermaid
 flowchart LR
-    ISO["ISO-чертёж<br/>линия 20 м, 15 швов"]
-    ISO --> S1["Spool SP-001-A<br/>5 м, 4 шва (цех)"]
-    ISO --> S2["Spool SP-001-B<br/>7 м, 5 швов (цех)"]
-    ISO --> S3["Spool SP-001-C<br/>6 м, 4 шва (цех)"]
-    S1 -.->|Field Weld FW-1<br/>варят на площадке| S2
-    S2 -.->|Field Weld FW-2<br/>варят на площадке| S3
+    PDA["PDA checklists<br/>(field data entry)"] --> EP["PipeQC<br/>analytics"]
+    EP --> R1["Acceptance rate<br/>KPI"]
+    EP --> R2["Defect trends<br/>per activity"]
+    EP --> R3["Open observations<br/>register"]
+    EP --> R4["Weekly graph"]
+
+    style R4 fill:#fff2cc
 ```
 
-**Модуль Spooling в PipeQC = `/spooling/*`**:
-
-- `Engineering Transmittals` — приём batch'ей ISO от engineering
-- `ISO Workflow` — checkout spooler'у → multi-round verification → release
-- `Spooling Transmittal` — outbound batch на cеть Fabrication
-
-> **Кто работает:** роль **Spooling Team**. **Document workflow editor**, не shop floor. Работает с PDF/CAD/CSV/Excel, а не с металлом.
->
-> **Связь с другими модулями:** Spooling = upstream для Fabrication. Без spooling'а в Fabrication нечему появиться.
+> Эти отчёты — то, что Easy Piping обещал и не доставил. PipeQC может построить лучшую версию, **если решит инвестировать в этот track**.
 
 ---
 
-## Slide 9 — CONSTRUCTION. Сердце приложения.
+## Slide 35 — Satellite tools summary
 
 > **Содержимое слайда:**
 
-### CONSTRUCTION = 4 параллельных модуля, работающих с одним общим объектом — швом и спулом.
+### Satellite tools at a glance
 
-```mermaid
-flowchart TB
-    subgraph CONST["CONSTRUCTION section"]
-        F["🏭 Fabrication<br/>/fabrication/*<br/>(цех — комфортные условия)"]
-        E["🏗️ Erection<br/>/erection/*<br/>(площадка — улица, высота, ветер)"]
-        N["🔬 NDE<br/>/nde<br/>(рентген, ультразвук, кап. контроль)"]
-        T["📍 Tracking<br/>/tracking<br/>(где физически лежит спул)"]
-    end
+| Tool                             | Purpose                                      | PipeQC status           | Track   |
+| -------------------------------- | -------------------------------------------- | ----------------------- | ------- |
+| **3D viewer**                    | Spatial visualization of construction status | ⚪ planned              | future  |
+| **Erection plan at spool level** | Schedule cascaded to foreman                 | ⚪ planned              | future  |
+| **Spool tracking architecture**  | Barcode label → PDA scan → location history  | 🟡 dashboard shell only | Track S |
+| **PDA / mobile application**     | Field data entry, location updates           | ⚪ planned              | future  |
+| **Construction surveillance**    | PDA checklists for proactive QC              | ⚪ planned (whitespace) | future  |
 
-    F -->|готовый спул| E
-    F -.->|готовый шов<br/>в batch| N
-    E -.->|field weld<br/>в batch| N
-    F -.->|перемещение| T
-    E -.->|перемещение| T
+🟢 working · 🟡 partial · ⚪ planned
 
-    style F fill:#fff2cc
-    style E fill:#dae8fc
-    style N fill:#d5e8d4
-    style T fill:#f8cecc
-```
-
-**Главные сущности**:
-
-- **Joint / Weld** — сварной шов. Каждый шов имеет паспорт (Joint Card): welder, WPS, дата, VT result, NDE result, heat numbers, PWHT.
-- **Spool** — катушка. Готова к отгрузке, когда **все её швы** прошли VT + NDE + PWHT (если требовалась) + paint + marking.
-
-**Stage rollup-логика**: spool «QC released» **только когда все joint'ы spool'а** имеют статус «released». Это **автоматический rollup**, не ручной чекбокс.
+> **Strategic note:** none of these are MVP-blocking. Core construction flow (Setup → Spooling → Fab → Erection → NDE → Testpack) works without them. Satellite tools are **expansion vector** for product differentiation and enterprise sales.
 
 ---
 
-## Slide 10 — Fabrication vs Erection: один процесс, разные сцены
+## Slide 36 — Section divider · «PipeQC deployment»
 
 > **Содержимое слайда:**
 
-### Те же activities (сварка, material check, NDE, QC release), но в разных условиях.
+# PipeQC deployment
 
-| Аспект         | **Fabrication** `/fabrication/*` | **Erection** `/erection/*`         |
-| -------------- | -------------------------------- | ---------------------------------- |
-| Сцена          | Тёплый ангар, поворотные стенды  | Улица, дождь, ветер, 30 м высоты   |
-| Сварка         | Любая позиция                    | 5G, 6G (над головой, в стеснении)  |
-| NDE            | Стационарная RT-камера           | Передвижная RT-машина / UT         |
-| Скорость       | Высокая                          | Низкая, много логистики            |
-| Стоимость шва  | ×1                               | ×3–5                               |
-| Бизнес-цель    | Максимум работы — в цех          | Минимум полевых швов               |
+### Modules — example of SOW · Roles × responsibilities
 
-**Sub-stages Fabrication** (`/fabrication/spool-fabrication/*`):
-
-`Material Check → QC Release → PWHT Release → Paint → Laydown`
-
-**Sub-stages Erection** (`/erection/spool-erection/*`):
-
-`To Site → Field Material Check → Erected → Welded/Bolted → Supported → Field QC Release → RFT`
-
-> **Дизайн-нота:** мы намеренно **дублируем структуру**, а не делаем «универсальный» экран. Reason: foreman в цеху и foreman на площадке думают разными категориями. Унификация всё ломает.
->
-> **Анти-Easy Piping выбор:** Easy Piping продублировал ещё и Assembly module как полную копию Erection. Мы этого не делаем — stage = `assembly | erection` решается флагом.
+_Section 5 / 5_
 
 ---
 
-## Slide 11 — NDE module. Отдельная вселенная — penalty shoot.
+## Slide 37 — Deployment · SOW matrix (Setup + Preparation + Fabrication)
 
 > **Содержимое слайда:**
 
-### NDE = главный domain-критичный модуль. Здесь самая глубокая логика.
+### Modules — example of SOW (Statement Of Work)
 
-**NDE Batch** — это группировка welds по формуле:
+**Setup / Admin module:**
 
-```
-Batch = (welder × NDE category)
-```
+| Activity                                                                   | Owner                   |
+| -------------------------------------------------------------------------- | ----------------------- |
+| Project setup: piping class, NDE matrix, weld type, rework code, thickness | **Spooling Team** (EPC) |
+| Define and customize WPS and welder qualifications                         | **Subcontractor**       |
+| Setup access rights, roles, scope locks                                    | **System Admin**        |
 
-Один сварщик может иметь N batch'ей (по одному на каждую NDE-категорию, которую он трогает).
+**Preparation / Spooling module:**
 
-**Что приложение делает автоматически (по требованию domain'а):**
+| Activity                                                                   | Owner                             |
+| -------------------------------------------------------------------------- | --------------------------------- |
+| Import spool data and weld data from SpoolGen                              | **Spooling Team**                 |
+| Import material availability, paint data, spool weight from SPMAT (Marian) | **Spooling Team**                 |
+| Manage ISO modifications (HO rev — head office revision)                   | **Spooling Team**                 |
+| Manage ISO modifications (Site rev — site revision)                        | **Spooling Team + Subcontractor** |
 
-```mermaid
-flowchart TB
-    A["Сварщик WLD-099 сварил weld #J-1029"]
-    B["NDE Inspector ввёл результат:<br/>R (rejected) + defect code CRK"]
-    C["✨ Система автоматически:"]
-    C1["1. Создаёт новый joint J-1029-R1<br/>в NDE100 категории"]
-    C2["2. Переводит остальные welds batch'а<br/>в статус T1 (tracer)"]
-    C3["3. Если 4 rejections в batch'е<br/>ИЛИ 2nd-level tracer (T1-1 / T1-2)<br/>→ flip всех remaining welds в SS"]
+**Fabrication module:**
 
-    A --> B --> C
-    C --> C1
-    C --> C2
-    C --> C3
-
-    style C1 fill:#ffd966
-    style C2 fill:#ffd966
-    style C3 fill:#f8cecc
-```
-
-> **Pitch-аргумент:** _«One bad weld doesn't cost one re-examination. It costs four: the original, the repair, and two tracer joints. PipeQC makes welder performance visible the day it happens — before tracer overhead compounds.»_
->
-> **Demo moment** (планируется в Track N): инвестор видит, как после 4-го rejection в batch'е все остальные welds **сами** меняют статус. Нулевое вмешательство человека. Это **уникальная domain-логика**, не generic CRUD.
+| Activity                                                      | Owner                   |
+| ------------------------------------------------------------- | ----------------------- |
+| Input daily reports: welding, painting, spool fab, NDE        | **Subcontractor**       |
+| Analyze reports for sequence respect, backlog, QC deviations  | **Subcontractor + EPC** |
+| Weekly spool selection for fabrication                        | **Spooling Team (EPC)** |
+| Input daily reports: manhours and progress                    | **Subcontractor**       |
+| Productivity calculation (cutting, beveling, fit-up, welding) | **Subcontractor + EPC** |
 
 ---
 
-## Slide 12 — TESTING (Testpack). Финальный gate перед сдачей клиенту.
+## Slide 38 — Deployment · SOW matrix (NDE + Surveillance + Spool tracking)
 
 > **Содержимое слайда:**
 
-### Test Pack = группа линий, тестируемых одним hydrotest'ом.
+### Modules — example of SOW (continued)
 
-В трубу заливают воду, накачивают до 1.5× рабочего давления, держат несколько часов. Если не течёт — линия прошла.
+**Welding & NDE management module:**
 
-**Почему сложно:**
+| Activity                                                                    | Owner                   |
+| --------------------------------------------------------------------------- | ----------------------- |
+| Selection of welds to be examined per PipeQC suggestions (batch management) | **Subcontractor**       |
+| Manage progressive sampling and penalty shoot                               | **Subcontractor**       |
+| Edit examination program (Work Order PDF)                                   | **Subcontractor**       |
+| Input material traceability records (heat numbers)                          | **Subcontractor**       |
+| Edit QC forms, weld history registers                                       | **Subcontractor**       |
+| Edit welder statistics, control welder performance                          | **Subcontractor + EPC** |
+| Analyze reports: backlog, repairs, NDE-on-time vs TP priority               | **Subcontractor + EPC** |
 
-```mermaid
-flowchart LR
-    A["Линия идёт через<br/>дорогое оборудование<br/>(турбина, реактор)"]
-    B["Налить воду под 90 бар<br/>→ оборудование сломается"]
-    C["Нужно изолировать<br/>тестируемый участок"]
-    D["Ставят временные<br/>заглушки (blinds)"]
-    A --> B --> C --> D
-```
+**Construction surveillance module ⚪ future:**
 
-**3 бригады работают синхронно** (PipeQC координирует все три):
+| Activity                                                           | Owner   |
+| ------------------------------------------------------------------ | ------- |
+| Report surveillance activity (PDA)                                 | **EPC** |
+| Edit and analyze statistics: defect quantity, level of supervision | **EPC** |
 
-1. **Blinding Team** — ставит временные заглушки **до** теста.
-2. **Line Checker Team** — обходит TP перед тестом, сверяет с чертежом, выписывает **Punch List** (Cat X / Y / Z).
-3. **Reinstatement Team** — **после** теста снимает заглушки, ставит постоянные прокладки. PipeQC **жёстко считает баланс «поставили / сняли»** — иначе на пуске рванёт.
+**Spool tracking module:**
 
-**RFT gate** (Ready For Test): 8 числовых условий должны быть закрыты — joints to weld, flanges to bolt, joints awaiting NDE, ISOs to QC release, Cat-X items to clear и т.д. **PM не может назначить hydrotest, пока gate не зелёный**. Это by design — защита от wishful thinking.
-
-> **Подразделы**: `/testpack/builder` (компоновка TP), `/testpack/explorer` (drill-down по TP), `/testpack/pressure-test` (RFT pursuit homepage), `/flange` (отдельный flange management — учёт всех фланцевых соединений, моменты затяжки).
+| Activity                                     | Owner                   |
+| -------------------------------------------- | ----------------------- |
+| Area mapping                                 | **Subcontractor**       |
+| System setup and configuration               | **EPC**                 |
+| Edit barcode stickers and tag spools         | **Subcontractor**       |
+| Scan spool transportation and location (PDA) | **Subcontractor**       |
+| Analyze spool movement and stand-by          | **Subcontractor + EPC** |
 
 ---
 
-## Slide 13 — REPORTS + CONFIGURATION. Поддерживающие секции.
+## Slide 39 — Deployment · roles matrix on PipeQC
 
 > **Содержимое слайда:**
 
-### REPORTS — выгрузка для клиента и руководства
+### Role × Module access matrix
 
-`/reports` — каталог отчётов с фильтром по категории (Fabrication / NDE / Testpack / Welder Performance).
+| Module / Role         | System Admin | Spooling Team | QC Engineer | NDE Inspector | Subcontractor | Project Manager |
+| --------------------- | :----------: | :-----------: | :---------: | :-----------: | :-----------: | :-------------: |
+| **Setup / Admin**     |      🟢      |       —       |      —      |       —       |       —       |       🟡        |
+| **Preparation**       |      —       |      🟢       |      —      |       —       |       —       |       🟡        |
+| **Fabrication**       |      —       |       —       |     🟢      |       —       |  🟢 (scope)   |       🟡        |
+| **Erection**          |      —       |       —       |     🟢      |       —       |  🟢 (scope)   |       🟡        |
+| **NDE Management**    |      —       |       —       |     🟡      |      🟢       |  🟢 (scope)   |       🟡        |
+| **Test Pack**         |      —       |       —       |     🟢      |      🟡       |       —       |       🟢        |
+| **Flange Management** |      —       |       —       |     🟢      |       —       |  🟢 (scope)   |       🟡        |
+| **Spool Tracking**    |      —       |       —       |      —      |       —       |  🟢 (scope)   |       🟢        |
+| **Reports**           |      🟡      |      🟡       |     🟢      |      🟡       |       —       |       🟢        |
+| **Configuration**     |      🟢      |      🟢       |     🟢      |      🟢       |      🟢       |       🟢        |
 
-Каждый отчёт = download Excel/PDF. Сегодня — mock-toast (для demo), production-версия = реальная генерация через серверные функции.
+🟢 full access · 🟡 read-only (watcher) · 🟢 (scope) = PDS area lock applied
 
-**Назначение:**
+**Key observations:**
 
-- **Внутренний loop**: PM смотрит еженедельный fabrication report, видит bottleneck, эскалирует.
-- **Внешний loop**: weekly meeting с client'ом (Owner) — PM выгружает «NDE acceptance rate за неделю», обсуждают.
-- **Audit dossier**: при closeout проекта весь Weld History sheet выгружается как формальный handover document.
-
-### CONFIGURATION — служебные экраны
-
-- `/settings` — личные настройки пользователя (тема, уведомления, язык).
-- `/documentation` — встроенная документация: терминология, статусы, как работать с формами.
-
-> **Дизайн-нота:** конфигурация — единственная секция, видимая **всем ролям**. Остальные секции скрыты по `getVisibleNavigation(role)` в [config/navigation.ts](../../config/navigation.ts).
+- **System Admin** — only role without operational daily loop. Active during setup ramp + maintenance only.
+- **Project Manager** — sees all modules in watcher mode → drill into blockers → call people (offline). Never enters data.
+- **Subcontractor** — operationally identical to QC + NDE, but scope-locked to assigned PDS areas. **Multi-tenant in a single project.**
+- **NDE Inspector** — narrowest scope, deepest logic. The «examination cockpit».
 
 ---
 
-## Slide 14 — Роли в приложении. 6 ролей, разные lifecycle.
+## Slide 40 — Closing · what's next
 
 > **Содержимое слайда:**
 
-### 6 ролей, у каждой свой ритм и свой набор экранов.
+### What this deck covered, what comes next
 
-| Роль                | Тип       | Когда активна             | Ритм                                  | Главные экраны                              |
-| ------------------- | --------- | ------------------------- | ------------------------------------- | ------------------------------------------- |
-| **System Admin**    | Setup     | Pre-project ramp          | Heavy on ramp → maintenance           | `/admin/*` (5 sub-pages)                    |
-| **Spooling Team**   | Editor    | Engineering ramp → end    | Длинные thoughtful sessions           | `/spooling/*` (3 sub-pages)                 |
-| **QC Engineer**     | Editor    | First weld → closeout     | **Edit-heavy каждые 5 минут весь день** | `/fabrication/*`, `/erection/*`, `/testpack/*` |
-| **NDE Inspector**   | Editor    | First batch → closeout    | Длинные batch-level sessions          | `/nde`, `/nde/dashboard`                    |
-| **Project Manager** | **Watcher** | Весь lifecycle            | Утренний обход + drill-down at-need    | Dashboards + `/reports`                     |
-| **Subcontractor**   | **Restricted Editor** | По мере assigned scope    | Daily entries в рамках своей PDS area | Те же, что QC Eng, но со **scope lock**     |
+**This deck (Part 1 — PSMS overview):**
 
-> **Главное observation:** PM **никогда не вбивает welder ID, не assign'ит batch, не подписывает W24**. Это работа editor-ролей ниже него. PM смотрит итог, drill'ится в проблему, звонит кому надо (вне приложения).
->
-> Это меняет дизайн экранов: для PM на тех же страницах action-кнопки должны быть скрыты / disabled. Это _Track J — Subcontractor scope + PM write-lock_.
+- Industry context: piping construction process, ISO → spool → weld data flow, SmartPlant Material run-by-spool methodology
+- PipeQC architecture: 7 active modules + 3 future tracks, all sharing one ISO/spool/weld data repository
+- Navigation, homepage, lifecycle workflow
+- Features per module (Preparation, Fabrication, NDE, Erection, Testpack, Flange, Tracking)
+- Satellite tools (3D viewer, mobile, surveillance)
+- SOW matrix and role × module access
 
----
+**Next deck series (planned):**
 
-## Slide 15 — Карта «Роль × Модуль». Кто где работает.
+| #   | Deck                              | Focus                                                                                     |
+| --- | --------------------------------- | ----------------------------------------------------------------------------------------- |
+| 2   | **PipeQC Administration**         | Project Definition · System Referential · Project Referential · Access Rights · Imports   |
+| 3   | **PipeQC Preparation / Spooling** | ISO lifecycle state machine · SpoolGen integration · Revision cascade · Test Pack Builder |
+| 4   | **PipeQC Fabrication**            | Spool fab sub-stages · Weld progress · Material check · QC release · Multi-welder         |
+| 5   | **PipeQC NDE / Welding**          | Batch lifecycle · Tracer cascade · Penalty shoot automation · Examination program         |
+| 6   | **PipeQC Erection**               | Site flow · Field welds · Flange management · Field QC · RFT cascade                      |
+| 7   | **PipeQC Test Pack**              | Builder · Explorer · Pressure Test · Reinstatement balance · Client handover dossier      |
+| 8   | **PipeQC Spool Tracking**         | Data analysis tabs · Inconsistency flags · Transit-out · Future mobile-web                |
+| 9   | **PipeQC Roles deep dive**        | Day-in-the-life per role · Scope lock UX · PM read-only mode                              |
 
-> **Содержимое слайда:**
-
-### Heatmap покрытия ролями секций приложения.
-
-| Секция / Роль      | System Admin | Spooling Team | QC Engineer | NDE Inspector | Subcontractor | Project Manager |
-| ------------------ | :----------: | :-----------: | :---------: | :-----------: | :-----------: | :-------------: |
-| **SETUP**          |      🟢      |       —       |      —      |       —       |       —       |       🟡        |
-| **PREPARATION**    |      —       |      🟢       |      —      |       —       |       —       |       🟡        |
-| **CONSTRUCTION**   |      —       |       —       |     🟢      |      🟢       |    🟢 (scope) |       🟡        |
-| **TESTING**        |      —       |       —       |     🟢      |      🟢       |       —       |       🟢        |
-| **REPORTS**        |      —       |       —       |     🟢      |       —       |       —       |       🟢        |
-| **CONFIGURATION**  |      🟢      |      🟢       |     🟢      |      🟢       |      🟢       |       🟢        |
-
-`🟢` = full access · `🟡` = read-only / watcher · `🟢 (scope)` = только assigned PDS area
-
-> **Что отсюда видно:**
->
-> 1. **System Admin** — единственная роль, у которой нет «operational daily loop». Только setup-фаза и редкое maintenance.
-> 2. **Subcontractor** — operationally identical to QC Engineer, но со **scope filter** на всех экранах. Это multi-tenant в рамках одного проекта.
-> 3. **Project Manager** — единственная роль, видящая **все секции** через watcher mode. Поэтому навигация PM = «дашборды + drill-down».
-> 4. **NDE Inspector** — самая узкая роль, но самая глубокая по логике.
-
----
-
-## Slide 16 — Динамика. Путь одного weld'а через все роли.
-
-> **Содержимое слайда:**
-
-### Один и тот же шов меняет «владельца» по мере lifecycle'а.
-
-```mermaid
-flowchart TB
-    A["📐 Spooling Team<br/>получает ISO-1004 от engineering<br/>→ checkout spooler'у<br/>→ release transmittal к Fabrication"]
-    B["🔧 Subcontractor (fab)<br/>заполняет QC13:<br/>welder, WPS, heat numbers<br/>→ varит шов J-1029"]
-    C["✅ QC Engineer<br/>visual inspection root + cap<br/>→ heat number traceability check<br/>→ send to NDE batch"]
-    D["🔬 NDE Inspector<br/>принимает batch<br/>→ RT exam в lab<br/>→ record result A/R"]
-    E["⚠️ Если R: → R1-joint в NDE100<br/>+ tracers T1<br/>+ если 4×R: penalty shoot"]
-    F["✅ QC Engineer<br/>spool QC Release<br/>(когда все joints spool'а = released)"]
-    G["🚚 Subcontractor (erection)<br/>принимает spool на площадке<br/>→ field material check"]
-    H["✅ QC Engineer (site)<br/>Field QC Release per spool<br/>→ RFT для test pack"]
-    I["💧 PM<br/>проверяет RFT gate TP-205<br/>→ Cat-X items cleared?<br/>→ schedule hydrotest"]
-    J["🔧 Reinstatement Team<br/>после успешного теста<br/>→ снимают blinds<br/>→ ставят постоянные прокладки"]
-
-    A --> B --> C --> D --> E --> F --> G --> H --> I --> J
-
-    style C fill:#fff2cc
-    style D fill:#d5e8d4
-    style F fill:#fff2cc
-    style H fill:#fff2cc
-    style I fill:#dae8fc
-```
-
-> **Смысл слайда:** один артефакт (joint J-1029, потом spool, потом ISO, потом TP) **передаётся между ролями**. На каждом hand-off — другой экран, другая action-кнопка, другая validation. **Это и есть «динамика приложения»**, которую мы воспроизвели.
-
----
-
-## Slide 17 — Cross-role coordination. RFT pursuit на TP-205.
-
-> **Содержимое слайда — реальный сценарий:**
-
-### Сценарий: TP-205 запланирован на hydrotest в этот четверг. Сегодня среда утром. **Что внутри приложения происходит между ролями?**
-
-**Anna (PM)** открывает `/testpack/explorer`, выбирает TP-205, тапает **Release Tracking** tab. Видит 8 кликабельных числовых gate'ов:
-
-| Gate                          | Value | Кто закрывает                                   |
-| ----------------------------- | :---: | ----------------------------------------------- |
-| Joints to be welded           |   0   | Subcontractor (fab/erection) — daily progress   |
-| Flanges to be bolted          |   0   | Subcontractor + QC Engineer                     |
-| Joints awaiting NDE           |   0   | NDE Inspector — examination + result entry      |
-| ISOs to complete              |   0   | Spooling Team — transmittal closure             |
-| ISOs to return from line check |  0   | Line Checker Team (через role «subcontractor»)  |
-| **Items Cat-X to clear**      | **1** | **QC Engineer + Finishing Team** ← ⚠️ блокер!    |
-| ISOs to QC release            |   0   | QC Engineer                                     |
-| ISOs ready for test           | 4/5   | автоматический rollup от всех гейтов выше       |
-
-Anna кликает на **«1»** Cat-X item → popup с конкретным punch item:
-
-```
-PI-009 · Cat X · ISO-1004
-originator LC-01 (Line Checker)
-opened 2026-05-15
-assigned to FT-02 (Finishing Team)
-status Open
-```
-
-Anna теперь знает причину. Звонит FT-02 leader (вне приложения). Возвращается → `/testpack/explorer` → Progress Status tab → видит % completion по фазам. Hydrotest на четверг остаётся в плане.
-
-> **Главное:** один экран в одной роли — это бесполезно. **Ценность приложения = в том, что роли видят результаты работ друг друга в реальном времени**. PM не звонит каждому подрядчику — он видит, кто блокирует, и звонит **точечно**.
-
----
-
-## Slide 18 — Что построено сегодня. Честный статус.
-
-> **Содержимое слайда:**
-
-### Покрытие модулей в текущей версии PipeQC (demo state, 2026-05-23):
-
-| Модуль                          | Статус | Что построено                                                                                              |
-| ------------------------------- | :----: | ---------------------------------------------------------------------------------------------------------- |
-| **Admin module**                |   🟡   | Routes + IA shell + 2 working CRUD (Subcontractors, Teams), 28 справочников = demo-shell.                  |
-| **Spooling (preparation)**      |   🟡   | IA shell + demo import + validation table. Real SpoolGen parser отсутствует.                               |
-| **Fabrication**                 |   🟢   | Полный flow: spool fabrication 5 sub-stages + weld progress + dashboard.                                   |
-| **Erection**                    |   🟢   | Полный flow: 7 sub-stages + field weld + flange progress + dashboard.                                      |
-| **NDE module**                  |   🟡   | Batch operational list + result entry. **Penalty shoot automation, tracer cascade, NDE100 = Track N**.     |
-| **Tracking**                    |   🟡   | Dashboard shell, нет data analysis tabs.                                                                   |
-| **Testpack**                    |   🟢   | Builder + Explorer + Pressure Test homepage + RFT gate engine.                                             |
-| **Flange Management**           |   🟢   | Working CRUD + torquing.                                                                                   |
-| **Reports**                     |   🟡   | Каталог + filter, downloads = mock-toast.                                                                  |
-| **Multi-tenant / scope lock**   |   🔴   | Subcontractor видит всё. **Track J — обязательно для production**.                                          |
-
-Легенда: 🟢 working · 🟡 shell + partial · 🔴 missing.
-
-> **Что это значит для партнёра:**
->
-> Базовая каркасная архитектура построена end-to-end: можно пройти от Admin до Hydrotest через все роли в одной сессии. **Это уже сегодня**.
->
-> Глубинная domain-логика (penalty shoot, scope lock, real SpoolGen import, dossier-grade reports) — следующая волна. Прицельно строится **по трекам** (Tracks A / H / J / K / N / S — см. roadmap_v3).
-
----
-
-## Slide 19 — Что дальше. Roadmap волн.
-
-> **Содержимое слайда:**
-
-### Не «25 backlog items», а 6 приоритизированных треков.
-
-```mermaid
-flowchart LR
-    A["Track A<br/>Admin IA / Referentials<br/>📁 backbone master data"]
-    H["Track H<br/>Testpack / RFT engine<br/>🎯 самый pitch-worthy модуль"]
-    J["Track J<br/>Role / Scope lock<br/>🔒 enterprise credibility"]
-    K["Track K<br/>Iso Lifecycle / Spooling<br/>📐 upstream data source"]
-    N["Track N<br/>NDE / Welding upgrade<br/>🔬 penalty shoot, tracer logic"]
-    S["Track S<br/>Spool Tracking<br/>📍 physical reality layer"]
-
-    A --> J
-    A --> H
-    K --> H
-    N --> H
-    S --> J
-```
-
-**Принцип triage:**
-
-- **Каждая функция в матрице** имеет три тега: **Status** (live / partial / missing / planned) + **Priority** (P0 / P1 / P2 / P3) + **Decision** (build / defer / reject / redesign).
-- **Не всё missing — это backlog.** Часть — это сознательное «не строим как у Easy Piping» (e.g. Construction Surveillance PDA, Assembly как duplicate). Часть — _defer_ до production-фазы.
-
-> **Главное сообщение:** мы строим **не «копию Easy Piping»**. Мы строим **их недостроенное** (penalty shoot, scope lock) **+ их непостроенное** (mobile-web, real-time PM dashboards) **+ архитектурно лучше** (single shared layout, multi-tenant scope lock, real RFT gate engine).
-
----
-
-## Slide 20 — Закрытие. Главные мысли.
-
-> **Содержимое слайда:**
-
-### 5 главных take-away'ев
-
-1. **Мы не магистральные трубопроводы.** Мы — индустриальные стройки (НПЗ, LNG, химия). На один объект — десятки тысяч сварных швов. На каждый шов — паспорт с историей.
-
-2. **Real-world pipeline → app pipeline 1-в-1.** Setup → Preparation → Construction → Testing → Reports. Пользователь работает в порядке, который ему диктует физика стройки, а не выдумывает порядок сам.
-
-3. **Главный пользователь — QA/QC department EPC-подрядчика.** Это edit-heavy роль (QC Engineer, NDE Inspector). Project Manager — watcher (дашборды + drill-down). Subcontractor — restricted editor со scope lock'ом.
-
-4. **Один артефакт (шов / спул / ISO / TP) проходит через все роли.** Ценность приложения — не в одном экране, а в координации между ролями в реальном времени.
-
-5. **Сегодня каркас end-to-end построен. Глубинная domain-логика — следующая волна, по трекам.** Особенно critical: NDE penalty shoot (flagship demo), subcontractor scope lock (enterprise credibility), RFT gate engine (уже работает, но углубляем).
-
----
-
-## Slide 21 — Что в следующих deck'ах
-
-> **Содержимое слайда:**
-
-### Эта презентация — обзор. Дальше — по модулям, прицельно.
-
-| Следующий deck                       | Что там                                                                                  |
-| ------------------------------------ | ---------------------------------------------------------------------------------------- |
-| **02 — Spooling deep dive**          | ISO lifecycle state machine, SpoolGen integration, revision cascade, hold management.    |
-| **03 — Fabrication + NDE deep dive** | Joint Card, multi-weld-point, welder qualification gate, penalty shoot automation.       |
-| **04 — Erection + Tracking**         | Field flow vs shop flow, RFT gate cascade, spool tracking dashboard, inconsistency flags. |
-| **05 — Testpack + Flange**           | Builder UX, Release Tracking, Pressure Test workflow, Reinstatement balance.             |
-| **06 — Roles deep dive**             | Каждая роль — отдельный story map (a day in the life), gap matrix, scope lock UX.        |
-| **07 — Reports + Audit dossier**     | Что выгружается клиенту, формат, governance.                                              |
-
-> Каждый следующий deck в той же структуре: **бизнес-процесс → как живёт в приложении → роли в динамике → что построено / что в roadmap**.
+> Каждый следующий deck — в том же template'е: Title → TOC → Section dividers (Introduction · Sub-modules · Features · Reports) → Deployment / SOW.
 
 ---
 
 ## Конец deck'а
 
-**Список диаграмм / визуализаций** (для подготовки в Google Slides):
+**Структурный pattern (для сверки с оригиналом):**
 
-| Слайд | Тип визуализации                            | Сервис для рендера                                                |
-| ----- | ------------------------------------------- | ----------------------------------------------------------------- |
-| 3     | Mermaid flowchart (Owner → EPC → Subs)      | [mermaid.live](https://mermaid.live) → export PNG                 |
-| 4     | Mermaid flowchart (8 фаз lifecycle)         | mermaid.live                                                      |
-| 5     | Mermaid flowchart (real ↔ app mapping)      | mermaid.live · ⭐ ключевая диаграмма                              |
-| 6     | ASCII-tree IA                               | вставить как монопространный текст / скриншот                     |
-| 8     | Mermaid flowchart (ISO → 3 spools)          | mermaid.live                                                      |
-| 9     | Mermaid flowchart (4 CONSTRUCTION модуля)   | mermaid.live                                                      |
-| 11    | Mermaid flowchart (NDE rejection cascade)   | mermaid.live · ⭐ pitch-worthy                                    |
-| 12    | Mermaid flowchart (testpack blind logic)    | mermaid.live                                                      |
-| 15    | Таблица (heatmap Role × Module)             | нативная таблица Google Slides + раскраска ячеек                 |
-| 16    | Mermaid flowchart (путь weld'а через роли)  | mermaid.live · ⭐ ключевая диаграмма для динамики                |
-| 19    | Mermaid flowchart (Tracks dependency)       | mermaid.live                                                      |
+| Слайды | Секция                             | Соответствие в Easy Piping PSMS overview |
+| ------ | ---------------------------------- | ---------------------------------------- |
+| 1      | Title                              | Slide 1                                  |
+| 2–3    | Section divider + TOC              | Slides 2–3                               |
+| 4–5    | Section 1: PipeQC suite            | Slides 4–5 (Easy plant)                  |
+| 6–12   | Section 2: Piping construction     | Slides 6–12                              |
+| 13–27  | Section 3: PipeQC description      | Slides 13–27 (Easy piping description)   |
+| 28–35  | Section 4: Satellite tools         | Slides 28–35                             |
+| 36–39  | Section 5: PipeQC deployment / SOW | Slides 36–39                             |
+| 40     | Closing / next decks               | Slide 40                                 |
 
-**Цвета (рекомендация):**
+**Список mermaid-диаграмм для рендеринга через [mermaid.live](https://mermaid.live):**
+
+| Слайд | Диаграмма                         | Приоритет |
+| ----- | --------------------------------- | --------- |
+| 5     | Data exchanges (interfaces)       | ⭐        |
+| 7     | 8 phases of project lifecycle     | ⭐        |
+| 8     | Data pipeline 3D → ISO → Spool    | ⭐        |
+| 12    | Daily data flow methodology       | ⭐        |
+| 14    | PULL / PUSH dual-leg supervision  |           |
+| 16    | Modules constellation around core | ⭐⭐      |
+| 20    | Full lifecycle workflow (large)   | ⭐⭐      |
+| 29    | 3D viewer consolidating           |           |
+| 31    | Spool tracking architecture       |           |
+| 34    | Surveillance KPI flow             |           |
+
+**Color palette (по модулям):**
 
 - Setup / Admin — серый `#E8EAED`
 - Preparation / Spooling — голубой `#E8F4FD`
-- Construction (Fab) — янтарный `#FFF2CC`
-- Construction (Erection) — синий `#DAE8FC`
+- Fabrication — янтарный `#FFF2CC`
+- Erection — синий `#DAE8FC`
 - NDE — зелёный `#D5E8D4`
 - Testing / Testpack — розовый `#FFE6CC`
-- Tracking — красный/коралл `#F8CECC`
+- Tracking — коралл `#F8CECC`
+- Flange — фиолетовый `#E1D5E7`
+- Highlighted (PipeQC core, RFT gate, etc.) — `#FFD966` (стандартный янтарный)
 
 ---
 
-_Made for: партнёрская презентация · 2026-05-23 · версия 1 (overview)_
+_Version 2 — restructured to match Technip PSMS overview template (40 slides, 5 sections)._
+_Made for: партнёрская презентация · 2026-05-23_

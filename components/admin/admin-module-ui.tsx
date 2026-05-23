@@ -153,7 +153,13 @@ export function ReferentialGroup({
   );
 }
 
-export function ImportPlaceholder({ title }: { title: string }) {
+export function ImportPlaceholder({
+  title,
+  comingSoon,
+}: {
+  title: string
+  comingSoon?: boolean
+}) {
   return (
     <Card className="border-slate-200">
       <CardHeader>
@@ -163,7 +169,7 @@ export function ImportPlaceholder({ title }: { title: string }) {
             <CardDescription>Excel/template import configuration.</CardDescription>
           </div>
           <Badge variant="outline" className="text-[10px]">
-            Not implemented / planned
+            {comingSoon ? "Coming soon" : "Not implemented / planned"}
           </Badge>
         </div>
       </CardHeader>

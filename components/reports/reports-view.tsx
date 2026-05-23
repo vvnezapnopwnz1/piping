@@ -5,6 +5,19 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Download, Search } from "lucide-react";
 import { toast } from "sonner";
 
+import { useRole } from "@/contexts/role-context";
+import {
+  REAL_REPORT_GENERATORS,
+  triggerReportDownload,
+  type ReportStoreSnapshot,
+} from "@/lib/report-generators";
+import { useAdminStore } from "@/store/admin-store";
+import { useBatchesStore } from "@/store/batches-store";
+import { useErectionStore } from "@/store/erection-store";
+import { useFlangeStore } from "@/store/flange-store";
+import { useNotificationsStore } from "@/store/notifications-store";
+import { useTestpackStore } from "@/store/testpack-store";
+import { useWeldsStore } from "@/store/welds-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -74,8 +87,19 @@ export function ReportsView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const liveCounts = useReportsLiveCounts();
+  const { currentRole } = useRole();
+  const welds = useWeldsStore((s) => s.welds);
+  const batches = useBatchesStore((s) => s.batches);
+  const testPacks = useTestpackStore((s) => s.testPacks);
+  const isos = useTestpackStore((s) => s.isos);
+  const punchItems = useTestpackStore((s) => s.punchItems);
+  const fieldWelds = useErectionStore((s) => s.fieldWelds);
+  const flangeJoints = useFlangeStore((s) => s.joints);
+  const projectDef = useAdminStore((s) => s.projectDefinition);
+  const pushNotification = useNotificationsStore((s) => s.pushNotification);
   const [search, setSearch] = useState("");
   const [now, setNow] = useState<Date | null>(null);
+  const [generatedAt, setGeneratedAt] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setNow(new Date());
@@ -97,7 +121,10 @@ export function ReportsView() {
   };
 
   const filteredReports = useMemo(() => {
-    let rows = [...REPORTS_SEED];
+    let rows = REPORTS_SEED.map((r) => ({
+      ...r,
+      lastGeneratedISO: generatedAt[r.id] ?? r.lastGeneratedISO,
+    }));
     if (activeCategory !== "All") {
       rows = rows.filter((r) => r.category === activeCategory);
     }
@@ -110,7 +137,7 @@ export function ReportsView() {
       );
     }
     return rows;
-  }, [activeCategory, search]);
+  }, [activeCategory, search, generatedAt]);
 
   const kpiCounts = useMemo(() => {
     const counts: Record<FilterCategory, number> = {
@@ -124,11 +151,57 @@ export function ReportsView() {
     return counts;
   }, [filteredReports]);
 
+  const storeSnapshot: ReportStoreSnapshot = useMemo(
+    () => ({
+      welds,
+      batches,
+      testPacks,
+      isos,
+      punchItems,
+      fieldWelds,
+      flangeJoints,
+      projectTitle: projectDef.projectTitle,
+      activityCode: projectDef.activityCode,
+    }),
+    [
+      welds,
+      batches,
+      testPacks,
+      isos,
+      punchItems,
+      fieldWelds,
+      flangeJoints,
+      projectDef,
+    ],
+  );
+
   const handleDownload = async (report: ReportDef) => {
     const filename = buildFilename(report);
-    const duration = 900 + Math.random() * 200;
+    const duration = 700 + Math.random() * 200;
     const t = toast.loading(`Generating ${filename}…`, { duration: Infinity });
     await new Promise((r) => setTimeout(r, duration));
+
+    const generator = REAL_REPORT_GENERATORS[report.id];
+    if (generator) {
+      const blob = await generator(storeSnapshot);
+      triggerReportDownload(blob, filename);
+      const iso = new Date().toISOString();
+      setGeneratedAt((prev) => ({ ...prev, [report.id]: iso }));
+      pushNotification({
+        severity: "info",
+        category: "system",
+        title: `Report ${report.title} downloaded`,
+        description: `Downloaded by ${currentRole.replace(/_/g, " ")}`,
+        href: "/reports",
+      });
+      toast.success(`Downloaded ${filename}`, {
+        id: t,
+        description: `${report.format.toUpperCase()} · ${formatBytes(blob.size)}`,
+        duration: 4000,
+      });
+      return;
+    }
+
     toast.success(`Downloaded ${filename}`, {
       id: t,
       description: `${report.format.toUpperCase()} · ${formatBytes(

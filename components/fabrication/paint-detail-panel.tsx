@@ -39,6 +39,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
+import { W10pPdfButton } from "@/components/fabrication/w10p-pdf-button";
 
 interface PaintDetailPanelProps {
   spoolNo: string | null;
@@ -367,11 +368,14 @@ export function PaintDetailPanel({
             </>
           )}
 
-          {isSignedOff && (
-            <p className="text-sm text-slate-500 text-right">
-              Painted on {form.finalQCSignedOffDate} — DFT {form.dftMicrons} µm — {form.finalQCInspector}
-            </p>
-          )}
+          {isSignedOff && form ? (
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <W10pPdfButton spoolNo={spoolNo!} record={form} />
+              <p className="text-sm text-slate-500">
+                Painted on {form.finalQCSignedOffDate} — DFT {form.dftMicrons} µm — {form.finalQCInspector}
+              </p>
+            </div>
+          ) : null}
         </SheetFooter>
       </SheetContent>
     </Sheet>

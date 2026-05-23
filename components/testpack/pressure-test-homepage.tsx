@@ -65,6 +65,8 @@ import {
   useReinstatementKPIs,
 } from "@/store";
 import { TestpackActivityFeed } from "@/components/testpack/testpack-activity-feed";
+import { DossierPdfButton } from "@/components/testpack/dossier-pdf-button";
+import { useTestpackStore } from "@/store/testpack-store";
 import { useScopeLock } from "@/lib/scope-lock";
 
 // Icon map
@@ -420,6 +422,59 @@ function AlertRow({ alert }: { alert: Alert }) {
   );
 }
 
+function TestpackHandoverTable() {
+  const testPacks = useTestpackStore((s) => s.testPacks);
+  const scope = useScopeLock();
+
+  const rows = testPacks.filter((tp) => {
+    if (!scope.active) return true;
+    return scope.isInScope(tp.pdsAreaCode);
+  });
+
+  if (rows.length === 0) return null;
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium">Client handover dossiers</CardTitle>
+        <CardDescription>
+          Generate a PDF dossier per test pack for owner handover.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-hidden rounded-lg border">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 border-b">
+              <tr>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">
+                  Test pack
+                </th>
+                <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">
+                  Location
+                </th>
+                <th className="px-3 py-2 text-right text-xs font-semibold text-slate-600">
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((tp) => (
+                <tr key={tp.id} className="border-b last:border-0">
+                  <td className="px-3 py-2 font-medium">{tp.id}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{tp.location}</td>
+                  <td className="px-3 py-2 text-right">
+                    <DossierPdfButton testpack={tp} size="sm" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function PressureTestHomepage() {
   const scope = useScopeLock();
   const [timeScale, setTimeScale] = useState("30D");
@@ -654,6 +709,8 @@ export function PressureTestHomepage() {
           </CardContent>
         </Card>
       </div>
+
+      <TestpackHandoverTable />
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
         <div className="space-y-4 xl:col-span-3">

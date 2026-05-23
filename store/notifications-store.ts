@@ -31,6 +31,11 @@ export type NotificationCategory =
   | "testpack"
   | "system"
 
+export interface NotificationAck {
+  actor: string
+  at: string
+}
+
 export interface Notification {
   id: string
   severity: NotificationSeverity
@@ -41,6 +46,8 @@ export interface Notification {
   timestamp: string // ISO
   read: boolean
   actorLabel?: string // e.g. "Bureau Veritas" — shown as source/badge
+  acknowledged?: NotificationAck
+  archived?: boolean
 }
 
 interface NotificationsState {
@@ -52,6 +59,10 @@ interface NotificationsState {
   markRead: (id: string) => void
   markAllRead: () => void
   dismiss: (id: string) => void
+  acknowledge: (id: string, actor: string) => void
+  unacknowledge: (id: string) => void
+  archive: (id: string) => void
+  unarchive: (id: string) => void
   clearAll: () => void
   resetDemo: () => void
   hydrateDemoScenario: () => void
@@ -72,7 +83,7 @@ export const INITIAL_NOTIFICATIONS: Notification[] = [
     id: "n-001",
     severity: "error",
     category: "nde_result",
-    title: "BTH-2025-0156: 1 weld rejected — TP-205 RFT blocked",
+    title: "BTH-2025-0156: 1 weld rejected — TP-205 blocked",
     description:
       "J-1028 (PL-FU300-007-A) · TP-205 — Undercut on external bead, depth 1.2mm. Awaiting disposition.",
     href: "/nde",
@@ -141,7 +152,7 @@ export const INITIAL_NOTIFICATIONS: Notification[] = [
   {
     id: "n-007",
     severity: "info",
-    category: "system",
+    category: "testpack",
     title: "TP-205: 5 ISOs ready for line check",
     description:
       "Test pack TP-205 (Cooling Tower CT-01) has 5 ISOs eligible for line check. Assign to a checker team.",
@@ -162,6 +173,14 @@ function dedupeNotificationsById(
     seen.add(n.id)
     return true
   })
+}
+
+function migrateNotification(n: Notification): Notification {
+  return {
+    ...n,
+    archived: n.archived ?? false,
+    acknowledged: n.acknowledged,
+  }
 }
 
 /** Next id from existing list — survives persist rehydrate (module counter does not). */
@@ -187,6 +206,7 @@ export const useNotificationsStore = create<NotificationsState>()(
             id,
             timestamp: n.timestamp ?? new Date().toISOString(),
             read: false,
+            archived: false,
             ...n,
           }
           const rest = state.notifications.filter((item) => item.id !== id)
@@ -217,6 +237,40 @@ export const useNotificationsStore = create<NotificationsState>()(
           notifications: state.notifications.filter((n) => n.id !== id),
         })),
 
+      acknowledge: (id, actor) =>
+        set((state) => ({
+          notifications: state.notifications.map((n) =>
+            n.id === id
+              ? {
+                  ...n,
+                  read: true,
+                  acknowledged: { actor, at: new Date().toISOString() },
+                }
+              : n
+          ),
+        })),
+
+      unacknowledge: (id) =>
+        set((state) => ({
+          notifications: state.notifications.map((n) =>
+            n.id === id ? { ...n, acknowledged: undefined } : n
+          ),
+        })),
+
+      archive: (id) =>
+        set((state) => ({
+          notifications: state.notifications.map((n) =>
+            n.id === id ? { ...n, archived: true, read: true } : n
+          ),
+        })),
+
+      unarchive: (id) =>
+        set((state) => ({
+          notifications: state.notifications.map((n) =>
+            n.id === id ? { ...n, archived: false } : n
+          ),
+        })),
+
       clearAll: () => set({ notifications: [] }),
 
       resetDemo: () => set({ notifications: INITIAL_NOTIFICATIONS }),
@@ -225,17 +279,20 @@ export const useNotificationsStore = create<NotificationsState>()(
         set({ notifications: INITIAL_NOTIFICATIONS }),
 
       getUnreadCount: () =>
-        get().notifications.filter((n) => !n.read).length,
+        get().notifications.filter((n) => !n.read && !n.archived).length,
     }),
     {
       name: "pipeqc-notifications",
       storage: createJSONStorage(() => localStorage),
-      version: 2,
+      version: 3,
       migrate: (persisted, version) => {
         const state = persisted as { notifications?: Notification[] }
         if (!state?.notifications) return persisted as NotificationsState
         if (version < 2) {
           state.notifications = dedupeNotificationsById(state.notifications)
+        }
+        if (version < 3) {
+          state.notifications = state.notifications.map(migrateNotification)
         }
         return state as NotificationsState
       },
@@ -249,10 +306,11 @@ export const useNotificationsStore = create<NotificationsState>()(
 
 export const useUnreadNotifications = () => {
   const notifications = useNotificationsStore((s) => s.notifications)
-  return dedupeNotificationsById(notifications).filter((n) => !n.read)
+  return dedupeNotificationsById(notifications).filter(
+    (n) => !n.read && !n.archived
+  )
 }
 
 export const useNotificationsCount = () => {
-  const notifications = useNotificationsStore((s) => s.notifications)
-  return notifications.filter((n) => !n.read).length
+  return useNotificationsStore((s) => s.getUnreadCount())
 }

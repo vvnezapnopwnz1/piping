@@ -23,8 +23,19 @@ import {
   type NDEMatrixRecord,
   type WPSRecord,
 } from "@/lib/engineering-references"
+import type { Role } from "@/contexts/role-context"
 
 export type { WPSRecord }
+
+export interface AccessRightsRow {
+  userId: string
+  fullName: string
+  email: string
+  role: Role
+  subcontractorId?: string
+  pdsAreaCodes?: string[]
+  active: boolean
+}
 
 export type TeamType = "lineCheck" | "blinding" | "finishing" | "reinstatement" | "jointer"
 
@@ -375,6 +386,98 @@ function seedJointCategories(): JointCategoryRecord[] {
   return JOINT_CATEGORIES.map((c) => ({ ...c }))
 }
 
+function seedAccessRights(): AccessRightsRow[] {
+  return [
+    {
+      userId: "U-001",
+      fullName: "Maria Garcia",
+      email: "maria.garcia@epc.com",
+      role: "system_admin",
+      active: true,
+    },
+    {
+      userId: "U-002",
+      fullName: "James Okonkwo",
+      email: "j.okonkwo@epc.com",
+      role: "project_manager",
+      active: true,
+    },
+    {
+      userId: "U-003",
+      fullName: "Elena Vasquez",
+      email: "e.vasquez@epc.com",
+      role: "qc_engineer",
+      active: true,
+    },
+    {
+      userId: "U-004",
+      fullName: "David Chen",
+      email: "d.chen@nde.com",
+      role: "nde_inspector",
+      active: true,
+    },
+    {
+      userId: "U-005",
+      fullName: "Sofia Lindström",
+      email: "s.lindstrom@epc.com",
+      role: "spooling_team",
+      active: true,
+    },
+    {
+      userId: "U-006",
+      fullName: "John Smith",
+      email: "john.smith@acme-weld.com",
+      role: "subcontractor",
+      subcontractorId: "SUB-001",
+      pdsAreaCodes: ["PR-01", "CA-02"],
+      active: true,
+    },
+    {
+      userId: "U-007",
+      fullName: "Ahmed Hassan",
+      email: "ahmed.hassan@gulf-erectors.com",
+      role: "subcontractor",
+      subcontractorId: "SUB-002",
+      pdsAreaCodes: ["RA-01", "VS-01"],
+      active: true,
+    },
+    {
+      userId: "U-008",
+      fullName: "Carlos García",
+      email: "carlos@falcon-ndt.com",
+      role: "subcontractor",
+      subcontractorId: "SUB-005",
+      pdsAreaCodes: ["PR-01"],
+      active: true,
+    },
+    {
+      userId: "U-009",
+      fullName: "Liu Wei",
+      email: "liu.wei@apex-rein.com",
+      role: "subcontractor",
+      subcontractorId: "SUB-004",
+      pdsAreaCodes: ["UB-03"],
+      active: false,
+    },
+    {
+      userId: "U-010",
+      fullName: "Priya Nair",
+      email: "priya.nair@epc.com",
+      role: "qc_engineer",
+      active: true,
+    },
+  ]
+}
+
+function nextAccessUserId(rows: AccessRightsRow[]): string {
+  const nums = rows
+    .map((r) => /^U-(\d+)$/.exec(r.userId)?.[1])
+    .filter(Boolean)
+    .map((n) => parseInt(n!, 10))
+  const max = nums.length ? Math.max(...nums) : 0
+  return `U-${String(max + 1).padStart(3, "0")}`
+}
+
 function nextNdeMatrixId(rules: NDEMatrixRule[]): string {
   const usedNumbers = rules
     .map((r) => {
@@ -398,6 +501,7 @@ interface AdminState {
   pipingMaterialList: HeatRecord[]
   reworkCodes: ReworkCodeRecord[]
   jointCategories: JointCategoryRecord[]
+  accessRights: AccessRightsRow[]
 
   getTeamsByType: (type: TeamType) => Team[]
   getActiveTeamsByType: (type: TeamType) => Team[]
@@ -456,6 +560,12 @@ interface AdminState {
     patch: { description?: string; examples?: string[] }
   ) => void
 
+  addAccessUser: (
+    payload: Omit<AccessRightsRow, "userId" | "active"> & { userId?: string }
+  ) => void
+  updateAccessUser: (userId: string, patch: Partial<AccessRightsRow>) => void
+  toggleAccessUserActive: (userId: string) => void
+
   resetAdmin: () => void
 }
 
@@ -473,6 +583,7 @@ export const useAdminStore = create<AdminState>()(
       pipingMaterialList: seedPipingMaterialList(),
       reworkCodes: seedReworkCodes(),
       jointCategories: seedJointCategories(),
+      accessRights: seedAccessRights(),
 
       getTeamsByType: (type: TeamType) => {
         return get().teams.filter((t) => t.type === type)
@@ -706,6 +817,38 @@ export const useAdminStore = create<AdminState>()(
         }))
       },
 
+      addAccessUser: (payload) => {
+        set((s) => {
+          const userId = payload.userId ?? nextAccessUserId(s.accessRights)
+          const row: AccessRightsRow = {
+            userId,
+            fullName: payload.fullName,
+            email: payload.email,
+            role: payload.role,
+            subcontractorId: payload.subcontractorId,
+            pdsAreaCodes: payload.pdsAreaCodes,
+            active: true,
+          }
+          return { accessRights: [...s.accessRights, row] }
+        })
+      },
+
+      updateAccessUser: (userId, patch) => {
+        set((s) => ({
+          accessRights: s.accessRights.map((u) =>
+            u.userId === userId ? { ...u, ...patch } : u
+          ),
+        }))
+      },
+
+      toggleAccessUserActive: (userId) => {
+        set((s) => ({
+          accessRights: s.accessRights.map((u) =>
+            u.userId === userId ? { ...u, active: !u.active } : u
+          ),
+        }))
+      },
+
       resetAdmin: () => {
         set({
           teams: seedTeams(),
@@ -719,12 +862,13 @@ export const useAdminStore = create<AdminState>()(
           pipingMaterialList: seedPipingMaterialList(),
           reworkCodes: seedReworkCodes(),
           jointCategories: seedJointCategories(),
+          accessRights: seedAccessRights(),
         })
       },
     }),
     {
       name: "pipeqc-admin",
-      version: 3,
+      version: 4,
       migrate: (persistedState, version) => {
         let state = (persistedState ?? {}) as Partial<AdminState>
         if (version < 2) {
@@ -748,6 +892,12 @@ export const useAdminStore = create<AdminState>()(
               state.pipingMaterialList ?? seedPipingMaterialList(),
             reworkCodes: state.reworkCodes ?? seedReworkCodes(),
             jointCategories: state.jointCategories ?? seedJointCategories(),
+          }
+        }
+        if (version < 4) {
+          state = {
+            ...state,
+            accessRights: state.accessRights ?? seedAccessRights(),
           }
         }
         return state as AdminState

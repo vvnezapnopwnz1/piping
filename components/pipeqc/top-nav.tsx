@@ -26,6 +26,7 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useRole, ROLES } from "@/contexts/role-context";
 import { useDemoStore } from "@/store";
+import { useNotificationsCount } from "@/store/notifications-store";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 
@@ -69,6 +70,7 @@ export function TopNav() {
   const [selectedProject, setSelectedProject] = React.useState(projects[0]);
   const resetAll = useDemoStore((s) => s.resetAll);
   const demoMode = useDemoStore((s) => s.demoMode);
+  const unreadCount = useNotificationsCount();
 
   const handleReset = () => {
     resetAll();
@@ -181,12 +183,16 @@ export function TopNav() {
           <span className="sr-only">Search</span>
         </Button>
 
-        <Button variant="ghost" size="icon" className="relative size-8">
-          <Bell className="size-4 text-muted-foreground" />
-          <span className="absolute right-1.5 top-1.5 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
-            3
-          </span>
-          <span className="sr-only">Notifications</span>
+        <Button variant="ghost" size="icon" className="relative size-8" asChild>
+          <Link href="/">
+            <Bell className="size-4 text-muted-foreground" />
+            {unreadCount > 0 ? (
+              <span className="absolute right-1.5 top-1.5 flex size-4 min-w-4 items-center justify-center rounded-full bg-destructive px-0.5 text-[10px] font-medium text-destructive-foreground">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            ) : null}
+            <span className="sr-only">Notifications</span>
+          </Link>
         </Button>
 
         <Button variant="ghost" size="icon" className="size-8">

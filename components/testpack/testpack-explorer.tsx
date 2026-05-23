@@ -54,6 +54,7 @@ import { IsoLevelView } from "@/components/testpack/iso-level-view";
 import { ReleaseWorkDialog } from "@/components/testpack/release-work-dialog";
 import { TestpackBuilderSheet } from "@/components/testpack/testpack-builder-sheet";
 import { ClientExaminationPanel } from "@/components/testpack/client-examination-panel";
+import { DossierPdfButton } from "@/components/testpack/dossier-pdf-button";
 import { PmWriteLockBanner } from "@/components/pm-write-lock-banner";
 import { usePmWriteLock } from "@/lib/pm-write-lock";
 import { useScopeLock } from "@/lib/scope-lock";
@@ -1762,14 +1763,9 @@ export function TestpackExplorer() {
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => toast.info("Opening test pack dossier...")}
-            >
-              <Eye className="mr-1 h-4 w-4" />
-              View Dossier
-            </Button>
+            {liveTpForEdit ? (
+              <DossierPdfButton testpack={liveTpForEdit} label="Generate Dossier" />
+            ) : null}
             {liveTpForEdit ? (
               <Button
                 variant="outline"

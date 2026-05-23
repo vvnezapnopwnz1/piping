@@ -31,10 +31,22 @@ on operational context, competitive framing, or per-role capability scope.
 | -------- | ---- | ---------------- |
 | Presentation findings | `docs/research/presentation_findings.md` | All **10** Easy Piping sales/training decks read sequentially (#1 PSMS overview → #10 Painting). Cross-cutting findings CC-1…CC-23 (RFT formula, punch X/Y/Z gates, Generate Request pattern, role hierarchy, SpoolGen/Marian data flow, competitive positioning). Module-specific gaps per deck. |
 | Role matrices | `docs/role_matrix/*.md` | Per-role function inventories with ✅ live / ⚠ partial / 📋 planned / ❌ missing tags: `qc_engineer`, `nde_inspector`, `project_manager`, `spooling_team`, `subcontractor`, `system_admin` (+ approach notes in `chat_gpt_on_role_matrix_aproach.md`). Ground truth for **what to build next** — triage consolidated in each matrix's gap table. |
-| Roadmap v3 | `docs/roadmap_v3.md` | Module-by-module delivery order (Phase 0 Admin → … → Phase 7 polish). Replaces capability-first v2 sequencing. **Phases 0–6 complete; current focus: Phase 7 polish (Reports, PDF, notifications).** |
+| Roadmap v3 | `docs/roadmap_v3.md` | Module-by-module delivery order (Phase 0 Admin → … → Phase 7 polish). Replaces capability-first v2 sequencing. **Phases 0–7 core slices complete** (2026-05-23); extended Phase 7 backlog items remain deferred. |
+| Partner presentations (Markdown) | `docs/presentations/` | Slide-ready decks for stakeholder demos — not app runtime. See table below. |
 | Phase implementation plans | `docs/superpowers/plans/2026-05-22-phase{2,3,4}-*.md`, `2026-05-23-phase{5,6}-*.md` | Agent execution plans for Phases 2–6 (Fabrication → Test Pack). |
+| Phase 7 prompt | `docs/prompts/PipeQC_Phase7_Polish.md` | Spec for cross-cutting polish (reports, notifications, admin import, dossier/W10P PDF). **Implemented 2026-05-23.** |
 | Pipeline construction guide | `docs/pipeline_construction_guide.md` | End-to-end production chain narrative (Admin → Test Pack) aligned with roadmap v3. |
 | Archived phase prompts | `docs/prompts/archive/` | Completed track prompts (A*, G*, I*, N*, etc.) moved out of `docs/prompts/` root during docs housekeeping. |
+
+**Presentation decks (`docs/presentations/`):**
+
+| File | Purpose |
+| ---- | ------- |
+| `01-pipeqc-overview.md` | Part 1 — PSMS-style suite overview (~40 slides): industry lifecycle, PipeQC modules, deployment narrative. Technip deck *structure* only; content is PipeQC-specific. |
+| `01-pipeqc-v2.md` | Technical / functional product overview (Russian): screens, validations, role mapping — deeper than the sales overview. |
+| `first.md` | Earlier compact overview deck (EN): domain context + module map + hero flows; useful as a shorter partner pitch. |
+
+Source `.pptx` files (Easy Piping originals) stay **gitignored** at repo root / `docs/` — Markdown decks are the committed derivative for agents and Google Slides copy-paste.
 
 **Recent merge milestones (not yet in older agent context):**
 
@@ -47,6 +59,7 @@ on operational context, competitive framing, or per-role capability scope.
 - **Phase 4 Erection** (2026-05-23) — Reuse Phase 2–3 on field: welder qual table chips, field PWHT in unified queue, Field QC Release `/erection/field-qc-release` + RFT gate, PM write-lock + scope lock on all erection panels, QC13 on field welds, W24 PDF stub on To Site/Erected/W-B.
 - **Phase 5 Spool Tracking** (2026-05-23) — Live `/tracking` dashboard derived from laydown/to-site/erection stores + append-only `spool-tracking-store`; KPI strip, capacity map, inconsistency/transit-out panels, manual relocate Sheet; `/tracking/data-analysis` 4-tab IA; `/tracking/print-barcodes` Excel basket (`xlsx`); CC-11 active spool chip; scope lock + PM write-lock.
 - **Phase 6 Test Pack** (2026-05-23) — `/testpack/builder` + `TestpackBuilderSheet`; live General/Iso tabs via `StatusCodeBadge` + `fabStageToStatusCode`; `testpack-store` v6 (`createTestpack`, client witness); activity feed on pressure-test homepage; real `.xlsx` release worklist; print routes for 4 prep request types; flange gate → `/flange?testpack=`; PM write-lock + scope lock on all prep/progress views.
+- **Phase 7 Polish** (2026-05-23) — `lib/report-generators.ts` (4 hero reports); `notifications-store` v3 + `components/notifications/notifications-feed.tsx`; `admin-store` v4 access rights + import dry-run; `DossierPdfButton` + `W10pPdfButton`; sample templates under `public/sample-imports/`.
 
 ---
 
@@ -62,8 +75,8 @@ on operational context, competitive framing, or per-role capability scope.
 | Charts     | `recharts`                            |                                      |
 | State      | `zustand@5.0.13` + persist middleware | localStorage backed                  |
 | Toasts     | `sonner`                              | Already wired                        |
-| PDF stubs  | `jspdf`                               | Phase 2 QC13 / W24 / NDE Issue Examination |
-| Excel export | `xlsx`                              | Phase 5 barcode basket + Phase 6 release worklist |
+| PDF generation | `jspdf`                           | QC13 / W24 / W10P / Dossier handover / 4 hero reports (`lib/report-generators.ts`) |
+| Excel export | `xlsx`                              | Phase 5 barcode basket, Phase 6 release worklist, Phase 7 hero reports + admin import dry-run |
 
 Do **not** add new dependencies without confirming with the user first.
 
@@ -149,14 +162,14 @@ app/
   admin/project-definition/page.tsx     # ✅ Phase 0.1 — project definition form (store-backed)
   admin/system-referential/page.tsx     # ✅ Phase 0.7 — 4 system-ref cards + inline add
   admin/project-referential/page.tsx    # ✅ Phase 0 — <AdminTabs /> + Piping Material List tab
-  admin/access-rights/page.tsx          # ⚠ shell — role/scope UI scaffold
-  admin/import-settings/page.tsx        # ⚠ shell — Excel import templates (Phase 7 defer)
+  admin/access-rights/page.tsx          # ✅ Phase 7.3 — AccessRightsView (role × PDS scope matrix)
+  admin/import-settings/page.tsx        # ✅ Phase 7.3 — PML / WPS / Welder dry-run import + sample xlsx
   admin/admin-tabs.tsx                  # ✅ 8-tab referential CRUD with ?tab= URL sync
   spooling/page.tsx                     # ✅ Phase 1.7 — live KPI dashboard (`SpoolingHomeDashboard`)
   spooling/engineering-transmittals/      # ✅ Phase 1.1 — inbound list + Accept sheet
   spooling/iso-workflow/                # ✅ Phase 1.2–1.4 — ISO Workflow tab + detail panel; legacy demo import tab
   spooling/spooling-transmittal/          # ✅ Phase 1.5 — outbound list + compose batch
-  reports/page.tsx                      # ⚠ placeholder (header only)
+  reports/page.tsx                      # ✅ Phase 7.1 — ReportsView; 4 hero downloads + mock-toast for rest
   documentation/page.tsx                # ✅ 4-tab devlog (Overview / What works / Modules / Tracks & Stories)
   settings/                             # ⚠ placeholder
 
@@ -171,7 +184,8 @@ components/
     laydown-detail-panel.tsx              # Place on yard / release Sheet (G5)
     pwht-release-view.tsx                 # Phase 2.3
     pwht-release-detail-panel.tsx
-    qc13-pdf-button.tsx                   # Phase 2 — Daily Progress Report PDF stub
+    qc13-pdf-button.tsx                   # Phase 2 — QC13 PDF
+    w10p-pdf-button.tsx                   # Phase 7.4 — W10P paint QC form (painted spools)
   fabrication-dashboard.tsx             # ← reference dashboard pattern
   weld-table.tsx                        # ← reference table pattern
   weld-detail-panel.tsx                 # ← reference side panel pattern
@@ -216,6 +230,11 @@ components/
     add-subcontractor-dialog.tsx
     add-wps-dialog.tsx
     add-rework-code-dialog.tsx
+    access-rights-view.tsx                # Phase 7.3 — user × role × scope matrix
+    import-settings-view.tsx              # Phase 7.3 — 3 dry-run import cards
+    import-dry-run-card.tsx               # Phase 7.3 — shared xlsx preview Sheet
+  notifications/
+    notifications-feed.tsx                # Phase 7.2 — home feed filters + acknowledge/archive
     edit-joint-category-dialog.tsx
   spool-tracking-dashboard.tsx          # ✅ Phase 5 — orchestrates tracking/* subcomponents (was mock-only)
   tracking/
@@ -242,6 +261,7 @@ components/
     client-examination-panel.tsx        # Phase 6 slice 6.4
     iso-level-view.tsx                  # live spool status codes (Phase 6)
     release-work-dialog.tsx             # real .xlsx export (Phase 6)
+    dossier-pdf-button.tsx              # Phase 7.4 — multi-section handover PDF per testpack
     line-check/
       preparation-view.tsx              # Line Check Preparation UI (A1)
       progress-view.tsx                 # Line Check Progress UI (A1)
@@ -380,14 +400,14 @@ with a unique localStorage key, exports a main hook and a KPI hook.
 - Gates `isSpoolRFTEligible()` — RFT requires field QC sign-off when spool has field joints
 - Persist key: `pipeqc-field-qc-release`
 
-### `admin-store.ts` (Phase 0 complete — slices 0.1–0.9)
+### `admin-store.ts` (Phase 0 + Phase 7.3)
 
-- Slices: `teams`, `subcontractors`, `projectDefinition`, `systemReferentials`, `welderQualifications`, `ndeMatrix`, `wpsList`, `pdsAreas`, `pipingMaterialList`, `reworkCodes`, `jointCategories`
-- CRUD highlights: WPS `addWps` / `updateWps` / `supersededWps` · Welder qual add/edit/deactivate · NDE matrix add/edit/delete · PDS `addPdsArea` / `assignPdsArea` / `togglePdsAreaActive` · Heat registry `addHeatRecord` / `toggleHeatRecordActive` · Rework full CRUD · Joint categories edit-only · Teams add/edit/deactivate
+- Slices: `teams`, `subcontractors`, `projectDefinition`, `systemReferentials`, `welderQualifications`, `ndeMatrix`, `wpsList`, `pdsAreas`, `pipingMaterialList`, `reworkCodes`, `jointCategories`, **`accessRights`** (Phase 7)
+- CRUD highlights: WPS / welder qual / NDE matrix / PDS / heat / rework / teams (as before) · **`addAccessUser` / `updateAccessUser` / `toggleAccessUserActive`** for demo user matrix
 - Hooks: `useTeams()`, `useSubcontractors()`, `useActiveWelderQualifications()`, `useActivePipingMaterialList()`, `useProjectDefinition()`
-- UI: 8 tabs in `<AdminTabs />` on `/admin/project-referential`; heat registry in `PipingMaterialListTab` on same page; project definition on `/admin/project-definition`; system referential on `/admin/system-referential`
-- Persist key: `pipeqc-admin`, **version 3** (migrates older localStorage to seeded v3 slices)
-- **Deferred (Phase 7):** Access Rights scope-lock editor, Import Settings Excel templates, project archive — see `system_admin.md` gap table
+- UI: 8 tabs in `<AdminTabs />` on `/admin/project-referential`; `/admin/access-rights` · `/admin/import-settings` (3 dry-run templates)
+- Persist key: `pipeqc-admin`, **version 4** (v4 migration seeds `accessRights`)
+- **Deferred:** project archive, remaining import placeholders (Spooling ZIP, etc.)
 
 ### `erection-store.ts` (E2.1)
 
@@ -417,10 +437,11 @@ with a unique localStorage key, exports a main hook and a KPI hook.
 - Consumed by `/tracking`, `/tracking/data-analysis`, transit-out notifications (`category: tracking`)
 - Persist key: `pipeqc-spool-tracking`, version 1
 
-### `notifications-store.ts`
+### `notifications-store.ts` (Phase 7.2)
 
-- 6 seed notifications driving home feed
-- Severity: `error | warning | success | info`
+- Seed notifications driving home feed; **`acknowledged`**, **`archived`**, actions `acknowledge` / `archive` / `unarchive`
+- Severity: `error | warning | success | info`; `getUnreadCount()` excludes archived
+- Persist key: `pipeqc-notifications`, **version 3**
 
 ### `demo-store.ts`
 
@@ -453,9 +474,14 @@ with a unique localStorage key, exports a main hook and a KPI hook.
 - **`usePmWriteLock()`** — `project_manager` role cannot mutate progress entry screens; `<PmWriteLockBanner />` on fab/NDE/erection/**tracking/testpack** panels
 - **`useScopeLock()`** — `subcontractor` role filtered by `pipeqc-active-sub` + PDS area matrix from `admin-store`; wired on weld tables, NDE batch list, erection lists, fab QC/MC views, **tracking dashboard**, **testpack prep/progress**
 
+### `lib/report-generators.ts` (Phase 7.1)
+
+- Client-side generators for hero reports: `RPT-F-001` (fab progress xlsx), `RPT-F-003` (welder perf pdf), `RPT-N-001` (NDE batch xlsx), `RPT-T-001` (testpack RFT pdf)
+- `REAL_REPORT_GENERATORS` map consumed by `components/reports/reports-view.tsx`
+
 ### ⚠ Remaining store gaps
 
-- None blocking full vertical demo through Admin → Spooling → Fab → NDE → Erection → Tracking → Test Pack → RFT. Deepest deferrals: real NDE/welder **reports** (Phase 7), Dossier Handover PDF (Phase 7), SpoolGen/Marian (Phase 7), punch-code referential in Admin (Phase 7), PDA scan ingestion (Phase 7)
+- None blocking full vertical demo through Admin → Spooling → Fab → NDE → Erection → Tracking → Test Pack → RFT → **client handoff PDF**. Deepest deferrals: remaining report rows (mock-toast), full 8 NDE + 4 welder monitoring reports, SpoolGen/Marian, PDA/Kalipso, project archive, Project Reader role
 
 ---
 
@@ -490,11 +516,11 @@ Page numbers below refer to the Easy Piping User Manual PDF (156 pp).
 | ------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | §1–§2         | Project definition + System ref       | ✅ Phase 0.1 + 0.7 — `/admin/project-definition`, `/admin/system-referential` (store-backed CRUD on 4 system-ref cards)                                                                                                                                           |
 | §3 (3.1–3.26) | **Project Referential** — 26 entities | ✅ Phase 0 core — 8 CRUD tabs + heat registry on `/admin/project-referential`; team pickers site-wide read `admin-store`. Remaining §3 items (systems, line service, devices, …) still shell/grouped placeholders on same page |
-| §4            | Access Rights                         | ⚠ shell `/admin/access-rights` — scope-lock **configured** via PDS×subcontractor matrix (0.5), full role matrix editor deferred                                                                                                                                  |
-| §5            | Import settings (NDE matrix, PMC)     | ⚠ shell `/admin/import-settings` — live CRUD covers matrix + PML without Excel; bulk import deferred Phase 7                                                                                                                                                        |
+| §4            | Access Rights                         | ✅ `/admin/access-rights` — interactive user × role × PDS scope matrix (`admin-store` v4); CC-4 scope lock unchanged in `lib/scope-lock.ts`                                                                                                                        |
+| §5            | Import settings (NDE matrix, PMC)     | ✅ `/admin/import-settings` — dry-run xlsx for PML / WPS / Welder + `public/sample-imports/` templates; NDE matrix still via referential CRUD tab                                                                                                                  |
 | §6            | Spooling (Ident Code, Marian, Browse) | ✅ **Phase 1 substantial** — sidebar Home / Engineering Transmittals / ISO Workflow / Spooling Transmittal; eng handoff Accept, ISO checkout + multi-round check + holds, outbound batch, revision cascade, home KPIs. Legacy demo import under ISO Workflow. Deferred: SpoolGen parser, Marian CSV, Browser (Phase 7). See `spooling_team.md` |
 | §7            | Fabrication module (Start Fab → QC)   | ✅ **Phase 2 complete** — G1–G6 + PWHT release + PML heat hard block + welder qual chips + QC Fail/rework + PM/scope locks; sidebar §7 peer sections; shop-only filter on weld-progress |
-| §9            | Fabrication reports                   | not built                                                                                                                                                                                                                                                         |
+| §9            | Fabrication reports                   | ✅ `/reports` — hero `RPT-F-001` / `RPT-F-003` live; remaining catalog rows mock-toast                                                                                                                                                                            |
 | §10           | Spool Tracking + Dashboard            | ✅ **Phase 5 complete** — live `/tracking` dashboard + `/tracking/data-analysis` (4-tab IA) + `/tracking/print-barcodes` Excel basket; movement audit via append-only events; CC-11 active spool; transit-out from `projectDefinition.maxTransitTime` |
 | §11           | NDE Management (batch lifecycle)      | ✅ /nde + `/nde/dashboard` — per-weld Accept/Reject with defect codes, R1 auto-joint, tracer T1/T1-1/T2-1, Penalty Shoot behavior, joint examination history; Issue Examination PDF stub (Phase 7 polish)                                                                                                                                 |
 | §12           | Erection module                       | ✅ **Phase 4 complete** on cross-cutting reuse — I1–I10 pipeline + Field QC Release + field PWHT + scope/PM locks + W24/QC13 PDF stubs; NDE field cascade verified via shared NDE module                                                                                                                                                                                  |
@@ -542,14 +568,14 @@ Snapshot **2026-05-23**:
 
 | Phase | Module | Status | Next gaps (see role matrix + roadmap) |
 | ----- | ------ | ------ | ------------------------------------- |
-| **0** | Admin | ✅ **Phase 0 complete** — 9/9 slices in `admin-store` v3 | Access Rights editor, Import Settings Excel, remaining §3 placeholder groups |
+| **0** | Admin | ✅ **Phase 0 + 7.3** — referentials v3 + access rights v4 + 3 import dry-runs | Project archive, remaining import placeholders, SpoolGen/Marian |
 | **1** | Spooling | ✅ **Phase 1 complete** — slices 1.1–1.7 live | SpoolGen parser, Marian CSV, Browser, S-curve chart (Phase 7); scope-lock UI on spooling lists (optional) |
-| **2** | Fabrication | ✅ **Phase 2 complete** — G1–G6 + hardening 2.1–2.4 | Real report generation (Phase 7); Marian/SpoolGen defer |
+| **2** | Fabrication | ✅ **Phase 2 + 7.4** — G1–G6 + W10P PDF on painted spools | Marian/SpoolGen defer |
 | **3** | NDE | ✅ **Phase 3 complete** — cascade + tracer + penalty shoot + dashboard | 8 NDE reports + welder monitoring reports (Phase 7 Track C) |
 | **4** | Erection | ✅ **Phase 4 complete** — I1–I10 + cross-cutting reuse 4.1–4.6 | Erection reports §13 (Phase 7) |
 | **5** | Spool Tracking | ✅ **Phase 5 complete** — live dashboard, 4-tab Data Analysis, barcode Excel basket | PDA ingestion, Kalipso sync, `pdsAreaCode` on spools (Phase 7) |
-| **6** | Test Pack | ✅ **Phase 6 complete** — Builder, live General/Iso tabs, XLSX export, PM lock | Dossier PDF (Phase 7), punch-code referential in Admin (Phase 7) |
-| **7** | Reports + polish | ⚠ shell `/reports` | Real report generation, notifications upgrade |
+| **6** | Test Pack | ✅ **Phase 6 + 7.4** — Builder, XLSX export, Dossier PDF handover | Punch-code referential in Admin (defer) |
+| **7** | Reports + polish | ✅ **Core complete** — 4 hero reports, notifications upgrade, admin polish | Remaining report rows, SpoolGen/PDA/Reader/archive (see roadmap §Phase 7 deferred) |
 
 **Completed legacy tracks (no longer "next"):** Track A (Pressure Test §16),
 Track G (Fabrication funnel §7), Track I (Erection §12 + §19.2.1 field flanges).
@@ -578,6 +604,8 @@ phase → the relevant `docs/role_matrix/<role>.md` for function-level gaps.
 | `docs/role_matrix/*.md` | Per-role ✅/⚠/📋/❌ function inventory + gap triage |
 | `docs/prompts/archive/` | Historical implementation prompts for merged tracks |
 | `docs/tracks/gapmap_and_roadmap.md` | Earlier gap map (superseded for sequencing by v3; still useful for IDs) |
+| `docs/presentations/*.md` | Partner-facing slide decks (overview + technical); copy to Google Slides |
+| `public/sample-imports/*.xlsx` | Download templates for admin import dry-run demo |
 
 Manual § pointers: Admin **§1–§5** · Spooling **§6** · Fabrication **§7, §9** ·
 NDE **§11** · Erection **§12–§13** · Test Pack **§14–§20** · Tracking **§10**.
@@ -634,6 +662,7 @@ NDE **§11** · Erection **§12–§13** · Test Pack **§14–§20** · Trackin
 
 - **Docs housekeeping (2026-05-22)** — `roadmap_v3.md` added; legacy track prompts moved to `docs/prompts/archive/`; role matrices + presentation findings referenced from this context file.
 
+- **2026-05-23: Phase 7 (Cross-cutting polish)** — `lib/report-generators.ts` with real `.xlsx`/`.pdf` for `RPT-F-001`, `RPT-F-003`, `RPT-N-001`, `RPT-T-001`; `notifications-store` v3 (`acknowledge`, `archive`, grouping) + `components/notifications/notifications-feed.tsx` on home; `admin-store` v4 `accessRights` + `components/admin/access-rights-view.tsx`; `components/admin/import-settings-view.tsx` + `import-dry-run-card.tsx` + `public/sample-imports/{pml,wps,welder}-template.xlsx`; `components/testpack/dossier-pdf-button.tsx` on explorer + pressure-test handover table; `components/fabrication/w10p-pdf-button.tsx` on painted spools; top-nav bell uses live unread count (excludes archived).
 - **Phase 1 Spooling (2026-05-22)** — Roadmap v3 Phase 1 closure (slices 1.1–1.7). `store/spooling-store.ts` extended with ISO state machine, inbound `EngTransmittal` + outbound `SpoolingTransmittal` entities, seed data, and mutations; persist bumped to **v2** with migration. `store/index.ts` exports spooling `ISORecord` as `SpoolingISORecord` to avoid testpack name clash. New components under `components/spooling/`: `eng-transmittal-list`, `eng-transmittal-detail-panel`, `iso-workflow-view`, `iso-detail-panel`, `revision-cascade-dialog`, `spooling-transmittal-view`, `spooling-transmittal-detail-panel`, `spooling-home-dashboard`. Routes wired: `/spooling` (live KPIs), `/spooling/engineering-transmittals` (Accept flow + notifications), `/spooling/iso-workflow` (workflow tab + legacy Demo Import tab), `/spooling/spooling-transmittal` (compose batch → Sent → ISOs Superseded). `demo-store.resetAll()` already cascades via `resetDemo()`. Implementation plan: `docs/superpowers/plans/2026-05-22-phase1-spooling.md`. **Deferred per roadmap:** SpoolGen Browser, Marian import, auto-poll, S-curve chart, real file parser (Phase 7); subcontractor scope-lock UI filtering (CC-4 foundation in admin matrix only).
 
 ## Manual-alignment notes (2026-05-22)
@@ -643,10 +672,10 @@ NDE **§11** · Erection **§12–§13** · Test Pack **§14–§20** · Trackin
 - **Two flange domains:** testpack browse uses `store/flange-store.ts`; erection field bolts use `store/flange-bolt-progress-store.ts` (I8/I9b).
 - RFT formula (from presentation #7): `ISO_RFT = QC_RELEASED ∧ ISO_COMPLETE ∧ LINE_CHECK_DONE ∧ (all Cat-X cleared)`; PipeQC implements spool-level RFT via supported sign-off + flange verification (I9b) + testpack bridge (`recordSpoolRFT`).
 - Punch categories X/Y/Z are **sequencer gates** (X blocks testing, Y blocks pre-comm, Z blocks closeout) — not decorative tags (CC-20).
-- NDE Penalty Shoot + tracer second-level cascade live (Phase 3); real 8 NDE management reports still Phase 7.
+- NDE Penalty Shoot + tracer second-level cascade live (Phase 3); hero reports + dossier/W10P PDF live (Phase 7); extended NDE/welder report catalog still deferred.
 - Fabrication PWHT release queue and field QC release gate RFT (Phases 2 + 4).
 - PM write-lock and subcontractor scope lock wired on Fab, NDE, and Erection progress screens (Phases 2–4).
 - Fabrication QC Release, Sent to Paint, Painted, and Laydown are wired (Track G complete); sidebar matches §7 peer sections (G6).
 - Erection sidebar matches §12 peer sections (I10); Field Material Check is a documented standalone-screen deviation from strict manual tile order.
-- Admin Phase 0 covers the 9 referentials required before Spooling/Fab/NDE demos; Excel import templates remain Phase 7.
+- Admin Phase 0 + 7.3 cover referentials, access-rights matrix, and 3 Excel dry-run imports; project archive remains deferred.
 - Spooling Phase 1 covers engineering handoff → spooler checkout → checker rounds → holds → outbound transmittal; Browse/Marian/SpoolGen file ingest remain Phase 7.

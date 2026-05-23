@@ -391,10 +391,23 @@ erection → tracking → testpack → ready for handover.
 
 ---
 
-### Phase 7 — Cross-cutting polish
+### Phase 7 — Cross-cutting polish ✅ (core slices complete — 2026-05-23)
+
+**Shipped in this repo (Phase 7 prompt `docs/prompts/PipeQC_Phase7_Polish.md`):**
+
+| Slice | Status | Deliverable |
+| ----- | ------ | ----------- |
+| 7.1 | ✅ | Real report download for `RPT-F-001`, `RPT-F-003`, `RPT-N-001`, `RPT-T-001` via `lib/report-generators.ts` |
+| 7.2 | ✅ | Notifications acknowledge / archive / severity grouping + filter strip (`notifications-store` v3, `notifications-feed.tsx`) |
+| 7.3 | ✅ | Access Rights matrix (`admin-store` v4) + Import Settings dry-run (PML / WPS / Welder) + `public/sample-imports/*.xlsx` |
+| 7.4 | ✅ | `DossierPdfButton` (explorer + pressure-test) + `W10pPdfButton` on painted spools |
+
+**Explicitly deferred (post-demo):** SpoolGen 4-file parser, Marian CSV, PDA/Kalipso sync, multiple welders per joint, Project Reader role, project archive, activity-type scope filter, remaining ~11 report rows (mock-toast), Issue Examination PDF full form, 8 NDE + 4 welder monitoring reports as separate rows, Import Spooling Images ZIP, remaining import placeholders.
+
+---
 
 Всё что НЕ блокирует модульный narrative, но добавляет enterprise
-maturity:
+maturity (extended backlog beyond the shipped slices):
 
 **7.A — Reports module (Track C).** 8 NDE management reports
 (Batch status, Radiographic, Outstanding Repairs, Service class,

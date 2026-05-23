@@ -111,11 +111,12 @@ export const REPORTS_SEED: ReportDef[] = [
   // Testpack (3) — §20.x
   {
     id: "RPT-T-001",
-    title: "Testpack Readiness Matrix",
-    description: "ISO-level line check and punch list clearance status.",
+    title: "Testpack RFT Pursuit",
+    description:
+      "Per testpack release tracking gates, ISO list, RFT readiness and blockers.",
     category: "Testpack",
-    format: "xlsx",
-    sizeBytes: 880_000,
+    format: "pdf",
+    sizeBytes: 640_000,
     lastGeneratedISO: "2026-05-13T10:00:00Z",
     owner: "QC-ENG-03",
     manualSection: "§20.1",
@@ -148,7 +149,7 @@ export const REPORTS_SEED: ReportDef[] = [
   // NDE (2) — cross-§11
   {
     id: "RPT-N-001",
-    title: "NDE Batch Summary",
+    title: "NDE Batch Status",
     description: "Active RT/UT/MT batches with weld counts and subcontractors.",
     category: "NDE",
     format: "xlsx",
