@@ -13,15 +13,58 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "PIPEQC_CONTEXT.md",
+                "file": "app_user_journey.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "PIPEQC_CONTEXT"
+              "title": "app_user_journey"
+            }
+          },
+          {
+            "id": "2713545ac7b8041f",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "presentations/01-pipeqc-v2.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "01-pipeqc-v2"
+            }
+          },
+          {
+            "id": "6025308013e38158",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "presentations/first.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "first"
+            }
+          },
+          {
+            "id": "c6f693c7ebb894e4",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "pipeline_construction_guide_with_app.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "pipeline_construction_guide_with_app"
             }
           }
-        ]
+        ],
+        "currentTab": 3
       }
     ],
     "direction": "vertical"
@@ -53,7 +96,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "",
+                "query": "1-в",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -94,7 +137,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "PIPEQC_CONTEXT.md",
+                "file": "pipeline_construction_guide_with_app.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +147,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for PIPEQC_CONTEXT"
+              "title": "Backlinks for pipeline_construction_guide_with_app"
             }
           },
           {
@@ -156,16 +199,17 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "PIPEQC_CONTEXT.md",
+                "file": "pipeline_construction_guide_with_app.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of PIPEQC_CONTEXT"
+              "title": "Outline of pipeline_construction_guide_with_app"
             }
           }
-        ]
+        ],
+        "currentTab": 4
       }
     ],
     "direction": "horizontal",
@@ -183,11 +227,44 @@
       "bases:Create new base": false
     }
   },
-  "active": "470636adf0244717",
+  "active": "c6f693c7ebb894e4",
   "lastOpenFiles": [
-    "prompts/PipeQC_Track_E_Phase_E2.5.md",
-    "prompts/PipeQC_Track_E_Phase_E2.3.md",
-    "tracks/track-upstream.md",
-    "PIPEQC_CONTEXT.md"
+    "pipeline_construction_guide.md",
+    "app_user_journey.md",
+    "pipeline_construction_guide_with_app.md",
+    "superpowers/plans/2026-05-27-unified-mock-data-fixtures.md",
+    "superpowers/specs/2026-05-26-unified-mock-data-fixtures-design.md",
+    "presentations/06-pipeqc-construction-app-en.pptx",
+    "presentations/~$06-pipeqc-construction-app.pptx",
+    "presentations/06-pipeqc-construction-app.pptx",
+    "presentations/build/build-app-guide.js",
+    "presentations/build/node_modules/react-icons/wi/index.d.ts",
+    "presentations/build/node_modules/react-icons/vsc/index.d.ts",
+    "presentations/build/node_modules/react-icons/ti/index.d.ts",
+    "presentations/build/node_modules/react-icons/tfi/index.d.ts",
+    "presentations/build/node_modules/react-icons/tb/index.d.ts",
+    "presentations/build/node_modules/react-icons/sl/index.d.ts",
+    "presentations/build/node_modules/react-icons/README.md",
+    "presentations/build/node_modules/@img/sharp-libvips-darwin-arm64/README.md",
+    "presentations/build/node_modules/react-dom/README.md",
+    "presentations/build/node_modules/semver/README.md",
+    "presentations/build/node_modules/sharp/README.md",
+    "presentations/build/node_modules/react/README.md",
+    "presentations/build/node_modules/scheduler/README.md",
+    "presentations/build/node_modules/detect-libc/README.md",
+    "presentations/build/node_modules/@img/colour/README.md",
+    "presentations/build/node_modules/@img/colour/LICENSE.md",
+    "presentations/build/node_modules/@img/sharp-darwin-arm64/README.md",
+    "presentations/01-pipeqc-v2.md",
+    "presentations/first.md",
+    "PROJECT_OVERVIEW.md",
+    "presentations/build/node_modules/pptxgenjs/README.md",
+    "presentations/build/node_modules/jszip/graph.svg",
+    "presentations/build/node_modules/jszip/sponsors.md",
+    "presentations/build/node_modules/jszip/CHANGES.md",
+    "presentations/build/node_modules/pako/README.md",
+    "presentations/build/node_modules/pako/CHANGELOG.md",
+    "presentations/build/node_modules/image-size/Readme.md",
+    "presentations/build/node_modules/readable-stream/README.md"
   ]
 }

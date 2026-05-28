@@ -128,8 +128,7 @@ export function MaterialCheckDetailPanel({
   }, [form, validateHeat]);
 
   const blockedCount = useMemo(
-    () =>
-      Array.from(heatValidations.values()).filter((v) => !v.valid).length,
+    () => Array.from(heatValidations.values()).filter((v) => !v.valid).length,
     [heatValidations],
   );
 
@@ -246,13 +245,13 @@ export function MaterialCheckDetailPanel({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-[640px] flex flex-col overflow-hidden">
+      <SheetContent className="sm:max-w-[740px] flex flex-col overflow-hidden">
         <SheetHeader className="shrink-0 pb-4 border-b">
           <div className="flex items-center gap-2">
             <SheetTitle className="font-mono text-base">{spoolNo}</SheetTitle>
             <span
               className={cn(
-                "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border",
+                "inline-flex items-center mx-2 py-0.5 rounded text-xs font-medium border",
                 colors.bg,
                 colors.text,
                 "border-current/20",
@@ -273,7 +272,9 @@ export function MaterialCheckDetailPanel({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-xs">Heat #</TableHead>
+                <TableHead className="text-xs w-[180px] max-w-[180px] mx-2">
+                  Heat #
+                </TableHead>
                 <TableHead className="text-xs">Grade</TableHead>
                 <TableHead className="text-xs">Dia × Length</TableHead>
                 <TableHead className="text-xs">Mill cert</TableHead>
@@ -286,10 +287,10 @@ export function MaterialCheckDetailPanel({
             <TableBody>
               {form.pieces.map((piece) => (
                 <TableRow key={piece.id}>
-                  <TableCell>
+                  <TableCell className="max-w-[180px] w-[180px] align-top ml-2 mr-2">
                     <Input
                       className={cn(
-                        "h-8 text-xs font-mono",
+                        "h-8 w-[180px] max-w-[180px] min-w-0 text-xs font-mono ml-2 mr-2",
                         heatValidations.get(piece.id)?.valid === false &&
                           piece.heatNumber.trim()
                           ? "border-red-400 bg-red-50"
@@ -309,13 +310,13 @@ export function MaterialCheckDetailPanel({
                     </datalist>
                     {piece.heatNumber.trim() &&
                       heatValidations.get(piece.id)?.valid === false && (
-                        <p className="mt-1 text-[10px] text-red-700 leading-tight">
+                        <p className="mt-1 max-w-[180px] break-words text-[10px] text-red-700 leading-tight mx-2">
                           {heatValidations.get(piece.id)?.message}
                         </p>
                       )}
                   </TableCell>
                   <TableCell>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-700">
+                    <span className="inline-flex items-center mx-2 py-0.5 rounded text-xs bg-slate-100 text-slate-700 ml-2 mr-2">
                       {piece.materialGrade}
                     </span>
                   </TableCell>

@@ -90,14 +90,14 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-    A["1. Engineering<br/>📐 ISO-чертежи"]
-    B["2. Procurement<br/>📦 закупка"]
-    C["3. Preparation<br/>📋 Spooling"]
-    D["4. Fabrication<br/>🏭 цех"]
-    E["5. Erection<br/>🏗️ монтаж"]
-    F["6. Testing<br/>💧 Hydrotest"]
-    G["7. Reinstatement<br/>🔧 финальная сборка"]
-    H["8. Commissioning<br/>🚀 пуск"]
+    A["1  Engineering<br/>📐 ISO-чертежи"]
+    B["2  Procurement<br/>📦 закупка"]
+    C["3  Preparation<br/>📋 Spooling"]
+    D["4  Fabrication<br/>🏭 цех"]
+    E["5  Erection<br/>🏗️ монтаж"]
+    F["6  Testing<br/>💧 Hydrotest"]
+    G["7  Reinstatement<br/>🔧 финальная сборка"]
+    H["8  Commissioning<br/>🚀 пуск"]
 
     A --> B --> C --> D --> E --> F --> G --> H
 
@@ -356,9 +356,9 @@ flowchart TB
     A["Сварщик WLD-099 сварил weld #J-1029"]
     B["NDE Inspector ввёл результат:<br/>R (rejected) + defect code CRK"]
     C["✨ Система автоматически:"]
-    C1["1. Создаёт новый joint J-1029-R1<br/>в NDE100 категории"]
-    C2["2. Переводит остальные welds batch'а<br/>в статус T1 (tracer)"]
-    C3["3. Если 4 rejections в batch'е<br/>ИЛИ 2nd-level tracer (T1-1 / T1-2)<br/>→ flip всех remaining welds в SS"]
+    C1["1  Создаёт новый joint J-1029-R1<br/>в NDE100 категории"]
+    C2["2  Переводит остальные welds batch'а<br/>в статус T1 (tracer)"]
+    C3["3  Если 4 rejections в batch'е<br/>ИЛИ 2nd-level tracer (T1-1 / T1-2)<br/>→ flip всех remaining welds в SS"]
 
     A --> B --> C
     C --> C1

@@ -83,14 +83,14 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-    A["1. Engineering<br/>📐 Проектируют завод<br/>выдают ISO-чертежи"]
-    B["2. Procurement<br/>📦 Закупают трубы,<br/>фланцы, болты"]
-    C["3. Preparation<br/>📋 Spooling<br/>режут чертежи на катушки"]
-    D["4. Fabrication<br/>🏭 В цеху варят<br/>катушки из деталей"]
-    E["5. Erection<br/>🏗️ На площадке<br/>монтируют катушки"]
-    F["6. Testing<br/>💧 Гидроиспытания<br/>под давлением"]
-    G["7. Reinstatement<br/>🔧 Снимают заглушки,<br/>ставят постоянные<br/>прокладки"]
-    H["8. Commissioning<br/>🚀 Передача<br/>в эксплуатацию"]
+    A["1 Engineering<br/>📐 Проектируют завод<br/>выдают ISO-чертежи"]
+    B["2 Procurement<br/>📦 Закупают трубы,<br/>фланцы, болты"]
+    C["3 Preparation<br/>📋 Spooling<br/>режут чертежи на катушки"]
+    D["4 Fabrication<br/>🏭 В цеху варят<br/>катушки из деталей"]
+    E["5 Erection<br/>🏗️ На площадке<br/>монтируют катушки"]
+    F["6 Testing<br/>💧 Гидроиспытания<br/>под давлением"]
+    G["7 Reinstatement<br/>🔧 Снимают заглушки,<br/>ставят постоянные<br/>прокладки"]
+    H["8 Commissioning<br/>🚀 Передача<br/>в эксплуатацию"]
     
     A --> B --> C --> D --> E --> F --> G --> H
     
