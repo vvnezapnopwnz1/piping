@@ -155,9 +155,16 @@ export function ErectedDetailPanel({
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent className="sm:max-w-[560px]">
-          <p className="mt-8 text-sm text-slate-500">
-            Select a spool to view erection details.
-          </p>
+          <SheetHeader>
+            <SheetTitle className="font-mono text-base">
+              {spoolNo ?? "Erection"}
+            </SheetTitle>
+            <SheetDescription>
+              {spoolNo
+                ? "Loading erection details…"
+                : "Select a spool to view erection details."}
+            </SheetDescription>
+          </SheetHeader>
         </SheetContent>
       </Sheet>
     );

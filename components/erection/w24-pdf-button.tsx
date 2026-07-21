@@ -22,11 +22,11 @@ export function W24PdfButton({
   erectedDate,
 }: Props) {
   const projectDef = useAdminStore((s) => s.projectDefinition)
-  const fieldWelds = useErectionStore((s) =>
-    s.fieldWelds.filter((w) => w.spoolNo === spoolNo),
-  )
 
   function handleGenerate() {
+    const fieldWelds = useErectionStore
+      .getState()
+      .fieldWelds.filter((w) => w.spoolNo === spoolNo)
     const doc = new jsPDF({ unit: "pt", format: "letter" })
     const margin = 40
     let y = margin

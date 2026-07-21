@@ -66,96 +66,6 @@ export const QC_INSPECTORS = [
   "QC-ENG-04",
 ]
 
-// Helper to build a seed record
-function makeRecord(
-  spoolNo: string,
-  pieces: Omit<HeatPiece, "id">[],
-  opts?: { inspector?: string; signedOffDate?: string }
-): MaterialCheckRecord {
-  const pcs: HeatPiece[] = pieces.map((p, i) => ({
-    ...p,
-    id: `HP-${spoolNo}-${i + 1}`,
-  }))
-  const ncCount = pcs.filter((p) => p.status === "Non-conformance").length
-  return {
-    spoolNo,
-    pieces: pcs,
-    inspector: opts?.inspector,
-    signedOffDate: opts?.signedOffDate,
-    nonConformanceCount: ncCount,
-  }
-}
-
-export const MATERIAL_CHECK_SEED: MaterialCheckRecord[] = [
-  // --- Material Check spools (Pending / NC) -------------------------------
-  makeRecord("PL-CW200-003-A", [
-    { heatNumber: "HT-SS-316L-55120", materialGrade: "SS 316L", diaInch: '12"', lengthM: 6.0, millCertRef: "MILL-2026-3841", status: "Cleared" },
-    { heatNumber: "HT-SS-316L-55121", materialGrade: "SS 316L", diaInch: '12"', lengthM: 6.0, status: "Non-conformance", ncRemark: "Mill certificate not yet received from supplier" },
-    { heatNumber: "HT-SS-316L-55122", materialGrade: "SS 316L", diaInch: '12"', lengthM: 6.0, millCertRef: "MILL-2026-3842", status: "Pending" },
-  ]),
-  makeRecord("PL-CW200-003-B", [
-    { heatNumber: "HT-SS-316L-55123", materialGrade: "SS 316L", diaInch: '12"', lengthM: 6.0, millCertRef: "MILL-2026-3843", status: "Pending" },
-    { heatNumber: "HT-SS-316L-55124", materialGrade: "SS 316L", diaInch: '12"', lengthM: 6.0, millCertRef: "MILL-2026-3844", status: "Pending" },
-  ]),
-  makeRecord("PL-FU300-007-B", [
-    { heatNumber: "HT-CS-A106B-33010", materialGrade: "CS A106B", diaInch: '4"', lengthM: 6.0, millCertRef: "MILL-2026-2201", status: "Pending" },
-    { heatNumber: "HT-CS-A106B-33011", materialGrade: "CS A106B", diaInch: '4"', lengthM: 6.0, millCertRef: "MILL-2026-2202", status: "Pending" },
-  ]),
-  makeRecord("PL-CW200-008-A", [
-    { heatNumber: "HT-SS-316L-55130", materialGrade: "SS 316L", diaInch: '3"', lengthM: 6.0, millCertRef: "MILL-2026-3845", status: "Pending" },
-    { heatNumber: "HT-SS-316L-55131", materialGrade: "SS 316L", diaInch: '3"', lengthM: 6.0, millCertRef: "MILL-2026-3846", status: "Pending" },
-    { heatNumber: "HT-SS-316L-55132", materialGrade: "SS 316L", diaInch: '3"', lengthM: 6.0, millCertRef: "MILL-2026-3847", status: "Pending" },
-  ]),
-
-  // --- Pre-signed-off spools (land on Weld Progress) ----------------------
-  makeRecord("PL-TK100-002-B", [
-    { heatNumber: "HT-CS-P91-99810", materialGrade: "CS A335 P91", diaInch: '8"', lengthM: 6.0, millCertRef: "MILL-2026-1101", status: "Cleared" },
-    { heatNumber: "HT-CS-P91-99811", materialGrade: "CS A335 P91", diaInch: '8"', lengthM: 6.0, millCertRef: "MILL-2026-1102", status: "Cleared" },
-  ], { inspector: "QC-ENG-01", signedOffDate: "2025-05-10" }),
-  makeRecord("PL-CW200-006-A", [
-    { heatNumber: "HT-SS-316L-55140", materialGrade: "SS 316L", diaInch: '6"', lengthM: 6.0, millCertRef: "MILL-2026-3848", status: "Cleared" },
-    { heatNumber: "HT-SS-316L-55141", materialGrade: "SS 316L", diaInch: '6"', lengthM: 6.0, millCertRef: "MILL-2026-3849", status: "Cleared" },
-    { heatNumber: "HT-SS-316L-55142", materialGrade: "SS 316L", diaInch: '6"', lengthM: 6.0, millCertRef: "MILL-2026-3850", status: "Cleared" },
-  ], { inspector: "QC-ENG-02", signedOffDate: "2025-05-11" }),
-
-  // --- Signed-off spools (land on Fabricated or Weld Progress) -----------
-  makeRecord("PL-TK100-001-A", [
-    { heatNumber: "HT-CS-A106B-44210", materialGrade: "CS A106B", diaInch: '6"', lengthM: 6.0, millCertRef: "MILL-2026-2203", status: "Cleared" },
-    { heatNumber: "HT-CS-A106B-44211", materialGrade: "CS A106B", diaInch: '6"', lengthM: 6.0, millCertRef: "MILL-2026-2204", status: "Cleared" },
-  ], { inspector: "QC-ENG-03", signedOffDate: "2025-05-09" }),
-  makeRecord("PL-TK100-001-B", [
-    { heatNumber: "HT-CS-A106B-44212", materialGrade: "CS A106B", diaInch: '6"', lengthM: 6.0, millCertRef: "MILL-2026-2205", status: "Cleared" },
-    { heatNumber: "HT-CS-A106B-44213", materialGrade: "CS A106B", diaInch: '6"', lengthM: 6.0, millCertRef: "MILL-2026-2206", status: "Cleared" },
-  ], { inspector: "QC-ENG-03", signedOffDate: "2025-05-09" }),
-  makeRecord("PL-FU300-007-A", [
-    { heatNumber: "HT-CS-A106B-33012", materialGrade: "CS A106B", diaInch: '4"', lengthM: 6.0, millCertRef: "MILL-2026-2207", status: "Cleared" },
-    { heatNumber: "HT-CS-A106B-33013", materialGrade: "CS A106B", diaInch: '4"', lengthM: 6.0, millCertRef: "MILL-2026-2208", status: "Cleared" },
-  ], { inspector: "QC-ENG-04", signedOffDate: "2025-05-09" }),
-  makeRecord("PL-TK100-002-A", [
-    { heatNumber: "HT-CS-P91-99812", materialGrade: "CS A335 P91", diaInch: '8"', lengthM: 6.0, millCertRef: "MILL-2026-1103", status: "Cleared" },
-    { heatNumber: "HT-CS-P91-99813", materialGrade: "CS A335 P91", diaInch: '8"', lengthM: 6.0, millCertRef: "MILL-2026-1104", status: "Cleared" },
-  ], { inspector: "QC-ENG-01", signedOffDate: "2025-05-08" }),
-  makeRecord("PL-CW200-005-A", [
-    { heatNumber: "HT-SS-316L-55150", materialGrade: "SS 316L", diaInch: '3"', lengthM: 6.0, millCertRef: "MILL-2026-3851", status: "Cleared" },
-    { heatNumber: "HT-SS-316L-55151", materialGrade: "SS 316L", diaInch: '3"', lengthM: 6.0, millCertRef: "MILL-2026-3852", status: "Cleared" },
-  ], { inspector: "QC-ENG-02", signedOffDate: "2025-05-08" }),
-  makeRecord("PL-TK100-003-A", [
-    { heatNumber: "HT-CS-P91-99814", materialGrade: "CS A335 P91", diaInch: '10"', lengthM: 6.0, millCertRef: "MILL-2026-1105", status: "Cleared" },
-    { heatNumber: "HT-CS-P91-99815", materialGrade: "CS A335 P91", diaInch: '10"', lengthM: 6.0, millCertRef: "MILL-2026-1106", status: "Cleared" },
-  ], { inspector: "QC-ENG-01", signedOffDate: "2025-05-08" }),
-  makeRecord("PL-FU300-009-A", [
-    { heatNumber: "HT-CS-A106B-33014", materialGrade: "CS A106B", diaInch: '2"', lengthM: 6.0, millCertRef: "MILL-2026-2209", status: "Cleared" },
-    { heatNumber: "HT-CS-A106B-33015", materialGrade: "CS A106B", diaInch: '2"', lengthM: 6.0, millCertRef: "MILL-2026-2210", status: "Cleared" },
-  ], { inspector: "QC-ENG-04", signedOffDate: "2025-05-09" }),
-  makeRecord("PL-TK100-004-A", [
-    { heatNumber: "HT-CS-A106B-44214", materialGrade: "CS A106B", diaInch: '16"', lengthM: 6.0, millCertRef: "MILL-2026-2211", status: "Cleared" },
-    { heatNumber: "HT-CS-A106B-44215", materialGrade: "CS A106B", diaInch: '16"', lengthM: 6.0, millCertRef: "MILL-2026-2212", status: "Cleared" },
-  ], { inspector: "QC-ENG-03", signedOffDate: "2025-05-08" }),
-  makeRecord("PL-FU300-011-A", [
-    { heatNumber: "HT-CS-P91-99816", materialGrade: "CS A335 P91", diaInch: '8"', lengthM: 6.0, millCertRef: "MILL-2026-1107", status: "Cleared" },
-    { heatNumber: "HT-CS-P91-99817", materialGrade: "CS A335 P91", diaInch: '8"', lengthM: 6.0, millCertRef: "MILL-2026-1108", status: "Cleared" },
-  ], { inspector: "QC-ENG-01", signedOffDate: "2025-05-08" }),
-]
 
 // ---------------------------------------------------------------------------
 // Paint data model (G4)
@@ -188,29 +98,6 @@ export interface PaintRecord {
   dispatchRemark?: string        // optional note captured on dispatch
 }
 
-function makePaintRecord(
-  spoolNo: string,
-  patch: Partial<Omit<PaintRecord, "spoolNo">>,
-): PaintRecord {
-  return { spoolNo, ...patch }
-}
-
-export const PAINT_SEED: PaintRecord[] = [
-  makePaintRecord("PL-TK100-002-A", {
-    paintSystem: "PS-3A: Zinc Primer + Epoxy (250 µm)",
-    subcontractor: "ColorPro Coatings Inc",
-    dispatchDate: "2025-05-13",
-  }),
-  makePaintRecord("PL-CW200-005-A", {
-    paintSystem: "PS-2B: Epoxy 2-coat",
-    subcontractor: "Apex Industrial Painting",
-    dispatchDate: "2025-05-11",
-    returnDate: "2025-05-14",
-    dftMicrons: 285,
-    finalQCInspector: "QC-ENG-02",
-    finalQCSignedOffDate: "2025-05-14",
-  }),
-]
 
 // ---------------------------------------------------------------------------
 // Stage derivation (G1 + G2 + G3 + G4)
@@ -297,57 +184,6 @@ export interface QCReleaseRecord {
   failedAt?: string
 }
 
-function makeQCRecord(
-  spoolNo: string,
-  entries: Partial<Record<QCChecklistKey, { status: QCChecklistStatus; remark?: string }>>,
-  opts?: { inspector?: string; signedOffDate?: string },
-): QCReleaseRecord {
-  return {
-    spoolNo,
-    entries: QC_CHECKLIST.map((item) => ({
-      key: item.key,
-      status: entries[item.key]?.status ?? "Pending",
-      remark: entries[item.key]?.remark,
-    })),
-    inspector: opts?.inspector,
-    signedOffDate: opts?.signedOffDate,
-  }
-}
-
-export const QC_RELEASE_SEED: QCReleaseRecord[] = [
-  // Pre-released spools — all 4 entries Pass
-  makeQCRecord(
-    "PL-TK100-002-A",
-    {
-      dimensional: { status: "Pass" },
-      visual: { status: "Pass" },
-      nde_complete: { status: "Pass" },
-      traceability: { status: "Pass" },
-    },
-    { inspector: "QC-ENG-01", signedOffDate: "2025-05-12" },
-  ),
-  makeQCRecord(
-    "PL-CW200-005-A",
-    {
-      dimensional: { status: "Pass" },
-      visual: { status: "Pass" },
-      nde_complete: { status: "Pass" },
-      traceability: { status: "Pass" },
-    },
-    { inspector: "QC-ENG-02", signedOffDate: "2025-05-11" },
-  ),
-  // Anchor spool — Pass with remark on Dimensional
-  makeQCRecord(
-    "PL-TK100-001-A",
-    {
-      dimensional: { status: "Pass with remark", remark: "0.3 mm out on flange face — within tolerance per spec 12-PIP-002" },
-      visual: { status: "Pass" },
-      nde_complete: { status: "Pass" },
-      traceability: { status: "Pass" },
-    },
-    { inspector: "QC-ENG-03", signedOffDate: "2025-05-10" },
-  ),
-]
 
 // ---------------------------------------------------------------------------
 // Laydown data model (G5)
@@ -372,40 +208,6 @@ export interface LaydownRecord {
   releasedBy?: string
 }
 
-function makeLaydownRecord(
-  spoolNo: string,
-  patch: Partial<Omit<LaydownRecord, "spoolNo">> & { yardLocation: YardLocation; placedDate: string; placedBy: string },
-): LaydownRecord {
-  return { spoolNo, ...patch }
-}
-
-export const LAYDOWN_SEED: LaydownRecord[] = [
-  makeLaydownRecord("PL-CW200-005-A", {
-    yardLocation: "YARD-A-12",
-    placedDate: "2025-05-15",
-    placedBy: "QC-ENG-02",
-    releasedToSiteDate: "2025-05-15",
-    releasedBy: "QC-ENG-03",
-  }),
-  makeLaydownRecord("PL-TK100-002-B", {
-    yardLocation: "YARD-B-04",
-    placedDate: "2025-05-16",
-    placedBy: "QC-ENG-01",
-    releasedToSiteDate: "2025-05-17",
-    releasedBy: "QC-ENG-04",
-  }),
-  makeLaydownRecord("PL-TK100-003-A", {
-    yardLocation: "YARD-C-02",
-    placedDate: "2025-05-15",
-    placedBy: "QC-ENG-03",
-    releasedToSiteDate: "2025-05-16",
-    releasedBy: "QC-ENG-02",
-  }),
-  makeLaydownRecord("PL-TK100-004-A", {
-    yardLocation: "YARD-B-09",
-    placedDate: "2025-05-16",
-    placedBy: "QC-ENG-04",
-    releasedToSiteDate: "2025-05-17",
-    releasedBy: "QC-ENG-01",
-  }),
-]
+// Fabrication demo seeds are derived from the canonical spine.
+// See lib/fixtures/derive/fabrication.ts.
+export { MATERIAL_CHECK_SEED, PAINT_SEED, QC_RELEASE_SEED, LAYDOWN_SEED } from "@/lib/fixtures"

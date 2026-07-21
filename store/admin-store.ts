@@ -24,6 +24,14 @@ import {
   type WPSRecord,
 } from "@/lib/engineering-references"
 import type { Role } from "@/contexts/role-context"
+import {
+  SEED_SUBCONTRACTORS,
+  SEED_PROJECT_DEFINITION,
+  SEED_SYSTEM_REFERENTIALS,
+  seedPdsAreas,
+  seedPipingMaterialList,
+  seedAccessRights,
+} from "@/lib/admin-seed"
 
 export type { WPSRecord }
 
@@ -197,94 +205,6 @@ function seedTeams(): Team[] {
   return teams
 }
 
-const SEED_SUBCONTRACTORS: Subcontractor[] = [
-  {
-    code: "SUB-001",
-    name: "Acme Welding Ltd.",
-    scope: ["fabrication", "nde"],
-    contact: "John Smith / +971 50 111 1111",
-    active: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    code: "SUB-002",
-    name: "Gulf Erectors LLC",
-    scope: ["erection", "lineCheck"],
-    contact: "Ahmed Hassan / +971 50 222 2222",
-    active: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    code: "SUB-003",
-    name: "Pioneer Hydrotest Co.",
-    scope: ["blinding", "finishing"],
-    contact: "Marko Petrović / +971 50 333 3333",
-    active: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    code: "SUB-004",
-    name: "Apex Reinstatement",
-    scope: ["reinstatement"],
-    contact: "Liu Wei / +971 50 444 4444",
-    active: true,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    code: "SUB-005",
-    name: "Falcon NDT Services",
-    scope: ["nde"],
-    contact: "Carlos García / +971 50 555 5555",
-    active: true,
-    createdAt: new Date().toISOString(),
-  },
-]
-
-const SEED_PROJECT_DEFINITION: ProjectDefinition = {
-  activityCode: "PQ-001",
-  projectTitle: "PipeQC Demo Project",
-  owner: "EasyPlant Owner",
-  contractor: "Main EPC Contractor",
-  ownerLogoUrl: "",
-  contractorLogoUrl: "",
-  maxTransitTimeDays: 14,
-  updatedAt: new Date().toISOString(),
-}
-
-function entry(code: string, description: string): SysRefEntry {
-  return {
-    code,
-    description,
-    active: true,
-    createdAt: new Date().toISOString(),
-  }
-}
-
-const SEED_SYSTEM_REFERENTIALS: SystemReferentials = {
-  materialTypes: [
-    entry("CS-A106B", "Carbon Steel A106 Gr. B"),
-    entry("SS-316L", "Stainless Steel 316L"),
-    entry("CS-P91", "CrMo alloy A335 P91"),
-    entry("LTCS-A333", "Low-Temp Carbon Steel A333 Gr. 6"),
-  ],
-  filmQty: [
-    entry("DN-25-50", "Diameter DN 25–50 — 1 film per joint"),
-    entry("DN-80-150", "Diameter DN 80–150 — 2 films per joint"),
-    entry("DN-200-300", "Diameter DN 200–300 — 3 films per joint"),
-    entry("DN-350-600", "Diameter DN 350–600 — 4 films per joint"),
-  ],
-  utCalc: [
-    entry("UT-CARBON-A", "Coefficient 1.00 — carbon steel < DN 200"),
-    entry("UT-CARBON-B", "Coefficient 1.15 — carbon steel ≥ DN 200"),
-    entry("UT-ALLOY", "Coefficient 1.30 — alloy / P91 (any DN)"),
-  ],
-  torquing: [
-    entry("TRQ-LR", "Lubricated flange — refer torque table A1"),
-    entry("TRQ-DRY", "Dry flange — refer torque table A2"),
-    entry("TRQ-HT", "Hot-bolted / live service — table A3"),
-  ],
-}
-
 function seedWelderQualifications(): WelderQualification[] {
   return WELDER_QUALIFICATIONS.map((w) => ({ ...w, active: true }))
 }
@@ -295,82 +215,6 @@ function seedNdeMatrix(): NDEMatrixRule[] {
 
 function seedWpsList(): WPSRecord[] {
   return WPS_LIST.map((w) => ({ ...w }))
-}
-
-function seedPdsAreas(): PdsArea[] {
-  const now = new Date().toISOString()
-  const areas: Omit<PdsArea, "createdAt">[] = [
-    { code: "PR-01", name: "Process Area 01", assignedSubCode: "SUB-001", active: true },
-    { code: "CA-02", name: "Catalyst Area 02", assignedSubCode: "SUB-001", active: true },
-    { code: "RA-01", name: "Reactor Area 01", assignedSubCode: "SUB-002", active: true },
-    { code: "VS-01", name: "Vessel Area 01", assignedSubCode: "SUB-002", active: true },
-    { code: "UB-03", name: "Utility Block 03", assignedSubCode: null, active: true },
-    { code: "HX-02", name: "Heat Exchanger Area 02", assignedSubCode: null, active: true },
-  ]
-  return areas.map((a) => ({ ...a, createdAt: now }))
-}
-
-function seedPipingMaterialList(): HeatRecord[] {
-  const now = new Date().toISOString()
-  const rows: Omit<HeatRecord, "active" | "createdAt">[] = [
-    {
-      heatNo: "HT-2024-001",
-      material: "CS-A106B",
-      grade: "Grade B",
-      millCertRef: "CERT-2024-0012",
-      supplier: "Gulf Steel Trading",
-    },
-    {
-      heatNo: "HT-2024-002",
-      material: "CS-A106B",
-      grade: "Grade B",
-      millCertRef: "CERT-2024-0018",
-      supplier: "Arabian Pipe Mills",
-    },
-    {
-      heatNo: "HT-2024-003",
-      material: "SS-316L",
-      grade: "316L",
-      millCertRef: "CERT-2024-0024",
-      supplier: "Stainless Gulf LLC",
-    },
-    {
-      heatNo: "HT-2024-004",
-      material: "SS-316L",
-      grade: "316L",
-      millCertRef: "CERT-2024-0031",
-      supplier: "Euro Alloy Supply",
-    },
-    {
-      heatNo: "HT-2024-005",
-      material: "CS-P91",
-      grade: "P91",
-      millCertRef: "CERT-2024-0040",
-      supplier: "HighTemp Metals Co.",
-    },
-    {
-      heatNo: "HT-2024-006",
-      material: "LTCS-A333",
-      grade: "Gr. 6",
-      millCertRef: "CERT-2024-0047",
-      supplier: "Cryo Pipe Industries",
-    },
-    {
-      heatNo: "HT-2024-007",
-      material: "CS-A106B",
-      grade: "Grade B",
-      millCertRef: "CERT-2024-0052",
-      supplier: "Gulf Steel Trading",
-    },
-    {
-      heatNo: "HT-2024-008",
-      material: "LTCS-A333",
-      grade: "Gr. 6",
-      millCertRef: "CERT-2024-0059",
-      supplier: "Northern Alloy Works",
-    },
-  ]
-  return rows.map((r) => ({ ...r, active: true, createdAt: now }))
 }
 
 function seedReworkCodes(): ReworkCodeRecord[] {
@@ -384,89 +228,6 @@ function seedReworkCodes(): ReworkCodeRecord[] {
 
 function seedJointCategories(): JointCategoryRecord[] {
   return JOINT_CATEGORIES.map((c) => ({ ...c }))
-}
-
-function seedAccessRights(): AccessRightsRow[] {
-  return [
-    {
-      userId: "U-001",
-      fullName: "Maria Garcia",
-      email: "maria.garcia@epc.com",
-      role: "system_admin",
-      active: true,
-    },
-    {
-      userId: "U-002",
-      fullName: "James Okonkwo",
-      email: "j.okonkwo@epc.com",
-      role: "project_manager",
-      active: true,
-    },
-    {
-      userId: "U-003",
-      fullName: "Elena Vasquez",
-      email: "e.vasquez@epc.com",
-      role: "qc_engineer",
-      active: true,
-    },
-    {
-      userId: "U-004",
-      fullName: "David Chen",
-      email: "d.chen@nde.com",
-      role: "nde_inspector",
-      active: true,
-    },
-    {
-      userId: "U-005",
-      fullName: "Sofia Lindström",
-      email: "s.lindstrom@epc.com",
-      role: "spooling_team",
-      active: true,
-    },
-    {
-      userId: "U-006",
-      fullName: "John Smith",
-      email: "john.smith@acme-weld.com",
-      role: "subcontractor",
-      subcontractorId: "SUB-001",
-      pdsAreaCodes: ["PR-01", "CA-02"],
-      active: true,
-    },
-    {
-      userId: "U-007",
-      fullName: "Ahmed Hassan",
-      email: "ahmed.hassan@gulf-erectors.com",
-      role: "subcontractor",
-      subcontractorId: "SUB-002",
-      pdsAreaCodes: ["RA-01", "VS-01"],
-      active: true,
-    },
-    {
-      userId: "U-008",
-      fullName: "Carlos García",
-      email: "carlos@falcon-ndt.com",
-      role: "subcontractor",
-      subcontractorId: "SUB-005",
-      pdsAreaCodes: ["PR-01"],
-      active: true,
-    },
-    {
-      userId: "U-009",
-      fullName: "Liu Wei",
-      email: "liu.wei@apex-rein.com",
-      role: "subcontractor",
-      subcontractorId: "SUB-004",
-      pdsAreaCodes: ["UB-03"],
-      active: false,
-    },
-    {
-      userId: "U-010",
-      fullName: "Priya Nair",
-      email: "priya.nair@epc.com",
-      role: "qc_engineer",
-      active: true,
-    },
-  ]
 }
 
 function nextAccessUserId(rows: AccessRightsRow[]): string {

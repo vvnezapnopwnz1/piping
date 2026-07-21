@@ -282,17 +282,17 @@ flowchart LR
 ```mermaid
 flowchart TD
     Reject["Инспектор вводит результат 'Rejected' (R)
-    на шве J-1029"] --> AutoR1["1. Авто-создание шва J-1029-R1
+    на шве J-1029"] --> AutoR1["1 Авто-создание шва J-1029-R1
     в категории NDE 100%"]
 
-    Reject --> AutoTracers["2. Авто-выбор Tracer-стыков (T1, T2)
+    Reject --> AutoTracers["2 Авто-выбор Tracer-стыков (T1, T2)
     2 дополнительных шва этого же сварщика
     отправляются на рентген"]
 
     AutoTracers --> TracerCheck{"Есть брак в Tracers
     или 4-й брак сварщика?"}
 
-    TracerCheck -->|Да| Penalty["3. Penalty Shoot!
+    TracerCheck -->|Да| Penalty["3 Penalty Shoot!
     Все оставшиеся швы сварщика в батче
     автоматически отправляются на 100% NDE"]
 

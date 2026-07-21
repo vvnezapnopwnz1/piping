@@ -1,0 +1,261 @@
+/**
+ * Project the spine into the flat erection seed shapes.
+ *
+ * Types only from the domain files (erased at runtime); runtime constants are
+ * declared locally so this module has no runtime dependency on the seed files
+ * that re-export from fixtures — keeping the import graph acyclic.
+ */
+import { SPINE, type SpineSpool, type SpineWeld } from "../spine"
+import type {
+  SpoolErectionStage,
+  ToSiteRecord,
+  ErectedRecord,
+  WeldedBoltedRecord,
+  SupportItem,
+  SupportedRecord,
+  FieldMaterialCheckRecord,
+  FieldHeatPiece,
+  RFTRecord,
+  FlangeBoltProgressRecord,
+  AreaSupervisor,
+  PlacementLocation,
+} from "@/lib/erection-stage"
+import type { FieldWeldJoint, ErectionStatus } from "@/lib/erection-weld-data"
+
+const ER_ORDER: SpoolErectionStage[] = [
+  "Awaiting Release",
+  "To Site",
+  "Field Material Check",
+  "Erected",
+  "Welded/Bolted",
+  "Supported",
+  "Field QC Released",
+  "RFT",
+]
+const erRank = (s?: SpoolErectionStage) => (s ? ER_ORDER.indexOf(s) : -1)
+const atLeast = (s: SpineSpool, stage: SpoolErectionStage) => erRank(s.erectionStage) >= ER_ORDER.indexOf(stage)
+
+const MATERIAL_LABEL: Record<string, string> = {
+  "CS-A106B": "CS A106B",
+  "SS-316L": "SS 316L",
+  "CS-P91": "CS A335 P91",
+  "LTCS-A333": "LTCS A333",
+}
+const mat = (code: string) => MATERIAL_LABEL[code] ?? code
+
+const SUPERVISORS: AreaSupervisor[] = ["SUP-01", "SUP-02", "SUP-03", "SUP-04"]
+const ZONES: PlacementLocation[] = [
+  "Area A - North Pipe Rack",
+  "Area B - Compressor Hall",
+  "Area C - Tank Farm",
+  "Area D - Utility Corridor",
+]
+const sup = (i: number) => SUPERVISORS[i % SUPERVISORS.length]
+const zone = (i: number) => ZONES[i % ZONES.length]
+
+const fieldWelds = (s: SpineSpool) => s.welds.filter((w) => w.type === "FIELD")
+
+function fieldWeldStatus(s: SpineSpool, w: SpineWeld): ErectionStatus {
+  switch (s.erectionStage) {
+    case "RFT":
+      return "RFT"
+    case "Field QC Released":
+    case "Supported":
+      return "Supported"
+    case "Welded/Bolted":
+      return w.jointType === "Flange Bolt" ? "Bolted" : "Welded"
+    case "Erected":
+    case "Field Material Check":
+      return "Erected"
+    default:
+      return "To Site"
+  }
+}
+
+// ─── To Site ──────────────────────────────────────────────────────────────────
+
+export function deriveToSiteSeed(): ToSiteRecord[] {
+  return SPINE.filter((s) => atLeast(s, "To Site")).map((s, i) => ({
+    spoolNo: s.spoolNo,
+    receivedDate: "2025-05-16",
+    receivedBy: sup(i),
+    w24FormNo: `W24-2025-${140 + i}`,
+    remark: "Received and offloaded at site per W-24.",
+  }))
+}
+
+// ─── Erected ────────────────────────────────────────────────────────────────────
+
+export function deriveErectedSeed(): ErectedRecord[] {
+  return SPINE.filter((s) => atLeast(s, "Erected")).map((s, i) => ({
+    spoolNo: s.spoolNo,
+    erectedDate: "2025-05-17",
+    erectedBy: sup(i),
+    w24FormNo: `W24-2025-${160 + i}`,
+    placementLocation: zone(i),
+    elevation: "EL +8.2",
+    remark: "Crane-lifted and aligned per ISO.",
+  }))
+}
+
+// ─── Welded / Bolted ──────────────────────────────────────────────────────────
+
+export function deriveWeldedBoltedSeed(): WeldedBoltedRecord[] {
+  return SPINE.filter((s) => atLeast(s, "Welded/Bolted")).map((s, i) => {
+    const fw = fieldWelds(s)
+    const welded = fw.filter((w) => w.jointType === "Butt Weld" || w.jointType === "Socket Weld").length
+    const bolted = fw.filter((w) => w.jointType === "Flange Bolt").length
+    return {
+      spoolNo: s.spoolNo,
+      confirmedDate: "2025-05-18",
+      confirmedBy: `QC-ENG-0${(i % 4) + 1}`,
+      w24FormNo: `W24-2025-${180 + i}`,
+      weldedJointCount: welded,
+      boltedJointCount: bolted,
+      remark: bolted > 0 && welded === 0 ? "Flange bolts torqued per W-24." : "Field welds completed per W-24.",
+    }
+  })
+}
+
+// ─── Supports ──────────────────────────────────────────────────────────────────
+
+export function deriveSupportSeed(): SupportItem[] {
+  const items: SupportItem[] = []
+  for (const s of SPINE.filter((sp) => atLeast(sp, "Supported"))) {
+    const tags: { tag: string; type: SupportItem["type"] }[] = [
+      { tag: `H-${s.spoolNo}`, type: "Hanger" },
+      { tag: `A-${s.spoolNo}`, type: "Anchor" },
+    ]
+    tags.forEach((t, i) =>
+      items.push({
+        id: `SUP-${s.spoolNo}-${i + 1}`,
+        spoolNo: s.spoolNo,
+        tag: t.tag,
+        type: t.type,
+        status: "Welded",
+      }),
+    )
+  }
+  return items
+}
+
+export function deriveSupportedSeed(): SupportedRecord[] {
+  return SPINE.filter((s) => atLeast(s, "Supported")).map((s, i) => ({
+    spoolNo: s.spoolNo,
+    confirmedDate: "2025-05-18",
+    confirmedBy: sup(i),
+    w23FormNo: `W23-2025-${180 + i}`,
+    totalSupports: 2,
+    remark: "All supports erected and welded per W-23.",
+  }))
+}
+
+// ─── RFT ──────────────────────────────────────────────────────────────────────
+
+export function deriveRFTSeed(): RFTRecord[] {
+  return SPINE.filter((s) => atLeast(s, "RFT")).map((s) => ({
+    spoolNo: s.spoolNo,
+    rftDate: "2025-05-19",
+    autoGenerated: true,
+    predecessors: {
+      toSiteDate: "2025-05-16",
+      erectedDate: "2025-05-17",
+      weldedBoltedDate: "2025-05-18",
+      supportedDate: "2025-05-18",
+    },
+  }))
+}
+
+// ─── Field Material Check (the headline pain point) ─────────────────────────────
+
+export function deriveFieldMCSeed(): FieldMaterialCheckRecord[] {
+  return SPINE.filter((s) => atLeast(s, "Field Material Check")).map((s, idx) => {
+    const fieldJointId = `fj-${s.spoolNo}`
+    const pieces: FieldHeatPiece[] = s.pieces.map((p, i) => ({
+      id: `FHP-${fieldJointId}-${i + 1}`,
+      fieldJointId,
+      tag: p.tag,
+      type: p.kind === "Pipe" ? "Pipe Stub" : p.kind === "Weld Stub" ? "Weld Stub" : p.kind === "Flange" ? "Flange" : "Fitting",
+      heatNumber: p.heatNo, // ∈ pipingMaterialList → panel shows "in list"
+      millCertRef: p.millCertRef,
+      status: p.mcStatus,
+      ncRemark: p.ncRemark,
+    }))
+    const nc = pieces.filter((p) => p.status === "Non-conformance").length
+    const cleared = nc === 0 && erRank(s.erectionStage) > ER_ORDER.indexOf("Field Material Check")
+    return {
+      fieldJointId,
+      spoolNo: s.spoolNo,
+      pieces,
+      inspector: cleared ? "QC-ENG-01" : undefined,
+      signedOffDate: cleared ? "2025-05-16" : undefined,
+      wmcFormNo: cleared ? `WMC-2025-${140 + idx}` : undefined,
+      nonConformanceCount: nc,
+    }
+  })
+}
+
+// ─── Flange-bolt progress ────────────────────────────────────────────────────
+
+export function deriveFlangeBoltSeed(): FlangeBoltProgressRecord[] {
+  const records: FlangeBoltProgressRecord[] = []
+  for (const s of SPINE) {
+    for (const w of fieldWelds(s).filter((x) => x.jointType === "Flange Bolt")) {
+      const verified = atLeast(s, "Supported")
+      records.push({
+        fieldJointId: w.weldNo,
+        spoolNo: s.spoolNo,
+        targetTorqueNm: 320,
+        boltingMethod: "Hydraulic Wrench",
+        assignedBy: "QC-ENG-01",
+        assignedDate: "2025-05-14",
+        boltedDate: "2025-05-15",
+        jointer: "JTR-02",
+        tagNo: `TAG-${w.weldNo}`,
+        reportNo: `BR-19-2025-${w.weldNo}`,
+        verifiedDate: verified ? "2025-05-15" : undefined,
+        verifiedBy: verified ? "QC-ENG-02" : undefined,
+        torqueTool: "TT-09",
+        remark: "Torque values recorded per §19.2.1.",
+      })
+    }
+  }
+  return records
+}
+
+// ─── Field welds (FIELD_WELD_DATA) ──────────────────────────────────────────────
+
+export function deriveFieldWeldData(): FieldWeldJoint[] {
+  const rows: FieldWeldJoint[] = []
+  let n = 0
+  for (const s of SPINE) {
+    for (const w of fieldWelds(s)) {
+      n += 1
+      const status = fieldWeldStatus(s, w)
+      rows.push({
+        id: w.weldNo,
+        jointNo: w.weldNo,
+        spoolNo: s.spoolNo,
+        isoNo: s.isoNo,
+        diaInch: '6"',
+        materialType: mat(s.material),
+        wpsNo: w.wps,
+        welderCode: w.welderId,
+        weldDate: "17 May 2025",
+        dwirNo: `DWIR-2025-${2000 + n}`,
+        status: status === "RFT" || status === "Welded" || status === "Bolted" || status === "Supported" ? "Completed" : "In Progress",
+        isLocked: status === "RFT",
+        erectionStatus: status,
+        fieldJointType: w.jointType,
+        areaZone: zone(n),
+        rootPercent: 40,
+        capPercent: 60,
+        heatNo: s.pieces[0]?.heatNo,
+        rtNo: w.ndeBatchId ? `RT-${w.ndeBatchId}` : undefined,
+        rtResult: w.ndeResult,
+        foremanConfirmed: status === "RFT",
+      })
+    }
+  }
+  return rows
+}
