@@ -9,13 +9,9 @@ import {
   Source_Serif_4 as V0_Font_Source_Serif_4,
 } from "next/font/google";
 
-import { RoleProvider } from "@/contexts/role-context";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { SidebarNav } from "@/components/pipeqc/sidebar-nav";
-import { TopNav } from "@/components/pipeqc/top-nav";
-import { Toaster } from "@/components/ui/sonner";
-import { IsoWatcherMount } from "@/components/iso-watcher-mount";
-import { SpoolRFTWatcherMount } from "@/components/spool-rft-watcher-mount";
+import { AppShell } from "@/components/pipeqc/app-shell";
+import { AppModeProvider } from "@/contexts/app-mode-context";
+import { SupabaseAuthProvider } from "@/contexts/supabase-auth-context";
 
 // Initialize fonts
 const _inter = V0_Font_Inter({
@@ -63,18 +59,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="bg-background">
       <body className="font-sans antialiased">
-        <RoleProvider>
-          <SidebarProvider>
-            <SidebarNav />
-            <SidebarInset>
-              <TopNav />
-              <main className="flex-1 overflow-auto p-2">{children}</main>
-            </SidebarInset>
-          </SidebarProvider>
-        </RoleProvider>
-        <Toaster richColors position="top-right" />
-        <IsoWatcherMount />
-        <SpoolRFTWatcherMount />
+        <AppModeProvider>
+          <SupabaseAuthProvider>
+            <AppShell>{children}</AppShell>
+          </SupabaseAuthProvider>
+        </AppModeProvider>
         {process.env.NODE_ENV === "production" && <Analytics />}
       </body>
     </html>

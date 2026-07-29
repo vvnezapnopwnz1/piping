@@ -41,8 +41,23 @@ export function useRole() {
   return context
 }
 
-export function RoleProvider({ children }: { children: React.ReactNode }) {
-  const [currentRole, setCurrentRole] = React.useState<Role>('project_manager')
+export function RoleProvider({
+  children,
+  lockedRole,
+}: {
+  children: React.ReactNode
+  lockedRole?: Role
+}) {
+  const [selectedRole, setSelectedRole] = React.useState<Role>('project_manager')
+  const currentRole = lockedRole ?? selectedRole
+  const setCurrentRole = React.useCallback(
+    (role: Role) => {
+      if (!lockedRole) {
+        setSelectedRole(role)
+      }
+    },
+    [lockedRole]
+  )
 
   const roleInfo = React.useMemo(
     () => ROLES.find((r) => r.id === currentRole) || ROLES[0],

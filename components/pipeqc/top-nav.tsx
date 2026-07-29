@@ -11,6 +11,7 @@ import {
   ChevronRight,
   ChevronDown,
   RefreshCw,
+  LogOut,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -24,11 +25,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { useAppMode } from "@/contexts/app-mode-context";
 import { useRole, ROLES } from "@/contexts/role-context";
+import { useSupabaseAuth } from "@/contexts/supabase-auth-context";
 import { useDemoStore } from "@/store";
 import { useNotificationsCount } from "@/store/notifications-store";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+
+import { getTopNavDisplay } from "./top-nav-state";
 
 // Demo projects
 const projects = [
@@ -66,11 +71,18 @@ const routeLabels: Record<string, string> = {
 
 export function TopNav() {
   const pathname = usePathname();
+  const appMode = useAppMode();
+  const { membership, signOut, user } = useSupabaseAuth();
   const { roleInfo, currentRole, setCurrentRole } = useRole();
   const [selectedProject, setSelectedProject] = React.useState(projects[0]);
   const resetAll = useDemoStore((s) => s.resetAll);
   const demoMode = useDemoStore((s) => s.demoMode);
   const unreadCount = useNotificationsCount();
+  const topNavDisplay = getTopNavDisplay(appMode, {
+    membership,
+    email: user?.email,
+    roleLabel: roleInfo.label,
+  });
 
   const handleReset = () => {
     resetAll();
@@ -107,42 +119,53 @@ export function TopNav() {
 
         <Separator orientation="vertical" className="mx-2 h-5" />
 
-        {/* Project Selector */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 gap-1 px-2 text-xs"
-            >
-              <span className="font-medium text-foreground">
-                {selectedProject.code}
-              </span>
-              <span className="text-muted-foreground">·</span>
-              <span className="max-w-[140px] truncate text-muted-foreground">
-                {selectedProject.name}
-              </span>
-              <ChevronDown className="ml-1 size-3 text-muted-foreground" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-[280px]">
-            {projects.map((project) => (
-              <DropdownMenuItem
-                key={project.id}
-                onClick={() => setSelectedProject(project)}
-                className={cn(
-                  "flex flex-col items-start gap-0.5",
-                  selectedProject.id === project.id && "bg-accent",
-                )}
+        {topNavDisplay.kind === "demo" ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1 px-2 text-xs"
               >
-                <span className="text-sm font-medium">{project.code}</span>
-                <span className="text-xs text-muted-foreground">
-                  {project.name}
+                <span className="font-medium text-foreground">
+                  {selectedProject.code}
                 </span>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+                <span className="text-muted-foreground">·</span>
+                <span className="max-w-[140px] truncate text-muted-foreground">
+                  {selectedProject.name}
+                </span>
+                <ChevronDown className="ml-1 size-3 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-[280px]">
+              {projects.map((project) => (
+                <DropdownMenuItem
+                  key={project.id}
+                  onClick={() => setSelectedProject(project)}
+                  className={cn(
+                    "flex flex-col items-start gap-0.5",
+                    selectedProject.id === project.id && "bg-accent",
+                  )}
+                >
+                  <span className="text-sm font-medium">{project.code}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {project.name}
+                  </span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <div className="flex h-7 items-center gap-1 px-2 text-xs">
+            <span className="font-medium text-foreground">
+              {topNavDisplay.project.activityCode}
+            </span>
+            <span className="text-muted-foreground">·</span>
+            <span className="max-w-[140px] truncate text-muted-foreground">
+              {topNavDisplay.project.title}
+            </span>
+          </div>
+        )}
 
         {/* Breadcrumb */}
         {breadcrumbs.length > 0 && (
@@ -205,7 +228,7 @@ export function TopNav() {
           <span className="sr-only">Settings</span>
         </Button>
 
-        {demoMode && (
+        {topNavDisplay.kind === "demo" && demoMode && (
           <Badge
             variant="outline"
             className="ml-2 border-amber-300 bg-amber-50 text-amber-800"
@@ -214,54 +237,82 @@ export function TopNav() {
           </Badge>
         )}
 
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleReset}
-          title="Reset demo data"
-        >
-          <RefreshCw className="size-4" />
-        </Button>
+        {topNavDisplay.kind === "demo" && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleReset}
+            title="Reset demo data"
+          >
+            <RefreshCw className="size-4" />
+          </Button>
+        )}
 
         <Separator orientation="vertical" className="mx-2 h-5" />
 
-        {/* User Block with Role Switcher */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 gap-2 px-2">
-              <Avatar className="size-6">
-                <AvatarImage src="/avatars/user.jpg" alt="A. Rahman" />
-                <AvatarFallback className="text-[10px]">AR</AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col items-start">
-                <span className="text-xs font-medium leading-none">
-                  A. Rahman
-                </span>
-                <span className="text-[10px] leading-none text-muted-foreground">
-                  {roleInfo.label}
-                </span>
-              </div>
-              <ChevronDown className="size-3 text-muted-foreground" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[200px]">
-            {ROLES.map((role) => (
-              <DropdownMenuItem
-                key={role.id}
-                onClick={() => setCurrentRole(role.id)}
-                className={cn(
-                  "flex flex-col items-start gap-0.5",
-                  currentRole === role.id && "bg-accent",
-                )}
-              >
-                <span className="text-sm font-medium">{role.label}</span>
-                <span className="text-xs text-muted-foreground">
-                  {role.description}
-                </span>
+        {topNavDisplay.kind === "demo" ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 gap-2 px-2">
+                <Avatar className="size-6">
+                  <AvatarImage src="/avatars/user.jpg" alt="A. Rahman" />
+                  <AvatarFallback className="text-[10px]">AR</AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col items-start">
+                  <span className="text-xs font-medium leading-none">
+                    A. Rahman
+                  </span>
+                  <span className="text-[10px] leading-none text-muted-foreground">
+                    {roleInfo.label}
+                  </span>
+                </div>
+                <ChevronDown className="size-3 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[200px]">
+              {ROLES.map((role) => (
+                <DropdownMenuItem
+                  key={role.id}
+                  onClick={() => setCurrentRole(role.id)}
+                  className={cn(
+                    "flex flex-col items-start gap-0.5",
+                    currentRole === role.id && "bg-accent",
+                  )}
+                >
+                  <span className="text-sm font-medium">{role.label}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {role.description}
+                  </span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 gap-2 px-2">
+                <Avatar className="size-6">
+                  <AvatarFallback className="text-[10px]">{topNavDisplay.email.slice(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div className="flex min-w-0 flex-col items-start">
+                  <span className="max-w-[180px] truncate text-xs font-medium leading-none">
+                    {topNavDisplay.email}
+                  </span>
+                  <span className="text-[10px] leading-none text-muted-foreground">
+                    {topNavDisplay.roleLabel}
+                  </span>
+                </div>
+                <ChevronDown className="size-3 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => void signOut()}>
+                <LogOut className="mr-2 size-4" />
+                Sign out
               </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
     </header>
   );
