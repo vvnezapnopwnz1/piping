@@ -68,12 +68,28 @@ the project and role shown by the shell come from `project_memberships`, and
 the role is read-only in the client. A user without a membership sees an
 explicit access-pending state, never the mock-data shell.
 
-The implementation is intentionally limited to session/membership access and
-the configuration schema. **Supabase-backed Project Definition CRUD is the
-next unstarted vertical slice; the existing demo Project Definition page is
-not part of that scope.** It must be implemented as a platform-admin workflow
-with RLS-backed database checks, before treating project settings or
-referentials as a browser-editable source of truth.
+Access-capability migrations are applied locally: `20260731090000_access_capability_catalog.sql`, `20260731091000_access_capability_security.sql` and `20260731092000_access_management_rpc.sql`. The legacy compatibility role column remains, while auth context uses `list_current_user_projects()` effective-access summaries. Access Rights has a real-mode RPC UI boundary. The full database suite currently executes 103 pgTAP assertions, including capability, audited membership-command, fail-closed scope and service-role fixture-bootstrap checks. Demo operational screens still retain Track 3 compatibility behavior and are not evidence of Supabase authorization.
+
+The implementation includes session/membership access, configuration schema,
+Supabase-backed Project Definition CRUD, and Supabase-backed global System
+Referential management:
+
+1. **Project Definition:** Platform administrators can manage project identity,
+   parties, logos, and transit times backed by PostgreSQL RLS checks and RPC capability assertions.
+2. **System Referential:** `public.system_reference_entries` serves as the global,
+   cross-project store. Material Type is fully managed by platform administrators
+   (create, update code/description, activate/deactivate, delete with RESTRICT protection),
+   while Film Quantity per Diameter, UT Calculation, and Torquing Requirement remain read-only
+   view lists for all authenticated users until their structured domain contracts are introduced.
+
+3. **Active-Project Selection / Multi-Membership:** Real mode loads all active memberships allowed by RLS for the signed-in user, restores a validated per-user project preference, and switches active project context safely in the UI while continuing to enforce access through RLS on every project-scoped API call.
+
+4. **WPS CRUD (Project-scoped referential):** Fully managed, including forward-only migration (no hard deletes, `active`/`inactive`/`archived` statuses) and column-level grants. Follows a **Pure Modules + Supabase Adapters** architecture:
+   - **Pure Module** (`lib/welding-procedures.ts`): Domain data validation and mapping, independent of any backend.
+   - **Supabase Adapter** (`lib/supabase/welding-procedures.ts`): Implements data access, mapping pure types to Supabase types.
+   - **UI Adapter** (`WpsModeAdapter` in `admin-tabs.tsx`): Conditionally renders either the real `SupabaseWpsTab` or the legacy `WpsTab` demo view based on `useAppMode()`, keeping demo mode entirely intact.
+
+**The next unstarted vertical slice** will continue with other project-scoped referentials or operational data.
 
 See [the initial bootstrap runbook](SUPABASE_BOOTSTRAP.md) for the
 deployment-only creation of the first administrator, project and membership.
@@ -92,9 +108,11 @@ deployment-only creation of the first administrator, project and membership.
 
 ## Local verification
 
-The local Supabase stack is intentionally stopped to save resources. When it
-is needed again, run `/opt/homebrew/bin/supabase start`, then
-`/opt/homebrew/bin/supabase db reset` and `/opt/homebrew/bin/supabase test db`.
+When the local Supabase stack is running, verify it with
+`/opt/homebrew/bin/supabase test db`. If it is stopped, start it with
+`/opt/homebrew/bin/supabase start` first. Do **not** use `supabase db reset`
+as a routine verification command: it recreates the local database and removes
+locally created accounts and project data.
 The test specification under `supabase/tests/database/` checks the
 project/membership foundation and the critical NDE constraint. The complete
 real-mode verification also runs the pure checks in `lib/app-mode.test.ts`,
@@ -103,4 +121,4 @@ real-mode verification also runs the pure checks in `lib/app-mode.test.ts`,
 `components/pipeqc/app-shell-state.test.ts`, and
 `components/pipeqc/top-nav-state.test.ts`, followed by strict TypeScript and a
 demo production build. Stop the stack with `/opt/homebrew/bin/supabase stop`
-after local database verification.
+only when no one needs the local environment.

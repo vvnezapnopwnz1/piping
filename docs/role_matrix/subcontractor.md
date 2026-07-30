@@ -10,6 +10,8 @@
 
 ## Роль: Subcontractor
 
+> Authorization note: Subcontractor is restricted; commands require explicit functional roles and subcontractor/PDS scope, not automatic QC and NDE access.
+
 **One-line:** Restricted Project Editor с forced scope lock (CC-4). NDE
 subcontractor (BV / SGS / TÜV / Intertek) или Fabrication / Erection
 subcontractor — видит только свои PDS areas, только свои batches. Выполняет
