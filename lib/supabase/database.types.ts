@@ -7,6 +7,31 @@ export type Json =
   | Json[]
 
 export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       audit_events: {
@@ -59,6 +84,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      capabilities: {
+        Row: {
+          code: string
+          description: string
+          is_mutating: boolean
+          requires_functional_role: boolean
+        }
+        Insert: {
+          code: string
+          description: string
+          is_mutating: boolean
+          requires_functional_role: boolean
+        }
+        Update: {
+          code?: string
+          description?: string
+          is_mutating?: boolean
+          requires_functional_role?: boolean
+        }
+        Relationships: []
       }
       import_jobs: {
         Row: {
@@ -590,8 +636,42 @@ export type Database = {
           },
         ]
       }
+      project_membership_functional_roles: {
+        Row: {
+          created_at: string
+          membership_id: string
+          role_code: string
+        }
+        Insert: {
+          created_at?: string
+          membership_id: string
+          role_code: string
+        }
+        Update: {
+          created_at?: string
+          membership_id?: string
+          role_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_membership_functional_roles_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "project_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_membership_functional_roles_role_code_fkey"
+            columns: ["role_code"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       project_memberships: {
         Row: {
+          access_role_code: string
           created_at: string
           id: string
           is_active: boolean
@@ -601,6 +681,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          access_role_code: string
           created_at?: string
           id?: string
           is_active?: boolean
@@ -610,6 +691,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          access_role_code?: string
           created_at?: string
           id?: string
           is_active?: boolean
@@ -619,6 +701,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "project_memberships_access_role_code_fkey"
+            columns: ["access_role_code"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["code"]
+          },
           {
             foreignKeyName: "project_memberships_project_id_fkey"
             columns: ["project_id"]
@@ -1221,7 +1310,7 @@ export type Database = {
           project_id: string
           revision: string
           status: Database["public"]["Enums"]["project_reference_status"]
-          subcontractor_id: string | null
+          subcontractor_id: string
           thickness_from: number
           thickness_to: number
           updated_at: string
@@ -1239,7 +1328,7 @@ export type Database = {
           project_id: string
           revision: string
           status?: Database["public"]["Enums"]["project_reference_status"]
-          subcontractor_id?: string | null
+          subcontractor_id: string
           thickness_from: number
           thickness_to: number
           updated_at?: string
@@ -1257,7 +1346,7 @@ export type Database = {
           project_id?: string
           revision?: string
           status?: Database["public"]["Enums"]["project_reference_status"]
-          subcontractor_id?: string | null
+          subcontractor_id?: string
           thickness_from?: number
           thickness_to?: number
           updated_at?: string
@@ -1331,6 +1420,63 @@ export type Database = {
           status?: Database["public"]["Enums"]["project_reference_status"]
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      role_capabilities: {
+        Row: {
+          capability_code: string
+          role_code: string
+        }
+        Insert: {
+          capability_code: string
+          role_code: string
+        }
+        Update: {
+          capability_code?: string
+          role_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_capabilities_capability_code_fkey"
+            columns: ["capability_code"]
+            isOneToOne: false
+            referencedRelation: "capabilities"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "role_capabilities_role_code_fkey"
+            columns: ["role_code"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      roles: {
+        Row: {
+          bypasses_functional_gate: boolean
+          code: string
+          created_at: string
+          is_active: boolean
+          kind: Database["public"]["Enums"]["role_kind"]
+          label: string
+        }
+        Insert: {
+          bypasses_functional_gate?: boolean
+          code: string
+          created_at?: string
+          is_active?: boolean
+          kind: Database["public"]["Enums"]["role_kind"]
+          label: string
+        }
+        Update: {
+          bypasses_functional_gate?: boolean
+          code?: string
+          created_at?: string
+          is_active?: boolean
+          kind?: Database["public"]["Enums"]["role_kind"]
+          label?: string
         }
         Relationships: []
       }
@@ -1456,15 +1602,156 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_project_member_by_email: {
+        Args: {
+          requested_access_role: string
+          requested_functional_roles: string[]
+          requested_pds_area_ids: string[]
+          requested_subcontractor_ids: string[]
+          target_email: string
+          target_project_id: string
+        }
+        Returns: {
+          access_role_code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          project_id: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "project_memberships"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      assert_access_request_is_valid: {
+        Args: {
+          requested_access_role: string
+          requested_functional_roles: string[]
+          requested_pds_area_ids: string[]
+          requested_subcontractor_ids: string[]
+          target_project_id: string
+        }
+        Returns: undefined
+      }
       can_administer_project: {
         Args: { target_project_id: string }
         Returns: boolean
+      }
+      compatibility_membership_role: {
+        Args: {
+          requested_access_role: string
+          requested_functional_roles: string[]
+        }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      current_user_has_capability: {
+        Args: { requested_capability: string; target_project_id: string }
+        Returns: boolean
+      }
+      current_user_in_pds_scope: {
+        Args: { target_pds_area_id: string; target_project_id: string }
+        Returns: boolean
+      }
+      current_user_in_subcontractor_scope: {
+        Args: { target_project_id: string; target_subcontractor_id: string }
+        Returns: boolean
+      }
+      get_project_access_matrix: {
+        Args: { target_project_id: string }
+        Returns: {
+          access_role_code: string
+          email: string
+          full_name: string
+          functional_role_codes: string[]
+          is_active: boolean
+          membership_id: string
+          pds_area_ids: string[]
+          subcontractor_ids: string[]
+          user_id: string
+        }[]
       }
       has_project_access: {
         Args: { target_project_id: string }
         Returns: boolean
       }
       is_platform_admin: { Args: never; Returns: boolean }
+      legacy_access_role: {
+        Args: { legacy_role: Database["public"]["Enums"]["app_role"] }
+        Returns: string
+      }
+      legacy_functional_role: {
+        Args: { legacy_role: Database["public"]["Enums"]["app_role"] }
+        Returns: string
+      }
+      list_current_user_projects: {
+        Args: never
+        Returns: {
+          access_role_code: string
+          activity_code: string
+          capability_codes: string[]
+          functional_role_codes: string[]
+          is_platform_admin: boolean
+          membership_id: string
+          pds_area_ids: string[]
+          project_id: string
+          project_status: Database["public"]["Enums"]["project_reference_status"]
+          subcontractor_ids: string[]
+          title: string
+        }[]
+      }
+      membership_access_state: {
+        Args: { target_membership_id: string }
+        Returns: Json
+      }
+      set_project_member_active: {
+        Args: { requested_active: boolean; target_membership_id: string }
+        Returns: {
+          access_role_code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          project_id: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "project_memberships"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      update_project_member_access: {
+        Args: {
+          requested_access_role: string
+          requested_functional_roles: string[]
+          requested_pds_area_ids: string[]
+          requested_subcontractor_ids: string[]
+          target_membership_id: string
+        }
+        Returns: {
+          access_role_code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          project_id: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "project_memberships"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
     }
     Enums: {
       app_role:
@@ -1478,6 +1765,7 @@ export type Database = {
       ndt_method: "rt" | "ut" | "mt" | "pt" | "pmi" | "ht" | "vt"
       pressure_unit: "bar" | "psi"
       project_reference_status: "active" | "inactive" | "archived"
+      role_kind: "access" | "functional"
       system_reference_kind:
         | "material_type"
         | "film_quantity"
@@ -1614,6 +1902,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: [
@@ -1628,6 +1919,7 @@ export const Constants = {
       ndt_method: ["rt", "ut", "mt", "pt", "pmi", "ht", "vt"],
       pressure_unit: ["bar", "psi"],
       project_reference_status: ["active", "inactive", "archived"],
+      role_kind: ["access", "functional"],
       system_reference_kind: [
         "material_type",
         "film_quantity",

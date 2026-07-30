@@ -8,6 +8,8 @@ import { TeamsTab } from "@/components/admin/teams-tab";
 import { SubcontractorsTab } from "@/components/admin/subcontractors-tab";
 import { WelderQualificationsTab } from "@/components/admin/welder-qualifications-tab";
 import { WpsTab } from "@/components/admin/wps-tab";
+import { SupabaseWpsTab } from "@/components/admin/supabase-wps-tab";
+import { useAppMode } from "@/contexts/app-mode-context";
 import { NdeMatrixTab } from "@/components/admin/nde-matrix-tab";
 import { ReworkCodesTab } from "@/components/admin/rework-codes-tab";
 import { JointCategoriesTab } from "@/components/admin/joint-categories-tab";
@@ -27,6 +29,11 @@ type TabValue = (typeof TAB_VALUES)[number];
 
 function isValidTab(value: string): value is TabValue {
   return TAB_VALUES.includes(value as TabValue);
+}
+
+function WpsModeAdapter() {
+  const appMode = useAppMode();
+  return appMode === "demo" ? <WpsTab /> : <SupabaseWpsTab />;
 }
 
 export function AdminTabs() {
@@ -80,7 +87,7 @@ export function AdminTabs() {
         <WelderQualificationsTab />
       </TabsContent>
       <TabsContent value="wps" className="mt-4">
-        <WpsTab />
+        <WpsModeAdapter />
       </TabsContent>
       <TabsContent value="nde-matrix" className="mt-4">
         <NdeMatrixTab />

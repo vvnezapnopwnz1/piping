@@ -34,7 +34,9 @@ import {
   Send,
   ListPlus,
 } from 'lucide-react'
-import type { Role } from '@/contexts/role-context'
+import type { Capability } from '@/modules/access/domain/capability'
+
+import { requiredCapabilityForPath } from './route-capabilities'
 
 export interface NavItem {
   title: string
@@ -46,13 +48,11 @@ export interface NavItem {
 export interface NavSection {
   title: string
   items: NavItem[]
-  roles: Role[]
 }
 
 export const navigationConfig: NavSection[] = [
   {
     title: 'SETUP',
-    roles: ['system_admin', 'project_manager'],
     items: [
       {
         title: 'Admin Module',
@@ -95,7 +95,6 @@ export const navigationConfig: NavSection[] = [
   },
   {
     title: 'PREPARATION',
-    roles: ['spooling_team', 'project_manager'],
     items: [
       {
         title: 'Spooling',
@@ -128,7 +127,6 @@ export const navigationConfig: NavSection[] = [
   },
   {
     title: 'CONSTRUCTION',
-    roles: ['qc_engineer', 'nde_inspector', 'subcontractor', 'project_manager'],
     items: [
       {
         title: 'Fabrication',
@@ -285,7 +283,6 @@ export const navigationConfig: NavSection[] = [
   },
   {
     title: 'REPORTS',
-    roles: ['project_manager', 'qc_engineer'],
     items: [
       {
         title: 'Reports',
@@ -295,7 +292,6 @@ export const navigationConfig: NavSection[] = [
     ],
   }, {
     title: 'TESTING',
-    roles: ['qc_engineer', 'project_manager', 'nde_inspector'],
     items: [
       {
         title: 'Testpack',
@@ -328,7 +324,6 @@ export const navigationConfig: NavSection[] = [
   },
   {
     title: 'CONFIGURATION',
-    roles: ['qc_engineer', 'nde_inspector', 'project_manager', 'spooling_team', 'subcontractor', 'system_admin'],
     items: [
       {
         title: 'Settings',
@@ -344,11 +339,34 @@ export const navigationConfig: NavSection[] = [
   },
 ]
 
-export function getVisibleNavigation(role: Role): NavSection[] {
+function getVisibleItem(
+  item: NavItem,
+  can: (capability: Capability) => boolean,
+): NavItem | null {
+  const children = item.children
+    ?.map((child) => getVisibleItem(child, can))
+    .filter((child): child is NavItem => child !== null)
+  const capability = requiredCapabilityForPath(item.href)
+
+  if (!capability || can(capability) || children?.length) {
+    return {
+      ...item,
+      ...(children ? { children } : {}),
+    }
+  }
+
+  return null
+}
+
+export function getVisibleNavigation(
+  can: (capability: Capability) => boolean,
+): NavSection[] {
   return navigationConfig
-    .filter((section) => section.roles.includes(role))
     .map((section) => ({
       ...section,
-      items: section.items,
+      items: section.items
+        .map((item) => getVisibleItem(item, can))
+        .filter((item): item is NavItem => item !== null),
     }))
+    .filter((section) => section.items.length > 0)
 }

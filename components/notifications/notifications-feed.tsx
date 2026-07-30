@@ -17,7 +17,8 @@ import { formatDistanceToNow } from "date-fns"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { useRole } from "@/contexts/role-context"
+import { useAppMode } from "@/contexts/app-mode-context"
+import { useOptionalAccess } from "@/modules/access/ui/access-context"
 import {
   useNotificationsStore,
   type Notification,
@@ -260,7 +261,8 @@ function GroupedBlock({
 }
 
 export function NotificationsFeed() {
-  const { currentRole } = useRole()
+  const appMode = useAppMode()
+  const access = useOptionalAccess()
   const notifications = useNotificationsStore((s) => s.notifications)
   const acknowledge = useNotificationsStore((s) => s.acknowledge)
   const archive = useNotificationsStore((s) => s.archive)
@@ -298,7 +300,7 @@ export function NotificationsFeed() {
   const feedItems = useMemo(() => buildFeedItems(filtered), [filtered])
 
   const handleAcknowledge = (id: string) => {
-    acknowledge(id, currentRole)
+    if (appMode === "demo" || access?.can("settings.view")) acknowledge(id, "access-controlled user")
   }
 
   const handleArchive = (id: string) => {

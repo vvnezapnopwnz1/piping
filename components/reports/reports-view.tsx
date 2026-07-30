@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Download, Search } from "lucide-react";
 import { toast } from "sonner";
 
-import { useRole } from "@/contexts/role-context";
+import { useAppMode } from "@/contexts/app-mode-context";
+import { useOptionalAccess } from "@/modules/access/ui/access-context";
 import {
   REAL_REPORT_GENERATORS,
   triggerReportDownload,
@@ -87,7 +88,9 @@ export function ReportsView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const liveCounts = useReportsLiveCounts();
-  const { currentRole } = useRole();
+  const appMode = useAppMode();
+  const access = useOptionalAccess();
+  const canExport = appMode === "demo" || access?.can("reports.export") === true;
   const welds = useWeldsStore((s) => s.welds);
   const batches = useBatchesStore((s) => s.batches);
   const testPacks = useTestpackStore((s) => s.testPacks);
@@ -176,6 +179,7 @@ export function ReportsView() {
   );
 
   const handleDownload = async (report: ReportDef) => {
+    if (!canExport) return;
     const filename = buildFilename(report);
     const duration = 700 + Math.random() * 200;
     const t = toast.loading(`Generating ${filename}…`, { duration: Infinity });
@@ -191,7 +195,7 @@ export function ReportsView() {
         severity: "info",
         category: "system",
         title: `Report ${report.title} downloaded`,
-        description: `Downloaded by ${currentRole.replace(/_/g, " ")}`,
+        description: "Report export completed",
         href: "/reports",
       });
       toast.success(`Downloaded ${filename}`, {
@@ -444,6 +448,7 @@ export function ReportsView() {
                       size="sm"
                       className="h-7 text-xs border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 gap-1"
                       onClick={() => handleDownload(report)}
+                      disabled={!canExport}
                     >
                       <Download className="w-3 h-3" />
                       Download

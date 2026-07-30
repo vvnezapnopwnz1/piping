@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "validate:fixtures": "tsx lib/fixtures/validate.run.ts"
+    "validate:fixtures": "tsx lib/fixtures/validate.run.ts",
+    "bootstrap:track01-browser-fixtures": "tsx scripts/bootstrap-track01-browser-fixtures.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

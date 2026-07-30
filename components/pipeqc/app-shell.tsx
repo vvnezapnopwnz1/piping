@@ -12,30 +12,53 @@ import { Toaster } from "@/components/ui/sonner"
 import { useAppMode } from "@/contexts/app-mode-context"
 import { RoleProvider, type Role } from "@/contexts/role-context"
 import { useSupabaseAuth } from "@/contexts/supabase-auth-context"
+import type { ProjectAccessSummary } from "@/modules/access/infrastructure/supabase-access-repository"
+import { AccessProvider } from "@/modules/access/ui/access-context"
+
+import { RouteCapabilityGuard } from "./route-capability-guard"
 
 import { getAppShellState } from "./app-shell-state"
 
-function PipeQCShell({
+function PipeQCShell({ children }: { children: React.ReactNode }) {
+  return (
+    <SidebarProvider>
+      <SidebarNav />
+      <SidebarInset>
+        <TopNav />
+        <main className="flex-1 overflow-auto p-2">{children}</main>
+      </SidebarInset>
+      <Toaster richColors position="top-right" />
+      <IsoWatcherMount />
+      <SpoolRFTWatcherMount />
+    </SidebarProvider>
+  )
+}
+
+function LegacyPersonaBridge({
   children,
   lockedRole,
 }: {
   children: React.ReactNode
   lockedRole?: Role
 }) {
-  return (
-    <RoleProvider lockedRole={lockedRole}>
-      <SidebarProvider>
-        <SidebarNav />
-        <SidebarInset>
-          <TopNav />
-          <main className="flex-1 overflow-auto p-2">{children}</main>
-        </SidebarInset>
-      </SidebarProvider>
-      <Toaster richColors position="top-right" />
-      <IsoWatcherMount />
-      <SpoolRFTWatcherMount />
-    </RoleProvider>
+  return <RoleProvider lockedRole={lockedRole}>{children}</RoleProvider>
+}
+
+function legacyRoleForAccess(access: ProjectAccessSummary): Role {
+  if (access.isPlatformAdmin) return "system_admin"
+
+  const legacyFunctionalRoles = [
+    "qc_engineer",
+    "nde_inspector",
+    "project_manager",
+    "spooling_team",
+  ] as const
+  const functionalRole = access.functionalRoles.find(
+    (role): role is (typeof legacyFunctionalRoles)[number] =>
+      legacyFunctionalRoles.includes(role as (typeof legacyFunctionalRoles)[number]),
   )
+
+  return functionalRole ?? (access.accessRole === "subcontractor" ? "subcontractor" : "project_manager")
 }
 
 function LoadingScreen() {
@@ -48,10 +71,14 @@ function LoadingScreen() {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const appMode = useAppMode()
-  const { accessState, error, membership, signOut, user } = useSupabaseAuth()
+  const { accessState, error, access, signOut, user } = useSupabaseAuth()
 
   if (appMode === "demo") {
-    return <PipeQCShell>{children}</PipeQCShell>
+    return (
+      <LegacyPersonaBridge>
+        <PipeQCShell>{children}</PipeQCShell>
+      </LegacyPersonaBridge>
+    )
   }
 
   switch (getAppShellState(accessState, Boolean(error))) {
@@ -64,8 +91,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     case "access_pending":
       return <AccessPendingScreen email={user?.email} onSignOut={signOut} />
     case "shell":
-      return membership ? (
-        <PipeQCShell lockedRole={membership.role}>{children}</PipeQCShell>
+      return access ? (
+        <AccessProvider access={access}>
+          <LegacyPersonaBridge lockedRole={legacyRoleForAccess(access)}>
+            <PipeQCShell>
+              <RouteCapabilityGuard>{children}</RouteCapabilityGuard>
+            </PipeQCShell>
+          </LegacyPersonaBridge>
+        </AccessProvider>
       ) : (
         <LoadingScreen />
       )

@@ -35,6 +35,39 @@ import { Badge } from "@/components/ui/badge";
 
 import { getTopNavDisplay } from "./top-nav-state";
 
+const ACCESS_ROLE_LABELS: Record<string, string> = {
+  project_admin: "Project Admin",
+  site_admin: "Site Admin",
+  project_editor: "Project Editor",
+  subcontractor: "Subcontractor",
+  project_reader: "Project Reader",
+};
+
+const FUNCTIONAL_ROLE_LABELS: Record<string, string> = {
+  project_manager: "Project Manager",
+  qc_engineer: "QC Engineer",
+  nde_inspector: "NDE Inspector",
+  spooling_team: "Spooling Team",
+  fabrication_contributor: "Fabrication Contributor",
+  erection_contributor: "Erection Contributor",
+  tracking_operator: "Tracking Operator",
+};
+
+function accessLabels(access: {
+  isPlatformAdmin: boolean;
+  accessRole: string | null;
+  functionalRoles: readonly string[];
+}): string[] {
+  if (access.isPlatformAdmin) return ["System Admin"];
+
+  return [
+    ...(access.accessRole ? [ACCESS_ROLE_LABELS[access.accessRole] ?? access.accessRole] : []),
+    ...access.functionalRoles.map(
+      (role) => FUNCTIONAL_ROLE_LABELS[role] ?? role,
+    ),
+  ];
+}
+
 // Demo projects
 const projects = [
   { id: "proj-1", code: "PROJ-LNG-2025", name: "Qatar LNG Train 7" },
@@ -72,16 +105,37 @@ const routeLabels: Record<string, string> = {
 export function TopNav() {
   const pathname = usePathname();
   const appMode = useAppMode();
-  const { membership, signOut, user } = useSupabaseAuth();
+  const { access, projectAccesses, selectProject, signOut, user } = useSupabaseAuth();
   const { roleInfo, currentRole, setCurrentRole } = useRole();
   const [selectedProject, setSelectedProject] = React.useState(projects[0]);
   const resetAll = useDemoStore((s) => s.resetAll);
   const demoMode = useDemoStore((s) => s.demoMode);
   const unreadCount = useNotificationsCount();
+
+  const supabaseProjects = React.useMemo(
+    () =>
+      projectAccesses.map((m) => {
+        return {
+          projectId: m.projectId,
+          activityCode: m.activityCode,
+          title: m.title,
+          accessLabels: accessLabels(m),
+        };
+      }),
+    [projectAccesses]
+  );
+
   const topNavDisplay = getTopNavDisplay(appMode, {
-    membership,
+    access: access
+      ? {
+          projectId: access.projectId,
+          activityCode: access.activityCode,
+          title: access.title,
+          accessLabels: accessLabels(access),
+        }
+      : null,
+    projectAccesses: supabaseProjects,
     email: user?.email,
-    roleLabel: roleInfo.label,
   });
 
   const handleReset = () => {
@@ -150,6 +204,47 @@ export function TopNav() {
                   <span className="text-sm font-medium">{project.code}</span>
                   <span className="text-xs text-muted-foreground">
                     {project.name}
+                  </span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : topNavDisplay.canSwitchProject ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1 px-2 text-xs"
+              >
+                <span className="font-medium text-foreground">
+                  {topNavDisplay.project.activityCode}
+                </span>
+                <span className="text-muted-foreground">·</span>
+                <span className="max-w-[140px] truncate text-muted-foreground">
+                  {topNavDisplay.project.title}
+                </span>
+                <ChevronDown className="ml-1 size-3 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-[280px]">
+              {topNavDisplay.projects.map((proj) => (
+                <DropdownMenuItem
+                  key={proj.projectId}
+                  onClick={() => selectProject(proj.projectId)}
+                  className={cn(
+                    "flex flex-col items-start gap-0.5",
+                    topNavDisplay.project.projectId === proj.projectId && "bg-accent",
+                  )}
+                >
+                  <div className="flex w-full items-center justify-between">
+                    <span className="text-sm font-medium">{proj.activityCode}</span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {proj.accessLabels.join(" · ")}
+                    </span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {proj.title}
                   </span>
                 </DropdownMenuItem>
               ))}
@@ -299,7 +394,7 @@ export function TopNav() {
                     {topNavDisplay.email}
                   </span>
                   <span className="text-[10px] leading-none text-muted-foreground">
-                    {topNavDisplay.roleLabel}
+                    {topNavDisplay.accessLabels.join(" · ") || "Project access"}
                   </span>
                 </div>
                 <ChevronDown className="size-3 text-muted-foreground" />

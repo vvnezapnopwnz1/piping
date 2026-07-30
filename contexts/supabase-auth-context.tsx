@@ -4,79 +4,74 @@ import * as React from "react"
 import type { Session, User } from "@supabase/supabase-js"
 
 import { useAppMode } from "@/contexts/app-mode-context"
-import type { Role } from "@/contexts/role-context"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
+import {
+  listCurrentUserProjects,
+  type ProjectAccessSummary,
+} from "@/modules/access/infrastructure/supabase-access-repository"
 
 import {
+  activeProjectStorageKey,
   deriveSupabaseAccessState,
-  synchronizeMembershipProjectDisplay,
+  resolveActiveProjectAccess,
+  sortProjectAccessesForDisplay,
+  synchronizeProjectAccessDisplay,
   type SupabaseAccessState,
 } from "./supabase-auth-state"
 
-export interface SupabaseMembership {
-  membershipId: string
-  projectId: string
-  activityCode: string
-  title: string
-  role: Role
-}
-
 interface SupabaseAuthContextValue {
   user: User | null
-  membership: SupabaseMembership | null
+  projectAccesses: ProjectAccessSummary[]
+  access: ProjectAccessSummary | null
   error: Error | null
   accessState: SupabaseAccessState
+  selectProject: (projectId: string) => void
+  reloadAccess: () => void
   signOut: () => Promise<void>
   synchronizeProjectDisplay: (
     projectId: string,
-    project: Pick<SupabaseMembership, "activityCode" | "title">
+    project: Pick<ProjectAccessSummary, "activityCode" | "title">
   ) => void
-}
-
-interface MembershipQueryRow {
-  id: string
-  role: Role
-  project: {
-    id: string
-    activity_code: string
-    title: string
-  } | null
 }
 
 const SupabaseAuthContext = React.createContext<SupabaseAuthContextValue | null>(
   null
 )
 
-function normalizeMembership(
-  membership: MembershipQueryRow | null
-): SupabaseMembership | null {
-  if (!membership?.project) {
+function safelyReadLocalStorage(key: string): string | null {
+  try {
+    return window.localStorage.getItem(key)
+  } catch {
     return null
   }
+}
 
-  return {
-    membershipId: membership.id,
-    projectId: membership.project.id,
-    activityCode: membership.project.activity_code,
-    title: membership.project.title,
-    role: membership.role,
+function safelyWriteOrRemoveLocalStorage(key: string, projectId: string | null) {
+  try {
+    if (projectId) window.localStorage.setItem(key, projectId)
+    else window.localStorage.removeItem(key)
+  } catch {
+    // Browser storage is a preference only; context remains usable without it.
   }
 }
 
 export function SupabaseAuthProvider({ children }: { children: React.ReactNode }) {
   const appMode = useAppMode()
   const [user, setUser] = React.useState<User | null>(null)
-  const [membership, setMembership] = React.useState<SupabaseMembership | null>(
-    null
-  )
+  const [projectAccesses, setProjectAccesses] = React.useState<
+    ProjectAccessSummary[]
+  >([])
+  const [access, setAccess] = React.useState<ProjectAccessSummary | null>(null)
   const [error, setError] = React.useState<Error | null>(null)
+  const [reloadVersion, setReloadVersion] = React.useState(0)
   const [accessState, setAccessState] =
     React.useState<SupabaseAccessState>("loading")
 
   React.useEffect(() => {
     if (appMode === "demo") {
       setUser(null)
-      setMembership(null)
+      setProjectAccesses([])
+      setAccess(null)
       setError(null)
       setAccessState("unauthenticated")
       return
@@ -86,12 +81,13 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
     let disposed = false
     let requestVersion = 0
 
-    const loadMembership = async (session: Session | null) => {
+    const loadAccess = async (session: Session | null) => {
       const currentRequest = ++requestVersion
       const sessionUser = session?.user ?? null
 
       setUser(sessionUser)
-      setMembership(null)
+      setProjectAccesses([])
+      setAccess(null)
       setError(null)
 
       if (!sessionUser) {
@@ -101,29 +97,38 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
 
       setAccessState("loading")
 
-      const { data, error: membershipError } = await client
-        .from("project_memberships")
-        .select("id, role, project:projects(id, activity_code, title)")
-        .eq("user_id", sessionUser.id)
-        .eq("is_active", true)
-        .limit(1)
-        .maybeSingle()
+      let projectAccesses: ProjectAccessSummary[]
+      try {
+        projectAccesses = await listCurrentUserProjects(client)
+      } catch (loadError) {
+        if (disposed || currentRequest !== requestVersion) return
+
+        setError(loadError instanceof Error ? loadError : new Error("Unable to load access."))
+        setProjectAccesses([])
+        setAccess(null)
+        setAccessState(deriveSupabaseAccessState(sessionUser, null))
+        return
+      }
 
       if (disposed || currentRequest !== requestVersion) {
         return
       }
 
-      if (membershipError) {
-        setError(membershipError)
-        setMembership(null)
-        setAccessState(deriveSupabaseAccessState(sessionUser, null))
-        return
-      }
+      const storageKey = activeProjectStorageKey(sessionUser.id)
+      const preferredProjectId = safelyReadLocalStorage(storageKey)
+      const activeAccess = resolveActiveProjectAccess(
+        projectAccesses,
+        preferredProjectId
+      )
 
-      const normalizedMembership = normalizeMembership(data)
-      setMembership(normalizedMembership)
+      setProjectAccesses(sortProjectAccessesForDisplay(projectAccesses))
+      setAccess(activeAccess)
       setAccessState(
-        deriveSupabaseAccessState(sessionUser, normalizedMembership)
+        deriveSupabaseAccessState(sessionUser, activeAccess)
+      )
+      safelyWriteOrRemoveLocalStorage(
+        storageKey,
+        activeAccess?.projectId ?? null
       )
     }
 
@@ -135,18 +140,20 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
 
         if (sessionError) {
           setUser(null)
-          setMembership(null)
+          setProjectAccesses([])
+          setAccess(null)
           setError(sessionError)
           setAccessState("unauthenticated")
           return
         }
 
-        return loadMembership(session)
+        return loadAccess(session)
       },
       (sessionError: Error) => {
         if (!disposed) {
           setUser(null)
-          setMembership(null)
+          setProjectAccesses([])
+          setAccess(null)
           setError(sessionError)
           setAccessState("unauthenticated")
         }
@@ -156,7 +163,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
     const {
       data: { subscription },
     } = client.auth.onAuthStateChange((_event, session) => {
-      void loadMembership(session)
+      void loadAccess(session)
     })
 
     return () => {
@@ -164,6 +171,31 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
       requestVersion += 1
       subscription.unsubscribe()
     }
+  }, [appMode, reloadVersion])
+
+  const selectProject = React.useCallback(
+    (projectId: string) => {
+      if (appMode !== "supabase" || !user) return
+
+      setProjectAccesses((currentProjectAccesses) => {
+        const next = currentProjectAccesses.find(
+          (item) => item.projectId === projectId
+        )
+        if (!next) return currentProjectAccesses
+
+        setAccess(next)
+        safelyWriteOrRemoveLocalStorage(
+          activeProjectStorageKey(user.id),
+          next.projectId
+        )
+        return currentProjectAccesses
+      })
+    },
+    [appMode, user]
+  )
+
+  const reloadAccess = React.useCallback(() => {
+    if (appMode === "supabase") setReloadVersion((current) => current + 1)
   }, [appMode])
 
   const signOut = React.useCallback(async () => {
@@ -181,14 +213,26 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
   const synchronizeProjectDisplay = React.useCallback(
     (
       projectId: string,
-      project: Pick<SupabaseMembership, "activityCode" | "title">
+      project: Pick<ProjectAccessSummary, "activityCode" | "title">
     ) => {
       if (appMode !== "supabase") {
         return
       }
 
-      setMembership((current) =>
-        synchronizeMembershipProjectDisplay(current, projectId, project)
+      setProjectAccesses((currentProjectAccesses) =>
+        currentProjectAccesses.map((item) =>
+          item.projectId === projectId
+            ? {
+                ...item,
+                activityCode: project.activityCode,
+                title: project.title,
+              }
+            : item
+        )
+      )
+
+      setAccess((current) =>
+        synchronizeProjectAccessDisplay(current, projectId, project)
       )
     },
     [appMode]
@@ -197,13 +241,26 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
   const value = React.useMemo(
     () => ({
       user,
-      membership,
+      projectAccesses,
+      access,
       error,
       accessState,
+      selectProject,
+      reloadAccess,
       signOut,
       synchronizeProjectDisplay,
     }),
-    [accessState, error, membership, signOut, synchronizeProjectDisplay, user]
+    [
+      accessState,
+      error,
+      access,
+      projectAccesses,
+      selectProject,
+      reloadAccess,
+      signOut,
+      synchronizeProjectDisplay,
+      user,
+    ]
   )
 
   return (

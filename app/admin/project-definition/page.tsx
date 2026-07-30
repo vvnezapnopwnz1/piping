@@ -61,7 +61,7 @@ function toProjectDefinitionInput(
 
 export default function ProjectDefinitionPage() {
   const appMode = useAppMode();
-  const { membership, synchronizeProjectDisplay } = useSupabaseAuth();
+  const { access, synchronizeProjectDisplay } = useSupabaseAuth();
   const projectDefinition = useAdminStore((s) => s.projectDefinition);
   const setProjectDefinition = useAdminStore((s) => s.setProjectDefinition);
 
@@ -98,7 +98,7 @@ export default function ProjectDefinitionPage() {
   }, [appMode, projectDefinition]);
 
   useEffect(() => {
-    if (appMode !== "supabase" || !membership?.projectId) return;
+    if (appMode !== "supabase" || !access?.projectId) return;
 
     let isCurrent = true;
     setIsLoading(true);
@@ -108,7 +108,7 @@ export default function ProjectDefinitionPage() {
 
     void loadProjectDefinition(
       getSupabaseBrowserClient(),
-      membership.projectId,
+      access.projectId,
     ).then(
       (loaded) => {
         if (!isCurrent) return;
@@ -129,7 +129,7 @@ export default function ProjectDefinitionPage() {
     return () => {
       isCurrent = false;
     };
-  }, [appMode, loadAttempt, membership?.projectId]);
+  }, [appMode, loadAttempt, access?.projectId]);
 
   const updateForm = <Field extends keyof ProjectDefinitionForm>(
     field: Field,
@@ -195,7 +195,7 @@ export default function ProjectDefinitionPage() {
       return;
     }
 
-    if (!membership?.projectId || !canEdit) return;
+    if (!access?.projectId || !canEdit) return;
 
     const validation = validateProjectDefinition(toProjectDefinitionInput(form));
     if (!validation.isValid) {
@@ -208,12 +208,12 @@ export default function ProjectDefinitionPage() {
     try {
       const saved = await saveProjectDefinition(
         getSupabaseBrowserClient(),
-        membership.projectId,
+        access.projectId,
         validation.value,
       );
       setSupabaseDefinition(saved);
       setForm(toFormValue(saved));
-      synchronizeProjectDisplay(membership.projectId, {
+      synchronizeProjectDisplay(access.projectId, {
         activityCode: saved.activityCode,
         title: saved.projectTitle,
       });

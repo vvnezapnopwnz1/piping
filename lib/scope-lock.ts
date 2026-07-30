@@ -3,6 +3,8 @@
 import { useMemo } from "react"
 import { useCurrentRole } from "@/lib/pm-write-lock"
 import { useAdminStore } from "@/store/admin-store"
+import { useAppMode } from "@/contexts/app-mode-context"
+import { useOptionalAccess } from "@/modules/access/ui/access-context"
 
 export function useActiveSubcontractor(): string | null {
   if (typeof window === "undefined") return null
@@ -10,6 +12,8 @@ export function useActiveSubcontractor(): string | null {
 }
 
 export function useScopeLock() {
+  const appMode = useAppMode()
+  const access = useOptionalAccess()
   const role = useCurrentRole()
   const activeSub = useActiveSubcontractor()
   const pdsAreas = useAdminStore((s) => s.pdsAreas)
@@ -23,6 +27,15 @@ export function useScopeLock() {
         .map((a) => a.code),
     )
   }, [pdsAreas, activeSub, isSubcontractorRole])
+
+  if (appMode === "supabase") {
+    return {
+      active: access?.access.accessRole === "subcontractor",
+      subCode: null,
+      isInScope: (pdsAreaId: string | undefined) =>
+        access?.isPdsAreaInScope(pdsAreaId) === true,
+    }
+  }
 
   return {
     active: subPdsAreas !== null,
