@@ -1,12 +1,16 @@
-import { Suspense } from "react";
+"use client"
 
-import { AdminTabs } from "../admin-tabs";
-import { PipingMaterialListTab } from "@/components/admin/piping-material-list-tab";
+import { Suspense } from "react"
+import { AdminTabs } from "../admin-tabs"
+import { PipingMaterialListTab } from "@/components/admin/piping-material-list-tab"
 import {
   AdminPageHeader,
   ReferentialGroup,
-} from "@/components/admin/admin-module-ui";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+} from "@/components/admin/admin-module-ui"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useAppMode } from "@/contexts/app-mode-context"
+import { useSupabaseAuth } from "@/contexts/supabase-auth-context"
+import { ProjectReferentialScreen } from "@/modules/project-setup/ui/project-referential-screen"
 
 const groups = {
   general: [
@@ -54,9 +58,75 @@ const groups = {
     "Maximum Transit Time reference note",
   ],
   painting: ["RAL Code", "Paint Code Matrix"],
-};
+}
+
+function DemoProjectReferentialScreen() {
+  return (
+    <Tabs defaultValue="general" className="w-full">
+      <TabsList className="w-full overflow-x-auto whitespace-nowrap">
+        <TabsTrigger value="general">General</TabsTrigger>
+        <TabsTrigger value="spooling">Spooling</TabsTrigger>
+        <TabsTrigger value="fabrication">Fabrication & Erection</TabsTrigger>
+        <TabsTrigger value="testpack">Testpack</TabsTrigger>
+        <TabsTrigger value="tracking">Spool Tracking</TabsTrigger>
+        <TabsTrigger value="painting">Painting</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="general" className="mt-4 space-y-4">
+        <ReferentialGroup
+          title="General"
+          description="Common project master data used across modules."
+          items={groups.general}
+        />
+        <Suspense fallback={<div className="h-40 rounded-xl border border-slate-200 bg-white" />}>
+          <AdminTabs />
+        </Suspense>
+      </TabsContent>
+      <TabsContent value="spooling" className="mt-4 space-y-4">
+        <ReferentialGroup
+          title="Spooling"
+          description="Spooling and material master data."
+          items={groups.spooling}
+        />
+        <PipingMaterialListTab />
+      </TabsContent>
+      <TabsContent value="fabrication" className="mt-4">
+        <ReferentialGroup
+          title="Fabrication & Erection"
+          description="Welding, qualifications, joint, and location references."
+          items={groups.fabrication}
+        />
+      </TabsContent>
+      <TabsContent value="testpack" className="mt-4">
+        <ReferentialGroup
+          title="Testpack"
+          description="Teams, systems, pressure units, and line services."
+          items={groups.testpack}
+        />
+      </TabsContent>
+      <TabsContent value="tracking" className="mt-4">
+        <ReferentialGroup
+          title="Spool Tracking"
+          description="Device, PDA, and location references for tracking flows."
+          items={groups.tracking}
+        />
+      </TabsContent>
+      <TabsContent value="painting" className="mt-4">
+        <ReferentialGroup
+          title="Painting"
+          description="Painting color and paint code references."
+          items={groups.painting}
+        />
+      </TabsContent>
+    </Tabs>
+  )
+}
 
 export default function ProjectReferentialPage() {
+  const appMode = useAppMode()
+  const auth = useSupabaseAuth()
+  const activeProjectId = auth?.access?.projectId
+
   return (
     <div className="space-y-4">
       <AdminPageHeader
@@ -64,67 +134,14 @@ export default function ProjectReferentialPage() {
         description="Project-level master data for spooling, fabrication, erection, testpack, tracking, and painting."
       />
 
-      <Tabs defaultValue="general" className="w-full">
-        <TabsList className="w-full overflow-x-auto whitespace-nowrap">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="spooling">Spooling</TabsTrigger>
-          <TabsTrigger value="fabrication">Fabrication & Erection</TabsTrigger>
-          <TabsTrigger value="testpack">Testpack</TabsTrigger>
-          <TabsTrigger value="tracking">Spool Tracking</TabsTrigger>
-          <TabsTrigger value="painting">Painting</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="general" className="mt-4 space-y-4">
-          <ReferentialGroup
-            title="General"
-            description="Common project master data used across modules."
-            items={groups.general}
-          />
-          <Suspense
-            fallback={
-              <div className="h-40 rounded-xl border border-slate-200 bg-white" />
-            }
-          >
-            <AdminTabs />
-          </Suspense>
-        </TabsContent>
-        <TabsContent value="spooling" className="mt-4 space-y-4">
-          <ReferentialGroup
-            title="Spooling"
-            description="Spooling and material master data."
-            items={groups.spooling}
-          />
-          <PipingMaterialListTab />
-        </TabsContent>
-        <TabsContent value="fabrication" className="mt-4">
-          <ReferentialGroup
-            title="Fabrication & Erection"
-            description="Welding, qualifications, joint, and location references."
-            items={groups.fabrication}
-          />
-        </TabsContent>
-        <TabsContent value="testpack" className="mt-4">
-          <ReferentialGroup
-            title="Testpack"
-            description="Teams, systems, pressure units, and line services."
-            items={groups.testpack}
-          />
-        </TabsContent>
-        <TabsContent value="tracking" className="mt-4">
-          <ReferentialGroup
-            title="Spool Tracking"
-            description="Device, PDA, and location references for tracking flows."
-            items={groups.tracking}
-          />
-        </TabsContent>
-        <TabsContent value="painting" className="mt-4">
-          <ReferentialGroup
-            title="Painting"
-            description="Painting color and paint code references."
-            items={groups.painting}
-          />
-        </TabsContent>
-      </Tabs>
+      {appMode === "demo" || !activeProjectId ? (
+        <DemoProjectReferentialScreen />
+      ) : (
+        <ProjectReferentialScreen
+          projectId={activeProjectId}
+          canManage={auth.access?.capabilities.includes("project_referential.manage") ?? true}
+        />
+      )}
     </div>
-  );
+  )
 }

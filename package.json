@@ -8,7 +8,12 @@
     "start": "next start",
     "lint": "eslint .",
     "validate:fixtures": "tsx lib/fixtures/validate.run.ts",
-    "bootstrap:track01-browser-fixtures": "tsx scripts/bootstrap-track01-browser-fixtures.ts"
+    "bootstrap:track01-browser-fixtures": "tsx scripts/bootstrap-track01-browser-fixtures.ts",
+    "bootstrap:track02-browser-fixtures": "tsx scripts/bootstrap-track02-browser-fixtures.ts",
+    "typecheck": "tsc --noEmit --incremental false",
+    "test:unit": "node --import tsx --test \"modules/**/*.test.ts\" \"lib/**/*.test.ts\" \"config/**/*.test.ts\" \"contexts/**/*.test.ts\" \"components/**/*.test.ts\" \"scripts/**/*.test.ts\"",
+    "test:db": "supabase test db",
+    "verify": "npm run typecheck && npm run test:unit && npm run test:db && npm run validate:fixtures"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

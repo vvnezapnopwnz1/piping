@@ -21,6 +21,7 @@ node_modules
 .playwright-mcp
 docs/full_response.md
 .claude
+.skills
 
 docs/.obisidian
 docs/marker-output/Easy Piping User Manual.md

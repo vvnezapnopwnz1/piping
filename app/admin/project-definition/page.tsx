@@ -25,6 +25,10 @@ import {
   loadProjectDefinition,
   saveProjectDefinition,
 } from "@/lib/supabase/project-definition";
+import {
+  uploadProjectLogo,
+  getProjectLogoSignedUrl,
+} from "@/modules/project-setup/infrastructure/supabase-project-branding";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
 import { formatDate } from "@/lib/utils";
 import { useAdminStore } from "@/store/admin-store";
@@ -110,11 +114,23 @@ export default function ProjectDefinitionPage() {
       getSupabaseBrowserClient(),
       access.projectId,
     ).then(
-      (loaded) => {
+      async (loaded) => {
         if (!isCurrent) return;
 
-        setSupabaseDefinition(loaded.projectDefinition);
-        setForm(toFormValue(loaded.projectDefinition));
+        const client = getSupabaseBrowserClient();
+        const [ownerSigned, contractorSigned] = await Promise.all([
+          getProjectLogoSignedUrl(client, loaded.projectDefinition.ownerLogoUrl),
+          getProjectLogoSignedUrl(client, loaded.projectDefinition.contractorLogoUrl),
+        ]);
+
+        if (!isCurrent) return;
+        const displayDefinition = {
+          ...loaded.projectDefinition,
+          ownerLogoUrl: ownerSigned || loaded.projectDefinition.ownerLogoUrl,
+          contractorLogoUrl: contractorSigned || loaded.projectDefinition.contractorLogoUrl,
+        };
+        setSupabaseDefinition(displayDefinition);
+        setForm(toFormValue(displayDefinition));
         setCanEdit(loaded.canEdit);
         setIsLoading(false);
       },
@@ -226,6 +242,22 @@ export default function ProjectDefinitionPage() {
     }
   };
 
+  const handleUploadLogo = async (brandType: "owner" | "contractor", file: File) => {
+    if (!access?.projectId) return;
+    try {
+      const client = getSupabaseBrowserClient();
+      const res = await uploadProjectLogo(client, access.projectId, brandType, file);
+      toast.success(`${brandType === "owner" ? "Owner" : "Contractor"} logo uploaded successfully`);
+      if (brandType === "owner") {
+        updateForm("ownerLogoUrl", res.signedUrl);
+      } else {
+        updateForm("contractorLogoUrl", res.signedUrl);
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to upload logo");
+    }
+  };
+
   const displayedDefinition =
     appMode === "demo" ? projectDefinition : supabaseDefinition;
   const isReadOnly = appMode === "supabase" && !canEdit;
@@ -330,12 +362,14 @@ export default function ProjectDefinitionPage() {
                 activityError={activityError}
                 disabled={isReadOnly || isSaving}
                 form={form}
+                appMode={appMode}
                 onActivityBlur={() => validateActivity(form.activityCode)}
                 onActivityChange={(value) => {
                   updateForm("activityCode", value.toUpperCase());
                   if (activityError) validateActivity(value);
                 }}
                 onChange={updateForm}
+                onUploadLogo={handleUploadLogo}
               />
 
               {!isReadOnly ? (
@@ -374,19 +408,23 @@ function ProjectDefinitionFields({
   activityError,
   disabled,
   form,
+  appMode,
   onActivityBlur,
   onActivityChange,
   onChange,
+  onUploadLogo,
 }: {
   activityError: string;
   disabled: boolean;
   form: ProjectDefinitionForm;
+  appMode: string;
   onActivityBlur: () => void;
   onActivityChange: (value: string) => void;
   onChange: <Field extends keyof ProjectDefinitionForm>(
     field: Field,
     value: ProjectDefinitionForm[Field],
   ) => void;
+  onUploadLogo?: (brandType: "owner" | "contractor", file: File) => Promise<void>;
 }) {
   return (
     <div className="grid gap-4 md:grid-cols-2">
@@ -437,29 +475,73 @@ function ProjectDefinitionFields({
         />
       </div>
 
-      <div className="grid gap-1.5">
-        <Label htmlFor="pd-owner-logo">Owner Logo URL</Label>
-        <Input
-          id="pd-owner-logo"
-          type="url"
-          value={form.ownerLogoUrl}
-          onChange={(event) => onChange("ownerLogoUrl", event.target.value)}
-          placeholder="https://…"
-          disabled={disabled}
-        />
-      </div>
+      {appMode === "supabase" ? (
+        <>
+          <div className="grid gap-1.5">
+            <Label htmlFor="pd-owner-logo-file">Owner Logo (Image Upload)</Label>
+            <Input
+              id="pd-owner-logo-file"
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/svg+xml"
+              disabled={disabled}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file && onUploadLogo) {
+                  onUploadLogo("owner", file);
+                }
+              }}
+            />
+            {form.ownerLogoUrl && (
+              <p className="text-xs text-muted-foreground truncate">Current: {form.ownerLogoUrl}</p>
+            )}
+          </div>
 
-      <div className="grid gap-1.5">
-        <Label htmlFor="pd-contractor-logo">Contractor Logo URL</Label>
-        <Input
-          id="pd-contractor-logo"
-          type="url"
-          value={form.contractorLogoUrl}
-          onChange={(event) => onChange("contractorLogoUrl", event.target.value)}
-          placeholder="https://…"
-          disabled={disabled}
-        />
-      </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="pd-contractor-logo-file">Contractor Logo (Image Upload)</Label>
+            <Input
+              id="pd-contractor-logo-file"
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/svg+xml"
+              disabled={disabled}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file && onUploadLogo) {
+                  onUploadLogo("contractor", file);
+                }
+              }}
+            />
+            {form.contractorLogoUrl && (
+              <p className="text-xs text-muted-foreground truncate">Current: {form.contractorLogoUrl}</p>
+            )}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="grid gap-1.5">
+            <Label htmlFor="pd-owner-logo">Owner Logo URL</Label>
+            <Input
+              id="pd-owner-logo"
+              type="url"
+              value={form.ownerLogoUrl}
+              onChange={(event) => onChange("ownerLogoUrl", event.target.value)}
+              placeholder="https://…"
+              disabled={disabled}
+            />
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label htmlFor="pd-contractor-logo">Contractor Logo URL</Label>
+            <Input
+              id="pd-contractor-logo"
+              type="url"
+              value={form.contractorLogoUrl}
+              onChange={(event) => onChange("contractorLogoUrl", event.target.value)}
+              placeholder="https://…"
+              disabled={disabled}
+            />
+          </div>
+        </>
+      )}
 
       <div className="grid gap-1.5">
         <Label htmlFor="pd-transit">Maximum Transit Time (days)</Label>

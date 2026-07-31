@@ -1,6 +1,16 @@
 # PipeQC Supabase — context for the next planning session
 
-Updated: 2026-07-29
+Updated: 2026-08-01 (Track 02 Complete — Ready for Track 03)
+
+> **Track 02 Completion (2026-08-01):** Track 02 (Project Referentials) is 100% complete.
+> Added database migrations `20260801090000_complete_project_referentials.sql`,
+> `20260801091000_referential_invariants.sql`, and `20260801092000_project_branding_storage.sql`.
+> The pgTAP test suite now contains 153 passing assertions across 7 test files.
+> All 15 domain and repository unit test suites pass, along with strict TypeScript (`npx tsc --noEmit`).
+>
+> **Next Roadmap Boundary:** Track 03 — Import Platform and Engineering Definition.
+> Engineering imports (ISO, spool, weld, flange) and file/row validation lifecycle must be established
+> before starting operational fabrication data persistence.
 
 > **Track 01 supersession (2026-07-30):** the historical membership-role
 > passages below predate the access-capability model. Current Supabase auth

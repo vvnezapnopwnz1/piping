@@ -2,7 +2,7 @@
 
 import { AdminPageHeader } from "@/components/admin/admin-module-ui"
 import { SystemReferentialCard } from "@/components/admin/system-referential-card"
-import { SupabaseSystemReferentialView } from "@/components/admin/supabase-system-referential-view"
+import { SystemReferentialScreen } from "@/modules/project-setup/ui/system-referential-screen"
 import { useAppMode } from "@/contexts/app-mode-context"
 
 function DemoSystemReferentialCards() {
@@ -53,7 +53,7 @@ export default function SystemReferentialPage() {
       {appMode === "demo" ? (
         <DemoSystemReferentialCards />
       ) : (
-        <SupabaseSystemReferentialView />
+        <SystemReferentialScreen />
       )}
     </div>
   )

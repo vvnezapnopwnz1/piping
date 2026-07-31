@@ -68,28 +68,33 @@ the project and role shown by the shell come from `project_memberships`, and
 the role is read-only in the client. A user without a membership sees an
 explicit access-pending state, never the mock-data shell.
 
-Access-capability migrations are applied locally: `20260731090000_access_capability_catalog.sql`, `20260731091000_access_capability_security.sql` and `20260731092000_access_management_rpc.sql`. The legacy compatibility role column remains, while auth context uses `list_current_user_projects()` effective-access summaries. Access Rights has a real-mode RPC UI boundary. The full database suite currently executes 103 pgTAP assertions, including capability, audited membership-command, fail-closed scope and service-role fixture-bootstrap checks. Demo operational screens still retain Track 3 compatibility behavior and are not evidence of Supabase authorization.
+Access-capability migrations are applied locally: `20260731090000_access_capability_catalog.sql`, `20260731091000_access_capability_security.sql` and `20260731092000_access_management_rpc.sql`. Track 02 adds `20260801090000_complete_project_referentials.sql`, `20260801091000_referential_invariants.sql`, and `20260801092000_project_branding_storage.sql`. The full database test suite executes 153 pgTAP assertions across 7 test files, verifying table schemas, FKs, RLS capability isolation, audit triggers, custom field constraints, cross-project relationship protection, atomic progress weight replacements, welder/WPS RPCs, setup readiness calculation, and private logo storage policies.
 
-The implementation includes session/membership access, configuration schema,
-Supabase-backed Project Definition CRUD, and Supabase-backed global System
-Referential management:
+The implementation includes Track 01 foundation plus the complete Track 02 Project Referential vertical slice:
 
-1. **Project Definition:** Platform administrators can manage project identity,
-   parties, logos, and transit times backed by PostgreSQL RLS checks and RPC capability assertions.
+1. **Project Definition & Branding Storage:** Platform administrators can manage project identity, parties, logos, and transit times. Project logos are stored in a private Storage bucket (`project-branding`) protected by `project.view` and `project.definition.manage` RLS policies.
 2. **System Referential:** `public.system_reference_entries` serves as the global,
    cross-project store. Material Type is fully managed by platform administrators
    (create, update code/description, activate/deactivate, delete with RESTRICT protection),
    while Film Quantity per Diameter, UT Calculation, and Torquing Requirement remain read-only
    view lists for all authenticated users until their structured domain contracts are introduced.
 
-3. **Active-Project Selection / Multi-Membership:** Real mode loads all active memberships allowed by RLS for the signed-in user, restores a validated per-user project preference, and switches active project context safely in the UI while continuing to enforce access through RLS on every project-scoped API call.
+3. **Project Referentials (Track 02 Complete):** All manual Project Referential groups have real Supabase-backed domain models, repositories, and UI screens:
+   - **Geography & PDS Areas:** Subcontractors, Units, Area Classifications, PDS Areas.
+   - **Welding & QC:** Service Classes, Weld Types, Welder Qualifications, NDE Matrix Rules (with coverage completeness projection), Thickness / Flange Rules, Piping Material List (PML), Rework Codes, Joint Categories.
+   - **Execution References:** Teams, Systems, Subsystems, Line Services, Tracking Locations, Pressure Units, Unit Time References.
+   - **Extended References:** Tracking Devices, Spooling config, Painting/RAL Codes, Paint Matrix Rules, Assembly settings.
+   - **Progress Weights:** Atomic weight replacement RPC ensuring 100% total per phase.
+   - **Setup Readiness Panel:** Real-time Gate B (Engineering Import Prerequisites) and Gate C (Full Referential Setup) readiness monitoring with requirement tab deep-linking.
 
-4. **WPS CRUD (Project-scoped referential):** Fully managed, including forward-only migration (no hard deletes, `active`/`inactive`/`archived` statuses) and column-level grants. Follows a **Pure Modules + Supabase Adapters** architecture:
+4. **Active-Project Selection / Multi-Membership:** Real mode loads all active memberships allowed by RLS for the signed-in user, restores a validated per-user project preference, and switches active project context safely in the UI while continuing to enforce access through RLS on every project-scoped API call.
+
+5. **WPS CRUD (Project-scoped referential):** Fully managed, including forward-only migration (no hard deletes, `active`/`inactive`/`archived` statuses) and column-level grants. Follows a **Pure Modules + Supabase Adapters** architecture:
    - **Pure Module** (`lib/welding-procedures.ts`): Domain data validation and mapping, independent of any backend.
    - **Supabase Adapter** (`lib/supabase/welding-procedures.ts`): Implements data access, mapping pure types to Supabase types.
    - **UI Adapter** (`WpsModeAdapter` in `admin-tabs.tsx`): Conditionally renders either the real `SupabaseWpsTab` or the legacy `WpsTab` demo view based on `useAppMode()`, keeping demo mode entirely intact.
 
-**The next unstarted vertical slice** will continue with other project-scoped referentials or operational data.
+**The next unstarted track** is Track 03 (Import Platform & Engineering Definition). ISO/spool/weld identity and import file/row/issue lifecycle will be built before any operational fabrication persistence begins.
 
 See [the initial bootstrap runbook](SUPABASE_BOOTSTRAP.md) for the
 deployment-only creation of the first administrator, project and membership.
