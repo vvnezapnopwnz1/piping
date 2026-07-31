@@ -6,6 +6,7 @@ export const ROUTE_CAPABILITIES = [
   ["/admin/project-referential", "project_referential.manage"],
   ["/admin/access-rights", "access_rights.manage"],
   ["/admin/import-settings", "project_referential.manage"],
+  ["/admin/imports", "imports.view"],
   ["/admin", "project_referential.manage"],
   ["/spooling", "spooling.view"],
   ["/fabrication", "fabrication.view"],

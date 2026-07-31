@@ -13,5 +13,7 @@ assert.equal(
   requiredCapabilityForPath("/admin/access-rights"),
   "access_rights.manage",
 )
+assert.equal(requiredCapabilityForPath("/admin/imports"), "imports.view")
+assert.equal(requiredCapabilityForPath("/admin/project-referential"), "project_referential.manage")
 assert.equal(requiredCapabilityForPath("/unknown"), null)
 assert.equal(requiredCapabilityForPath("/"), null)

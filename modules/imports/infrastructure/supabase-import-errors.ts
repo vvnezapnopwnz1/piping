@@ -1,0 +1,28 @@
+const GENERIC = "The import could not be completed. Please try again."
+
+export function mapSupabaseImportError(
+  error: { code?: string; message?: string } | null | undefined
+): string {
+  if (!error) return GENERIC
+
+  switch (error.code) {
+    case "PQC10":
+      return "This import has already been applied. Start a new import to load the file again."
+    case "PQC11":
+      return "This import is not in a state where that action is allowed."
+    case "PQC12":
+      return "The import job could not be found."
+    case "PQC13":
+      return "Some rows still have blocking errors. Fix them in the source file and upload it again."
+    case "PQC14":
+      return "This import overwrites existing records. Confirm the overwrite to continue."
+    case "42501":
+      return "You do not have permission to manage imports for this project."
+    case "23514":
+      return "The file contains a value the project rules do not allow."
+    case "23503":
+      return "A referenced value in the file does not exist in this project."
+    default:
+      return GENERIC
+  }
+}

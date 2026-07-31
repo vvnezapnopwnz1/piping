@@ -47,6 +47,8 @@ export const CAPABILITIES = [
   "reports.view",
   "reports.export",
   "settings.view",
+  "imports.view",
+  "imports.manage",
 ] as const
 
 export type Capability = (typeof CAPABILITIES)[number]

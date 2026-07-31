@@ -34,6 +34,8 @@ const CAPABILITY_SECTION_LABELS = {
   "reports.view": "Reports",
   "reports.export": "Reports",
   "settings.view": "Settings",
+  "imports.view": "Imports",
+  "imports.manage": "Imports",
 } as const
 
 export function RouteCapabilityGuard({ children }: { children: React.ReactNode }) {

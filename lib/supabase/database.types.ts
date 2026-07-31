@@ -106,39 +106,157 @@ export type Database = {
         }
         Relationships: []
       }
-      import_jobs: {
+      import_job_issues: {
         Row: {
-          completed_at: string | null
+          code: string
+          column_name: string | null
           created_at: string
           id: string
-          kind: string
+          job_id: string
+          message: string
+          row_number: number | null
+          severity: Database["public"]["Enums"]["import_issue_severity"]
+        }
+        Insert: {
+          code: string
+          column_name?: string | null
+          created_at?: string
+          id?: string
+          job_id: string
+          message: string
+          row_number?: number | null
+          severity: Database["public"]["Enums"]["import_issue_severity"]
+        }
+        Update: {
+          code?: string
+          column_name?: string | null
+          created_at?: string
+          id?: string
+          job_id?: string
+          message?: string
+          row_number?: number | null
+          severity?: Database["public"]["Enums"]["import_issue_severity"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_job_issues_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "import_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      import_job_rows: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          job_id: string
+          normalized_values: Json
+          raw_values: Json
+          row_number: number
+          target_entity_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          job_id: string
+          normalized_values?: Json
+          raw_values: Json
+          row_number: number
+          target_entity_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          job_id?: string
+          normalized_values?: Json
+          raw_values?: Json
+          row_number?: number
+          target_entity_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_job_rows_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "import_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      import_jobs: {
+        Row: {
+          affected_entity_ids: string[]
+          applied_at: string | null
+          applied_row_count: number
+          canceled_at: string | null
+          completed_at: string | null
+          conflicts_confirmed: boolean
+          created_at: string
+          failure_reason: string | null
+          id: string
+          import_type: string
+          kind: string | null
           project_id: string
           requested_by: string
+          source_checksum: string | null
+          source_file_name: string | null
+          source_media_type: string | null
+          source_size_bytes: number | null
           status: string
           storage_path: string | null
           summary: Json
+          validated_at: string | null
         }
         Insert: {
+          affected_entity_ids?: string[]
+          applied_at?: string | null
+          applied_row_count?: number
+          canceled_at?: string | null
           completed_at?: string | null
+          conflicts_confirmed?: boolean
           created_at?: string
+          failure_reason?: string | null
           id?: string
-          kind: string
+          import_type: string
+          kind?: string | null
           project_id: string
           requested_by: string
+          source_checksum?: string | null
+          source_file_name?: string | null
+          source_media_type?: string | null
+          source_size_bytes?: number | null
           status: string
           storage_path?: string | null
           summary?: Json
+          validated_at?: string | null
         }
         Update: {
+          affected_entity_ids?: string[]
+          applied_at?: string | null
+          applied_row_count?: number
+          canceled_at?: string | null
           completed_at?: string | null
+          conflicts_confirmed?: boolean
           created_at?: string
+          failure_reason?: string | null
           id?: string
-          kind?: string
+          import_type?: string
+          kind?: string | null
           project_id?: string
           requested_by?: string
+          source_checksum?: string | null
+          source_file_name?: string | null
+          source_media_type?: string | null
+          source_size_bytes?: number | null
           status?: string
           storage_path?: string | null
           summary?: Json
+          validated_at?: string | null
         }
         Relationships: [
           {
@@ -415,6 +533,42 @@ export type Database = {
           },
         ]
       }
+      project_assembly_settings: {
+        Row: {
+          default_subcontractor_id: string | null
+          enabled: boolean
+          project_id: string
+          updated_at: string
+        }
+        Insert: {
+          default_subcontractor_id?: string | null
+          enabled?: boolean
+          project_id: string
+          updated_at?: string
+        }
+        Update: {
+          default_subcontractor_id?: string | null
+          enabled?: boolean
+          project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_assembly_settings_default_subcontractor_id_fkey"
+            columns: ["default_subcontractor_id"]
+            isOneToOne: false
+            referencedRelation: "project_subcontractors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_assembly_settings_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_custom_field_definitions: {
         Row: {
           created_at: string
@@ -455,6 +609,96 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "project_custom_field_definitions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_device_users: {
+        Row: {
+          created_at: string
+          device_id: string | null
+          id: string
+          membership_id: string
+          project_id: string
+          status: Database["public"]["Enums"]["project_reference_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          device_id?: string | null
+          id?: string
+          membership_id: string
+          project_id: string
+          status?: Database["public"]["Enums"]["project_reference_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string | null
+          id?: string
+          membership_id?: string
+          project_id?: string
+          status?: Database["public"]["Enums"]["project_reference_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_device_users_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "project_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_device_users_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "project_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_device_users_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_devices: {
+        Row: {
+          code: string
+          created_at: string
+          description: string
+          id: string
+          project_id: string
+          status: Database["public"]["Enums"]["project_reference_status"]
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description: string
+          id?: string
+          project_id: string
+          status?: Database["public"]["Enums"]["project_reference_status"]
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string
+          id?: string
+          project_id?: string
+          status?: Database["public"]["Enums"]["project_reference_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_devices_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
@@ -724,9 +968,77 @@ export type Database = {
           },
         ]
       }
+      project_paint_matrix_rules: {
+        Row: {
+          blasting_required: boolean
+          created_at: string
+          final_coat_count: number
+          id: string
+          intermediate_coat_count: number
+          line_service_id: string
+          primer_required: boolean
+          project_id: string
+          ral_code_id: string
+          required_final_dft_microns: number
+          status: Database["public"]["Enums"]["project_reference_status"]
+          updated_at: string
+        }
+        Insert: {
+          blasting_required: boolean
+          created_at?: string
+          final_coat_count: number
+          id?: string
+          intermediate_coat_count: number
+          line_service_id: string
+          primer_required: boolean
+          project_id: string
+          ral_code_id: string
+          required_final_dft_microns: number
+          status?: Database["public"]["Enums"]["project_reference_status"]
+          updated_at?: string
+        }
+        Update: {
+          blasting_required?: boolean
+          created_at?: string
+          final_coat_count?: number
+          id?: string
+          intermediate_coat_count?: number
+          line_service_id?: string
+          primer_required?: boolean
+          project_id?: string
+          ral_code_id?: string
+          required_final_dft_microns?: number
+          status?: Database["public"]["Enums"]["project_reference_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_paint_matrix_rules_line_service_id_fkey"
+            columns: ["line_service_id"]
+            isOneToOne: false
+            referencedRelation: "project_line_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_paint_matrix_rules_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_paint_matrix_rules_ral_code_id_fkey"
+            columns: ["ral_code_id"]
+            isOneToOne: false
+            referencedRelation: "project_ral_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_pds_areas: {
         Row: {
           area_classification_id: string | null
+          assembly_subcontractor_id: string | null
           code: string
           created_at: string
           custom_values: Json
@@ -743,6 +1055,7 @@ export type Database = {
         }
         Insert: {
           area_classification_id?: string | null
+          assembly_subcontractor_id?: string | null
           code: string
           created_at?: string
           custom_values?: Json
@@ -759,6 +1072,7 @@ export type Database = {
         }
         Update: {
           area_classification_id?: string | null
+          assembly_subcontractor_id?: string | null
           code?: string
           created_at?: string
           custom_values?: Json
@@ -779,6 +1093,13 @@ export type Database = {
             columns: ["area_classification_id"]
             isOneToOne: false
             referencedRelation: "project_area_classifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_pds_areas_assembly_subcontractor_id_fkey"
+            columns: ["assembly_subcontractor_id"]
+            isOneToOne: false
+            referencedRelation: "project_subcontractors"
             referencedColumns: ["id"]
           },
           {
@@ -871,6 +1192,54 @@ export type Database = {
           },
         ]
       }
+      project_ral_codes: {
+        Row: {
+          color_code: string
+          created_at: string
+          id: string
+          line_service_id: string
+          project_id: string
+          ral_code: string
+          status: Database["public"]["Enums"]["project_reference_status"]
+          updated_at: string
+        }
+        Insert: {
+          color_code: string
+          created_at?: string
+          id?: string
+          line_service_id: string
+          project_id: string
+          ral_code: string
+          status?: Database["public"]["Enums"]["project_reference_status"]
+          updated_at?: string
+        }
+        Update: {
+          color_code?: string
+          created_at?: string
+          id?: string
+          line_service_id?: string
+          project_id?: string
+          ral_code?: string
+          status?: Database["public"]["Enums"]["project_reference_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_ral_codes_line_service_id_fkey"
+            columns: ["line_service_id"]
+            isOneToOne: false
+            referencedRelation: "project_line_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_ral_codes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_rework_codes: {
         Row: {
           code: string
@@ -950,6 +1319,133 @@ export type Database = {
           },
           {
             foreignKeyName: "project_service_classes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_spooling_checklist_items: {
+        Row: {
+          code: string
+          created_at: string
+          description: string
+          id: string
+          is_required: boolean
+          project_id: string
+          sort_order: number
+          status: Database["public"]["Enums"]["project_reference_status"]
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description: string
+          id?: string
+          is_required?: boolean
+          project_id: string
+          sort_order: number
+          status?: Database["public"]["Enums"]["project_reference_status"]
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string
+          id?: string
+          is_required?: boolean
+          project_id?: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["project_reference_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_spooling_checklist_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_spooling_material_classes: {
+        Row: {
+          created_at: string
+          external_class_code: string
+          id: string
+          material_type_id: string
+          project_id: string
+          status: Database["public"]["Enums"]["project_reference_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          external_class_code: string
+          id?: string
+          material_type_id: string
+          project_id: string
+          status?: Database["public"]["Enums"]["project_reference_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          external_class_code?: string
+          id?: string
+          material_type_id?: string
+          project_id?: string
+          status?: Database["public"]["Enums"]["project_reference_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_spooling_material_classes_material_type_id_fkey"
+            columns: ["material_type_id"]
+            isOneToOne: false
+            referencedRelation: "project_spooling_material_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_spooling_material_classes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_spooling_material_types: {
+        Row: {
+          code: string
+          created_at: string
+          description: string
+          id: string
+          project_id: string
+          status: Database["public"]["Enums"]["project_reference_status"]
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description: string
+          id?: string
+          project_id: string
+          status?: Database["public"]["Enums"]["project_reference_status"]
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string
+          id?: string
+          project_id?: string
+          status?: Database["public"]["Enums"]["project_reference_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_spooling_material_types_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
@@ -1480,6 +1976,39 @@ export type Database = {
         }
         Relationships: []
       }
+      system_film_quantity_rules: {
+        Row: {
+          created_at: string
+          diameter_from_inch: number
+          diameter_to_inch: number
+          film_count: number
+          id: string
+          thickness_from_mm: number
+          thickness_to_mm: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          diameter_from_inch: number
+          diameter_to_inch: number
+          film_count: number
+          id?: string
+          thickness_from_mm: number
+          thickness_to_mm: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          diameter_from_inch?: number
+          diameter_to_inch?: number
+          film_count?: number
+          id?: string
+          thickness_from_mm?: number
+          thickness_to_mm?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       system_reference_entries: {
         Row: {
           attributes: Json
@@ -1509,6 +2038,36 @@ export type Database = {
           id?: string
           kind?: Database["public"]["Enums"]["system_reference_kind"]
           status?: Database["public"]["Enums"]["project_reference_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      system_ut_calculation_rules: {
+        Row: {
+          coefficient_diameter: number
+          coefficient_rating: number
+          created_at: string
+          diameter_from_inch: number
+          diameter_to_inch: number
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          coefficient_diameter: number
+          coefficient_rating: number
+          created_at?: string
+          diameter_from_inch: number
+          diameter_to_inch: number
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          coefficient_diameter?: number
+          coefficient_rating?: number
+          created_at?: string
+          diameter_from_inch?: number
+          diameter_to_inch?: number
+          id?: string
           updated_at?: string
         }
         Relationships: []
@@ -1628,6 +2187,38 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      apply_import_job: {
+        Args: { confirm_conflicts?: boolean; target_job_id: string }
+        Returns: {
+          affected_entity_ids: string[]
+          applied_at: string | null
+          applied_row_count: number
+          canceled_at: string | null
+          completed_at: string | null
+          conflicts_confirmed: boolean
+          created_at: string
+          failure_reason: string | null
+          id: string
+          import_type: string
+          kind: string | null
+          project_id: string
+          requested_by: string
+          source_checksum: string | null
+          source_file_name: string | null
+          source_media_type: string | null
+          source_size_bytes: number | null
+          status: string
+          storage_path: string | null
+          summary: Json
+          validated_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "import_jobs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       assert_access_request_is_valid: {
         Args: {
           requested_access_role: string
@@ -1642,6 +2233,38 @@ export type Database = {
         Args: { target_project_id: string }
         Returns: boolean
       }
+      cancel_import_job: {
+        Args: { target_job_id: string }
+        Returns: {
+          affected_entity_ids: string[]
+          applied_at: string | null
+          applied_row_count: number
+          canceled_at: string | null
+          completed_at: string | null
+          conflicts_confirmed: boolean
+          created_at: string
+          failure_reason: string | null
+          id: string
+          import_type: string
+          kind: string | null
+          project_id: string
+          requested_by: string
+          source_checksum: string | null
+          source_file_name: string | null
+          source_media_type: string | null
+          source_size_bytes: number | null
+          status: string
+          storage_path: string | null
+          summary: Json
+          validated_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "import_jobs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       compatibility_membership_role: {
         Args: {
           requested_access_role: string
@@ -1649,8 +2272,51 @@ export type Database = {
         }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      create_import_job: {
+        Args: {
+          checksum: string
+          file_name: string
+          media_type: string
+          requested_import_type: string
+          size_bytes: number
+          target_project_id: string
+        }
+        Returns: {
+          affected_entity_ids: string[]
+          applied_at: string | null
+          applied_row_count: number
+          canceled_at: string | null
+          completed_at: string | null
+          conflicts_confirmed: boolean
+          created_at: string
+          failure_reason: string | null
+          id: string
+          import_type: string
+          kind: string | null
+          project_id: string
+          requested_by: string
+          source_checksum: string | null
+          source_file_name: string | null
+          source_media_type: string | null
+          source_size_bytes: number | null
+          status: string
+          storage_path: string | null
+          summary: Json
+          validated_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "import_jobs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       current_user_has_capability: {
         Args: { requested_capability: string; target_project_id: string }
+        Returns: boolean
+      }
+      current_user_has_global_capability: {
+        Args: { requested_capability: string }
         Returns: boolean
       }
       current_user_in_pds_scope: {
@@ -1673,6 +2339,14 @@ export type Database = {
           pds_area_ids: string[]
           subcontractor_ids: string[]
           user_id: string
+        }[]
+      }
+      get_project_setup_readiness: {
+        Args: { target_project_id: string }
+        Returns: {
+          admin_complete: boolean
+          missing_codes: string[]
+          ready_for_import: boolean
         }[]
       }
       has_project_access: {
@@ -1704,9 +2378,106 @@ export type Database = {
           title: string
         }[]
       }
+      mark_import_job_uploaded: {
+        Args: { object_path: string; target_job_id: string }
+        Returns: {
+          affected_entity_ids: string[]
+          applied_at: string | null
+          applied_row_count: number
+          canceled_at: string | null
+          completed_at: string | null
+          conflicts_confirmed: boolean
+          created_at: string
+          failure_reason: string | null
+          id: string
+          import_type: string
+          kind: string | null
+          project_id: string
+          requested_by: string
+          source_checksum: string | null
+          source_file_name: string | null
+          source_media_type: string | null
+          source_size_bytes: number | null
+          status: string
+          storage_path: string | null
+          summary: Json
+          validated_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "import_jobs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       membership_access_state: {
         Args: { target_membership_id: string }
         Returns: Json
+      }
+      record_import_validation: {
+        Args: { parsed_issues: Json; parsed_rows: Json; target_job_id: string }
+        Returns: {
+          affected_entity_ids: string[]
+          applied_at: string | null
+          applied_row_count: number
+          canceled_at: string | null
+          completed_at: string | null
+          conflicts_confirmed: boolean
+          created_at: string
+          failure_reason: string | null
+          id: string
+          import_type: string
+          kind: string | null
+          project_id: string
+          requested_by: string
+          source_checksum: string | null
+          source_file_name: string | null
+          source_media_type: string | null
+          source_size_bytes: number | null
+          status: string
+          storage_path: string | null
+          summary: Json
+          validated_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "import_jobs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      revalidate_import_job: {
+        Args: { target_job_id: string }
+        Returns: {
+          blocker_count: number
+          conflict_count: number
+        }[]
+      }
+      save_welder_qualification: {
+        Args: {
+          target_project_id: string
+          target_welder_id?: string
+          target_wps_ids?: string[]
+          welder_payload?: Json
+        }
+        Returns: {
+          certificate_number: string | null
+          created_at: string
+          expires_on: string
+          full_name: string
+          id: string
+          project_id: string
+          status: Database["public"]["Enums"]["project_reference_status"]
+          subcontractor_id: string
+          updated_at: string
+          welder_code: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "welder_qualifications"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       set_project_member_active: {
         Args: { requested_active: boolean; target_membership_id: string }
@@ -1726,6 +2497,33 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      set_project_progress_weights: {
+        Args: {
+          target_phase: string
+          target_project_id: string
+          weight_items: Json
+        }
+        Returns: {
+          activity: string
+          created_at: string
+          id: string
+          phase: string
+          project_id: string
+          status: Database["public"]["Enums"]["project_reference_status"]
+          updated_at: string
+          weight: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "project_progress_weights"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      storage_path_project_id: {
+        Args: { object_name: string }
+        Returns: string
       }
       update_project_member_access: {
         Args: {
@@ -1762,6 +2560,7 @@ export type Database = {
         | "spooling_team"
         | "subcontractor"
       area_environment: "above_ground" | "underground"
+      import_issue_severity: "blocker" | "conflict" | "warning"
       ndt_method: "rt" | "ut" | "mt" | "pt" | "pmi" | "ht" | "vt"
       pressure_unit: "bar" | "psi"
       project_reference_status: "active" | "inactive" | "archived"
@@ -1916,6 +2715,7 @@ export const Constants = {
         "subcontractor",
       ],
       area_environment: ["above_ground", "underground"],
+      import_issue_severity: ["blocker", "conflict", "warning"],
       ndt_method: ["rt", "ut", "mt", "pt", "pmi", "ht", "vt"],
       pressure_unit: ["bar", "psi"],
       project_reference_status: ["active", "inactive", "archived"],

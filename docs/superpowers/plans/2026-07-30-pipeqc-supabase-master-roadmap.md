@@ -1068,20 +1068,22 @@ npm run test:e2e -- --project=chromium --grep @smoke
 
 ### Tasks
 
-- [ ] Эволюционировать `import_jobs` к утвержденному lifecycle.
-- [ ] Создать private `project-imports` bucket и project-scoped Storage policies.
-- [ ] Сохранять checksum, media type, size, original filename и Storage path.
-- [ ] Ввести parser registry по `import_type`.
-- [ ] Реализовать template download.
-- [ ] Реализовать file upload → validation job → preview.
-- [ ] Представлять red blocker, yellow overwrite confirmation и warning разными типами issue.
-- [ ] Запретить apply при unresolved blocker/conflict.
-- [ ] Выполнять apply одной SQL transaction.
-- [ ] Хранить примененные row counts и affected entity IDs.
-- [ ] Сделать applied/canceled/failed history read-only.
-- [ ] Перевести PML/WPS/Welder imports с `admin-store` на platform.
-- [ ] Добавить retry, который не создает duplicate apply.
-- [ ] Не выводить raw parser/SQL errors пользователю.
+- [x] Эволюционировать `import_jobs` к утвержденному lifecycle.
+- [x] Создать private `project-imports` bucket и project-scoped Storage policies.
+- [x] Сохранять checksum, media type, size, original filename и Storage path.
+- [x] Ввести parser registry по `import_type`.
+- [x] Реализовать template download.
+- [x] Реализовать file upload → validation job → preview.
+- [x] Представлять red blocker, yellow overwrite confirmation и warning разными типами issue.
+- [x] Запретить apply при unresolved blocker/conflict.
+- [x] Выполнять apply одной SQL transaction.
+- [x] Хранить примененные row counts и affected entity IDs.
+- [x] Сделать applied/canceled/failed history read-only.
+- [x] Перевести PML/WPS/Welder imports с `admin-store` на platform.
+- [x] Добавить retry, который не создает duplicate apply.
+- [x] Не выводить raw parser/SQL errors пользователю.
+
+*Note: The `supabase/functions/process-import/` edge function was deliberately not built; synchronous client-side parsing + atomic database RPC `apply_import_job` was implemented as specified in plan §3.6 to avoid multi-region network latency.*
 
 ### Exit criteria
 

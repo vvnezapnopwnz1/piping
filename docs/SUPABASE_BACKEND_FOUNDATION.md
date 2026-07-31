@@ -68,9 +68,9 @@ the project and role shown by the shell come from `project_memberships`, and
 the role is read-only in the client. A user without a membership sees an
 explicit access-pending state, never the mock-data shell.
 
-Access-capability migrations are applied locally: `20260731090000_access_capability_catalog.sql`, `20260731091000_access_capability_security.sql` and `20260731092000_access_management_rpc.sql`. Track 02 adds `20260801090000_complete_project_referentials.sql`, `20260801091000_referential_invariants.sql`, and `20260801092000_project_branding_storage.sql`. The full database test suite executes 153 pgTAP assertions across 7 test files, verifying table schemas, FKs, RLS capability isolation, audit triggers, custom field constraints, cross-project relationship protection, atomic progress weight replacements, welder/WPS RPCs, setup readiness calculation, and private logo storage policies.
+Access-capability migrations are applied locally: `20260731090000_access_capability_catalog.sql`, `20260731091000_access_capability_security.sql` and `20260731092000_access_management_rpc.sql`. Track 02 adds `20260801090000_complete_project_referentials.sql`, `20260801091000_referential_invariants.sql`, `20260801092000_project_branding_storage.sql`, `20260801093000_fix_system_reference_grants.sql`, `20260801094000_track02_blockers_fix.sql`, and `20260801095000_security_and_policy_cleanup.sql`. Track 03 adds `20260802090000_import_platform.sql`, `20260802091000_import_storage_policies.sql`, and `20260802092000_apply_import_commands.sql`. The full database test suite executes 201 pgTAP assertions across 12 test files, verifying table schemas, FKs, RLS capability isolation, audit triggers, custom field constraints, cross-project relationship protection, atomic progress weight replacements, welder/WPS RPCs, setup readiness calculation, private logo storage policies, import job lifecycles, server-side apply atomicity (`PQC10`..`PQC14`), and private import storage RLS policies.
 
-The implementation includes Track 01 foundation plus the complete Track 02 Project Referential vertical slice:
+The implementation includes Track 01 foundation, the complete Track 02 Project Referential vertical slice, and the Track 03 Import Platform:
 
 1. **Project Definition & Branding Storage:** Platform administrators can manage project identity, parties, logos, and transit times. Project logos are stored in a private Storage bucket (`project-branding`) protected by `project.view` and `project.definition.manage` RLS policies.
 2. **System Referential:** `public.system_reference_entries` serves as the global,
@@ -87,14 +87,21 @@ The implementation includes Track 01 foundation plus the complete Track 02 Proje
    - **Progress Weights:** Atomic weight replacement RPC ensuring 100% total per phase.
    - **Setup Readiness Panel:** Real-time Gate B (Engineering Import Prerequisites) and Gate C (Full Referential Setup) readiness monitoring with requirement tab deep-linking.
 
-4. **Active-Project Selection / Multi-Membership:** Real mode loads all active memberships allowed by RLS for the signed-in user, restores a validated per-user project preference, and switches active project context safely in the UI while continuing to enforce access through RLS on every project-scoped API call.
+4. **Import Platform & Engineering Definition (Track 03 Complete):**
+   - **Database & Storage Layer:** Introduces `import_jobs`, `import_job_rows`, and `import_job_issues` tables with `import_issue_severity` enum (`blocker`, `conflict`, `warning`). Private `project-imports` storage bucket with safe UUID path parsing (`storage_path_project_id`) and capability-gated RLS (`imports.view`, `imports.manage`).
+   - **Server-Side Security & Apply Atomicity:** Atomic RPC `apply_import_job` with `FOR UPDATE` job locking, single-use enforcement (`PQC10`), mandatory server-side re-validation of all referential requirements (`PQC13`), and conflict confirmation gates (`PQC14`).
+   - **Domain & Parser Engine:** Pure definition-driven sheet parser (`registry.ts`), per-type domain rules (`rules.ts`), and XLSX boundary module (`xlsx-workbook.ts`) handling all 5 import types (`piping_material_list`, `welding_procedure`, `welder_qualification`, `thickness_flange`, `nde_matrix`).
+   - **UI & History Workbench:** `/admin/imports` route featuring template generation, preview with issue summary, conflict confirmation dialog, and read-only import history with signed source download links.
+   - **Idempotent Fixture Bootstrap:** `scripts/bootstrap-track03-browser-fixtures.ts` reconciling fixture subcontractors, service classes, and weld types.
 
-5. **WPS CRUD (Project-scoped referential):** Fully managed, including forward-only migration (no hard deletes, `active`/`inactive`/`archived` statuses) and column-level grants. Follows a **Pure Modules + Supabase Adapters** architecture:
+5. **Active-Project Selection / Multi-Membership:** Real mode loads all active memberships allowed by RLS for the signed-in user, restores a validated per-user project preference, and switches active project context safely in the UI while continuing to enforce access through RLS on every project-scoped API call.
+
+6. **WPS CRUD (Project-scoped referential):** Fully managed, including forward-only migration (no hard deletes, `active`/`inactive`/`archived` statuses) and column-level grants. Follows a **Pure Modules + Supabase Adapters** architecture:
    - **Pure Module** (`lib/welding-procedures.ts`): Domain data validation and mapping, independent of any backend.
    - **Supabase Adapter** (`lib/supabase/welding-procedures.ts`): Implements data access, mapping pure types to Supabase types.
    - **UI Adapter** (`WpsModeAdapter` in `admin-tabs.tsx`): Conditionally renders either the real `SupabaseWpsTab` or the legacy `WpsTab` demo view based on `useAppMode()`, keeping demo mode entirely intact.
 
-**The next unstarted track** is Track 03 (Import Platform & Engineering Definition). ISO/spool/weld identity and import file/row/issue lifecycle will be built before any operational fabrication persistence begins.
+**The next unstarted track** is Track 04 (ISO & Spool Pipeline). ISO transmittals, spool fabrication, and material checks will be built next.
 
 See [the initial bootstrap runbook](SUPABASE_BOOTSTRAP.md) for the
 deployment-only creation of the first administrator, project and membership.

@@ -89,6 +89,11 @@ export const navigationConfig: NavSection[] = [
             href: '/admin/import-settings',
             icon: Inbox,
           },
+          {
+            title: 'Imports',
+            href: '/admin/imports',
+            icon: Inbox,
+          },
         ],
       },
     ],

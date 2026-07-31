@@ -69,8 +69,8 @@ function requiredEnvironment(name: string): string {
   return value
 }
 
-function throwOnError(error: { message: string } | null): void {
-  if (error) throw new Error(error.message)
+function throwOnError(error: { message?: string } | null): void {
+  if (error) throw new Error(error.message || JSON.stringify(error))
 }
 
 async function findOrCreateUser(
@@ -286,7 +286,7 @@ async function main(): Promise<void> {
 
 if (process.argv[1]?.endsWith("bootstrap-track01-browser-fixtures.ts")) {
   void main().catch((error: unknown) => {
-    console.error(error instanceof Error ? error.message : "Track 01 fixture bootstrap failed.")
+    console.error(error)
     process.exitCode = 1
   })
 }

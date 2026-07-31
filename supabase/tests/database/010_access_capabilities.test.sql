@@ -34,7 +34,7 @@ select results_eq(
 );
 select results_eq(
   $$select count(*)::bigint from public.capabilities$$,
-  array[26::bigint],
+  array[28::bigint],
   'canonical capability catalog is seeded'
 );
 select is(
