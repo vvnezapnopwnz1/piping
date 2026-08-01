@@ -1,5 +1,5 @@
 begin;
-select plan(83);
+select plan(86);
 
 select has_table('public', 'command_receipts', 'shared command receipts exist');
 select has_table('public', 'construction_progress_events', 'construction progress is an event ledger');
@@ -15,6 +15,7 @@ select has_function('public', 'complete_command_receipt', array['uuid', 'text', 
 select has_function('public', 'assert_construction_target', array['uuid', 'text'], 'target authorization guard exists');
 select has_function('public', 'construction_stage_ordinal', array['construction_stage'], 'stage ordinal helper exists');
 select has_function('public', 'effective_stage_date', array['uuid', 'construction_stage'], 'effective stage helper exists');
+select has_function('public', 'effective_stage_date', array['uuid', 'construction_phase', 'construction_stage'], 'the phase-scoped effective stage helper exists');
 select has_function('public', 'record_construction_progress', array['uuid', 'construction_phase', 'construction_stage', 'date', 'jsonb', 'text'], 'manual progress RPC exists');
 select has_function('public', 'request_qc13_form', array['uuid', 'date', 'text'], 'QC-13 request RPC exists');
 select has_function('public', 'materialize_progress_copies', array['uuid', 'text'], 'revision-copy materialization RPC exists');
@@ -389,6 +390,21 @@ select lives_ok(
   'a progress recorder can issue a QC-13 form'
 );
 reset role;
+
+-- Remediation task 2: the stage lookup is scoped by phase, so a future assembly event
+-- of the same stage cannot be mistaken for a fabrication one (plan section 3.2).
+insert into public.construction_progress_events (project_id, spool_revision_id, phase, stage, occurred_on)
+values ('30000000-0000-0000-0000-000000000590', '36000000-0000-0000-0000-000000000590', 'assembly', 'start_fab', date '2026-09-09');
+select is(
+  public.effective_stage_date('36000000-0000-0000-0000-000000000590', 'fabrication', 'start_fab'),
+  current_date,
+  'the fabrication lookup ignores an assembly event of the same stage'
+);
+select is(
+  public.effective_stage_date('36000000-0000-0000-0000-000000000590', 'assembly', 'start_fab'),
+  date '2026-09-09',
+  'the assembly lookup finds the assembly event'
+);
 
 select * from finish();
 rollback;

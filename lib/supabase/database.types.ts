@@ -4839,13 +4839,22 @@ export type Database = {
         Args: { target_project_id: string; target_subcontractor_id: string }
         Returns: boolean
       }
-      effective_stage_date: {
-        Args: {
-          target_spool_revision_id: string
-          target_stage: Database["public"]["Enums"]["construction_stage"]
-        }
-        Returns: string
-      }
+      effective_stage_date:
+        | {
+            Args: {
+              target_phase: Database["public"]["Enums"]["construction_phase"]
+              target_spool_revision_id: string
+              target_stage: Database["public"]["Enums"]["construction_stage"]
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              target_spool_revision_id: string
+              target_stage: Database["public"]["Enums"]["construction_stage"]
+            }
+            Returns: string
+          }
       engineering_numeric: { Args: { value: string }; Returns: number }
       engineering_numeric_key: { Args: { value: number }; Returns: string }
       generate_weld_obligations: {
