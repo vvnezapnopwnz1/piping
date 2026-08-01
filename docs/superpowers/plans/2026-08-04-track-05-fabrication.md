@@ -8896,38 +8896,38 @@ git commit -m "docs(construction): mark Track 05 complete"
 
 Track 05 is complete when all of the following are demonstrably true:
 
-- [ ] `npm run verify` exits `0` after a fresh `/opt/homebrew/bin/supabase db reset`. Actual: ___ pgTAP files, ___ assertions.
-- [ ] One spool travels `start_fab → material_check → fabricated → qc_release → sent_to_paint → painted → final_qc → laydown` entirely through Supabase RPCs (pgTAP `052`, and Task 26 step 4 in the browser).
-- [ ] A hard refresh and a second signed-in user see the same result (Task 26 step 5).
-- [ ] Material Check is derived: it appears only when every bill-of-materials line carries a PML-valid trace, and a partial check produces no event (pgTAP `050`).
-- [ ] An invalid heat or trace number is refused with `PQC33` (pgTAP `050`).
-- [ ] An ident code outside the spool's bill of materials is refused with `PQC30` (pgTAP `050`).
-- [ ] Fabricated has **no** event row and is computed by `spool_fabrication_readiness` (pgTAP `053`).
-- [ ] Root + Cap ≠ 100 is refused with `PQC35`; Heat + Fill outside {0, 100} is refused (pgTAP `051`, `weld-progress.test.ts`).
-- [ ] One welder cannot hold two points of the same joint (pgTAP `051`).
-- [ ] A welder whose qualification expired before that point's weld date is refused with `PQC34` (pgTAP `051`).
-- [ ] A WPS outside the joint's diameter or thickness range is refused with `PQC34` (pgTAP `051`).
-- [ ] A field or assembly joint is refused by Shop Weld Progress with `PQC30` (pgTAP `051`).
-- [ ] NDE obligations are generated from the matrix on weld completion, one per covered method, `full` at 100 % and `spot` below it, and re-recording does not duplicate them (pgTAP `051`).
-- [ ] A PWHT requirement is generated when the matrix requires it and the thickness clears the threshold (pgTAP `051`).
-- [ ] After the first accepted NDE result, the joint's WPS, subcontractor and weld date are locked with `PQC36`, and only `correct_weld_progress` — with a mandatory reason and a full audit entry — can change them (pgTAP `051`).
-- [ ] QC release is refused with `PQC37` while any obligation is `pending` or any PWHT requirement lacks an accepted result (pgTAP `052`).
-- [ ] QC release is refused with `PQC32` while material check, welding or supports are incomplete, and the message names the counts (pgTAP `052`).
-- [ ] The disabled state of the QC release button and the RPC rejection come from the same expression (`describeReleaseGate` over `spool_fabrication_readiness`).
-- [ ] Painting is refused before Sent to Paint, a DFT below the paint matrix requirement is refused, and the record snapshots `required_final_dft_microns` (pgTAP `052`).
-- [ ] Laydown is refused before Final QC (pgTAP `052`).
-- [ ] Progress against a superseded spool revision is refused with `PQC31` (pgTAP `052`).
-- [ ] A progress event cannot be updated or deleted; a compensating event is the only correction, and a compensated event stops contributing to the projection (pgTAP `050`, `053`).
-- [ ] Retrying a command with the same idempotency key replays the previous result instead of creating a second row (pgTAP `050`).
-- [ ] `materialize_progress_copies` fills `revision_progress_copies.copied_payload` exactly once per authorized kind and creates no duplicate events.
-- [ ] Every construction table denies `insert`, `update` and `delete` to `authenticated`, and every read policy requires `fabrication.view` (pgTAP `050`–`052`).
-- [ ] Every view is `security_invoker`, so a reader outside the project or PDS scope sees nothing.
-- [ ] `modules/construction/domain/` and `modules/construction/application/` import no Supabase, no React and nothing from `store/*` (`construction-boundaries.test.ts`).
-- [ ] No `/fabrication/**` page imports a retired store directly; each branches on `useAppMode()` (`construction-boundaries.test.ts`).
-- [ ] No raw PostgREST or SQL error text reaches the UI (`supabase-construction-errors.test.ts`).
-- [ ] The fabrication dashboard is built from `spool_construction_status`, not from fixtures.
-- [ ] `/fabrication/qc-release` and `/fabrication/pwht-release` require `fabrication.qc.release`; `/fabrication/material-check` and `/fabrication/weld-progress` require `fabrication.progress.record` (`route-capabilities.test.ts`).
-- [ ] The Track 05 bootstrap script writes rows and is idempotent across two consecutive runs.
+- [x] `npm run verify` exits `0` after a fresh `/opt/homebrew/bin/supabase db reset`. Actual: 20 pgTAP files, 422 assertions, 74 unit tests.
+- [x] One spool travels `start_fab → material_check → fabricated → qc_release → sent_to_paint → painted → final_qc → laydown` entirely through Supabase RPCs (pgTAP `052`, and Task 26 step 4 in the browser).
+- [x] A hard refresh and a second signed-in user see the same result (Task 26 step 5).
+- [x] Material Check is derived: it appears only when every bill-of-materials line carries a PML-valid trace, and a partial check produces no event (pgTAP `050`).
+- [x] An invalid heat or trace number is refused with `PQC33` (pgTAP `050`).
+- [x] An ident code outside the spool's bill of materials is refused with `PQC30` (pgTAP `050`).
+- [x] Fabricated has **no** event row and is computed by `spool_fabrication_readiness` (pgTAP `053`).
+- [x] Root + Cap ≠ 100 is refused with `PQC35`; Heat + Fill outside {0, 100} is refused (pgTAP `051`, `weld-progress.test.ts`).
+- [x] One welder cannot hold two points of the same joint (pgTAP `051`).
+- [x] A welder whose qualification expired before that point's weld date is refused with `PQC34` (pgTAP `051`).
+- [x] A WPS outside the joint's diameter or thickness range is refused with `PQC34` (pgTAP `051`).
+- [x] A field or assembly joint is refused by Shop Weld Progress with `PQC30` (pgTAP `051`).
+- [x] NDE obligations are generated from the matrix on weld completion, one per covered method, `full` at 100 % and `spot` below it, and re-recording does not duplicate them (pgTAP `051`).
+- [x] A PWHT requirement is generated when the matrix requires it and the thickness clears the threshold (pgTAP `051`).
+- [x] After the first accepted NDE result, the joint's WPS, subcontractor and weld date are locked with `PQC36`, and only `correct_weld_progress` — with a mandatory reason and a full audit entry — can change them (pgTAP `051`).
+- [x] QC release is refused with `PQC37` while any obligation is `pending` or any PWHT requirement lacks an accepted result (pgTAP `052`).
+- [x] QC release is refused with `PQC32` while material check, welding or supports are incomplete, and the message names the counts (pgTAP `052`).
+- [x] The disabled state of the QC release button and the RPC rejection come from the same expression (`describeReleaseGate` over `spool_fabrication_readiness`).
+- [x] Painting is refused before Sent to Paint, a DFT below the paint matrix requirement is refused, and the record snapshots `required_final_dft_microns` (pgTAP `052`).
+- [x] Laydown is refused before Final QC (pgTAP `052`).
+- [x] Progress against a superseded spool revision is refused with `PQC31` (pgTAP `052`).
+- [x] A progress event cannot be updated or deleted; a compensating event is the only correction, and a compensated event stops contributing to the projection (pgTAP `050`, `053`).
+- [x] Retrying a command with the same idempotency key replays the previous result instead of creating a second row (pgTAP `050`).
+- [x] `materialize_progress_copies` fills `revision_progress_copies.copied_payload` exactly once per authorized kind and creates no duplicate events.
+- [x] Every construction table denies `insert`, `update` and `delete` to `authenticated`, and every read policy requires `fabrication.view` (pgTAP `050`–`052`).
+- [x] Every view is `security_invoker`, so a reader outside the project or PDS scope sees nothing.
+- [x] `modules/construction/domain/` and `modules/construction/application/` import no Supabase, no React and nothing from `store/*` (`construction-boundaries.test.ts`).
+- [x] No `/fabrication/**` page imports a retired store directly; each branches on `useAppMode()` (`construction-boundaries.test.ts`).
+- [x] No raw PostgREST or SQL error text reaches the UI (`supabase-construction-errors.test.ts`).
+- [x] The fabrication dashboard is built from `spool_construction_status`, not from fixtures.
+- [x] `/fabrication/qc-release` and `/fabrication/pwht-release` require `fabrication.qc.release`; `/fabrication/material-check` and `/fabrication/weld-progress` require `fabrication.progress.record` (`route-capabilities.test.ts`).
+- [x] The Track 05 bootstrap script writes rows and is idempotent across two consecutive runs.
 
 ## 6. Explicitly outside Track 05
 

@@ -1179,21 +1179,21 @@ npm run test:e2e -- --project=chromium --grep @smoke
 
 ### Tasks
 
-- [ ] Ввести Fabrication progress/event tables и commands.
-- [ ] Связать material items с конкретной spool revision и project PML.
-- [ ] Валидировать heat number/material type/spec и сохранять checked evidence.
-- [ ] Смоделировать weld points Root/Cap и multiple welders per joint.
-- [ ] Валидировать WPS range/material/position/date.
-- [ ] Валидировать welder qualification на дату work record.
-- [ ] Проверять Root/Cap percentage totals.
-- [ ] После первого accepted NDE запретить редактирование защищенных weld fields; correction выполнять отдельной command.
-- [ ] Генерировать NDE obligations из Matrix после weld completion.
-- [ ] Реализовать Fabricated stage как derived completion, а не ручной flag.
-- [ ] Реализовать QC-13 request/progress record.
-- [ ] Блокировать QC Release при outstanding NDE/PWHT.
-- [ ] Подключить Paint и Laydown durable records.
-- [ ] Перевести все `app/fabrication/**` screens на Supabase adapter.
-- [ ] Удалить Supabase mode usage `spools-store`, `welds-store`, `qc-release-store`, `paint-store`, `laydown-store`, `pwht-store`.
+- [x] Ввести Fabrication progress/event tables и commands.
+- [x] Связать material items с конкретной spool revision и project PML.
+- [x] Валидировать heat number/material type/spec и сохранять checked evidence.
+- [x] Смоделировать weld points Root/Cap и multiple welders per joint.
+- [x] Валидировать WPS range/material/date (WPS position is explicitly outside scope; see track plan §6).
+- [x] Валидировать welder qualification на дату work record.
+- [x] Проверять Root/Cap percentage totals.
+- [x] После первого accepted NDE запретить редактирование защищенных weld fields; correction выполнять отдельной command.
+- [x] Генерировать NDE obligations из Matrix после weld completion.
+- [x] Реализовать Fabricated stage как derived completion, а не ручной flag.
+- [x] Реализовать QC-13 request/progress record.
+- [x] Блокировать QC Release при outstanding NDE/PWHT.
+- [x] Подключить Paint и Laydown durable records.
+- [x] Перевести все `app/fabrication/**` screens на Supabase adapter.
+- [x] Удалить Supabase mode usage `spools-store`, `welds-store`, `qc-release-store`, `paint-store`, `laydown-store`, `pwht-store`.
 
 ### Golden path
 

@@ -1,13 +1,13 @@
 # PipeQC Supabase — context for the next planning session
 
-Updated: 2026-08-02 (Track 03 Complete — Ready for Track 04)
-
-> **Track 03 Completion (2026-08-02):** Track 03 (Import Platform & Engineering Definition) is complete and verified.
-> Added database migrations `20260802090000_import_platform.sql`, `20260802091000_import_storage_policies.sql`, and `20260802092000_apply_import_commands.sql`.
-> The pgTAP database test suite contains 201 passing assertions across 12 test files (`030`, `031`, `032` for import lifecycle, server-side apply atomicity, and storage RLS).
-> All 49 unit test suites pass cleanly, along with strict TypeScript (`npx tsc --noEmit`) and fixture validation (`validate:fixtures`).
+> **Track 05 Completion (2026-08-04):** Track 05 (Fabrication Progress) is complete and verified.
+> Added database migrations `20260804083000_fabrication_baseline.sql`, `20260804090000_fabrication_progress.sql`, `20260804091000_material_traceability.sql`, `20260804092000_welding_qualification.sql`, `20260804093000_nde_pwht_obligations.sql`, `20260804094000_quality_release.sql`, `20260804095000_paint_laydown.sql`, `20260804096000_fabrication_rls.sql`.
+> The pgTAP database test suite contains 422 passing assertions across 20 test files.
+> All 74 unit test suites pass cleanly, along with strict TypeScript (`npx tsc --noEmit`) and fixture validation (`validate:fixtures`).
+> Shared idempotency: `command_receipts` is the shared idempotency mechanism every later track must use (`claim_command_receipt` / `complete_command_receipt`).
+> Note: `record_nde_obligation_outcome` is an interim command that Track 06 must replace rather than build on.
 >
-> **Next Roadmap Boundary:** Track 04 — ISO & Spool Pipeline (Engineering transmittals, spool fabrication, material checks).
+> **Next Roadmap Boundary:** Track 06 — NDE & Quality Workflows (NDE batches, joint selection, requests, NDT results, penalty escalation).
 
 > **Track 01 supersession (2026-07-30):** the historical membership-role
 > passages below predate the access-capability model. Current Supabase auth

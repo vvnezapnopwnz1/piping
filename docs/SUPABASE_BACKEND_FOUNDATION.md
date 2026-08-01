@@ -101,7 +101,11 @@ The implementation includes Track 01 foundation, the complete Track 02 Project R
    - **Supabase Adapter** (`lib/supabase/welding-procedures.ts`): Implements data access, mapping pure types to Supabase types.
    - **UI Adapter** (`WpsModeAdapter` in `admin-tabs.tsx`): Conditionally renders either the real `SupabaseWpsTab` or the legacy `WpsTab` demo view based on `useAppMode()`, keeping demo mode entirely intact.
 
-**The next unstarted track** is Track 04 (ISO & Spool Pipeline). ISO transmittals, spool fabrication, and material checks will be built next.
+**Track 04 (Spooling & Engineering Pipeline)** and **Track 05 (Fabrication Progress)** are complete:
+- **Track 04:** `spoolgen_staging`, `isometric_revisions`, `spool_revisions`, `spool_revision_materials`, `weld_joint_revisions`, `support_revisions`. RPCs: `apply_spooling_import_job`, `resolve_revision_decisions`, `materialize_progress_copies`.
+- **Track 05:** Event ledger `construction_progress_events`, command receipts `command_receipts`, stage projections `spool_material_check_status`, `spool_fabrication_readiness`, `spool_construction_status`. Fabrication RPCs: `record_construction_progress`, `request_qc13_form`, `record_material_check`, `record_weld_progress`, `correct_weld_progress`, `record_support_progress`, `record_nde_obligation_outcome`, `record_pwht_result`, `release_quality_record`, `record_paint_progress`, `record_laydown`.
+
+**The next unstarted track** is Track 06 (NDE & Quality Workflows).
 
 See [the initial bootstrap runbook](SUPABASE_BOOTSTRAP.md) for the
 deployment-only creation of the first administrator, project and membership.
