@@ -459,19 +459,41 @@ export async function recordConstructionProgress(
   fail(error)
 }
 
+export interface Qc13Form {
+  id: string
+  formNumber: string
+}
+
 export async function requestQc13Form(
   client: SupabaseClient<Database>,
   spoolRevisionId: string,
   issuedOn: string,
   idempotencyKey: string,
-): Promise<string> {
+): Promise<Qc13Form> {
   const { data, error } = await client.rpc("request_qc13_form", {
     target_spool_revision_id: spoolRevisionId,
     requested_date: issuedOn,
     target_idempotency_key: idempotencyKey,
   })
   fail(error)
-  return (required(data) as Row).form_number
+  const row = required(data) as Row
+  return { id: row.id, formNumber: row.form_number }
+}
+
+/** The most recent QC-13 for a spool, so a reload does not lose the evidence link. */
+export async function loadLatestQc13Form(
+  client: SupabaseClient<Database>,
+  spoolRevisionId: string,
+): Promise<Qc13Form | null> {
+  const { data, error } = await client
+    .from("qc13_progress_forms")
+    .select("id, form_number")
+    .eq("spool_revision_id", spoolRevisionId)
+    .order("requested_on", { ascending: false })
+    .limit(1)
+  fail(error)
+  const row = (data ?? [])[0] as Row | undefined
+  return row ? { id: row.id, formNumber: row.form_number } : null
 }
 
 export async function materializeProgressCopies(

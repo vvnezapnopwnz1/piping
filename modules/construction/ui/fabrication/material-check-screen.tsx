@@ -19,8 +19,10 @@ import { describeMaterialCheckGate, toMaterialCheckPayload } from "../../applica
 import type { BillLine, TraceEntry } from "../../domain/material-check"
 import {
   loadBillOfMaterials,
+  loadLatestQc13Form,
   loadMaterialCheckItems,
   loadSpoolStatus,
+  type Qc13Form,
   recordConstructionProgress,
   recordMaterialCheck,
   requestQc13Form,
@@ -38,19 +40,25 @@ export function MaterialCheckScreen({ projectId }: { projectId: string }) {
   const [checkedOn, setCheckedOn] = useState(today())
   const [refreshToken, setRefreshToken] = useState(0)
   const [isSaving, setIsSaving] = useState(false)
+  const [qc13Form, setQc13Form] = useState<Qc13Form | null>(null)
 
   useEffect(() => {
-    if (!spool) return
+    if (!spool) {
+      setQc13Form(null)
+      return
+    }
     const client = getSupabaseBrowserClient()
     void Promise.all([
       loadBillOfMaterials(client, spool.spoolRevisionId),
       loadMaterialCheckItems(client, spool.spoolRevisionId),
+      loadLatestQc13Form(client, spool.spoolRevisionId),
     ])
-      .then(([billLines, existing]) => {
+      .then(([billLines, existing, form]) => {
         setLines(billLines)
         setTraces(
           Object.fromEntries(existing.map((item) => [item.identCode, item.traceNumber])),
         )
+        setQc13Form(form)
       })
       .catch((error: unknown) =>
         toast.error(
@@ -95,13 +103,14 @@ export function MaterialCheckScreen({ projectId }: { projectId: string }) {
   const issueQc13 = async () => {
     if (!spool) return
     try {
-      const formNumber = await requestQc13Form(
+      const form = await requestQc13Form(
         getSupabaseBrowserClient(),
         spool.spoolRevisionId,
         checkedOn,
         crypto.randomUUID(),
       )
-      toast.success(`QC-13 ${formNumber} issued.`)
+      setQc13Form(form)
+      toast.success(`QC-13 ${form.formNumber} issued.`)
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "The QC-13 could not be issued.")
     }
@@ -116,7 +125,7 @@ export function MaterialCheckScreen({ projectId }: { projectId: string }) {
         toMaterialCheckPayload({
           spoolRevisionId: spool.spoolRevisionId,
           checkedOn,
-          qc13FormId: null,
+          qc13FormId: qc13Form?.id ?? null,
           entries,
         }),
         crypto.randomUUID(),

@@ -63,3 +63,16 @@ assert.deepEqual(
     qc13_form_id: null,
   },
 )
+
+// The screen issues a QC-13 and must carry its id into the command, so the accepted
+// traces keep the evidence they were transcribed from (dossier 16.4).
+{
+  const payload = toMaterialCheckPayload({
+    spoolRevisionId: "spool-1",
+    checkedOn: "2026-08-05",
+    qc13FormId: "form-1",
+    entries: [{ identCode: "IDN-1", traceNumber: "HEAT-1", quantity: 2 }],
+  })
+  assert.equal(payload.qc13_form_id, "form-1")
+  assert.equal(payload.items.length, 1)
+}
