@@ -102,8 +102,8 @@ The implementation includes Track 01 foundation, the complete Track 02 Project R
    - **UI Adapter** (`WpsModeAdapter` in `admin-tabs.tsx`): Conditionally renders either the real `SupabaseWpsTab` or the legacy `WpsTab` demo view based on `useAppMode()`, keeping demo mode entirely intact.
 
 **Track 04 (Spooling & Engineering Pipeline)** and **Track 05 (Fabrication Progress)** are complete:
-- **Track 04:** `spoolgen_staging`, `isometric_revisions`, `spool_revisions`, `spool_revision_materials`, `weld_joint_revisions`, `support_revisions`. RPCs: `apply_spooling_import_job`, `resolve_revision_decisions`, `materialize_progress_copies`.
-- **Track 05:** Event ledger `construction_progress_events`, command receipts `command_receipts`, stage projections `spool_material_check_status`, `spool_fabrication_readiness`, `spool_construction_status`. Fabrication RPCs: `record_construction_progress`, `request_qc13_form`, `record_material_check`, `record_weld_progress`, `correct_weld_progress`, `record_support_progress`, `record_nde_obligation_outcome`, `record_pwht_result`, `release_quality_record`, `record_paint_progress`, `record_laydown`.
+- **Track 04:** `spoolgen_staging`, `isometric_revisions`, `spool_revisions`, `spool_revision_materials`, `weld_joint_revisions`, `support_revisions`. RPCs: `apply_spooling_import_job`, `resolve_revision_decisions`. It writes the `revision_progress_copies` rows that authorize a progress carry-over; Track 05 owns the command that materializes them.
+- **Track 05:** Event ledger `construction_progress_events`, command receipts `command_receipts`, readiness view `spool_fabrication_readiness`, presentation views `spool_stage_events`, `spool_progress_dates`, `spool_construction_status`, `weld_progress_summary`. Fabrication RPCs: `record_construction_progress`, `request_qc13_form`, `materialize_progress_copies`, `record_material_check`, `record_weld_progress`, `correct_weld_progress`, `record_support_progress`, `record_nde_obligation_outcome`, `record_pwht_result`, `release_quality_record`, `record_paint_progress`, `record_laydown`.
 
 **The next unstarted track** is Track 06 (NDE & Quality Workflows).
 

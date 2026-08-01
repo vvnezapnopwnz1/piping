@@ -1,9 +1,10 @@
 # PipeQC Supabase — context for the next planning session
 
-> **Track 05 Completion (2026-08-04):** Track 05 (Fabrication Progress) is complete and verified.
-> Added database migrations `20260804083000_fabrication_baseline.sql`, `20260804090000_fabrication_progress.sql`, `20260804091000_material_traceability.sql`, `20260804092000_welding_qualification.sql`, `20260804093000_nde_pwht_obligations.sql`, `20260804094000_quality_release.sql`, `20260804095000_paint_laydown.sql`, `20260804096000_fabrication_rls.sql`.
-> The pgTAP database test suite contains 422 passing assertions across 20 test files.
+> **Track 05 Completion (2026-08-04, remediated 2026-08-05):** Track 05 (Fabrication Progress) is complete and verified.
+> Added database migrations `20260804090000_fabrication_progress.sql`, `20260804091000_material_traceability.sql`, `20260804092000_weld_progress_commands.sql`, `20260804092100_record_weld_progress.sql`, `20260804092200_weld_progress_locks.sql`, `20260804093000_fabrication_release.sql`, `20260804094000_construction_projections.sql`, plus the remediation pair `20260805090000_track05_remediation.sql` and `20260805091000_grant_track05_fixture_referentials.sql`.
+> The pgTAP database test suite contains 432 passing assertions across 20 test files.
 > All 74 unit test suites pass cleanly, along with strict TypeScript (`npx tsc --noEmit`) and fixture validation (`validate:fixtures`).
+> The browser fixtures and the QC-13 guard were repaired by `docs/superpowers/plans/2026-08-05-track-05-remediation.md`; `npm run bootstrap:track05-browser-fixtures` now seeds the whole golden path including the engineering definition.
 > Shared idempotency: `command_receipts` is the shared idempotency mechanism every later track must use (`claim_command_receipt` / `complete_command_receipt`).
 > Note: `record_nde_obligation_outcome` is an interim command that Track 06 must replace rather than build on.
 >

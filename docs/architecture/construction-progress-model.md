@@ -38,7 +38,7 @@ Fabrication progress comprises eight ordered stages defined in `public.construct
 
 Progress status is queried via real-time database projections and view layers:
 
-- **`spool_material_check_status`**: Reconciles `spool_revision_materials` against `material_check_items` and `piping_material_records` (PML).
+- **Material check is derived inside `spool_fabrication_readiness`**: its `bill` lateral reconciles `spool_revision_materials` against `material_check_items`, and an item exists only when the trace resolved to an `active` `piping_material_records` row. There is no separate `is_accepted` flag — the presence of `piping_material_record_id` *is* the acceptance, and the presence of an item *is* the checked line.
 - **`spool_fabrication_readiness`**: Computes 4 key readiness checks:
   1. Material Check completeness (`line_checked >= line_total`)
   2. Shop Welding completeness (`weld_complete >= weld_total`)
@@ -52,7 +52,7 @@ Progress status is queried via real-time database projections and view layers:
 
 - All construction progress records are strictly bound to `spool_revision_id`.
 - Mutating operations against superseded revisions raise error code **`PQC31`**.
-- When an engineering revision change occurs, `materialize_progress_copies` copies progress from previous revisions into `revision_progress_copies.copied_payload` to preserve historic context while enforcing current revision contracts.
+- When an engineering revision is accepted, `apply_spooling_import_job` writes `revision_progress_copies` rows *authorizing* a carry-over of `fabrication_start`, `sent_to_paint` and `paint`. It does not perform it. `materialize_progress_copies(isometric_revision_id)` copies each authorized source event onto the new spool revision as a fresh event with `source = 'revision_copy'`, then stamps `revision_progress_copies.copied_payload`; a non-empty payload means "already materialized", so the call is idempotent. `RevisionWorkbench` invokes it for every revision an applied job reports.
 
 ---
 
@@ -91,3 +91,13 @@ Custom application errors raised by PL/pgSQL functions:
 | `PQC37` | Unreleased quality gates | This spool still has outstanding NDE obligations or PWHT results and cannot be QC released. |
 | `PQC38` | Command in progress | The same request is already being processed. Wait for it to finish before retrying. |
 | `PQC39` | Missing referential | A project referential this action depends on is missing or archived. Check NDE matrix, paint matrix, material mapping. |
+
+## Known limitations
+
+- `spool_fabrication_readiness` counts every non-removed weld joint of a spool, not only
+  `weld_location = 'shop'`. A spool carrying a field or assembly joint can therefore never
+  become `is_fabricated` through Shop Weld Progress alone. Track 07 owns those joints and
+  must either widen the recording surface or narrow this count.
+- `effective_stage_date(uuid, construction_stage)` is a deprecated fabrication-only
+  delegate. Track 07 must call
+  `effective_stage_date(uuid, construction_phase, construction_stage)`.
