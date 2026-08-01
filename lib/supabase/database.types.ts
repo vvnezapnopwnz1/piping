@@ -106,6 +106,133 @@ export type Database = {
         }
         Relationships: []
       }
+      flange_joint_revisions: {
+        Row: {
+          bolt_quantity: number | null
+          bolt_size: string | null
+          created_at: string
+          diameter_inch: number | null
+          flange_joint_id: string
+          flange_rating: string | null
+          id: string
+          is_removed: boolean
+          joint_type: string | null
+          spool_revision_id: string
+        }
+        Insert: {
+          bolt_quantity?: number | null
+          bolt_size?: string | null
+          created_at?: string
+          diameter_inch?: number | null
+          flange_joint_id: string
+          flange_rating?: string | null
+          id?: string
+          is_removed?: boolean
+          joint_type?: string | null
+          spool_revision_id: string
+        }
+        Update: {
+          bolt_quantity?: number | null
+          bolt_size?: string | null
+          created_at?: string
+          diameter_inch?: number | null
+          flange_joint_id?: string
+          flange_rating?: string | null
+          id?: string
+          is_removed?: boolean
+          joint_type?: string | null
+          spool_revision_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flange_joint_revisions_flange_joint_id_fkey"
+            columns: ["flange_joint_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joints"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_joint_revisions_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_revisions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flange_joints: {
+        Row: {
+          created_at: string
+          flange_number: string
+          id: string
+          project_id: string
+        }
+        Insert: {
+          created_at?: string
+          flange_number: string
+          id?: string
+          project_id: string
+        }
+        Update: {
+          created_at?: string
+          flange_number?: string
+          id?: string
+          project_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flange_joints_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      import_files: {
+        Row: {
+          checksum: string | null
+          file_name: string
+          file_role: Database["public"]["Enums"]["spoolgen_file_role"]
+          id: string
+          job_id: string
+          media_type: string | null
+          size_bytes: number
+          storage_path: string | null
+          uploaded_at: string
+        }
+        Insert: {
+          checksum?: string | null
+          file_name: string
+          file_role: Database["public"]["Enums"]["spoolgen_file_role"]
+          id?: string
+          job_id: string
+          media_type?: string | null
+          size_bytes: number
+          storage_path?: string | null
+          uploaded_at?: string
+        }
+        Update: {
+          checksum?: string | null
+          file_name?: string
+          file_role?: Database["public"]["Enums"]["spoolgen_file_role"]
+          id?: string
+          job_id?: string
+          media_type?: string | null
+          size_bytes?: number
+          storage_path?: string | null
+          uploaded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_files_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "import_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       import_job_issues: {
         Row: {
           code: string
@@ -271,6 +398,179 @@ export type Database = {
             columns: ["requested_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      import_revision_decisions: {
+        Row: {
+          comment: string | null
+          decided_at: string
+          decided_by: string | null
+          decision: Database["public"]["Enums"]["revision_decision"]
+          entity_key: string
+          entity_type: Database["public"]["Enums"]["engineering_entity_type"]
+          id: string
+          iso_number: string
+          job_id: string
+        }
+        Insert: {
+          comment?: string | null
+          decided_at?: string
+          decided_by?: string | null
+          decision: Database["public"]["Enums"]["revision_decision"]
+          entity_key: string
+          entity_type: Database["public"]["Enums"]["engineering_entity_type"]
+          id?: string
+          iso_number: string
+          job_id: string
+        }
+        Update: {
+          comment?: string | null
+          decided_at?: string
+          decided_by?: string | null
+          decision?: Database["public"]["Enums"]["revision_decision"]
+          entity_key?: string
+          entity_type?: Database["public"]["Enums"]["engineering_entity_type"]
+          id?: string
+          iso_number?: string
+          job_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_revision_decisions_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_revision_decisions_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "import_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      isometric_revisions: {
+        Row: {
+          accepted_at: string | null
+          comment: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          isometric_id: string
+          line_number: string | null
+          pds_area_id: string | null
+          revision_number: string
+          revision_ordinal: number
+          service_class_id: string | null
+          sheet_number: string | null
+          source_import_job_id: string | null
+          status: Database["public"]["Enums"]["revision_status"]
+          superseded_at: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          isometric_id: string
+          line_number?: string | null
+          pds_area_id?: string | null
+          revision_number: string
+          revision_ordinal: number
+          service_class_id?: string | null
+          sheet_number?: string | null
+          source_import_job_id?: string | null
+          status?: Database["public"]["Enums"]["revision_status"]
+          superseded_at?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          comment?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          isometric_id?: string
+          line_number?: string | null
+          pds_area_id?: string | null
+          revision_number?: string
+          revision_ordinal?: number
+          service_class_id?: string | null
+          sheet_number?: string | null
+          source_import_job_id?: string | null
+          status?: Database["public"]["Enums"]["revision_status"]
+          superseded_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "isometric_revisions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "isometric_revisions_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "isometrics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "isometric_revisions_pds_area_id_fkey"
+            columns: ["pds_area_id"]
+            isOneToOne: false
+            referencedRelation: "project_pds_areas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "isometric_revisions_service_class_id_fkey"
+            columns: ["service_class_id"]
+            isOneToOne: false
+            referencedRelation: "project_service_classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "isometric_revisions_source_import_job_id_fkey"
+            columns: ["source_import_job_id"]
+            isOneToOne: false
+            referencedRelation: "import_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      isometrics: {
+        Row: {
+          created_at: string
+          id: string
+          iso_number: string
+          project_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          iso_number: string
+          project_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          iso_number?: string
+          project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "isometrics_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
@@ -1919,6 +2219,194 @@ export type Database = {
         }
         Relationships: []
       }
+      revision_change_items: {
+        Row: {
+          change_type: Database["public"]["Enums"]["revision_change_type"]
+          created_at: string
+          entity_id: string
+          entity_key: string
+          entity_type: Database["public"]["Enums"]["engineering_entity_type"]
+          id: string
+          isometric_id: string
+          isometric_revision_id: string
+          next_payload: Json | null
+          previous_isometric_revision_id: string | null
+          previous_payload: Json | null
+          project_id: string
+          source_import_job_id: string | null
+        }
+        Insert: {
+          change_type: Database["public"]["Enums"]["revision_change_type"]
+          created_at?: string
+          entity_id: string
+          entity_key: string
+          entity_type: Database["public"]["Enums"]["engineering_entity_type"]
+          id?: string
+          isometric_id: string
+          isometric_revision_id: string
+          next_payload?: Json | null
+          previous_isometric_revision_id?: string | null
+          previous_payload?: Json | null
+          project_id: string
+          source_import_job_id?: string | null
+        }
+        Update: {
+          change_type?: Database["public"]["Enums"]["revision_change_type"]
+          created_at?: string
+          entity_id?: string
+          entity_key?: string
+          entity_type?: Database["public"]["Enums"]["engineering_entity_type"]
+          id?: string
+          isometric_id?: string
+          isometric_revision_id?: string
+          next_payload?: Json | null
+          previous_isometric_revision_id?: string | null
+          previous_payload?: Json | null
+          project_id?: string
+          source_import_job_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revision_change_items_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "isometrics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revision_change_items_isometric_revision_id_fkey"
+            columns: ["isometric_revision_id"]
+            isOneToOne: false
+            referencedRelation: "isometric_revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revision_change_items_previous_isometric_revision_id_fkey"
+            columns: ["previous_isometric_revision_id"]
+            isOneToOne: false
+            referencedRelation: "isometric_revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revision_change_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revision_change_items_source_import_job_id_fkey"
+            columns: ["source_import_job_id"]
+            isOneToOne: false
+            referencedRelation: "import_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      revision_decisions: {
+        Row: {
+          change_item_id: string
+          comment: string | null
+          decided_at: string
+          decided_by: string | null
+          decision: Database["public"]["Enums"]["revision_decision"]
+          id: string
+        }
+        Insert: {
+          change_item_id: string
+          comment?: string | null
+          decided_at?: string
+          decided_by?: string | null
+          decision: Database["public"]["Enums"]["revision_decision"]
+          id?: string
+        }
+        Update: {
+          change_item_id?: string
+          comment?: string | null
+          decided_at?: string
+          decided_by?: string | null
+          decision?: Database["public"]["Enums"]["revision_decision"]
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revision_decisions_change_item_id_fkey"
+            columns: ["change_item_id"]
+            isOneToOne: true
+            referencedRelation: "revision_change_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revision_decisions_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      revision_progress_copies: {
+        Row: {
+          change_item_id: string
+          copied_at: string
+          copied_by: string | null
+          copied_payload: Json
+          id: string
+          progress_kind: string
+          source_spool_revision_id: string
+          target_spool_revision_id: string
+        }
+        Insert: {
+          change_item_id: string
+          copied_at?: string
+          copied_by?: string | null
+          copied_payload?: Json
+          id?: string
+          progress_kind: string
+          source_spool_revision_id: string
+          target_spool_revision_id: string
+        }
+        Update: {
+          change_item_id?: string
+          copied_at?: string
+          copied_by?: string | null
+          copied_payload?: Json
+          id?: string
+          progress_kind?: string
+          source_spool_revision_id?: string
+          target_spool_revision_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revision_progress_copies_change_item_id_fkey"
+            columns: ["change_item_id"]
+            isOneToOne: false
+            referencedRelation: "revision_change_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revision_progress_copies_copied_by_fkey"
+            columns: ["copied_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revision_progress_copies_source_spool_revision_id_fkey"
+            columns: ["source_spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revision_progress_copies_target_spool_revision_id_fkey"
+            columns: ["target_spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_revisions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_capabilities: {
         Row: {
           capability_code: string
@@ -1975,6 +2463,198 @@ export type Database = {
           label?: string
         }
         Relationships: []
+      }
+      spool_revision_materials: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          ident_code: string
+          quantity: number | null
+          spool_revision_id: string
+          trace_number: string | null
+          unit: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          ident_code: string
+          quantity?: number | null
+          spool_revision_id: string
+          trace_number?: string | null
+          unit?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          ident_code?: string
+          quantity?: number | null
+          spool_revision_id?: string
+          trace_number?: string | null
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spool_revision_materials_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_revisions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spool_revisions: {
+        Row: {
+          created_at: string
+          id: string
+          is_removed: boolean
+          isometric_revision_id: string
+          material_class: string | null
+          sequence_number: number
+          spool_id: string
+          weight_kg: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_removed?: boolean
+          isometric_revision_id: string
+          material_class?: string | null
+          sequence_number?: number
+          spool_id: string
+          weight_kg?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_removed?: boolean
+          isometric_revision_id?: string
+          material_class?: string | null
+          sequence_number?: number
+          spool_id?: string
+          weight_kg?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spool_revisions_isometric_revision_id_fkey"
+            columns: ["isometric_revision_id"]
+            isOneToOne: false
+            referencedRelation: "isometric_revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_revisions_spool_id_fkey"
+            columns: ["spool_id"]
+            isOneToOne: false
+            referencedRelation: "spools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spools: {
+        Row: {
+          created_at: string
+          id: string
+          project_id: string
+          spool_number: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          project_id: string
+          spool_number: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          project_id?: string
+          spool_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spools_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_revisions: {
+        Row: {
+          created_at: string
+          id: string
+          is_removed: boolean
+          quantity: number
+          spool_revision_id: string
+          support_id: string
+          support_type: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_removed?: boolean
+          quantity?: number
+          spool_revision_id: string
+          support_id: string
+          support_type?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_removed?: boolean
+          quantity?: number
+          spool_revision_id?: string
+          support_id?: string
+          support_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_revisions_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_revisions_support_id_fkey"
+            columns: ["support_id"]
+            isOneToOne: false
+            referencedRelation: "supports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supports: {
+        Row: {
+          created_at: string
+          id: string
+          project_id: string
+          support_number: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          project_id: string
+          support_number: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          project_id?: string
+          support_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supports_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       system_film_quantity_rules: {
         Row: {
@@ -2071,6 +2751,125 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      weld_joint_revisions: {
+        Row: {
+          created_at: string
+          diameter_inch: number | null
+          id: string
+          is_removed: boolean
+          spool_revision_id: string
+          thickness_mm: number | null
+          weld_joint_id: string
+          weld_location: string
+          weld_type_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          diameter_inch?: number | null
+          id?: string
+          is_removed?: boolean
+          spool_revision_id: string
+          thickness_mm?: number | null
+          weld_joint_id: string
+          weld_location?: string
+          weld_type_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          diameter_inch?: number | null
+          id?: string
+          is_removed?: boolean
+          spool_revision_id?: string
+          thickness_mm?: number | null
+          weld_joint_id?: string
+          weld_location?: string
+          weld_type_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weld_joint_revisions_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weld_joint_revisions_weld_joint_id_fkey"
+            columns: ["weld_joint_id"]
+            isOneToOne: false
+            referencedRelation: "weld_joints"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weld_joint_revisions_weld_type_id_fkey"
+            columns: ["weld_type_id"]
+            isOneToOne: false
+            referencedRelation: "project_weld_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weld_joints: {
+        Row: {
+          created_at: string
+          id: string
+          project_id: string
+          weld_number: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          project_id: string
+          weld_number: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          project_id?: string
+          weld_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weld_joints_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weld_points: {
+        Row: {
+          created_at: string
+          id: string
+          point_type: string
+          sequence_number: number
+          weld_joint_revision_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          point_type: string
+          sequence_number: number
+          weld_joint_revision_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          point_type?: string
+          sequence_number?: number
+          weld_joint_revision_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weld_points_weld_joint_revision_id_fkey"
+            columns: ["weld_joint_revision_id"]
+            isOneToOne: false
+            referencedRelation: "weld_joint_revisions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       welder_qualifications: {
         Row: {
@@ -2311,6 +3110,38 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_spooling_import_job: {
+        Args: { job_comment?: string; target_project_id: string }
+        Returns: {
+          affected_entity_ids: string[]
+          applied_at: string | null
+          applied_row_count: number
+          canceled_at: string | null
+          completed_at: string | null
+          conflicts_confirmed: boolean
+          created_at: string
+          failure_reason: string | null
+          id: string
+          import_type: string
+          kind: string | null
+          project_id: string
+          requested_by: string
+          source_checksum: string | null
+          source_file_name: string | null
+          source_media_type: string | null
+          source_size_bytes: number | null
+          status: string
+          storage_path: string | null
+          summary: Json
+          validated_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "import_jobs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       current_user_has_capability: {
         Args: { requested_capability: string; target_project_id: string }
         Returns: boolean
@@ -2354,6 +3185,10 @@ export type Database = {
         Returns: boolean
       }
       is_platform_admin: { Args: never; Returns: boolean }
+      isometric_revision_project_id: {
+        Args: { revision_id: string }
+        Returns: string
+      }
       legacy_access_role: {
         Args: { legacy_role: Database["public"]["Enums"]["app_role"] }
         Returns: string
@@ -2446,6 +3281,34 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      register_spooling_import_file: {
+        Args: {
+          checksum: string
+          file_name: string
+          media_type: string
+          object_path: string
+          role: Database["public"]["Enums"]["spoolgen_file_role"]
+          size_bytes: number
+          target_job_id: string
+        }
+        Returns: {
+          checksum: string | null
+          file_name: string
+          file_role: Database["public"]["Enums"]["spoolgen_file_role"]
+          id: string
+          job_id: string
+          media_type: string | null
+          size_bytes: number
+          storage_path: string | null
+          uploaded_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "import_files"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       revalidate_import_job: {
         Args: { target_job_id: string }
         Returns: {
@@ -2521,6 +3384,10 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      spool_revision_project_id: {
+        Args: { spool_revision_id: string }
+        Returns: string
+      }
       storage_path_project_id: {
         Args: { object_name: string }
         Returns: string
@@ -2560,11 +3427,24 @@ export type Database = {
         | "spooling_team"
         | "subcontractor"
       area_environment: "above_ground" | "underground"
+      engineering_entity_type:
+        | "spool"
+        | "weld_joint"
+        | "support"
+        | "flange_joint"
       import_issue_severity: "blocker" | "conflict" | "warning"
       ndt_method: "rt" | "ut" | "mt" | "pt" | "pmi" | "ht" | "vt"
       pressure_unit: "bar" | "psi"
       project_reference_status: "active" | "inactive" | "archived"
+      revision_change_type: "new" | "revised" | "unchanged" | "removed"
+      revision_decision:
+        | "not_done"
+        | "cancelled"
+        | "done_without_modification"
+        | "rework"
+      revision_status: "draft" | "accepted" | "superseded"
       role_kind: "access" | "functional"
+      spoolgen_file_role: "weld" | "trace" | "bolt" | "supp"
       system_reference_kind:
         | "material_type"
         | "film_quantity"
@@ -2715,11 +3595,26 @@ export const Constants = {
         "subcontractor",
       ],
       area_environment: ["above_ground", "underground"],
+      engineering_entity_type: [
+        "spool",
+        "weld_joint",
+        "support",
+        "flange_joint",
+      ],
       import_issue_severity: ["blocker", "conflict", "warning"],
       ndt_method: ["rt", "ut", "mt", "pt", "pmi", "ht", "vt"],
       pressure_unit: ["bar", "psi"],
       project_reference_status: ["active", "inactive", "archived"],
+      revision_change_type: ["new", "revised", "unchanged", "removed"],
+      revision_decision: [
+        "not_done",
+        "cancelled",
+        "done_without_modification",
+        "rework",
+      ],
+      revision_status: ["draft", "accepted", "superseded"],
       role_kind: ["access", "functional"],
+      spoolgen_file_role: ["weld", "trace", "bolt", "supp"],
       system_reference_kind: [
         "material_type",
         "film_quantity",
