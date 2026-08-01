@@ -1,5 +1,5 @@
 begin;
-select plan(22);
+select plan(30);
 
 insert into auth.users (id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at)
 values
@@ -290,6 +290,84 @@ select throws_ok(
       '[]'::jsonb, '{}'::jsonb)$$,
   'PQC30', null,
   'a field joint is refused by Shop Weld Progress'
+);
+
+-- Restore a clean welded record after the negative cases above
+select public.record_weld_progress(
+  '47000000-0000-0000-0000-000000000511',
+  '50000000-0000-0000-0000-000000000511',
+  '56000000-0000-0000-0000-000000000511',
+  '[{"point_type":"root","welder_qualification_id":"57000000-0000-0000-0000-000000000511",
+     "completion_percent":50,"welded_on":"2026-08-05"},
+    {"point_type":"cap","welder_qualification_id":"57000000-0000-0000-0000-000000000512",
+     "completion_percent":50,"welded_on":"2026-08-05"}]'::jsonb,
+  '{"weld_on":"2026-08-05"}'::jsonb);
+
+select is(
+  (select is_locked from public.weld_progress_records
+   where weld_joint_revision_id = '47000000-0000-0000-0000-000000000511'),
+  false,
+  'a welded joint starts unlocked'
+);
+
+-- Accepting the first obligation locks the joint
+select lives_ok(
+  format($$select public.record_nde_obligation_outcome(%L, 'satisfied')$$,
+    (select id from public.nde_obligations
+     where weld_joint_revision_id = '47000000-0000-0000-0000-000000000511' and method = 'rt')),
+  'the RT obligation is satisfied'
+);
+select is(
+  (select is_locked from public.weld_progress_records
+   where weld_joint_revision_id = '47000000-0000-0000-0000-000000000511'),
+  true,
+  'the first accepted NDE result locks the joint'
+);
+
+-- Dossier 30 prohibition 4
+select throws_ok(
+  $$select public.record_weld_progress(
+      '47000000-0000-0000-0000-000000000511',
+      '50000000-0000-0000-0000-000000000511',
+      '56000000-0000-0000-0000-000000000511',
+      '[{"point_type":"root","welder_qualification_id":"57000000-0000-0000-0000-000000000512",
+         "completion_percent":50,"welded_on":"2026-08-05"},
+        {"point_type":"cap","welder_qualification_id":"57000000-0000-0000-0000-000000000511",
+         "completion_percent":50,"welded_on":"2026-08-05"}]'::jsonb,
+      '{"weld_on":"2026-08-05"}'::jsonb)$$,
+  'PQC36', null,
+  'a locked joint refuses ordinary weld progress'
+);
+
+-- The correction path works, and only with a reason
+select throws_ok(
+  format($$select public.correct_weld_progress(
+      '47000000-0000-0000-0000-000000000511', %s,
+      '{"dwir_number":"DWIR-2"}'::jsonb, '   ')$$,
+    (select version from public.weld_progress_records
+     where weld_joint_revision_id = '47000000-0000-0000-0000-000000000511')),
+  '23514', null,
+  'a correction without a reason is refused'
+);
+select lives_ok(
+  format($$select public.correct_weld_progress(
+      '47000000-0000-0000-0000-000000000511', %s,
+      '{"dwir_number":"DWIR-2"}'::jsonb, 'Transcription error on the DWIR number')$$,
+    (select version from public.weld_progress_records
+     where weld_joint_revision_id = '47000000-0000-0000-0000-000000000511')),
+  'a reasoned correction passes the lock'
+);
+select is(
+  (select dwir_number from public.weld_progress_records
+   where weld_joint_revision_id = '47000000-0000-0000-0000-000000000511'),
+  'DWIR-2',
+  'the correction was applied'
+);
+select is(
+  (select count(*)::int from public.audit_events
+   where action = 'correct_weld_progress'),
+  1,
+  'the correction is in the audit trail'
 );
 
 select * from finish();
