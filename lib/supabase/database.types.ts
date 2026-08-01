@@ -3018,6 +3018,38 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      apply_spooling_import_job: {
+        Args: { target_job_id: string }
+        Returns: {
+          affected_entity_ids: string[]
+          applied_at: string | null
+          applied_row_count: number
+          canceled_at: string | null
+          completed_at: string | null
+          conflicts_confirmed: boolean
+          created_at: string
+          failure_reason: string | null
+          id: string
+          import_type: string
+          kind: string | null
+          project_id: string
+          requested_by: string
+          source_checksum: string | null
+          source_file_name: string | null
+          source_media_type: string | null
+          source_size_bytes: number | null
+          status: string
+          storage_path: string | null
+          summary: Json
+          validated_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "import_jobs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       assert_access_request_is_valid: {
         Args: {
           requested_access_role: string
@@ -3110,6 +3142,37 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_manual_revision: {
+        Args: {
+          decisions?: Json
+          new_revision_number: string
+          revision_comment?: string
+          target_isometric_id: string
+        }
+        Returns: {
+          accepted_at: string | null
+          comment: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          isometric_id: string
+          line_number: string | null
+          pds_area_id: string | null
+          revision_number: string
+          revision_ordinal: number
+          service_class_id: string | null
+          sheet_number: string | null
+          source_import_job_id: string | null
+          status: Database["public"]["Enums"]["revision_status"]
+          superseded_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "isometric_revisions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_spooling_import_job: {
         Args: { job_comment?: string; target_project_id: string }
         Returns: {
@@ -3158,6 +3221,8 @@ export type Database = {
         Args: { target_project_id: string; target_subcontractor_id: string }
         Returns: boolean
       }
+      engineering_numeric: { Args: { value: string }; Returns: number }
+      engineering_numeric_key: { Args: { value: number }; Returns: string }
       get_project_access_matrix: {
         Args: { target_project_id: string }
         Returns: {
@@ -3249,7 +3314,79 @@ export type Database = {
         Args: { target_membership_id: string }
         Returns: Json
       }
+      preview_spooling_import: {
+        Args: { target_job_id: string }
+        Returns: {
+          change_type: Database["public"]["Enums"]["revision_change_type"]
+          decision: Database["public"]["Enums"]["revision_decision"]
+          entity_key: string
+          entity_type: Database["public"]["Enums"]["engineering_entity_type"]
+          iso_number: string
+          next_payload: Json
+          previous_payload: Json
+          requires_decision: boolean
+        }[]
+      }
       record_import_validation: {
+        Args: { parsed_issues: Json; parsed_rows: Json; target_job_id: string }
+        Returns: {
+          affected_entity_ids: string[]
+          applied_at: string | null
+          applied_row_count: number
+          canceled_at: string | null
+          completed_at: string | null
+          conflicts_confirmed: boolean
+          created_at: string
+          failure_reason: string | null
+          id: string
+          import_type: string
+          kind: string | null
+          project_id: string
+          requested_by: string
+          source_checksum: string | null
+          source_file_name: string | null
+          source_media_type: string | null
+          source_size_bytes: number | null
+          status: string
+          storage_path: string | null
+          summary: Json
+          validated_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "import_jobs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      record_revision_decision: {
+        Args: {
+          chosen_decision: Database["public"]["Enums"]["revision_decision"]
+          decision_comment?: string
+          target_entity_key: string
+          target_entity_type: Database["public"]["Enums"]["engineering_entity_type"]
+          target_iso_number: string
+          target_job_id: string
+        }
+        Returns: {
+          comment: string | null
+          decided_at: string
+          decided_by: string | null
+          decision: Database["public"]["Enums"]["revision_decision"]
+          entity_key: string
+          entity_type: Database["public"]["Enums"]["engineering_entity_type"]
+          id: string
+          iso_number: string
+          job_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "import_revision_decisions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      record_spooling_validation: {
         Args: { parsed_issues: Json; parsed_rows: Json; target_job_id: string }
         Returns: {
           affected_entity_ids: string[]
@@ -3314,6 +3451,14 @@ export type Database = {
         Returns: {
           blocker_count: number
           conflict_count: number
+        }[]
+      }
+      revalidate_spooling_import_job: {
+        Args: { target_job_id: string }
+        Returns: {
+          blocker_count: number
+          unresolved_count: number
+          warning_count: number
         }[]
       }
       save_welder_qualification: {
@@ -3387,6 +3532,14 @@ export type Database = {
       spool_revision_project_id: {
         Args: { spool_revision_id: string }
         Returns: string
+      }
+      spooling_staging: {
+        Args: { target_job_id: string }
+        Returns: {
+          entity_kind: string
+          entity_values: Json
+          staging_row_number: number
+        }[]
       }
       storage_path_project_id: {
         Args: { object_name: string }
