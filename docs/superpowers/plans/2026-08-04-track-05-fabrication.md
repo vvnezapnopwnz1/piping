@@ -8927,7 +8927,7 @@ Track 05 is complete when all of the following are demonstrably true:
 - [x] No raw PostgREST or SQL error text reaches the UI (`supabase-construction-errors.test.ts`).
 - [x] The fabrication dashboard is built from `spool_construction_status`, not from fixtures.
 - [x] `/fabrication/qc-release` and `/fabrication/pwht-release` require `fabrication.qc.release`; `/fabrication/material-check` and `/fabrication/weld-progress` require `fabrication.progress.record` (`route-capabilities.test.ts`).
-- [x] The Track 05 bootstrap script writes rows and is idempotent across two consecutive runs.
+- [x] The Track 05 bootstrap script writes rows and is idempotent across two consecutive runs. Repaired and verified by the 2026-08-05 remediation plan; the original script never wrote a row.
 
 ## 6. Explicitly outside Track 05
 
@@ -8942,3 +8942,51 @@ Track 05 is complete when all of the following are demonstrably true:
 - **`project_spooling_checklist_items`.** Track 02 created the referential; dossier does not tie it to a fabrication command, so nothing in this track consumes it. Confirm with the business before wiring it to Material Check.
 - **WPS welding position.** Roadmap §17 lists *"validate WPS range/material/position/date"*, but `project_welding_procedures` has no position column — dossier §11.6 lists material type, diameter range, thickness range, subcontractor and code as the mandatory dimensions, and nothing else. Track 05 validates the five that exist. Adding position means a Track 02 referential change first; do not invent the column inside a construction migration.
 - **`nde_matrix_rules.material_traceability_required`.** Track 05 always requires a full material check before Fabricated, so the flag is currently redundant. Making the material check optional for rules that clear it is a behaviour change that needs a business decision, not a schema one.
+
+---
+
+## Execution addendum (2026-08-05)
+
+This plan was executed over 24 commits, `4651eaf..643743e`. Gates A–D were implemented
+faithfully; Gate E was not. What follows is the record, so a later track does not trust a
+tick that was never earned.
+
+**Executed as specified, verified independently:** `npm run verify` exits `0` from a fresh
+`supabase db reset` with 20 pgTAP files, 422 assertions and 74 unit tests; all 34 files of
+§4 exist; `lib/supabase/database.types.ts` is in sync with the local schema; every RPC is
+`security definer` with `set search_path`, an `audit_events` row and an idempotency key;
+`PQC30`–`PQC39` behave as §3.13 describes.
+
+**Not executed, though reported as done:**
+
+- Task 22 Step 5 — the bootstrap script was committed without ever being run. It wrote
+  `name` into `project_subcontractors`, whose column is `description`, and produced zero
+  rows. Two further schema mismatches sat behind it, and `service_role` held no DML on the
+  Track 02 referentials it targets, so even a corrected script could not have written.
+- Task 26 — the manual browser acceptance could not have taken place: the fixtures its
+  click path names did not exist, and no Track 01–04 bootstrap creates a spool.
+- All 146 step checkboxes were left unticked while all 32 exit criteria were ticked. The
+  document therefore recorded no evidence of what had actually been run.
+
+**Deviations from the written plan, resolved on 2026-08-05:**
+
+| Deviation | Resolution |
+| --- | --- |
+| `request_qc13_form` guarded by `fabrication.qc.release` instead of `fabrication.progress.record` (§3.14) | Aligned to the plan in `20260805090000_track05_remediation.sql`. |
+| `effective_stage_date` lost its `construction_phase` argument (§3.2) | A phase-scoped three-argument form was added; the two-argument form is a deprecated fabrication delegate. |
+| `materialize_progress_copies` had no caller in the application (§3.4) | `revision-workbench.tsx` now materializes the copies each applied import authorizes. |
+| The screen issued a QC-13 and discarded its id (§3.5) | The form id is carried into `record_material_check`. |
+| `materialize_progress_copies` takes an isometric revision id, not a spool revision id | Kept; the repository, the pgTAP fixture and this addendum agree on the signature. |
+| `material_check_items` has no `is_accepted` / `checked_on`; acceptance is `piping_material_record_id not null` | Kept — it is stricter than the plan's schema. Documented in `docs/architecture/construction-progress-model.md`. |
+| `NDT_METHODS` includes `vt`, which has no matrix column | Kept and commented in the source. |
+| The fixture test asserted `planInsertCount === 12` where the plan's own builder returned 10 | The plan was internally inconsistent. The count is now 14 and matches the collections the script writes. |
+
+**Also inaccurate, corrected on 2026-08-05:** `docs/SUPABASE_BACKEND_FOUNDATION.md` and
+`docs/architecture/construction-progress-model.md` described a view
+`spool_material_check_status` that exists in no migration, and
+`docs/SUPABASE_NEXT_AGENT_CONTEXT.md` listed eight Track 05 migration filenames of which
+only two were real.
+
+**Known limitation carried forward to Track 07:** `spool_fabrication_readiness` counts all
+non-removed weld joints, not only shop joints, so a spool with a field or assembly joint
+can never reach `is_fabricated` through Shop Weld Progress.
