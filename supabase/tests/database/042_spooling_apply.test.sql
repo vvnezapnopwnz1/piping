@@ -1,5 +1,5 @@
 begin;
-select plan(24);
+select plan(40);
 
 insert into auth.users (id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at)
 values
@@ -241,6 +241,191 @@ select is(
    where iso.iso_number = 'ISO-A' and rev.status = 'accepted'),
   'R1',
   'R1 replaced R0 as the accepted revision'
+);
+
+-- A registered file is not itself an engineering definition. The server must
+-- refuse an empty staging submission even when the caller has spooling.manage.
+select lives_ok(
+  $$select public.create_spooling_import_job('30000000-0000-0000-0000-000000000421', 'empty load')$$,
+  'an empty SpoolGen job can be opened for validation feedback'
+);
+
+create temporary table spl_empty_job as
+select id from public.import_jobs
+where project_id = '30000000-0000-0000-0000-000000000421'
+  and status = 'draft'
+order by created_at desc limit 1;
+
+select lives_ok(
+  format($$select public.register_spooling_import_file(
+      %L, 'weld', 'weld.txt', 'text/plain', 1, 'sum-empty', 'p/empty/weld.txt')$$,
+    (select id from spl_empty_job)),
+  'a file can be registered for the empty submission'
+);
+
+select lives_ok(
+  format($$select public.record_spooling_validation(%L, '[]'::jsonb, '[]'::jsonb)$$,
+    (select id from spl_empty_job)),
+  'the empty submission is recorded so its server blocker is visible'
+);
+
+select is(
+  (select count(*)::int from public.import_job_issues
+   where job_id = (select id from spl_empty_job)
+     and code = 'SRV_SPOOLING_SPINE_MISSING' and severity = 'blocker'),
+  1,
+  'an empty submission receives a server-derived engineering-spine blocker'
+);
+
+select throws_ok(
+  format($$select public.apply_spooling_import_job(%L)$$, (select id from spl_empty_job)),
+  'PQC26',
+  null,
+  'an empty submission cannot become an applied import'
+);
+
+-- Add support and flange history to the accepted R1 so removing its spool must
+-- retain every child change item in the next revision.
+reset role;
+
+insert into public.supports (id, project_id, support_number)
+values ('53000000-0000-0000-0000-000000000421', '30000000-0000-0000-0000-000000000421', 'SU-A1');
+
+insert into public.flange_joints (id, project_id, flange_number)
+values ('54000000-0000-0000-0000-000000000421', '30000000-0000-0000-0000-000000000421', 'FL-A1');
+
+insert into public.support_revisions (support_id, spool_revision_id, support_type, quantity)
+select '53000000-0000-0000-0000-000000000421', sr.id, 'shoe', 1
+from public.spool_revisions sr
+join public.isometric_revisions rev on rev.id = sr.isometric_revision_id
+join public.spools sp on sp.id = sr.spool_id
+where rev.status = 'accepted' and sp.spool_number = 'SP-A1';
+
+insert into public.flange_joint_revisions (
+  flange_joint_id, spool_revision_id, flange_rating, diameter_inch, bolt_size, bolt_quantity, joint_type
+)
+select '54000000-0000-0000-0000-000000000421', sr.id, '150', 6, 'M16', 4, 'butt'
+from public.spool_revisions sr
+join public.isometric_revisions rev on rev.id = sr.isometric_revision_id
+join public.spools sp on sp.id = sr.spool_id
+where rev.status = 'accepted' and sp.spool_number = 'SP-A1';
+
+set local role authenticated;
+
+select lives_ok(
+  $$select public.create_spooling_import_job('30000000-0000-0000-0000-000000000421', 'R2 removal')$$,
+  'a revision job can replace a removed spool with a new spool'
+);
+
+create temporary table spl_job3 as
+select id from public.import_jobs
+where project_id = '30000000-0000-0000-0000-000000000421'
+  and status = 'draft'
+order by created_at desc limit 1;
+
+select lives_ok(
+  format($$select public.register_spooling_import_file(
+      %L, 'weld', 'weld.txt', 'text/plain', 2048, 'sum-weld-3', 'p/j3/weld.txt')$$,
+    (select id from spl_job3)),
+  'weld.txt can be registered for the removal revision'
+);
+
+select lives_ok(
+  format($$select public.record_spooling_validation(%L, %L::jsonb, '[]'::jsonb)$$,
+    (select id from spl_job3),
+    $json$[
+      {"row_number":1,"raw_values":{},"action":"create","normalized_values":
+        {"entity_type":"isometric","iso_number":"ISO-A","revision_number":"R2",
+         "pds_area":"PDS-A","service_class":"SC-A","line_number":"L-1","sheet_number":"1"}},
+      {"row_number":2,"raw_values":{},"action":"create","normalized_values":
+        {"entity_type":"spool","iso_number":"ISO-A","spool_number":"SP-DUMMY",
+         "sequence_number":"1","weight_kg":"80.0","material_class":"CS"}},
+      {"row_number":3,"raw_values":{},"action":"create","normalized_values":
+        {"entity_type":"weld_joint","iso_number":"ISO-A","spool_number":"SP-DUMMY",
+         "weld_number":"W-DUMMY","weld_type":"BW","weld_location":"shop",
+         "service_class":"SC-A","diameter_inch":"6","thickness_mm":"8.2"}}
+    ]$json$),
+  'the removal revision validates'
+);
+
+select lives_ok(
+  format($$select public.record_revision_decision(
+      %L, 'ISO-A', 'spool', 'SP-A1', 'cancelled', 'removed from definition')$$,
+    (select id from spl_job3)),
+  'the removed spool can be cancelled'
+);
+
+select lives_ok(
+  format($$select public.record_revision_decision(
+      %L, 'ISO-A', 'spool', 'SP-DUMMY', 'not_done', 'new spool')$$,
+    (select id from spl_job3)),
+  'the new spool has its required revision decision'
+);
+
+select lives_ok(
+  format($$select public.apply_spooling_import_job(%L)$$, (select id from spl_job3)),
+  'the R2 removal import applies once every spool decision exists'
+);
+
+create temporary table spl_r2 as
+select rev.id as revision_id, iso.id as isometric_id
+from public.isometrics iso
+join public.isometric_revisions rev on rev.isometric_id = iso.id
+where iso.iso_number = 'ISO-A' and rev.status = 'accepted';
+
+select is(
+  (select count(*)::int from public.revision_change_items
+   where isometric_revision_id = (select revision_id from spl_r2)
+     and entity_type in ('support', 'flange_joint') and change_type = 'removed'),
+  2,
+  'removing a spool retains removed support and flange change items'
+);
+
+-- Manual revisions obey the same decision gate as imported revisions. The DO
+-- block rolls back an unexpected success so later assertions remain isolated.
+select throws_ok(
+  format($$do $manual$
+  begin
+    perform public.create_manual_revision(%L, 'R3', null, '[]'::jsonb);
+    raise exception 'manual revision unexpectedly succeeded' using errcode = 'PQC99';
+  exception when sqlstate 'PQC22' then
+    raise exception 'manual decisions are required' using errcode = 'PQC22';
+  end
+  $manual$;$$, (select isometric_id from spl_r2)),
+  'PQC22',
+  null,
+  'a manual revision requires every spool decision'
+);
+
+select throws_ok(
+  format($$do $manual$
+  begin
+    perform public.create_manual_revision(%L, 'R3', null,
+      '[{"entity_type":"spool","entity_key":"SP-DUMMY","decision":"rework"}]'::jsonb);
+    raise exception 'manual rework unexpectedly succeeded' using errcode = 'PQC99';
+  exception when sqlstate 'PQC22' then
+    raise exception 'manual weld decisions are required' using errcode = 'PQC22';
+  end
+  $manual$;$$, (select isometric_id from spl_r2)),
+  'PQC22',
+  null,
+  'a reworked manual spool requires every weld decision'
+);
+
+select lives_ok(
+  format($$select public.create_manual_revision(%L, 'R3', null,
+    '[
+      {"entity_type":"spool","entity_key":"SP-DUMMY","decision":"rework"},
+      {"entity_type":"weld_joint","entity_key":"W-DUMMY","decision":"done_without_modification"}
+    ]'::jsonb)$$, (select isometric_id from spl_r2)),
+  'a manual revision applies after every required decision is present'
+);
+
+select is(
+  (select revision_number from public.isometric_revisions
+   where isometric_id = (select isometric_id from spl_r2) and status = 'accepted'),
+  'R3',
+  'the manual revision becomes the accepted revision'
 );
 
 select * from finish();

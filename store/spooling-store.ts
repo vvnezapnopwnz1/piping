@@ -419,7 +419,7 @@ export const useSpoolingStore = create<SpoolingState>()(
         set((state) => ({
           splTransmittals: [newTrans, ...state.splTransmittals],
           isoRecords: state.isoRecords.map((iso) =>
-            isoIds.includes(iso.id) ? { ...iso, status: "Superseded" as ISOStatus } : iso
+            isoIds.includes(iso.id) ? { ...iso, status: "Released" as ISOStatus } : iso
           ),
         }))
       },
@@ -427,22 +427,24 @@ export const useSpoolingStore = create<SpoolingState>()(
       applyRevision: (isoId, newRev, reason) =>
         set((state) => {
           const existing = state.isoRecords.find((i) => i.id === isoId)
+          if (!existing) return state
+          const successorId = `${isoId}-${newRev}`
           return {
             isoRecords: [
               ...state.isoRecords.map((iso) =>
                 iso.id === isoId ? { ...iso, status: "Superseded" as ISOStatus } : iso
               ),
               {
-                id: isoId,
-                transmittalId: existing?.transmittalId ?? "",
+                id: successorId,
+                transmittalId: existing.transmittalId,
                 rev: newRev,
-                pdsArea: existing?.pdsArea ?? "",
-                serviceClass: existing?.serviceClass ?? "",
+                pdsArea: existing.pdsArea,
+                serviceClass: existing.serviceClass,
                 status: "Received",
                 totalRounds: 0,
                 checkingRounds: [],
                 holdHistory: [],
-                notes: `Revision from ${existing?.rev}: ${reason}`,
+                notes: `Revision from ${existing.rev}: ${reason}`,
               } as ISORecord,
             ],
           }

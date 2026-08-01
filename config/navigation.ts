@@ -111,6 +111,9 @@ export const navigationConfig: NavSection[] = [
             href: '/spooling',
             icon: LayoutDashboard,
           },
+          { title: 'SpoolGen Import', href: '/spooling/import', icon: Inbox },
+          { title: 'Browse', href: '/spooling/browse', icon: GitBranch },
+          { title: 'Revision History', href: '/spooling/revisions', icon: GitBranch },
           {
             title: 'Engineering Transmittals',
             href: '/spooling/engineering-transmittals',

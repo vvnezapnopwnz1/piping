@@ -3461,6 +3461,14 @@ export type Database = {
           warning_count: number
         }[]
       }
+      revalidate_spooling_import_job_base: {
+        Args: { target_job_id: string }
+        Returns: {
+          blocker_count: number
+          unresolved_count: number
+          warning_count: number
+        }[]
+      }
       save_welder_qualification: {
         Args: {
           target_project_id: string

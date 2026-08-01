@@ -9,6 +9,7 @@ __v0_jsx-dev-runtime.ts
 # Environment variables
 .env
 .env*.local
+scripts/bootstrap-track04-local-fixtures.sh
 
 # Local Supabase Studio query history; never version project-specific bootstrap values.
 supabase/snippets/

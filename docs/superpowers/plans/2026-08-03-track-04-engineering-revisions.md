@@ -1510,7 +1510,7 @@ git commit -m "chore(engineering): regenerate database types for engineering sch
 
 ### Checkpoint 1 — Gate A complete
 
-- [x] Run `npm run verify`. Expected: exit `0`, 16 pgTAP files pass.
+- [x] Run `npm run verify`. Expected: exit `0`, 15 pgTAP files pass at this point (the 12 inherited plus `040`, `041`, `043`).
 - [x] Report to the reviewer: the pgTAP file and assertion counts, and confirmation that
       `supabase db reset` was used so the migrations were proven from empty.
 
@@ -2660,7 +2660,27 @@ Run:
 ```
 Expected: exit `0`.
 
-- [ ] **Step 3: Commit.**
+- [ ] **Step 3: Note the known cost of re-evaluating the preview.**
+
+`apply_spooling_import_job` calls `preview_spooling_import(target_job_id)` once per spool loop and
+once per child loop, so the diff is recomputed O(n) times for an import of n spools. That is
+correct but quadratic, and once an ISO's new revision is accepted a later call recomputes that
+ISO's diff against the revision this function just created — harmless only because the results are
+filtered by `iso_number`.
+
+Do **not** edit the shipped migration. If a pilot-sized import is slow, add a follow-up migration
+that materializes the diff once at the top of the function:
+
+```sql
+  drop table if exists apply_preview;
+  create temporary table apply_preview on commit drop as
+  select * from public.preview_spooling_import(target_job_id);
+```
+
+and replaces each `from public.preview_spooling_import(target_job_id) p` inside the loops with
+`from apply_preview p`. Record the measured row count that motivated the change.
+
+- [ ] **Step 4: Commit.**
 
 ```bash
 git add supabase/migrations/20260803092000_spooling_import_apply.sql
@@ -2964,7 +2984,7 @@ Create `supabase/tests/database/042_spooling_apply.test.sql`:
 
 ```sql
 begin;
-select plan(22);
+select plan(24);
 
 insert into auth.users (id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at)
 values
@@ -2986,9 +3006,12 @@ values
 insert into public.project_pds_areas (id, project_id, code, description)
 values ('50000000-0000-0000-0000-000000000421', '30000000-0000-0000-0000-000000000421', 'PDS-A', 'Area A');
 
+insert into public.system_reference_entries (id, kind, code, description)
+values ('50100000-0000-0000-0000-000000000421', 'material_type', 'CS', 'Carbon Steel')
+on conflict do nothing;
+
 insert into public.project_service_classes (id, project_id, material_type_id, code, description)
-select '51000000-0000-0000-0000-000000000421', '30000000-0000-0000-0000-000000000421', e.id, 'SC-A', 'Class A'
-from public.system_reference_entries e where e.kind = 'material_type' limit 1;
+values ('51000000-0000-0000-0000-000000000421', '30000000-0000-0000-0000-000000000421', '50100000-0000-0000-0000-000000000421', 'SC-A', 'Class A');
 
 insert into public.project_weld_types (id, project_id, code, description)
 values ('52000000-0000-0000-0000-000000000421', '30000000-0000-0000-0000-000000000421', 'BW', 'Butt weld');
@@ -3082,8 +3105,8 @@ select is(
 select is(
   (select count(*)::int from public.preview_spooling_import((select id from spl_job))
    where change_type = 'new'),
-  3,
-  'the preview reports three new entities'
+   2,
+  'the preview reports two new entities'
 );
 
 -- Preview writes nothing.
@@ -3129,6 +3152,7 @@ select lives_ok(
 create temporary table spl_job2 as
 select id from public.import_jobs
 where project_id = '30000000-0000-0000-0000-000000000421'
+  and status = 'draft'
 order by created_at desc limit 1;
 
 select lives_ok(
@@ -3214,7 +3238,7 @@ Run:
 ```bash
 /opt/homebrew/bin/supabase db reset && /opt/homebrew/bin/supabase test db
 ```
-Expected: `042_spooling_apply.test.sql` reports `ok 1` … `ok 22`, no failures.
+Expected: `042_spooling_apply.test.sql` reports `ok 1` … `ok 24`, no failures.
 
 When an assertion fails, read the raised `errcode` before changing anything. A `PQC22` where
 `PQC26` was expected means the validation ordering is wrong, not that the test is wrong.
@@ -3279,7 +3303,7 @@ git commit -m "chore(engineering): regenerate database types for the spooling im
 
 ### Checkpoint 2 — Gate B complete
 
-- [ ] Run `npm run verify`. Expected: exit `0`, 17 pgTAP files pass.
+- [ ] Run `npm run verify`. Expected: exit `0`, 16 pgTAP files pass (`042` joins `040`, `041`, `043`).
 - [ ] Report to the reviewer: which `PQC` codes are exercised by `042`, and the outcome of
       Task 11 Step 3 — the manual proof that a failed apply left no revision behind.
 
@@ -5222,3 +5246,2170 @@ Expected: no output.
       rule is a warning in both the SQL (`SRV_WPS_MISSING`) and the apply gate.
 
 ---
+
+# Gate D — Infrastructure and UI
+
+## Task 21: Add the file-reading boundary and the error mapper
+
+**Files:**
+- Create: `modules/engineering/infrastructure/spoolgen-file-reader.ts`
+- Create: `modules/engineering/infrastructure/supabase-engineering-errors.ts`
+- Test: `modules/engineering/infrastructure/supabase-engineering-errors.test.ts`
+
+- [ ] **Step 1: Write the failing test.**
+
+Create `modules/engineering/infrastructure/supabase-engineering-errors.test.ts`:
+
+```ts
+import assert from "node:assert/strict"
+import { mapSupabaseEngineeringError } from "./supabase-engineering-errors"
+
+function run() {
+  assert.match(mapSupabaseEngineeringError({ code: "PQC10" }), /already been applied/)
+  assert.match(mapSupabaseEngineeringError({ code: "PQC20" }), /not be found/)
+  assert.match(mapSupabaseEngineeringError({ code: "PQC21" }), /read-only/)
+  assert.match(mapSupabaseEngineeringError({ code: "PQC22" }), /decision/)
+  assert.match(mapSupabaseEngineeringError({ code: "PQC23" }), /revision number/)
+  assert.match(mapSupabaseEngineeringError({ code: "PQC25" }), /weld\.txt/)
+  assert.match(mapSupabaseEngineeringError({ code: "PQC26" }), /blocking/)
+  assert.match(mapSupabaseEngineeringError({ code: "42501" }), /permission/)
+
+  // A raw database or parser message must never reach the user.
+  const leaked = mapSupabaseEngineeringError({
+    code: "P0001",
+    message: 'null value in column "spool_id" violates not-null constraint',
+  })
+  assert.doesNotMatch(leaked, /spool_id/)
+  assert.doesNotMatch(leaked, /not-null/)
+  assert.equal(mapSupabaseEngineeringError(null), mapSupabaseEngineeringError(undefined))
+
+  console.log("All supabase-engineering-errors.test.ts assertions passed!")
+}
+
+run()
+```
+
+- [ ] **Step 2: Run it and watch it fail.**
+
+Run:
+```bash
+node --import tsx --test modules/engineering/infrastructure/supabase-engineering-errors.test.ts
+```
+Expected: FAIL — module not found.
+
+- [ ] **Step 3: Write the error mapper.**
+
+Create `modules/engineering/infrastructure/supabase-engineering-errors.ts`:
+
+```ts
+const GENERIC = "The engineering action could not be completed. Please try again."
+
+export function mapSupabaseEngineeringError(
+  error: { code?: string; message?: string } | null | undefined
+): string {
+  if (!error) return GENERIC
+
+  switch (error.code) {
+    case "PQC10":
+      return "This import has already been applied. Start a new import to load the files again."
+    case "PQC12":
+      return "The import job could not be found."
+    case "PQC20":
+      return "The isometric could not be found, or it has no accepted revision to revise."
+    case "PQC21":
+      return "That revision is superseded and read-only. Create a new revision instead."
+    case "PQC22":
+      return "Every revised spool and every weld inside a reworked spool needs a decision before this import can be applied."
+    case "PQC23":
+      return "That revision number already exists for this isometric. Choose another one."
+    case "PQC24":
+      return "This import is not in a state where that action is allowed."
+    case "PQC25":
+      return "weld.txt is required before a SpoolGen import can be validated or applied."
+    case "PQC26":
+      return "The import still has blocking issues. Fix them in the source files and upload again."
+    case "42501":
+      return "You do not have permission to manage spooling data for this project."
+    case "23505":
+      return "That business number already exists in this project."
+    case "23514":
+      return "The files contain a value the project rules do not allow."
+    case "23503":
+      return "A referenced value in the files does not exist in this project."
+    default:
+      return GENERIC
+  }
+}
+```
+
+- [ ] **Step 4: Write the file reader.**
+
+Create `modules/engineering/infrastructure/spoolgen-file-reader.ts`:
+
+```ts
+// The only place a browser File becomes text. Everything downstream is pure.
+export async function readTextFile(file: File): Promise<string> {
+  return await file.text()
+}
+
+export async function computeFileChecksum(file: File): Promise<string> {
+  const bytes = await file.arrayBuffer()
+  const digest = await crypto.subtle.digest("SHA-256", bytes)
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("")
+}
+```
+
+- [ ] **Step 5: Run the test and watch it pass.**
+
+Run:
+```bash
+node --import tsx --test modules/engineering/infrastructure/supabase-engineering-errors.test.ts
+```
+Expected: PASS.
+
+- [ ] **Step 6: Commit.**
+
+```bash
+git add modules/engineering/infrastructure/spoolgen-file-reader.ts modules/engineering/infrastructure/supabase-engineering-errors.ts modules/engineering/infrastructure/supabase-engineering-errors.test.ts
+git commit -m "feat(engineering): add the SpoolGen file boundary and error mapper"
+```
+
+---
+
+## Task 22: Implement the Supabase engineering repository
+
+**Files:**
+- Create: `modules/engineering/infrastructure/supabase-engineering-repository.ts`
+- Test: `modules/engineering/infrastructure/supabase-engineering-repository.test.ts`
+
+- [ ] **Step 1: Write the failing test.**
+
+Create `modules/engineering/infrastructure/supabase-engineering-repository.test.ts`:
+
+```ts
+import assert from "node:assert/strict"
+import {
+  SPOOLING_BUCKET,
+  spoolingObjectPath,
+  toPreviewChangeItem,
+} from "./supabase-engineering-repository"
+
+function run() {
+  assert.equal(SPOOLING_BUCKET, "project-spooling")
+
+  // The Storage policy resolves the project from segment 1, so this shape is a contract.
+  assert.equal(
+    spoolingObjectPath("30000000-0000-0000-0000-000000000401", "job-1", "weld"),
+    "30000000-0000-0000-0000-000000000401/job-1/weld.txt"
+  )
+
+  const spool = toPreviewChangeItem({
+    iso_number: "ISO-A",
+    entity_type: "spool",
+    entity_key: "SP-1",
+    change_type: "revised",
+    requires_decision: true,
+    decision: null,
+    previous_payload: { sequence_number: "1" },
+    next_payload: { sequence_number: "1" },
+  })
+  assert.equal(spool.spoolNumber, "SP-1")
+  assert.equal(spool.requiresDecision, true)
+  assert.equal(spool.decision, null)
+
+  // A weld takes its spool from whichever payload exists.
+  const removedWeld = toPreviewChangeItem({
+    iso_number: "ISO-A",
+    entity_type: "weld_joint",
+    entity_key: "W-9",
+    change_type: "removed",
+    requires_decision: false,
+    decision: "cancelled",
+    previous_payload: { spool_number: "SP-2" },
+    next_payload: null,
+  })
+  assert.equal(removedWeld.spoolNumber, "SP-2")
+  assert.equal(removedWeld.decision, "cancelled")
+
+  console.log("All supabase-engineering-repository.test.ts assertions passed!")
+}
+
+run()
+```
+
+- [ ] **Step 2: Run it and watch it fail.**
+
+Run:
+```bash
+node --import tsx --test modules/engineering/infrastructure/supabase-engineering-repository.test.ts
+```
+Expected: FAIL — module not found.
+
+- [ ] **Step 3: Write the repository.**
+
+Create `modules/engineering/infrastructure/supabase-engineering-repository.ts`:
+
+```ts
+import type { SupabaseClient } from "@supabase/supabase-js"
+import type { Database } from "@/lib/supabase/database.types"
+import type { ImportJob, ImportJobStatus } from "@/modules/imports/domain/import-job"
+import type { ImportIssue } from "@/modules/imports/domain/import-issue"
+import type { EngineeringEntityType } from "../domain/entity"
+import type { SpoolgenFileRole } from "../domain/spoolgen-file"
+import type { ChangeType, PreviewChangeItem } from "../domain/diff"
+import type { RevisionDecision, RevisionStatus } from "../domain/revision"
+import type { StagingRow } from "../domain/definition"
+import { mapSupabaseEngineeringError } from "./supabase-engineering-errors"
+
+export const SPOOLING_BUCKET = "project-spooling"
+
+// Segment 1 must be the project id: the Storage policy reads it with
+// storage_path_project_id(). Segment 3 is the role so a re-upload replaces in place.
+export function spoolingObjectPath(
+  projectId: string,
+  jobId: string,
+  role: SpoolgenFileRole
+): string {
+  return `${projectId}/${jobId}/${role}.txt`
+}
+
+// A local mapper rather than a shared one: the engineering module reads import_jobs but
+// must not depend on the internals of the Track 03 infrastructure layer.
+function toImportJob(row: any): ImportJob {
+  return {
+    id: row.id,
+    projectId: row.project_id,
+    importType: row.import_type,
+    status: row.status as ImportJobStatus,
+    sourceFileName: row.source_file_name ?? null,
+    sourceMediaType: row.source_media_type ?? null,
+    sourceSizeBytes: row.source_size_bytes ?? null,
+    sourceChecksum: row.source_checksum ?? null,
+    storagePath: row.storage_path ?? null,
+    conflictsConfirmed: row.conflicts_confirmed === true,
+    appliedRowCount: row.applied_row_count ?? 0,
+    affectedEntityIds: row.affected_entity_ids ?? [],
+    failureReason: row.failure_reason ?? null,
+    createdAt: row.created_at,
+    validatedAt: row.validated_at ?? null,
+    appliedAt: row.applied_at ?? null,
+    canceledAt: row.canceled_at ?? null,
+  }
+}
+
+export function toPreviewChangeItem(row: any): PreviewChangeItem {
+  const entityType = row.entity_type as EngineeringEntityType
+  const spoolNumber =
+    entityType === "spool"
+      ? row.entity_key
+      : (row.next_payload?.spool_number ?? row.previous_payload?.spool_number ?? null)
+
+  return {
+    isoNumber: row.iso_number,
+    entityType,
+    entityKey: row.entity_key,
+    spoolNumber,
+    changeType: row.change_type as ChangeType,
+    requiresDecision: row.requires_decision === true,
+    decision: (row.decision ?? null) as RevisionDecision | null,
+  }
+}
+
+export async function createSpoolingImportJob(
+  client: SupabaseClient<Database>,
+  projectId: string,
+  comment: string | null
+): Promise<ImportJob> {
+  const { data, error } = await client.rpc("create_spooling_import_job" as never, {
+    target_project_id: projectId,
+    job_comment: comment,
+  } as never)
+
+  if (error) throw new Error(mapSupabaseEngineeringError(error))
+  return toImportJob(data)
+}
+
+export async function uploadSpoolgenFile(
+  client: SupabaseClient<Database>,
+  objectPath: string,
+  file: File
+): Promise<void> {
+  const { error } = await client.storage
+    .from(SPOOLING_BUCKET)
+    .upload(objectPath, file, { upsert: true, contentType: "text/plain" })
+
+  if (error) throw new Error(mapSupabaseEngineeringError(error as never))
+}
+
+export async function registerSpoolgenFile(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  role: SpoolgenFileRole,
+  file: File,
+  checksum: string,
+  objectPath: string
+): Promise<void> {
+  const { error } = await client.rpc("register_spooling_import_file" as never, {
+    target_job_id: jobId,
+    role,
+    file_name: file.name,
+    media_type: file.type || "text/plain",
+    size_bytes: file.size,
+    checksum,
+    object_path: objectPath,
+  } as never)
+
+  if (error) throw new Error(mapSupabaseEngineeringError(error))
+}
+
+export async function recordSpoolingValidation(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  rows: readonly StagingRow[],
+  issues: readonly ImportIssue[]
+): Promise<ImportJob> {
+  const { data, error } = await client.rpc("record_spooling_validation" as never, {
+    target_job_id: jobId,
+    parsed_rows: rows.map((row) => ({
+      row_number: row.rowNumber,
+      raw_values: row.rawValues,
+      normalized_values: row.normalizedValues,
+      action: row.action,
+    })),
+    parsed_issues: issues.map((issue) => ({
+      row_number: issue.rowNumber,
+      column_name: issue.columnName,
+      severity: issue.severity,
+      code: issue.code,
+      message: issue.message,
+    })),
+  } as never)
+
+  if (error) throw new Error(mapSupabaseEngineeringError(error))
+  return toImportJob(data)
+}
+
+export interface ValidationCounts {
+  blockerCount: number
+  warningCount: number
+  unresolvedCount: number
+}
+
+export async function revalidateSpoolingImportJob(
+  client: SupabaseClient<Database>,
+  jobId: string
+): Promise<ValidationCounts> {
+  const { data, error } = await client.rpc("revalidate_spooling_import_job" as never, {
+    target_job_id: jobId,
+  } as never)
+
+  if (error) throw new Error(mapSupabaseEngineeringError(error))
+  const row = Array.isArray(data) ? data[0] : data
+  return {
+    blockerCount: (row as any)?.blocker_count ?? 0,
+    warningCount: (row as any)?.warning_count ?? 0,
+    unresolvedCount: (row as any)?.unresolved_count ?? 0,
+  }
+}
+
+export async function loadPreview(
+  client: SupabaseClient<Database>,
+  jobId: string
+): Promise<PreviewChangeItem[]> {
+  const { data, error } = await client.rpc("preview_spooling_import" as never, {
+    target_job_id: jobId,
+  } as never)
+
+  if (error) throw new Error(mapSupabaseEngineeringError(error))
+  return ((data ?? []) as any[]).map(toPreviewChangeItem)
+}
+
+export async function recordRevisionDecision(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  item: PreviewChangeItem,
+  decision: RevisionDecision,
+  comment: string | null
+): Promise<void> {
+  const { error } = await client.rpc("record_revision_decision" as never, {
+    target_job_id: jobId,
+    target_iso_number: item.isoNumber,
+    target_entity_type: item.entityType,
+    target_entity_key: item.entityKey,
+    chosen_decision: decision,
+    decision_comment: comment,
+  } as never)
+
+  if (error) throw new Error(mapSupabaseEngineeringError(error))
+}
+
+export async function applySpoolingImportJob(
+  client: SupabaseClient<Database>,
+  jobId: string
+): Promise<ImportJob> {
+  const { data, error } = await client.rpc("apply_spooling_import_job" as never, {
+    target_job_id: jobId,
+  } as never)
+
+  if (error) throw new Error(mapSupabaseEngineeringError(error))
+  return toImportJob(data)
+}
+
+export async function createManualRevision(
+  client: SupabaseClient<Database>,
+  isometricId: string,
+  revisionNumber: string,
+  comment: string | null,
+  decisions: readonly { entity_type: EngineeringEntityType; entity_key: string; decision: RevisionDecision }[]
+): Promise<void> {
+  const { error } = await client.rpc("create_manual_revision" as never, {
+    target_isometric_id: isometricId,
+    new_revision_number: revisionNumber,
+    revision_comment: comment,
+    decisions,
+  } as never)
+
+  if (error) throw new Error(mapSupabaseEngineeringError(error))
+}
+
+export async function loadSpoolingJobs(
+  client: SupabaseClient<Database>,
+  projectId: string
+): Promise<ImportJob[]> {
+  const { data, error } = await client
+    .from("import_jobs")
+    .select(
+      "id, project_id, import_type, status, source_file_name, source_media_type, source_size_bytes, source_checksum, storage_path, conflicts_confirmed, applied_row_count, affected_entity_ids, failure_reason, created_at, validated_at, applied_at, canceled_at"
+    )
+    .eq("project_id", projectId)
+    .eq("import_type", "spooling_definition")
+    .order("created_at", { ascending: false })
+
+  if (error) throw new Error(mapSupabaseEngineeringError(error))
+  return (data ?? []).map(toImportJob)
+}
+
+export async function loadJobIssues(
+  client: SupabaseClient<Database>,
+  jobId: string
+): Promise<ImportIssue[]> {
+  const { data, error } = await client
+    .from("import_job_issues")
+    .select("row_number, column_name, severity, code, message")
+    .eq("job_id", jobId)
+    .order("row_number", { ascending: true })
+
+  if (error) throw new Error(mapSupabaseEngineeringError(error))
+  return (data ?? []).map((row: any) => ({
+    rowNumber: row.row_number,
+    columnName: row.column_name,
+    severity: row.severity,
+    code: row.code,
+    message: row.message,
+  }))
+}
+
+// Browse ----------------------------------------------------------------------
+
+export interface IsometricSummary {
+  id: string
+  isoNumber: string
+  acceptedRevisionId: string | null
+  acceptedRevisionNumber: string | null
+}
+
+export async function loadIsometrics(
+  client: SupabaseClient<Database>,
+  projectId: string
+): Promise<IsometricSummary[]> {
+  const { data, error } = await client
+    .from("isometrics")
+    .select("id, iso_number, isometric_revisions(id, revision_number, status)")
+    .eq("project_id", projectId)
+    .order("iso_number", { ascending: true })
+
+  if (error) throw new Error(mapSupabaseEngineeringError(error))
+
+  return (data ?? []).map((row: any) => {
+    const accepted = (row.isometric_revisions ?? []).find(
+      (revision: any) => revision.status === "accepted"
+    )
+    return {
+      id: row.id,
+      isoNumber: row.iso_number,
+      acceptedRevisionId: accepted?.id ?? null,
+      acceptedRevisionNumber: accepted?.revision_number ?? null,
+    }
+  })
+}
+
+export interface RevisionSummary {
+  id: string
+  revisionNumber: string
+  status: RevisionStatus
+  createdAt: string
+  acceptedAt: string | null
+  supersededAt: string | null
+  comment: string | null
+}
+
+export async function loadRevisionHistory(
+  client: SupabaseClient<Database>,
+  isometricId: string
+): Promise<RevisionSummary[]> {
+  const { data, error } = await client
+    .from("isometric_revisions")
+    .select("id, revision_number, status, created_at, accepted_at, superseded_at, comment")
+    .eq("isometric_id", isometricId)
+    .order("revision_ordinal", { ascending: false })
+
+  if (error) throw new Error(mapSupabaseEngineeringError(error))
+  return (data ?? []).map((row: any) => ({
+    id: row.id,
+    revisionNumber: row.revision_number,
+    status: row.status as RevisionStatus,
+    createdAt: row.created_at,
+    acceptedAt: row.accepted_at,
+    supersededAt: row.superseded_at,
+    comment: row.comment,
+  }))
+}
+
+export interface SpoolNode {
+  id: string
+  spoolNumber: string
+  isRemoved: boolean
+  weldNumbers: string[]
+  supportNumbers: string[]
+  flangeNumbers: string[]
+  identCodes: string[]
+}
+
+export async function loadRevisionGraph(
+  client: SupabaseClient<Database>,
+  revisionId: string
+): Promise<SpoolNode[]> {
+  const { data, error } = await client
+    .from("spool_revisions")
+    .select(
+      "id, is_removed, spools(spool_number), weld_joint_revisions(weld_joints(weld_number)), support_revisions(supports(support_number)), flange_joint_revisions(flange_joints(flange_number)), spool_revision_materials(ident_code)"
+    )
+    .eq("isometric_revision_id", revisionId)
+
+  if (error) throw new Error(mapSupabaseEngineeringError(error))
+
+  return (data ?? [])
+    .map((row: any) => ({
+      id: row.id,
+      spoolNumber: row.spools?.spool_number ?? "",
+      isRemoved: row.is_removed === true,
+      weldNumbers: (row.weld_joint_revisions ?? [])
+        .map((entry: any) => entry.weld_joints?.weld_number)
+        .filter(Boolean)
+        .sort(),
+      supportNumbers: (row.support_revisions ?? [])
+        .map((entry: any) => entry.supports?.support_number)
+        .filter(Boolean)
+        .sort(),
+      flangeNumbers: (row.flange_joint_revisions ?? [])
+        .map((entry: any) => entry.flange_joints?.flange_number)
+        .filter(Boolean)
+        .sort(),
+      identCodes: (row.spool_revision_materials ?? [])
+        .map((entry: any) => entry.ident_code)
+        .filter(Boolean)
+        .sort(),
+    }))
+    .sort((left: SpoolNode, right: SpoolNode) =>
+      left.spoolNumber.localeCompare(right.spoolNumber)
+    )
+}
+```
+
+- [ ] **Step 4: Run the test and watch it pass.**
+
+Run:
+```bash
+node --import tsx --test modules/engineering/infrastructure/supabase-engineering-repository.test.ts
+```
+Expected: PASS.
+
+- [ ] **Step 5: Typecheck.**
+
+Run:
+```bash
+npm run typecheck
+```
+Expected: exit `0`.
+
+- [ ] **Step 6: Commit.**
+
+```bash
+git add modules/engineering/infrastructure/supabase-engineering-repository.ts modules/engineering/infrastructure/supabase-engineering-repository.test.ts
+git commit -m "feat(engineering): implement the Supabase engineering repository"
+```
+
+---
+
+## Task 23: Build the SpoolGen import screen
+
+**Files:**
+- Create: `modules/engineering/ui/spooling-import-screen.tsx`
+
+- [ ] **Step 1: Write the component.**
+
+Create `modules/engineering/ui/spooling-import-screen.tsx`:
+
+```tsx
+"use client"
+
+import { useCallback, useMemo, useState } from "react"
+import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
+import { ImportIssueList } from "@/modules/imports/ui/import-issue-list"
+import type { ImportIssue } from "@/modules/imports/domain/import-issue"
+import {
+  SPOOLGEN_FILE_ROLES,
+  checkFileSize,
+  describeFileSet,
+  type SpoolgenFileRole,
+} from "../domain/spoolgen-file"
+import { buildSpoolgenSubmission } from "../application/import-spooling"
+import { readTextFile, computeFileChecksum } from "../infrastructure/spoolgen-file-reader"
+import {
+  createSpoolingImportJob,
+  uploadSpoolgenFile,
+  registerSpoolgenFile,
+  recordSpoolingValidation,
+  revalidateSpoolingImportJob,
+  loadJobIssues,
+  spoolingObjectPath,
+} from "../infrastructure/supabase-engineering-repository"
+
+const ROLE_LABEL: Record<SpoolgenFileRole, string> = {
+  weld: "weld.txt — ISO / spool / weld structure",
+  trace: "trace.txt — ident codes and material trace",
+  bolt: "bolt.txt — flange and bolting joints",
+  supp: "supp.txt — supports",
+}
+
+export function SpoolingImportScreen({
+  projectId,
+  canManage,
+  onValidated,
+}: {
+  projectId: string
+  canManage: boolean
+  onValidated: (jobId: string) => void
+}) {
+  const [files, setFiles] = useState<Partial<Record<SpoolgenFileRole, File>>>({})
+  const [issues, setIssues] = useState<ImportIssue[]>([])
+  const [busy, setBusy] = useState(false)
+  const [jobId, setJobId] = useState<string | null>(null)
+
+  const presentRoles = useMemo(
+    () => SPOOLGEN_FILE_ROLES.filter((role) => files[role] !== undefined),
+    [files]
+  )
+  const fileSet = useMemo(() => describeFileSet(presentRoles), [presentRoles])
+
+  const pickFile = useCallback((role: SpoolgenFileRole, file: File | null) => {
+    setIssues([])
+    setJobId(null)
+    if (file === null) {
+      setFiles((current) => {
+        const next = { ...current }
+        delete next[role]
+        return next
+      })
+      return
+    }
+
+    // Dossier 14.3: reject an oversized file before it is ever uploaded.
+    const sizeIssue = checkFileSize(role, file.name, file.size)
+    if (sizeIssue) {
+      toast.error(sizeIssue.message)
+      return
+    }
+    setFiles((current) => ({ ...current, [role]: file }))
+  }, [])
+
+  const validate = useCallback(async () => {
+    if (!canManage || busy) return
+    setBusy(true)
+    try {
+      const client = getSupabaseBrowserClient()
+
+      const texts: Partial<Record<SpoolgenFileRole, string>> = {}
+      for (const role of presentRoles) {
+        texts[role] = await readTextFile(files[role] as File)
+      }
+
+      const submission = buildSpoolgenSubmission(texts)
+      if (!submission.canSubmit) {
+        setIssues(submission.issues)
+        toast.error("weld.txt is required before a SpoolGen import can be validated.")
+        return
+      }
+
+      const job = await createSpoolingImportJob(client, projectId, null)
+      for (const role of presentRoles) {
+        const file = files[role] as File
+        const path = spoolingObjectPath(projectId, job.id, role)
+        const checksum = await computeFileChecksum(file)
+        await uploadSpoolgenFile(client, path, file)
+        await registerSpoolgenFile(client, job.id, role, file, checksum, path)
+      }
+
+      await recordSpoolingValidation(client, job.id, submission.rows, submission.issues)
+      const counts = await revalidateSpoolingImportJob(client, job.id)
+      setIssues(await loadJobIssues(client, job.id))
+      setJobId(job.id)
+      onValidated(job.id)
+
+      toast.success(
+        `Validated ${submission.rows.length} rows: ${counts.blockerCount} errors, ${counts.warningCount} warnings.`
+      )
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The import could not be validated.")
+    } finally {
+      setBusy(false)
+    }
+  }, [busy, canManage, files, onValidated, presentRoles, projectId])
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-3">
+          SpoolGen import
+          {fileSet.complete ? (
+            <Badge variant="outline">4 of 4 files</Badge>
+          ) : (
+            <Badge variant="outline">{presentRoles.length} of 4 files</Badge>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Upload the SpoolGen export. Only weld.txt is required; each file is limited to 4 MB.
+        </p>
+
+        <div className="space-y-2">
+          {SPOOLGEN_FILE_ROLES.map((role) => (
+            <label key={role} className="flex items-center gap-3 text-sm">
+              <span className="w-72 shrink-0">{ROLE_LABEL[role]}</span>
+              <input
+                type="file"
+                accept=".txt,.csv,.tsv,text/plain"
+                disabled={!canManage || busy}
+                onChange={(event) => pickFile(role, event.target.files?.[0] ?? null)}
+              />
+              {files[role] ? (
+                <span className="text-xs text-muted-foreground">{files[role]?.name}</span>
+              ) : null}
+            </label>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={validate}
+            disabled={!canManage || busy || presentRoles.length === 0}
+          >
+            {busy ? "Validating…" : "Validate files"}
+          </Button>
+          {jobId ? (
+            <span className="text-sm text-muted-foreground">
+              Job created. Review the decisions below before applying.
+            </span>
+          ) : null}
+        </div>
+
+        <ImportIssueList issues={issues} />
+      </CardContent>
+    </Card>
+  )
+}
+```
+
+- [ ] **Step 2: Typecheck.**
+
+Run:
+```bash
+npm run typecheck
+```
+Expected: exit `0`. Every repository call in this component takes the client first —
+`createSpoolingImportJob(client, projectId, comment)`. If typecheck complains, fix the call site,
+not the repository.
+
+- [ ] **Step 3: Commit.**
+
+```bash
+git add modules/engineering/ui/spooling-import-screen.tsx
+git commit -m "feat(engineering): build the SpoolGen import screen"
+```
+
+---
+
+## Task 24: Build the revision decision table and workbench
+
+**Files:**
+- Create: `modules/engineering/ui/revision-decision-table.tsx`
+- Create: `modules/engineering/ui/revision-workbench.tsx`
+
+- [ ] **Step 1: Write the decision table.**
+
+Create `modules/engineering/ui/revision-decision-table.tsx`:
+
+```tsx
+"use client"
+
+import { Badge } from "@/components/ui/badge"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import type { ChangeType, PreviewChangeItem } from "../domain/diff"
+import { changeTypeLabel } from "../domain/diff"
+import { REVISION_DECISIONS, decisionLabel, type RevisionDecision } from "../domain/revision"
+
+const CHANGE_STYLE: Record<ChangeType, string> = {
+  new: "bg-emerald-100 text-emerald-900 border-emerald-300",
+  revised: "bg-amber-100 text-amber-900 border-amber-300",
+  unchanged: "bg-slate-100 text-slate-700 border-slate-300",
+  removed: "bg-red-100 text-red-900 border-red-300",
+}
+
+export function RevisionDecisionTable({
+  items,
+  canManage,
+  busy,
+  onDecide,
+}: {
+  items: readonly PreviewChangeItem[]
+  canManage: boolean
+  busy: boolean
+  onDecide: (item: PreviewChangeItem, decision: RevisionDecision) => void
+}) {
+  if (items.length === 0) {
+    return <p className="text-sm text-muted-foreground">This import changes nothing.</p>
+  }
+
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Entity</TableHead>
+          <TableHead>Number</TableHead>
+          <TableHead>Spool</TableHead>
+          <TableHead>Change</TableHead>
+          <TableHead>Decision</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {items.map((item) => (
+          <TableRow key={`${item.isoNumber}-${item.entityType}-${item.entityKey}`}>
+            <TableCell className="text-xs uppercase text-muted-foreground">
+              {item.entityType.replace("_", " ")}
+            </TableCell>
+            <TableCell className="font-mono text-xs">{item.entityKey}</TableCell>
+            <TableCell className="font-mono text-xs">{item.spoolNumber ?? "—"}</TableCell>
+            <TableCell>
+              <Badge variant="outline" className={CHANGE_STYLE[item.changeType]}>
+                {changeTypeLabel(item.changeType)}
+              </Badge>
+            </TableCell>
+            <TableCell>
+              {item.requiresDecision ? (
+                <Select
+                  value={item.decision ?? undefined}
+                  disabled={!canManage || busy}
+                  onValueChange={(value) => onDecide(item, value as RevisionDecision)}
+                >
+                  <SelectTrigger className="w-64">
+                    <SelectValue placeholder="Decision required" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {REVISION_DECISIONS.map((decision) => (
+                      <SelectItem key={decision} value={decision}>
+                        {decisionLabel(decision)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <span className="text-xs text-muted-foreground">Not required</span>
+              )}
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  )
+}
+```
+
+- [ ] **Step 2: Write the workbench.**
+
+Create `modules/engineering/ui/revision-workbench.tsx`:
+
+```tsx
+"use client"
+
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
+import { summarizeChanges, type PreviewChangeItem } from "../domain/diff"
+import type { RevisionDecision } from "../domain/revision"
+import {
+  describeRevisionApplyGate,
+  groupByIsometric,
+  unresolvedItems,
+} from "../application/resolve-revision"
+import {
+  applySpoolingImportJob,
+  loadPreview,
+  recordRevisionDecision,
+  revalidateSpoolingImportJob,
+} from "../infrastructure/supabase-engineering-repository"
+import { RevisionDecisionTable } from "./revision-decision-table"
+
+export function RevisionWorkbench({
+  jobId,
+  canManage,
+  onApplied,
+}: {
+  jobId: string | null
+  canManage: boolean
+  onApplied: () => void
+}) {
+  const [items, setItems] = useState<PreviewChangeItem[]>([])
+  const [blockerCount, setBlockerCount] = useState(0)
+  const [status, setStatus] = useState<string>("validated")
+  const [busy, setBusy] = useState(false)
+
+  const refresh = useCallback(async () => {
+    if (jobId === null) {
+      setItems([])
+      return
+    }
+    try {
+      const client = getSupabaseBrowserClient()
+      const [preview, counts] = await Promise.all([
+        loadPreview(client, jobId),
+        revalidateSpoolingImportJob(client, jobId),
+      ])
+      setItems(preview)
+      setBlockerCount(counts.blockerCount)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The preview could not be loaded.")
+    }
+  }, [jobId])
+
+  useEffect(() => {
+    void refresh()
+  }, [refresh])
+
+  const summary = useMemo(() => summarizeChanges(items), [items])
+  const unresolved = useMemo(() => unresolvedItems(items), [items])
+  const grouped = useMemo(() => groupByIsometric(items), [items])
+
+  const gate = useMemo(
+    () =>
+      describeRevisionApplyGate({
+        status,
+        alreadyApplied: status === "applied",
+        blockerCount,
+        unresolvedCount: unresolved.length,
+      }),
+    [blockerCount, status, unresolved.length]
+  )
+
+  const decide = useCallback(
+    async (item: PreviewChangeItem, decision: RevisionDecision) => {
+      if (jobId === null || !canManage) return
+      setBusy(true)
+      try {
+        await recordRevisionDecision(getSupabaseBrowserClient(), jobId, item, decision, null)
+        // Reload rather than patch state: choosing anything other than Rework drops the
+        // weld decisions server-side, and requires_decision changes with it.
+        await refresh()
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "The decision could not be saved.")
+      } finally {
+        setBusy(false)
+      }
+    },
+    [canManage, jobId, refresh]
+  )
+
+  const apply = useCallback(async () => {
+    if (jobId === null || !gate.allowed) return
+    setBusy(true)
+    try {
+      const job = await applySpoolingImportJob(getSupabaseBrowserClient(), jobId)
+      setStatus(job.status)
+      toast.success(`Applied ${job.appliedRowCount} definition rows.`)
+      onApplied()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The import could not be applied.")
+    } finally {
+      setBusy(false)
+    }
+  }, [gate.allowed, jobId, onApplied])
+
+  if (jobId === null) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Revision decisions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            Validate a SpoolGen file set to see what it changes.
+          </p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex flex-wrap items-center gap-2">
+          Revision decisions
+          <Badge variant="outline">{summary.new} new</Badge>
+          <Badge variant="outline">{summary.revised} revised</Badge>
+          <Badge variant="outline">{summary.unchanged} unchanged</Badge>
+          <Badge variant="outline">{summary.removed} removed</Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {Array.from(grouped.entries()).map(([isoNumber, isoItems]) => (
+          <section key={isoNumber} className="space-y-2">
+            <h3 className="font-mono text-sm font-semibold">{isoNumber}</h3>
+            <RevisionDecisionTable
+              items={isoItems}
+              canManage={canManage}
+              busy={busy}
+              onDecide={decide}
+            />
+          </section>
+        ))}
+
+        <div className="flex items-center gap-3">
+          <Button onClick={apply} disabled={!canManage || busy || !gate.allowed}>
+            {busy ? "Applying…" : "Apply import"}
+          </Button>
+          {gate.reason ? (
+            <span className="text-sm text-muted-foreground">{gate.reason}</span>
+          ) : null}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+```
+
+- [ ] **Step 3: Typecheck.**
+
+Run:
+```bash
+npm run typecheck
+```
+Expected: exit `0`.
+
+- [ ] **Step 4: Commit.**
+
+```bash
+git add modules/engineering/ui/revision-decision-table.tsx modules/engineering/ui/revision-workbench.tsx
+git commit -m "feat(engineering): build the revision decision workbench"
+```
+
+---
+
+## Task 25: Build the engineering browser
+
+**Files:**
+- Create: `modules/engineering/ui/engineering-browser.tsx`
+
+Dossier §13.3: Browse is the operational explorer — ISO → spool → weld/support/flange, plus
+revision history. Everything here is read-only.
+
+- [ ] **Step 1: Write the component.**
+
+Create `modules/engineering/ui/engineering-browser.tsx`:
+
+```tsx
+"use client"
+
+import { useCallback, useEffect, useState } from "react"
+import { toast } from "sonner"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
+import type { RevisionStatus } from "../domain/revision"
+import {
+  loadIsometrics,
+  loadRevisionHistory,
+  loadRevisionGraph,
+  type IsometricSummary,
+  type RevisionSummary,
+  type SpoolNode,
+} from "../infrastructure/supabase-engineering-repository"
+
+const STATUS_STYLE: Record<RevisionStatus, string> = {
+  draft: "bg-slate-100 text-slate-700 border-slate-300",
+  accepted: "bg-emerald-100 text-emerald-900 border-emerald-300",
+  superseded: "bg-slate-200 text-slate-600 border-slate-400",
+}
+
+export function EngineeringBrowser({
+  projectId,
+  refreshToken,
+}: {
+  projectId: string
+  refreshToken: number
+}) {
+  const [isometrics, setIsometrics] = useState<IsometricSummary[]>([])
+  const [selectedIsometricId, setSelectedIsometricId] = useState<string | null>(null)
+  const [revisions, setRevisions] = useState<RevisionSummary[]>([])
+  const [selectedRevisionId, setSelectedRevisionId] = useState<string | null>(null)
+  const [spools, setSpools] = useState<SpoolNode[]>([])
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const rows = await loadIsometrics(getSupabaseBrowserClient(), projectId)
+        setIsometrics(rows)
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Isometrics could not be loaded.")
+      }
+    })()
+  }, [projectId, refreshToken])
+
+  const selectIsometric = useCallback(async (isometric: IsometricSummary) => {
+    setSelectedIsometricId(isometric.id)
+    setSelectedRevisionId(null)
+    setSpools([])
+    try {
+      const history = await loadRevisionHistory(getSupabaseBrowserClient(), isometric.id)
+      setRevisions(history)
+      const accepted = history.find((revision) => revision.status === "accepted")
+      if (accepted) await selectRevision(accepted.id)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Revision history could not be loaded.")
+    }
+  }, [])
+
+  const selectRevision = useCallback(async (revisionId: string) => {
+    setSelectedRevisionId(revisionId)
+    try {
+      const graph = await loadRevisionGraph(getSupabaseBrowserClient(), revisionId)
+      setSpools(graph)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "The revision could not be loaded.")
+    }
+  }, [])
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-3">
+      <Card>
+        <CardHeader>
+          <CardTitle>Isometrics</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-1">
+          {isometrics.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No isometrics have been imported for this project yet.
+            </p>
+          ) : (
+            isometrics.map((isometric) => (
+              <button
+                key={isometric.id}
+                type="button"
+                onClick={() => void selectIsometric(isometric)}
+                className={`flex w-full items-center justify-between rounded-md px-2 py-1 text-left text-sm hover:bg-muted ${
+                  selectedIsometricId === isometric.id ? "bg-muted" : ""
+                }`}
+              >
+                <span className="font-mono text-xs">{isometric.isoNumber}</span>
+                <Badge variant="outline">{isometric.acceptedRevisionNumber ?? "—"}</Badge>
+              </button>
+            ))
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Revision history</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-1">
+          {revisions.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Select an isometric.</p>
+          ) : (
+            revisions.map((revision) => (
+              <button
+                key={revision.id}
+                type="button"
+                onClick={() => void selectRevision(revision.id)}
+                className={`flex w-full items-center justify-between rounded-md px-2 py-1 text-left text-sm hover:bg-muted ${
+                  selectedRevisionId === revision.id ? "bg-muted" : ""
+                }`}
+              >
+                <span className="font-mono text-xs">{revision.revisionNumber}</span>
+                <Badge variant="outline" className={STATUS_STYLE[revision.status]}>
+                  {revision.status}
+                </Badge>
+              </button>
+            ))
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Spools</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {spools.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Select a revision.</p>
+          ) : (
+            spools.map((spool) => (
+              <div key={spool.id} className="rounded-md border px-3 py-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs">{spool.spoolNumber}</span>
+                  {spool.isRemoved ? <Badge variant="outline">Removed</Badge> : null}
+                </div>
+                <dl className="mt-1 grid grid-cols-2 gap-x-4 text-xs text-muted-foreground">
+                  <dt>Welds</dt>
+                  <dd className="font-mono">{spool.weldNumbers.join(", ") || "—"}</dd>
+                  <dt>Supports</dt>
+                  <dd className="font-mono">{spool.supportNumbers.join(", ") || "—"}</dd>
+                  <dt>Flange joints</dt>
+                  <dd className="font-mono">{spool.flangeNumbers.join(", ") || "—"}</dd>
+                  <dt>Ident codes</dt>
+                  <dd className="font-mono">{spool.identCodes.join(", ") || "—"}</dd>
+                </dl>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+```
+
+- [ ] **Step 2: Typecheck.**
+
+Run:
+```bash
+npm run typecheck
+```
+Expected: exit `0`. `selectIsometric` references `selectRevision` before its declaration — if
+TypeScript flags a use-before-declaration error, move the `selectRevision` `useCallback` above
+`selectIsometric` and add it to the `selectIsometric` dependency array.
+
+- [ ] **Step 3: Commit.**
+
+```bash
+git add modules/engineering/ui/engineering-browser.tsx
+git commit -m "feat(engineering): build the ISO to spool browse hierarchy"
+```
+
+---
+
+## Task 26: Wire the routes, capabilities and navigation
+
+**Files:**
+- Create: `app/spooling/import/page.tsx`
+- Create: `app/spooling/revisions/page.tsx`
+- Create: `app/spooling/browse/page.tsx`
+- Modify: `config/navigation.ts:100-131`
+- Modify: `config/route-capabilities.ts:11`
+
+- [ ] **Step 1: Create the import route.**
+
+Create `app/spooling/import/page.tsx`:
+
+```tsx
+"use client"
+
+import { useCallback, useState } from "react"
+import { useAppMode } from "@/contexts/app-mode-context"
+import { useOptionalAccess } from "@/modules/access/ui/access-context"
+import { SpoolingImportScreen } from "@/modules/engineering/ui/spooling-import-screen"
+import { RevisionWorkbench } from "@/modules/engineering/ui/revision-workbench"
+
+export default function SpoolingImportPage() {
+  const appMode = useAppMode()
+  const access = useOptionalAccess()
+  const [jobId, setJobId] = useState<string | null>(null)
+
+  const onApplied = useCallback(() => setJobId(null), [])
+
+  if (appMode === "demo") {
+    return (
+      <p className="text-sm text-muted-foreground">
+        The SpoolGen import writes durable engineering revisions and is available in Supabase mode
+        only. Switch the application mode to use it.
+      </p>
+    )
+  }
+
+  // can() honours isPlatformAdmin, which never appears in the capabilities array.
+  const projectId = access?.access.projectId ?? null
+  const canManage = access?.can("spooling.manage") ?? false
+
+  if (!projectId) {
+    return <p className="text-sm text-muted-foreground">Select a project to import SpoolGen files.</p>
+  }
+
+  return (
+    <div className="space-y-4">
+      <SpoolingImportScreen
+        projectId={projectId}
+        canManage={canManage}
+        onValidated={setJobId}
+      />
+      <RevisionWorkbench jobId={jobId} canManage={canManage} onApplied={onApplied} />
+    </div>
+  )
+}
+```
+
+- [ ] **Step 2: Create the revisions route.**
+
+Create `app/spooling/revisions/page.tsx`:
+
+```tsx
+"use client"
+
+import { useAppMode } from "@/contexts/app-mode-context"
+import { useOptionalAccess } from "@/modules/access/ui/access-context"
+import { EngineeringBrowser } from "@/modules/engineering/ui/engineering-browser"
+
+export default function SpoolingRevisionsPage() {
+  const appMode = useAppMode()
+  const access = useOptionalAccess()
+
+  if (appMode === "demo") {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Revision history is available in Supabase mode only.
+      </p>
+    )
+  }
+
+  const projectId = access?.access.projectId ?? null
+  if (!projectId) {
+    return <p className="text-sm text-muted-foreground">Select a project to see revision history.</p>
+  }
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-lg font-semibold">Revision history</h2>
+      <EngineeringBrowser projectId={projectId} refreshToken={0} />
+    </div>
+  )
+}
+```
+
+- [ ] **Step 3: Create the browse route.**
+
+Create `app/spooling/browse/page.tsx`:
+
+```tsx
+"use client"
+
+import { useAppMode } from "@/contexts/app-mode-context"
+import { useOptionalAccess } from "@/modules/access/ui/access-context"
+import { EngineeringBrowser } from "@/modules/engineering/ui/engineering-browser"
+
+export default function SpoolingBrowsePage() {
+  const appMode = useAppMode()
+  const access = useOptionalAccess()
+
+  if (appMode === "demo") {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Browse reads durable engineering definitions and is available in Supabase mode only.
+      </p>
+    )
+  }
+
+  const projectId = access?.access.projectId ?? null
+  if (!projectId) {
+    return <p className="text-sm text-muted-foreground">Select a project to browse engineering data.</p>
+  }
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-lg font-semibold">Browse</h2>
+      <EngineeringBrowser projectId={projectId} refreshToken={0} />
+    </div>
+  )
+}
+```
+
+- [ ] **Step 4: Add the navigation entries.**
+
+In `config/navigation.ts`, inside the Spooling `children` array (currently lines 108–130), add
+three entries after the `Home` entry:
+
+```ts
+          {
+            title: 'SpoolGen Import',
+            href: '/spooling/import',
+            icon: Inbox,
+          },
+          {
+            title: 'Browse',
+            href: '/spooling/browse',
+            icon: GitBranch,
+          },
+          {
+            title: 'Revision History',
+            href: '/spooling/revisions',
+            icon: GitBranch,
+          },
+```
+
+`Inbox` and `GitBranch` are already imported in this file — do not add duplicate imports.
+
+- [ ] **Step 5: Confirm route capabilities already cover the new routes.**
+
+`config/route-capabilities.ts:11` maps the `/spooling` prefix to `spooling.view`, and
+`requiredCapabilityForPath` matches by prefix, so `/spooling/import`, `/spooling/browse` and
+`/spooling/revisions` are already guarded. No change is required.
+
+Run:
+```bash
+node --import tsx --test config/route-capabilities.test.ts
+```
+Expected: PASS.
+
+Add two assertions to `config/route-capabilities.test.ts` proving the new routes resolve. That
+file has no `run()` wrapper — its assertions are top level — so append these immediately before
+the existing `requiredCapabilityForPath("/unknown")` assertion, importing nothing new:
+
+```ts
+assert.equal(requiredCapabilityForPath("/spooling/import"), "spooling.view")
+assert.equal(requiredCapabilityForPath("/spooling/browse"), "spooling.view")
+```
+
+- [ ] **Step 6: Verify.**
+
+Run:
+```bash
+npm run typecheck && npm run test:unit && npm run lint
+```
+Expected: exit `0` for all three.
+
+- [ ] **Step 7: Commit.**
+
+```bash
+git add app/spooling config/navigation.ts config/route-capabilities.test.ts
+git commit -m "feat(engineering): wire the SpoolGen import, browse and revision routes"
+```
+
+### Checkpoint 4 — Gate D complete
+
+- [ ] Run `npm run verify`. Expected: exit `0`.
+- [ ] Report to the reviewer: the three new routes, and confirmation that the demo branch of each
+      page renders without touching Supabase.
+
+---
+
+# Gate E — Fixtures, cleanup, verification and exit
+
+## Task 27: Fix the two demo spooling-store defects
+
+**Files:**
+- Modify: `store/spooling-store.ts:411-448`
+- Test: `store/spooling-store.test.ts`
+
+Roadmap §16 names both defects. Neither is about Supabase — they are wrong in demo mode too.
+
+- [ ] **Step 1: Write the failing test.**
+
+Create `store/spooling-store.test.ts`:
+
+```ts
+import assert from "node:assert/strict"
+// zustand/persist tolerates the missing localStorage under Node: createJSONStorage
+// catches the failure and the store falls back to in-memory state. Verified by importing
+// the module under `node --import tsx --test` before this plan was written.
+import { useSpoolingStore } from "./spooling-store"
+
+function run() {
+  const store = useSpoolingStore.getState()
+  const firstIso = store.isoRecords[0]
+  assert.ok(firstIso, "the seed contains at least one ISO")
+
+  // Defect 1: sending an outbound transmittal is a release, not a revision. It must not
+  // mark the ISO Superseded - only a new revision does that.
+  store.composeAndSendTransmittal("PDS-A", [firstIso.id], "tester")
+  const afterSend = useSpoolingStore
+    .getState()
+    .isoRecords.filter((iso) => iso.id === firstIso.id)
+  assert.equal(afterSend.length, 1, "sending a transmittal does not duplicate the ISO")
+  assert.notEqual(afterSend[0].status, "Superseded")
+  assert.equal(afterSend[0].status, "Released")
+
+  // Defect 2: applyRevision appended a second record carrying the same id, so every
+  // later find() became order-dependent.
+  useSpoolingStore.getState().applyRevision(firstIso.id, "R9", "engineering change")
+  const afterRevision = useSpoolingStore.getState().isoRecords
+  const sameId = afterRevision.filter((iso) => iso.id === firstIso.id)
+  assert.equal(sameId.length, 1, "a revision never leaves two records sharing one id")
+  assert.equal(sameId[0].status, "Superseded")
+
+  const successor = afterRevision.find(
+    (iso) => iso.rev === "R9" && iso.id !== firstIso.id
+  )
+  assert.ok(successor, "the new revision exists under its own id")
+  assert.equal(successor?.status, "Received")
+
+  console.log("All spooling-store.test.ts assertions passed!")
+}
+
+run()
+```
+
+- [ ] **Step 2: Run it and watch it fail.**
+
+Run:
+```bash
+node --import tsx --test store/spooling-store.test.ts
+```
+Expected: FAIL — the current `composeAndSendTransmittal` sets `Superseded`, and `applyRevision`
+produces two records sharing one id.
+
+`npm run test:unit` does not glob `store/**`. Add it in Step 5.
+
+- [ ] **Step 3: Fix `composeAndSendTransmittal`.**
+
+In `store/spooling-store.ts`, replace the `isoRecords` mapping inside
+`composeAndSendTransmittal` (currently lines 419–423):
+
+```ts
+        set((state) => ({
+          splTransmittals: [newTrans, ...state.splTransmittals],
+          isoRecords: state.isoRecords.map((iso) =>
+            // Sending an outbound transmittal releases the ISO to the shop. Only a new
+            // engineering revision supersedes it.
+            isoIds.includes(iso.id) ? { ...iso, status: "Released" as ISOStatus } : iso
+          ),
+        }))
+```
+
+- [ ] **Step 4: Fix `applyRevision`.**
+
+Replace the whole `applyRevision` implementation (currently lines 427–448):
+
+```ts
+      applyRevision: (isoId, newRev, reason) =>
+        set((state) => {
+          const existing = state.isoRecords.find((i) => i.id === isoId)
+          if (!existing) return state
+
+          // The successor gets its own id. Reusing isoId left two records answering to
+          // one key, so every later find() picked an arbitrary one.
+          const successorId = `${isoId}-${newRev}`
+
+          return {
+            isoRecords: [
+              ...state.isoRecords.map((iso) =>
+                iso.id === isoId ? { ...iso, status: "Superseded" as ISOStatus } : iso
+              ),
+              {
+                id: successorId,
+                transmittalId: existing.transmittalId,
+                rev: newRev,
+                pdsArea: existing.pdsArea,
+                serviceClass: existing.serviceClass,
+                status: "Received",
+                totalRounds: 0,
+                checkingRounds: [],
+                holdHistory: [],
+                notes: `Revision from ${existing.rev}: ${reason}`,
+              } as ISORecord,
+            ],
+          }
+        }),
+```
+
+- [ ] **Step 5: Include `store/**` in the unit test glob.**
+
+In `package.json`, change the `test:unit` script to add `"store/**/*.test.ts"`:
+
+```json
+    "test:unit": "node --import tsx --test \"modules/**/*.test.ts\" \"lib/**/*.test.ts\" \"config/**/*.test.ts\" \"contexts/**/*.test.ts\" \"components/**/*.test.ts\" \"scripts/**/*.test.ts\" \"store/**/*.test.ts\"",
+```
+
+- [ ] **Step 6: Run the test and watch it pass.**
+
+Run:
+```bash
+npm run test:unit
+```
+Expected: exit `0`, and `spooling-store.test.ts` appears in the output.
+
+- [ ] **Step 7: Commit.**
+
+```bash
+git add store/spooling-store.ts store/spooling-store.test.ts package.json
+git commit -m "fix(spooling): release ISOs on transmittal and give a revision its own id"
+```
+
+---
+
+## Task 28: Add working Track 04 browser fixtures
+
+**Files:**
+- Create: `scripts/bootstrap-track04-browser-fixtures.ts`
+- Create: `scripts/bootstrap-track04-browser-fixtures.test.ts`
+- Create: `docs/TRACK04_BROWSER_FIXTURES.md`
+- Modify: `package.json`
+
+The Track 04 screens need referentials that resolve, or every validation is a wall of blockers
+and nothing can be demonstrated.
+
+- [ ] **Step 1: Write the failing test.**
+
+Create `scripts/bootstrap-track04-browser-fixtures.test.ts`:
+
+```ts
+import assert from "node:assert/strict"
+import {
+  isLocalhost,
+  buildTrack04FixturePlan,
+  planInsertCount,
+} from "./bootstrap-track04-browser-fixtures"
+
+function run() {
+  assert.equal(isLocalhost("http://127.0.0.1:54321"), true)
+  assert.equal(isLocalhost("https://abc.supabase.co"), false)
+
+  const plan = buildTrack04FixturePlan("30000000-0000-0000-0000-000000000401", "mat-1", "sc-1", "wt-1")
+
+  assert.ok(plan.pdsAreas.some((area) => area.code === "PDS-T4"))
+  assert.ok(plan.serviceClasses.some((entry) => entry.code === "SC-T4"))
+  assert.ok(plan.weldTypes.some((entry) => entry.code === "BW-T4"))
+  // Without these two the SpoolGen validation can never come back clean.
+  assert.ok(plan.thicknessRules.length > 0)
+  assert.ok(plan.ndeMatrixRules.length > 0)
+  assert.ok(plan.ndeMatrixRules.every((rule) => rule.weld_location === "shop"))
+
+  assert.equal(planInsertCount(plan), 6)
+
+  console.log("All bootstrap-track04-browser-fixtures.test.ts assertions passed!")
+}
+
+run()
+```
+
+- [ ] **Step 2: Run it and watch it fail.**
+
+Run:
+```bash
+node --import tsx --test scripts/bootstrap-track04-browser-fixtures.test.ts
+```
+Expected: FAIL — module not found.
+
+- [ ] **Step 3: Write the bootstrap script.**
+
+Create `scripts/bootstrap-track04-browser-fixtures.ts`:
+
+```ts
+import { createClient } from "@supabase/supabase-js"
+
+export function isLocalhost(url: string): boolean {
+  try {
+    const { hostname } = new URL(url)
+    return hostname === "127.0.0.1" || hostname === "localhost" || hostname === "::1"
+  } catch {
+    return false
+  }
+}
+
+export interface Track04FixturePlan {
+  pdsAreas: { project_id: string; code: string; description: string }[]
+  serviceClasses: { project_id: string; code: string; description: string; material_type_id: string }[]
+  weldTypes: { project_id: string; code: string; description: string }[]
+  thicknessRules: {
+    project_id: string
+    service_class_id: string
+    diameter_inch: number
+    thickness_mm: number
+    flange_rating: string
+  }[]
+  ndeMatrixRules: {
+    project_id: string
+    service_class_id: string
+    weld_type_id: string
+    weld_location: string
+    rt_coverage: number
+  }[]
+}
+
+export function buildTrack04FixturePlan(
+  projectId: string,
+  materialTypeId: string,
+  serviceClassId: string,
+  weldTypeId: string
+): Track04FixturePlan {
+  return {
+    pdsAreas: [
+      { project_id: projectId, code: "PDS-T4", description: "Track 04 design area" },
+    ],
+    serviceClasses: [
+      {
+        project_id: projectId,
+        code: "SC-T4",
+        description: "Track 04 service class",
+        material_type_id: materialTypeId,
+      },
+    ],
+    weldTypes: [{ project_id: projectId, code: "BW-T4", description: "Butt weld" }],
+    thicknessRules: [
+      {
+        project_id: projectId,
+        service_class_id: serviceClassId,
+        diameter_inch: 6,
+        thickness_mm: 8.2,
+        flange_rating: "150",
+      },
+      {
+        project_id: projectId,
+        service_class_id: serviceClassId,
+        diameter_inch: 8,
+        thickness_mm: 10.3,
+        flange_rating: "150",
+      },
+    ],
+    ndeMatrixRules: [
+      {
+        project_id: projectId,
+        service_class_id: serviceClassId,
+        weld_type_id: weldTypeId,
+        weld_location: "shop",
+        rt_coverage: 10,
+      },
+    ],
+  }
+}
+
+export function planInsertCount(plan: Track04FixturePlan): number {
+  return (
+    plan.pdsAreas.length +
+    plan.serviceClasses.length +
+    plan.weldTypes.length +
+    plan.thicknessRules.length +
+    plan.ndeMatrixRules.length
+  )
+}
+
+async function runBootstrap(): Promise<void> {
+  const url = process.env.SUPABASE_URL ?? ""
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""
+
+  if (!isLocalhost(url)) {
+    throw new Error("Refusing to run against a non-local Supabase URL.")
+  }
+  if (!serviceRoleKey) {
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY is required and must be supplied out of band.")
+  }
+
+  const client = createClient(url, serviceRoleKey)
+
+  const { data: project, error: projectError } = await client
+    .from("projects")
+    .select("id")
+    .eq("activity_code", "TRACK01-A")
+    .maybeSingle()
+
+  if (projectError) throw new Error(projectError.message)
+  if (!project) {
+    throw new Error("Project TRACK01-A was not found. Run the Track 01 bootstrap first.")
+  }
+
+  const { data: materialType, error: materialError } = await client
+    .from("system_reference_entries")
+    .select("id")
+    .eq("kind", "material_type")
+    .limit(1)
+    .maybeSingle()
+
+  if (materialError) throw new Error(materialError.message)
+  if (!materialType) throw new Error("No material_type system reference entry exists.")
+
+  const seed = buildTrack04FixturePlan(project.id, materialType.id, "", "")
+
+  const { error: pdsError } = await client
+    .from("project_pds_areas")
+    .upsert(seed.pdsAreas, { onConflict: "project_id,code" })
+  if (pdsError) throw new Error(`project_pds_areas: ${pdsError.message}`)
+
+  const { error: classError } = await client
+    .from("project_service_classes")
+    .upsert(seed.serviceClasses, { onConflict: "project_id,code" })
+  if (classError) throw new Error(`project_service_classes: ${classError.message}`)
+
+  const { error: typeError } = await client
+    .from("project_weld_types")
+    .upsert(seed.weldTypes, { onConflict: "project_id,code" })
+  if (typeError) throw new Error(`project_weld_types: ${typeError.message}`)
+
+  const { data: serviceClass } = await client
+    .from("project_service_classes")
+    .select("id")
+    .eq("project_id", project.id)
+    .eq("code", "SC-T4")
+    .single()
+
+  const { data: weldType } = await client
+    .from("project_weld_types")
+    .select("id")
+    .eq("project_id", project.id)
+    .eq("code", "BW-T4")
+    .single()
+
+  if (!serviceClass || !weldType) {
+    throw new Error("The service class or weld type fixture was not written.")
+  }
+
+  const plan = buildTrack04FixturePlan(
+    project.id,
+    materialType.id,
+    serviceClass.id,
+    weldType.id
+  )
+
+  const { error: thicknessError } = await client
+    .from("project_thickness_flange_rules")
+    .upsert(plan.thicknessRules, { onConflict: "project_id,service_class_id,diameter_inch" })
+  if (thicknessError) throw new Error(`project_thickness_flange_rules: ${thicknessError.message}`)
+
+  const { error: matrixError } = await client
+    .from("nde_matrix_rules")
+    .upsert(plan.ndeMatrixRules, {
+      onConflict: "project_id,service_class_id,weld_type_id,weld_location",
+    })
+  if (matrixError) throw new Error(`nde_matrix_rules: ${matrixError.message}`)
+
+  console.log(
+    `Track 04 fixtures reconciled: ${planInsertCount(plan)} rows upserted into project ${project.id}.`
+  )
+}
+
+const invokedDirectly = process.argv[1]?.endsWith("bootstrap-track04-browser-fixtures.ts")
+if (invokedDirectly) {
+  runBootstrap().catch((error) => {
+    console.error(error instanceof Error ? error.message : error)
+    process.exit(1)
+  })
+}
+```
+
+- [ ] **Step 4: Add the npm script.**
+
+In `package.json`, after `bootstrap:track03-browser-fixtures`:
+
+```json
+    "bootstrap:track04-browser-fixtures": "tsx scripts/bootstrap-track04-browser-fixtures.ts",
+```
+
+- [ ] **Step 5: Run the unit test and watch it pass.**
+
+Run:
+```bash
+node --import tsx --test scripts/bootstrap-track04-browser-fixtures.test.ts
+```
+Expected: PASS.
+
+- [ ] **Step 6: Run the bootstrap twice and prove it is idempotent.**
+
+Run:
+```bash
+SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_SERVICE_ROLE_KEY=<local-service-role-secret> npm run bootstrap:track04-browser-fixtures
+SUPABASE_URL=http://127.0.0.1:54321 SUPABASE_SERVICE_ROLE_KEY=<local-service-role-secret> npm run bootstrap:track04-browser-fixtures
+```
+Expected: both runs report the same row count and exit `0`.
+
+Read the local service role key from `supabase status` output. **Never paste it into a file** —
+Track 02 leaked one into `docs/TRACK02_BROWSER_FIXTURES.md` and Track 03 had to remove it.
+
+- [ ] **Step 7: Write the fixture note.**
+
+Create `docs/TRACK04_BROWSER_FIXTURES.md` documenting: the prerequisite Track 01 bootstrap, the
+command, the referential codes it writes (`PDS-T4`, `SC-T4`, `BW-T4`, two thickness rules, one NDE
+matrix rule), and a sample `weld.txt` that validates cleanly against them. Include the sentence
+"This file contains no secrets." and **honour it** — pass the service role key through the
+environment only.
+
+Sample `weld.txt` to include:
+
+```text
+ISO_NUMBER	ISO_REVISION	PDS_AREA	SERVICE_CLASS	LINE_NUMBER	SPOOL_NUMBER	SPOOL_WEIGHT_KG	WELD_NUMBER	WELD_TYPE	WELD_LOCATION	DIAMETER_INCH	THICKNESS_MM
+ISO-T4-001	R0	PDS-T4	SC-T4	L-T4-1	SP-T4-001-A	120.5	W-T4-001	BW-T4	shop	6	8.2
+ISO-T4-001	R0	PDS-T4	SC-T4	L-T4-1	SP-T4-001-A	120.5	W-T4-002	BW-T4	shop	6	8.2
+ISO-T4-001	R0	PDS-T4	SC-T4	L-T4-1	SP-T4-001-B	98.0	W-T4-003	BW-T4	shop	8	10.3
+```
+
+- [ ] **Step 8: Commit.**
+
+```bash
+git add scripts/bootstrap-track04-browser-fixtures.ts scripts/bootstrap-track04-browser-fixtures.test.ts docs/TRACK04_BROWSER_FIXTURES.md package.json
+git commit -m "chore(engineering): add Track 04 browser fixtures"
+```
+
+---
+
+## Task 29: Full automated verification
+
+**Files:**
+- Modify only if a command exposes a defect.
+
+- [ ] **Step 1: Prove the migrations work from empty.**
+
+Run:
+```bash
+/opt/homebrew/bin/supabase db reset
+```
+Expected: every migration applies, exit `0`.
+
+- [ ] **Step 2: Run the full verification.**
+
+Run:
+```bash
+npm run verify
+```
+Expected: exit `0`. Record the pgTAP file count and assertion count from the output.
+
+- [ ] **Step 3: Audit for layering violations.**
+
+Run:
+```bash
+grep -rn "@supabase\|from \"react\"\|@/store" modules/engineering/domain/ modules/engineering/application/
+```
+Expected: no output.
+
+- [ ] **Step 4: Audit for leaked secrets.**
+
+Run:
+```bash
+grep -rn "sb_secret_\|service_role" docs/ scripts/ | grep -v "SUPABASE_SERVICE_ROLE_KEY" | grep -v "<local-service-role-secret>"
+```
+Expected: no literal key values.
+
+- [ ] **Step 5: Confirm the engineering tables reject direct writes.**
+
+Run:
+```bash
+grep -c "revoke insert, update, delete, truncate" supabase/migrations/20260803091000_engineering_revisions.sql
+```
+Expected: `1`, covering all fifteen tables in one statement.
+
+- [ ] **Step 6: Confirm no whitespace damage.**
+
+Run:
+```bash
+git diff --check
+```
+Expected: no output.
+
+- [ ] **Step 7: Commit any fixes.**
+
+```bash
+git add -A
+git commit -m "chore(engineering): resolve verification findings"
+```
+
+---
+
+## Task 30: Manual browser acceptance
+
+**Files:** none. This task produces evidence, not code.
+
+Run `npm run dev`, sign in as the Track 01 fixture Project Admin, and run
+`npm run bootstrap:track04-browser-fixtures` first.
+
+- [ ] **Step 1: Empty state.** Open `/spooling/browse`. Confirm it reports that no isometrics
+      have been imported.
+
+- [ ] **Step 2: Missing weld.txt.** On `/spooling/import`, attach only `supp.txt` and click
+      "Validate files". Confirm the error names `weld.txt` and that no job appears.
+
+- [ ] **Step 3: Oversized file.** Attach a `weld.txt` larger than 4 MB. Confirm it is rejected
+      **before** any upload happens — the network tab shows no Storage request.
+
+- [ ] **Step 4: Blocker path.** Upload a `weld.txt` whose `PDS_AREA` is `PDS-NOPE`. Confirm a red
+      error naming the PDS area, and that "Apply import" is disabled with a reason.
+
+- [ ] **Step 5: Warning path.** Upload the clean sample from `docs/TRACK04_BROWSER_FIXTURES.md`.
+      Confirm the WPS warnings appear in grey, the error count is zero, and **"Apply import" is
+      enabled**. A warning must never block. This is dossier §14.2 and the most common
+      implementation mistake in this track.
+
+- [ ] **Step 6: Apply R0.** Click "Apply import". Confirm the success toast reports a row count.
+
+- [ ] **Step 7: Durability.** Reload the page (F5), open `/spooling/browse`, select `ISO-T4-001`.
+      Confirm both spools, their welds and the accepted revision `R0` are present. **This is the
+      step that distinguishes a durable write from optimistic UI.**
+
+- [ ] **Step 8: Revised import.** Upload the same `weld.txt` with `ISO_REVISION` changed to `R1`
+      and one spool weight changed. Confirm the preview shows the changed spool as **Revised**,
+      that "Apply import" is disabled while decisions are missing, and that the reason names the
+      count.
+
+- [ ] **Step 9: Rework cascade.** Set the changed spool to **Rework**. Confirm its welds now
+      demand their own decision. Set the spool to **Done without Modification** instead and confirm
+      the weld decisions disappear.
+
+- [ ] **Step 10: Apply R1.** Give every required decision, apply, and confirm `/spooling/browse`
+      shows `R1` accepted and `R0` superseded, with `R0` still selectable and read-only.
+
+- [ ] **Step 11: Double apply.** Confirm the applied job offers no second Apply, and that
+      re-uploading the same files creates a *new* job.
+
+- [ ] **Step 12: Duplicate revision number.** Upload the files a third time still carrying `R1`.
+      Confirm apply fails with the message about the revision number already existing.
+
+- [ ] **Step 13: Capability denial.** Sign in as the Track 01 fixture Project Reader. Confirm
+      `/spooling/import` offers no working Validate control, and that a direct attempt is refused.
+
+- [ ] **Step 14: Cross-project isolation.** Sign in as the Project B admin fixture. Confirm
+      `/spooling/browse` shows no project A isometrics.
+
+- [ ] **Step 15: Record the result.** Write down which steps passed. Do **not** mark a step
+      complete that you did not perform in a browser.
+
+---
+
+## Task 31: Documentation and Track 04 exit
+
+**Files:**
+- Modify: `docs/SUPABASE_BACKEND_FOUNDATION.md`
+- Modify: `docs/SUPABASE_NEXT_AGENT_CONTEXT.md`
+- Modify: `docs/superpowers/plans/2026-07-30-pipeqc-supabase-master-roadmap.md`
+
+- [ ] **Step 1: Record only demonstrated facts.**
+
+In `docs/SUPABASE_BACKEND_FOUNDATION.md`, document: the five new migrations, the identity/revision
+split, the one-accepted-revision index, the superseded read-only trigger, the `import_files` and
+`import_revision_decisions` tables, the `project-spooling` bucket, the `PQC20`–`PQC26` codes, and
+the **actual** pgTAP file and assertion counts from Task 29 Step 2. Do not describe a test that
+does not exist.
+
+- [ ] **Step 2: Update the handoff context.**
+
+In `docs/SUPABASE_NEXT_AGENT_CONTEXT.md`, state which Track 04 exit criteria were verified
+automatically and which in a browser, and name anything left unverified. Record explicitly that
+`revision_progress_copies` is a provenance ledger whose `copied_payload` stays empty until Track 05
+materializes progress rows, so the next agent does not read it as a bug. Do not write
+"100% complete".
+
+- [ ] **Step 3: Tick the roadmap.**
+
+In the master roadmap §16, tick only the Task checkboxes whose work exists in the tree. Add notes
+that:
+
+- `spool_revision_materials` was added beyond §9.4, with the reason from §3.3 of this plan;
+- Assembly ownership in the PDS mapping was already delivered by Track 02 and is asserted by
+  pgTAP `040` rather than re-implemented;
+- the three legacy spooling screens remain on demo data by decision, with the two named store
+  defects fixed — so the line item "Подключить Engineering Transmittal/ISO Workflow/Spooling
+  Transmittal к новой модели" is **partially** done and stays open.
+
+- [ ] **Step 4: Commit.**
+
+```bash
+git add docs/
+git commit -m "docs: record Track 04 engineering revision state and verified evidence"
+```
+
+---
+
+## 5. Exit criteria
+
+Track 04 is complete when all of the following are demonstrably true:
+
+- [ ] `npm run verify` exits `0` after a fresh `supabase db reset`.
+- [ ] A real four-file import creates a connected revision graph: isometric → revision → spools →
+      welds/supports/flanges/materials, with root and cap weld points (pgTAP `042`).
+- [ ] Importing the same files twice is refused rather than silently duplicating: the second job
+      fails on the duplicate revision number (`PQC23`), and re-applying one job fails with `PQC10`.
+- [ ] A new revision never mutates the old one: updating or deleting anything under a superseded
+      revision raises `PQC21` (pgTAP `041`).
+- [ ] Exactly one accepted revision exists per isometric, enforced by a partial unique index
+      (pgTAP `040`).
+- [ ] A revised isometric cannot be applied until every spool — and every weld inside a reworked
+      spool — has a decision (`PQC22`, pgTAP `042`).
+- [ ] A missing covering WPS produces a `warning` and the import still applies; a missing PDS
+      area, service class, weld type, thickness rule or NDE matrix combination produces a
+      `blocker` and it does not (pgTAP `042`).
+- [ ] Mixed line numbers or service classes inside one ISO are blockers, client-side and
+      server-side.
+- [ ] A spool referenced by `trace`/`bolt`/`supp` but absent from `weld` is a blocker.
+- [ ] Each SpoolGen file is limited to 4 MB in the browser, in `import_files.size_bytes` and in
+      the bucket.
+- [ ] Preview writes nothing: a validated job with blockers leaves `isometrics` empty (pgTAP `042`).
+- [ ] Apply is all-or-nothing — a failure leaves no revision behind (Task 11 Step 3).
+- [ ] `revision_progress_copies` records the authorized carry-over for
+      `done_without_modification` and `rework`, and nothing for `not_done` and `cancelled`.
+- [ ] Browse shows ISO → spool → weld/support/flange and the full revision history, with
+      superseded revisions readable.
+- [ ] `composeAndSendTransmittal` no longer marks ISOs superseded, and `applyRevision` no longer
+      produces two records sharing one id (`store/spooling-store.test.ts`).
+- [ ] `modules/engineering/domain/` and `modules/engineering/application/` import no Supabase,
+      React or `store/*`.
+- [ ] No raw parser or SQL error text reaches the UI
+      (`supabase-engineering-errors.test.ts`).
+- [ ] No `storage.objects` policy applies to `PUBLIC`, and the `project-spooling` bucket is
+      private (pgTAP `043`).
+- [ ] The Track 04 bootstrap script writes rows and is idempotent across two consecutive runs.
+- [ ] A user holding only `imports.manage` cannot open a `spooling_definition` job through
+      `create_import_job` (`PQC24`).
+
+## 6. Explicitly outside Track 04
+
+- **Progress rows.** `revision_progress_copies` authorizes carry-over; Track 05 owns the
+  fabrication progress tables it will carry into.
+- **Spooling Images ZIP** (dossier §14.3). Deferred from Track 03 and still deferred: it is a
+  document attachment concern and belongs with Track 11.
+- **Marian / material availability import** (dossier §13.2). Needs run metadata and issue status
+  that no table models yet.
+- **Progress imports** — Prefabrication, Erection, Weld progress, Spool Definition Category
+  (dossier §12.4). They write progress, which Track 05 introduces.
+- **Rewiring `/spooling/engineering-transmittals`, `/spooling/iso-workflow` and
+  `/spooling/spooling-transmittal` to Supabase.** Decided out of scope for this track; the two
+  named store defects are fixed so demo mode is at least self-consistent.
+- **Manual revision UI.** `create_manual_revision` exists, is granted and is covered by
+  `PQC23`/`PQC20` behaviour, but no screen drives it — dossier §15.5 puts it inside Browse, and
+  building it needs the per-spool decision editor to work against an existing revision rather than
+  an import job. Track 11 or a follow-up.
+- **Weld points beyond Root and Cap.** Heat and Fill are permitted by the schema; assigning them,
+  along with welders and percentages, is Track 05 (dossier §7.3).

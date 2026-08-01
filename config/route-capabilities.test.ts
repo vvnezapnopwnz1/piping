@@ -15,5 +15,7 @@ assert.equal(
 )
 assert.equal(requiredCapabilityForPath("/admin/imports"), "imports.view")
 assert.equal(requiredCapabilityForPath("/admin/project-referential"), "project_referential.manage")
+assert.equal(requiredCapabilityForPath("/spooling/import"), "spooling.view")
+assert.equal(requiredCapabilityForPath("/spooling/browse"), "spooling.view")
 assert.equal(requiredCapabilityForPath("/unknown"), null)
 assert.equal(requiredCapabilityForPath("/"), null)
