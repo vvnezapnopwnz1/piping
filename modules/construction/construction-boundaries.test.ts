@@ -56,3 +56,17 @@ for (const path of walk(APP_ROOT).filter((candidate) => candidate.endsWith("page
     )
   }
 }
+
+// Plan section 3.4: accepting a revision authorizes a progress carry-over; something has
+// to materialize it. Until the workbench calls the command, the seam is dead code.
+{
+  const workbench = readFileSync("modules/engineering/ui/revision-workbench.tsx", "utf8")
+  assert.ok(
+    workbench.includes("materializeProgressCopies"),
+    "revision-workbench.tsx must materialize progress copies after applying an import",
+  )
+  assert.ok(
+    workbench.includes("affectedEntityIds"),
+    "revision-workbench.tsx must materialize the revisions the applied job reports",
+  )
+}

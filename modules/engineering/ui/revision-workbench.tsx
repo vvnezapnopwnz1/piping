@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
+import { materializeProgressCopies } from "@/modules/construction/infrastructure/supabase-construction-repository";
 import {
   describeRevisionApplyGate,
   groupByIsometric,
@@ -98,6 +99,25 @@ export function RevisionWorkbench({
       );
       setStatus(job.status);
       toast.success(`Applied ${job.appliedRowCount} definition rows.`);
+      // Plan section 3.4: the apply authorizes a carry-over, it does not perform it. The
+      // command is idempotent, so a retry is harmless. An operator who may import but may
+      // not record fabrication progress still gets a successful apply.
+      try {
+        let copied = 0;
+        for (const revisionId of job.affectedEntityIds) {
+          copied += await materializeProgressCopies(
+            getSupabaseBrowserClient(),
+            revisionId,
+          );
+        }
+        if (copied > 0) toast.success(`Carried ${copied} progress records forward.`);
+      } catch (carryError) {
+        toast.warning(
+          carryError instanceof Error
+            ? `Progress carry-over was not applied: ${carryError.message}`
+            : "Progress carry-over was not applied.",
+        );
+      }
       onApplied();
     } catch (e) {
       toast.error(
