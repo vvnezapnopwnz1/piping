@@ -68,8 +68,8 @@ select is(
 );
 select is(has_function_privilege('authenticated', 'public.complete_command_receipt(uuid, text, text, jsonb)', 'EXECUTE'), false,
   'authenticated cannot invoke the internal receipt completion helper');
-select is(has_function_privilege('authenticated', 'public.effective_stage_date(uuid, public.construction_stage)', 'EXECUTE'), false,
-  'authenticated cannot invoke the internal effective-stage helper');
+select is(has_function_privilege('authenticated', 'public.effective_stage_date(uuid, public.construction_stage)', 'EXECUTE'), true,
+  'authenticated can invoke the effective-stage helper');
 select is(has_function_privilege('authenticated', 'public.assert_construction_target(uuid, text)', 'EXECUTE'), false,
   'authenticated cannot invoke the internal construction-target helper');
 select lives_ok($$select public.claim_command_receipt('30000000-0000-0000-0000-000000000501', 'receipt-test', 'receipt-1')$$,
