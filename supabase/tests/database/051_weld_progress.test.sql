@@ -1,5 +1,5 @@
 begin;
-select plan(30);
+select plan(34);
 
 insert into auth.users (id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at)
 values
@@ -369,6 +369,104 @@ select is(
   1,
   'the correction is in the audit trail'
 );
+
+-- Remediation task 5: PQC39 and the PQC34 branches the TypeScript mirror covers but the
+-- authoritative SQL copy did not. A fresh joint, because W-0511-01 is locked by now.
+reset role;
+insert into public.weld_joints (id, project_id, weld_number)
+values ('46000000-0000-0000-0000-000000000513', '30000000-0000-0000-0000-000000000511', 'W-0511-03');
+insert into public.weld_joint_revisions (
+  id, weld_joint_id, spool_revision_id, weld_type_id, weld_location, diameter_inch, thickness_mm)
+values ('47000000-0000-0000-0000-000000000513', '46000000-0000-0000-0000-000000000513',
+        '43000000-0000-0000-0000-000000000511', '52000000-0000-0000-0000-000000000511',
+        'shop', 6, 12);
+insert into public.weld_points (id, weld_joint_revision_id, point_type, sequence_number)
+values
+  ('48000000-0000-0000-0000-000000000515', '47000000-0000-0000-0000-000000000513', 'root', 1),
+  ('48000000-0000-0000-0000-000000000516', '47000000-0000-0000-0000-000000000513', 'cap', 2);
+insert into public.project_subcontractors (id, project_id, code, description)
+values ('50000000-0000-0000-0000-000000000513', '30000000-0000-0000-0000-000000000511',
+        'SUB-OTHER', 'Another fabricator');
+
+-- A WPS approved after the weld date is refused (dossier 11.6).
+update public.project_welding_procedures set approved_on = date '2030-01-01'
+where id = '56000000-0000-0000-0000-000000000511';
+set local role authenticated;
+select throws_ok(
+  $$select public.record_weld_progress(
+      '47000000-0000-0000-0000-000000000513',
+      '50000000-0000-0000-0000-000000000511',
+      '56000000-0000-0000-0000-000000000511',
+      '[{"point_type":"root","welder_qualification_id":"57000000-0000-0000-0000-000000000511",
+         "completion_percent":50,"welded_on":"2026-08-05"},
+        {"point_type":"cap","welder_qualification_id":"57000000-0000-0000-0000-000000000512",
+         "completion_percent":50,"welded_on":"2026-08-05"}]'::jsonb,
+      '{"weld_on":"2026-08-05"}'::jsonb)$$,
+  'PQC34', null, 'a WPS approved after the weld date is refused');
+reset role;
+update public.project_welding_procedures set approved_on = date '2026-01-01'
+where id = '56000000-0000-0000-0000-000000000511';
+
+-- A WPS qualified for a different subcontractor is refused (dossier 11.6).
+update public.project_welding_procedures
+set subcontractor_id = '50000000-0000-0000-0000-000000000513'
+where id = '56000000-0000-0000-0000-000000000511';
+set local role authenticated;
+select throws_ok(
+  $$select public.record_weld_progress(
+      '47000000-0000-0000-0000-000000000513',
+      '50000000-0000-0000-0000-000000000511',
+      '56000000-0000-0000-0000-000000000511',
+      '[{"point_type":"root","welder_qualification_id":"57000000-0000-0000-0000-000000000511",
+         "completion_percent":50,"welded_on":"2026-08-05"},
+        {"point_type":"cap","welder_qualification_id":"57000000-0000-0000-0000-000000000512",
+         "completion_percent":50,"welded_on":"2026-08-05"}]'::jsonb,
+      '{"weld_on":"2026-08-05"}'::jsonb)$$,
+  'PQC34', null, 'a WPS qualified for another subcontractor is refused');
+reset role;
+update public.project_welding_procedures
+set subcontractor_id = '50000000-0000-0000-0000-000000000511'
+where id = '56000000-0000-0000-0000-000000000511';
+
+-- A welder with no welder_wps_qualifications row for this WPS is refused (dossier 11.7).
+delete from public.welder_wps_qualifications
+where welder_qualification_id = '57000000-0000-0000-0000-000000000512'
+  and wps_id = '56000000-0000-0000-0000-000000000511';
+set local role authenticated;
+select throws_ok(
+  $$select public.record_weld_progress(
+      '47000000-0000-0000-0000-000000000513',
+      '50000000-0000-0000-0000-000000000511',
+      '56000000-0000-0000-0000-000000000511',
+      '[{"point_type":"root","welder_qualification_id":"57000000-0000-0000-0000-000000000511",
+         "completion_percent":50,"welded_on":"2026-08-05"},
+        {"point_type":"cap","welder_qualification_id":"57000000-0000-0000-0000-000000000512",
+         "completion_percent":50,"welded_on":"2026-08-05"}]'::jsonb,
+      '{"weld_on":"2026-08-05"}'::jsonb)$$,
+  'PQC34', null, 'a welder not linked to the WPS is refused');
+reset role;
+insert into public.welder_wps_qualifications (welder_qualification_id, wps_id)
+values ('57000000-0000-0000-0000-000000000512', '56000000-0000-0000-0000-000000000511');
+
+-- PQC39: the matrix rule was archived after the definition was imported, so obligation
+-- generation has nothing to key on.
+update public.nde_matrix_rules set status = 'archived'
+where id = '58000000-0000-0000-0000-000000000511';
+set local role authenticated;
+select throws_ok(
+  $$select public.record_weld_progress(
+      '47000000-0000-0000-0000-000000000513',
+      '50000000-0000-0000-0000-000000000511',
+      '56000000-0000-0000-0000-000000000511',
+      '[{"point_type":"root","welder_qualification_id":"57000000-0000-0000-0000-000000000511",
+         "completion_percent":50,"welded_on":"2026-08-05"},
+        {"point_type":"cap","welder_qualification_id":"57000000-0000-0000-0000-000000000512",
+         "completion_percent":50,"welded_on":"2026-08-05"}]'::jsonb,
+      '{"weld_on":"2026-08-05"}'::jsonb)$$,
+  'PQC39', null, 'an archived NDE matrix rule is reported as a missing referential');
+reset role;
+update public.nde_matrix_rules set status = 'active'
+where id = '58000000-0000-0000-0000-000000000511';
 
 select * from finish();
 rollback;
