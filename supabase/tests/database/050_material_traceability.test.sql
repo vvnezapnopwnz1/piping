@@ -1,5 +1,5 @@
 begin;
-select plan(80);
+select plan(83);
 
 select has_table('public', 'command_receipts', 'shared command receipts exist');
 select has_table('public', 'construction_progress_events', 'construction progress is an event ledger');
@@ -341,6 +341,53 @@ select ok((select count(*) from public.qc13_progress_forms) > 0,
   'a permitted in-scope user can read QC-13 forms');
 select throws_ok($$select count(*) from public.command_receipts$$, '42501', null,
   'a permitted user still cannot read internal command receipts directly');
+reset role;
+
+-- Remediation task 1: the QC-13 request belongs to the progress recorder.
+-- A project_editor whose only functional role is fabrication_contributor holds
+-- fabrication.progress.record and, through the functional gate, NOT fabrication.qc.release.
+reset role;
+select ok(
+  position(
+    $needle$assert_construction_target(target_spool_revision_id, 'fabrication.progress.record')$needle$
+    in pg_get_functiondef('public.request_qc13_form(uuid, date, text)'::regprocedure)
+  ) > 0,
+  'the QC-13 request is guarded by fabrication.progress.record, not by the release capability'
+);
+
+insert into auth.users (id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at)
+values ('10000000-0000-0000-0000-000000000590', 'authenticated', 'authenticated', 'progress.only@example.test', 'not-used', now(), now(), now());
+insert into public.projects (id, activity_code, title, owner_name, contractor_name, maximum_transit_time_days, created_by)
+values ('30000000-0000-0000-0000-000000000590', 'P05-QC13', 'QC13 guard', 'Owner', 'Contractor', 1, '10000000-0000-0000-0000-000000000501');
+insert into public.project_memberships (id, project_id, user_id, role, access_role_code, is_active)
+values ('20000000-0000-0000-0000-000000000590', '30000000-0000-0000-0000-000000000590', '10000000-0000-0000-0000-000000000590', 'qc_engineer', 'project_editor', true);
+insert into public.project_membership_functional_roles (membership_id, role_code)
+values ('20000000-0000-0000-0000-000000000590', 'fabrication_contributor');
+insert into public.project_pds_areas (id, project_id, code, description)
+values ('31000000-0000-0000-0000-000000000590', '30000000-0000-0000-0000-000000000590', 'PDS-QC13', 'QC13 guard PDS');
+insert into public.isometrics (id, project_id, iso_number)
+values ('33000000-0000-0000-0000-000000000590', '30000000-0000-0000-0000-000000000590', 'ISO-QC13');
+insert into public.isometric_revisions (id, isometric_id, revision_number, revision_ordinal, status, pds_area_id, accepted_at)
+values ('34000000-0000-0000-0000-000000000590', '33000000-0000-0000-0000-000000000590', 'R0', 1, 'accepted', '31000000-0000-0000-0000-000000000590', now());
+insert into public.spools (id, project_id, spool_number)
+values ('35000000-0000-0000-0000-000000000590', '30000000-0000-0000-0000-000000000590', 'SP-QC13');
+insert into public.spool_revisions (id, spool_id, isometric_revision_id, sequence_number)
+values ('36000000-0000-0000-0000-000000000590', '35000000-0000-0000-0000-000000000590', '34000000-0000-0000-0000-000000000590', 1);
+insert into public.construction_progress_events (project_id, spool_revision_id, phase, stage, occurred_on)
+values ('30000000-0000-0000-0000-000000000590', '36000000-0000-0000-0000-000000000590', 'fabrication', 'start_fab', current_date);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000590', true);
+select set_config('request.jwt.claims', '{"sub":"10000000-0000-0000-0000-000000000590","role":"authenticated"}', true);
+select is(
+  public.current_user_has_capability('30000000-0000-0000-0000-000000000590', 'fabrication.qc.release'),
+  false,
+  'the fixture progress recorder deliberately lacks the release capability'
+);
+select lives_ok(
+  $$select public.request_qc13_form('36000000-0000-0000-0000-000000000590', current_date, 'qc13-progress-recorder')$$,
+  'a progress recorder can issue a QC-13 form'
+);
 reset role;
 
 select * from finish();
