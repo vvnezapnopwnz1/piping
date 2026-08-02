@@ -56,7 +56,10 @@ export function SpoolPicker({ projectId, value, onChange, refreshToken = 0 }: Sp
                 value === status.spoolRevisionId ? "bg-muted" : ""
               }`}
             >
-              <span className="font-mono text-xs">{status.spoolNumber}</span>
+              <span className="font-mono text-xs">
+                {status.spoolNumber}
+                <span className="text-muted-foreground ml-2">{status.revisionNumber}</span>
+              </span>
               <Badge variant="outline">{status.currentStage ?? "not started"}</Badge>
             </button>
           </li>

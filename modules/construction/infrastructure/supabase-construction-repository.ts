@@ -216,18 +216,37 @@ export interface WeldFormReferentials {
 
 // Reads -----------------------------------------------------------------------
 
+// Progress can only be recorded against the accepted revision — a superseded one is
+// refused with PQC31 — so offering superseded revisions offers guaranteed failures. Once
+// an isometric has a second revision the picker otherwise lists every spool twice under
+// an identical label. spool_construction_status carries revision_number but not the
+// revision's status; spool_fabrication_readiness carries revision_status, so the accepted
+// set comes from there. Narrowing the projection itself would need a migration.
 export async function loadSpoolStatuses(
   client: SupabaseClient<Database>,
   projectId: string,
 ): Promise<SpoolStatus[]> {
-  const { data, error } = await client
-    .from("spool_construction_status")
-    .select("*")
-    .eq("project_id", projectId)
-    .order("iso_number")
-    .order("spool_number")
-  fail(error)
-  return (data ?? []).map(toSpoolStatus)
+  const [statuses, accepted] = await Promise.all([
+    client
+      .from("spool_construction_status")
+      .select("*")
+      .eq("project_id", projectId)
+      .order("iso_number")
+      .order("spool_number"),
+    client
+      .from("spool_fabrication_readiness")
+      .select("spool_revision_id")
+      .eq("project_id", projectId)
+      .eq("revision_status", "accepted"),
+  ])
+  fail(statuses.error)
+  fail(accepted.error)
+  const acceptedIds = new Set(
+    (accepted.data ?? []).map((row: Row) => row.spool_revision_id as string),
+  )
+  return (statuses.data ?? [])
+    .filter((row: Row) => acceptedIds.has(row.spool_revision_id as string))
+    .map(toSpoolStatus)
 }
 
 export async function loadSpoolStatus(
