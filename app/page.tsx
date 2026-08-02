@@ -14,6 +14,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { NotificationsFeed } from "@/components/notifications/notifications-feed";
+import { useAppMode } from "@/contexts/app-mode-context";
 import { useWeldsKPIs } from "@/store/welds-store";
 import { useBatchesKPIs, useHydrateBatchesStore } from "@/store/batches-store";
 
@@ -21,6 +22,7 @@ export default function HomePage() {
   const hasHydrated = useHydrateBatchesStore();
   const kpis = useWeldsKPIs();
   const batchKpis = useBatchesKPIs();
+  const appMode = useAppMode();
 
   if (!hasHydrated) {
     return null;
@@ -28,6 +30,17 @@ export default function HomePage() {
 
   return (
     <div className="space-y-6">
+      {/* This dashboard still reads the demo stores. In Supabase mode it therefore shows
+          invented figures next to real project data — a browser walk on 2026-08-02 found
+          it reporting "Welds requiring action 1" and "NDE batches active 4" against a
+          project with no spools at all. Rebuilding it on spool_construction_status is
+          Track 11; until then, say so rather than let the numbers read as real. */}
+      {appMode === "supabase" ? (
+        <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm">
+          This dashboard still shows demonstration figures and is not yet connected to
+          project data. Use the module screens for real numbers.
+        </div>
+      ) : null}
       <section>
         <h1 className="text-2xl font-semibold">Good morning, QC Engineer</h1>
         <p className="text-sm text-muted-foreground">

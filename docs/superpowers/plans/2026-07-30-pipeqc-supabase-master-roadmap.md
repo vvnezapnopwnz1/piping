@@ -1566,6 +1566,8 @@ Active spool revision
 - Forms используют durable request/progress records.
 - Test Pack dossier содержит traceable ISO/spool/weld/NDE/flange/pressure-test evidence.
 
+- Домашний дашборд `/` в Supabase-режиме показывает демо-цифры: браузерный прогон 2026-08-02 при `spools=0` увидел «Welds requiring action 1», «NDE batches active 4» и уведомления `PL-FU300-007-A`. Он читает `welds-store`/`batches-store`. Временно закрыт баннером; перевод на `spool_construction_status` и реальные уведомления — задача T11.
+
 ## 24. T12 — Hardening, Pilot Data & Release
 
 **Цель:** собрать воспроизводимый рабочий prototype и доказать end-to-end сценарии.
