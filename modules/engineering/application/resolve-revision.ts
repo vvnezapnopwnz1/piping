@@ -11,6 +11,8 @@ export function describeRevisionApplyGate(gate: RevisionApplyGate): RevisionAppl
   if (gate.status === "failed" || gate.status === "canceled") return { allowed: false, reason: "This import is closed and can no longer be applied." }
   if (gate.status !== "validated") return { allowed: false, reason: "Upload and validate the SpoolGen files before applying them." }
   if (gate.blockerCount > 0) return { allowed: false, reason: `${gate.blockerCount} blocking issues must be fixed in the source files before this import can be applied.` }
-  if (gate.unresolvedCount > 0) return { allowed: false, reason: `${gate.unresolvedCount} revised spools or reworked welds still need a decision.` }
+  // unresolvedItems() counts items whose decision is still null, which includes an Unchanged
+  // spool that requires one — so the sentence says "items", not "revised spools".
+  if (gate.unresolvedCount > 0) return { allowed: false, reason: gate.unresolvedCount === 1 ? "1 item still needs a decision before this import can be applied." : `${gate.unresolvedCount} items still need a decision before this import can be applied.` }
   return { allowed: true, reason: null }
 }
