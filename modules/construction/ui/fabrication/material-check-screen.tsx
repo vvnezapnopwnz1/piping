@@ -41,10 +41,15 @@ export function MaterialCheckScreen({ projectId }: { projectId: string }) {
   const [refreshToken, setRefreshToken] = useState(0)
   const [isSaving, setIsSaving] = useState(false)
   const [qc13Form, setQc13Form] = useState<Qc13Form | null>(null)
+  // A failed load leaves `lines` empty, which describeMaterialCheckGate reports as "this
+  // spool revision has no bill of materials" — a sentence that means the opposite of the
+  // truth. Track the failure separately so the screen can say which of the two it is.
+  const [loadFailed, setLoadFailed] = useState(false)
 
   useEffect(() => {
     if (!spool) {
       setQc13Form(null)
+      setLoadFailed(false)
       return
     }
     const client = getSupabaseBrowserClient()
@@ -54,17 +59,20 @@ export function MaterialCheckScreen({ projectId }: { projectId: string }) {
       loadLatestQc13Form(client, spool.spoolRevisionId),
     ])
       .then(([billLines, existing, form]) => {
+        setLoadFailed(false)
         setLines(billLines)
         setTraces(
           Object.fromEntries(existing.map((item) => [item.identCode, item.traceNumber])),
         )
         setQc13Form(form)
       })
-      .catch((error: unknown) =>
+      .catch((error: unknown) => {
+        setLoadFailed(true)
+        setLines([])
         toast.error(
           error instanceof Error ? error.message : "The bill of materials could not be loaded.",
-        ),
-      )
+        )
+      })
   }, [spool, refreshToken])
 
   const reload = useCallback(async () => {
@@ -233,10 +241,19 @@ export function MaterialCheckScreen({ projectId }: { projectId: string }) {
                 </TableBody>
               </Table>
 
-              {gate.reason ? (
+              {loadFailed ? (
+                <p className="text-destructive text-sm">
+                  The bill of materials could not be loaded, so nothing is shown above and
+                  nothing has been changed. Reload the page, and report this if it persists.
+                </p>
+              ) : gate.reason ? (
                 <p className="text-sm text-muted-foreground">{gate.reason}</p>
               ) : null}
-              <Button type="button" onClick={() => void save()} disabled={!gate.allowed || isSaving}>
+              <Button
+                type="button"
+                onClick={() => void save()}
+                disabled={!gate.allowed || isSaving || loadFailed}
+              >
                 Record traces
               </Button>
               <p className="text-xs text-muted-foreground">
