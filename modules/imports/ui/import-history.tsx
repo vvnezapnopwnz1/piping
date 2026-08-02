@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
-import { getImportTypeDefinition, type ImportType } from "../domain/import-type"
+import { getImportJobTypeLabel } from "../domain/import-type"
 import type { ImportJob } from "../domain/import-job"
 import { isTerminalStatus } from "../domain/import-job"
 import {
@@ -101,7 +101,7 @@ export function ImportHistory({
               {jobs.map((job) => (
                 <TableRow key={job.id}>
                   <TableCell>
-                    {getImportTypeDefinition(job.importType as ImportType).label}
+                    {getImportJobTypeLabel(job.importType)}
                   </TableCell>
                   <TableCell className="font-mono text-xs">{job.sourceFileName}</TableCell>
                   <TableCell>

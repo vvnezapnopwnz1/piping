@@ -95,6 +95,12 @@ export function getImportTypeDefinition(importType: ImportType): ImportTypeDefin
   return definition
 }
 
+export function getImportJobTypeLabel(importType: string): string {
+  if (importType === "spooling_definition") return "SpoolGen definition"
+  if (importType in DEFINITIONS) return DEFINITIONS[importType as ImportType].label
+  return `Unknown import type: ${importType}`
+}
+
 export function templateHeaderRow(importType: ImportType): string[] {
   return getImportTypeDefinition(importType).columns.map((column) => column.header)
 }

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import {
   IMPORT_TYPES,
+  getImportJobTypeLabel,
   getImportTypeDefinition,
   templateHeaderRow,
   requiredColumnKeys,
@@ -41,6 +42,9 @@ function run() {
   ])
 
   assert.throws(() => getImportTypeDefinition("nope" as never), /Unknown import type/)
+
+  assert.equal(getImportJobTypeLabel("spooling_definition"), "SpoolGen definition")
+  assert.equal(getImportJobTypeLabel("future_import_type"), "Unknown import type: future_import_type")
 
   console.log("All import-type.test.ts assertions passed!")
 }
