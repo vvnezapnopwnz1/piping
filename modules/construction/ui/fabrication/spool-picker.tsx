@@ -56,9 +56,11 @@ export function SpoolPicker({ projectId, value, onChange, refreshToken = 0 }: Sp
                 value === status.spoolRevisionId ? "bg-muted" : ""
               }`}
             >
+              {/* The separator is inside the text, not just CSS margin: without it the
+                  accessible name concatenates to "SP-T4-001-AR1". */}
               <span className="font-mono text-xs">
                 {status.spoolNumber}
-                <span className="text-muted-foreground ml-2">{status.revisionNumber}</span>
+                <span className="text-muted-foreground ml-2">{` · ${status.revisionNumber}`}</span>
               </span>
               <Badge variant="outline">{status.currentStage ?? "not started"}</Badge>
             </button>
