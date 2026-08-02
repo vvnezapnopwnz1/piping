@@ -1231,19 +1231,39 @@ Active spool revision
 
 **Цель:** реализовать канонический Quality/NDE aggregate и закрыть самый рискованный набор QC правил.
 
-**Отдельный execution plan:** `docs/superpowers/plans/2026-08-05-track-06-nde-quality.md`.
+**Отдельный execution plan:** `docs/superpowers/plans/2026-08-07-track-06-nde-quality.md` (ещё не написан).
 
 ### Database
 
-- `supabase/migrations/20260805090000_nde_obligations.sql`;
-- `supabase/migrations/20260805091000_nde_batches_results.sql`;
-- `supabase/migrations/20260805092000_nde_repair_tracer.sql`;
-- `supabase/migrations/20260805093000_nde_penalty_commands.sql`;
-- `supabase/migrations/20260805094000_pwht_quality_gate.sql`;
+> **Проверено 2026-08-06 против дерева.** Прежний список неисполним: `20260805090000_nde_obligations.sql` конфликтует с уже применённой `20260805090000_track05_remediation.sql`, а три перечисленные таблицы уже созданы Track 05.
+
+Уже существует — Track 06 **изменяет, а не создаёт**:
+
+- `nde_obligations` (`20260804092000_weld_progress_commands.sql:47`) — `disposition text check (in ('pending','satisfied','waived'))`, `unique (weld_joint_revision_id, method)`;
+- `pwht_requirements` (`20260804092000_weld_progress_commands.sql:65`);
+- `pwht_results` (`20260804093000_fabrication_release.sql:18`);
+- `record_nde_obligation_outcome(uuid, text, text)` (`20260804092200_weld_progress_locks.sql:137`) — **interim**, подлежит удалению и замене, а не расширению.
+
+Два блокера, которые Track 06 обязан снять в первой же миграции:
+
+1. **`unique (weld_joint_revision_id, method)`** запрещает второе obligation на тот же шов и метод. Repair R1/R2 и tracer T1/T2 — это именно дополнительные obligations на тот же шов и метод, поэтому вся модель Track 06 упирается в это ограничение. Его нужно расширить (например до `unique (weld_joint_revision_id, method, cycle_kind, cycle_ordinal)`), а не обходить новой таблицей.
+2. **`spool_fabrication_readiness.nde_pending` считает `disposition = 'pending'`**, и от неё зависят `is_releasable` и отказ `PQC37`. Любое изменение словаря `disposition` меняет release gate, поэтому view заменяется в той же миграции — иначе QC release молча начнёт пропускать спулы с открытым NDE.
+
+Новые файлы Track 06 (таймстемпы после `20260805091000`):
+
+- `supabase/migrations/20260807090000_nde_obligation_lifecycle.sql` — расширение `nde_obligations`, снятие блокера 1, замена `spool_fabrication_readiness` (блокер 2), удаление `record_nde_obligation_outcome`;
+- `supabase/migrations/20260807091000_nde_batches_results.sql`;
+- `supabase/migrations/20260807092000_nde_repair_tracer.sql`;
+- `supabase/migrations/20260807093000_nde_penalty_commands.sql`;
+- `supabase/migrations/20260807094000_pwht_quality_gate.sql`;
 - `supabase/tests/database/060_nde_batch_invariants.test.sql`;
 - `supabase/tests/database/061_nde_repair_tracer_truth_table.test.sql`;
 - `supabase/tests/database/062_nde_penalty.test.sql`;
 - `supabase/tests/database/063_pwht_release.test.sql`.
+
+Track 05 занимает коды `PQC30`–`PQC39`; Track 06 начинает с `PQC40`.
+
+> **Обязательно для Track 06.** Каждый новый экран проходится в браузере по `docs/qa/local-supabase-browser-runbook.md` до объявления трека завершённым. Прогон 2026-08-02 нашёл в Track 05 запрос, который ломал весь fabrication golden path и при этом проходил `typecheck`, pgTAP и unit-тесты: `@supabase/supabase-js` 2.110.8 не типизирует строки `.select()`. `modules/construction/infrastructure/construction-select-columns.test.ts` закрывает этот класс для construction — для новых модулей Track 06 нужен свой аналог.
 
 ### Modules
 
