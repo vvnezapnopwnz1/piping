@@ -8990,3 +8990,70 @@ only two were real.
 **Known limitation carried forward to Track 07:** `spool_fabrication_readiness` counts all
 non-removed weld joints, not only shop joints, so a spool with a field or assembly joint
 can never reach `is_fabricated` through Shop Weld Progress.
+
+
+---
+
+## Close-out status (2026-08-06)
+
+Verified by `docs/superpowers/plans/2026-08-06-track-05-close-out.md`. The step boxes above
+were never ticked contemporaneously and are **deliberately left unticked** — retro-ticking
+would assert that a command ran at a time it did not. This block is the evidence instead.
+
+**A golden-path-blocking defect that every automated check passed over.** A browser walk on
+2026-08-02 found `loadMaterialCheckItems` selecting `ident_code`, `trace_number` and
+`quantity` from `material_check_items`, which has none of them. PostgREST answered `400`,
+the rejected promise took the bill of materials down with it, and the screen reported
+"This spool revision has no bill of materials to check" — the opposite of the truth. No
+heat number could be entered, so Material Check, QC Release, Paint and Laydown were all
+unreachable. `npm run verify` was green throughout: `@supabase/supabase-js` 2.110.8 does
+not type-check `.select()` strings (measured: a deliberately wrong select compiles with
+`tsc` exiting `0`), pgTAP tests SQL rather than PostgREST, and the unit tests mock the
+client. Fixed, and the class is now guarded by
+`modules/construction/infrastructure/construction-select-columns.test.ts`, which checks all
+16 repository selects against the generated types and was verified to fail on the original
+query.
+
+**Verified by execution on 2026-08-02:**
+
+- `supabase db reset` applies all 35 migrations including both `20260805*` files.
+  `npm run verify` exits `0`: pgTAP **Files=21, Tests=436** (was 20/422), unit **75 pass /
+  0 fail**, fixtures **0 issues**. `database.types.ts` matches `supabase gen types --local`.
+- `effective_stage_date` has two overloads, `request_qc13_form` is guarded by
+  `fabrication.progress.record`, and no `spool_material_check_status` view exists — probe
+  returns `2 | t | 0`.
+- Track 04's SpoolGen import was performed **through the real UI**: missing-`weld.txt`
+  refusal with `import_jobs = 0`; a 6 MB file rejected with `storage.objects = 0`, so the
+  refusal precedes any Storage write; `PDS-NOPE` blocked with Apply disabled; a clean
+  `Validated 10 rows: 0 errors, 3 warnings`; `Applied 7 definition rows`; R1 revision
+  decisions with Rework toggling weld decisions on and off; R1 accepted and R0 superseded.
+  Definition shape `SP-T4-001-A: 2 welds / 4 points / 1 support / 2 bom` and
+  `SP-T4-001-B: 1 / 2 / 0 / 1`.
+- The Track 05 bootstrap prints `14 rows upserted` — **14, not the 13 the remediation
+  addendum claimed** — skips the import when an accepted revision exists, and writes
+  `1 | 1 | 2 | 2 | 3 | 1 | 1 | 1`.
+- The golden path was walked end to end in the browser. `spool_stage_events` for
+  `SP-T4-001-A` holds exactly
+  `start_fab → material_check → qc_release → sent_to_paint → painted → final_qc → laydown`,
+  with **`fabricated` absent by design**. A partial material check produced no event. The
+  QC release button stayed disabled while naming its outstanding counts and enabled only
+  when the last obligation closed. A DFT of 200 µm was refused against the 240 µm matrix
+  rule before any request; 250 µm was accepted.
+- `material_check_records.qc13_form_id` holds `QC13-000001`, the form the screen issued —
+  remediation Task 3's fix confirmed end to end for the first time.
+- `PQC31` refuses the superseded revision: `Construction target revision is not current`.
+- The shop-joint limitation is pinned by
+  `supabase/tests/database/054_readiness_shop_joint_limitation.test.sql`, verified to fail
+  assertions 1 and 4 when the view is narrowed.
+
+**Also found and fixed by the same walk:** the fabrication spool picker listed superseded
+revisions under labels identical to the accepted ones; `/` presented demo figures as real
+in Supabase mode; the revision-decision message miscounted; `127.0.0.1:3000` never loaded.
+
+**Measured, not assumed:** with the full Track 01-05 bootstrap data present,
+`supabase test db` gives `Files=20, Tests=354` and fails in `040_engineering_identity`,
+`042_spooling_apply` and `051_weld_progress`. Every test file ends in `rollback`, so the
+conflict runs one way only — bootstrap data breaks pgTAP, never the reverse.
+
+**Not exercised:** T01, T02, T03, T04-10..12 and S01. They cover Tracks 01-03, which this
+close-out did not touch.

@@ -79,10 +79,18 @@ without one and the material check screen is where it is supplied.
 
 ### Fixtures and pgTAP do not coexist
 
-`supabase test db` runs its own fixtures against the same database and conflicts with the
-bootstrap data — in particular `system_reference_entries` codes collide. Always
-`supabase db reset` before running the database suite, and re-run the bootstrap chain
-afterwards if you want the browser fixtures back.
+Measured 2026-08-02: with the full Track 01-05 bootstrap data present, `supabase test db`
+reports `Files=20, Tests=354` (against 21/436 on a clean database) and fails in three
+files - `040_engineering_identity` (`planned 20 tests but ran 16`), `042_spooling_apply`
+(`planned 40 but ran 0`) and `051_weld_progress`
+(`material_type_id must reference a material_type system referential`). The cause is
+`on conflict do nothing` on shared `system_reference_entries` codes: the bootstrap owns the
+code, the test's own insert is skipped, and its foreign key then fails.
+
+Every test file ends in `rollback`, so the suite leaves no residue. The conflict runs one
+way only: **bootstrap data breaks pgTAP, never the reverse.** So `supabase db reset` before
+`supabase test db`, and re-run the bootstrap chain afterwards if you want the browser
+fixtures back. Track 06 will meet this on every iteration; budget for the reset.
 
 ## Manual acceptance click path
 

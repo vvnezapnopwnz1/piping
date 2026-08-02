@@ -21,7 +21,8 @@ end-to-end data set for their business workflows.
 Use this contract verbatim when delegating a run to Codex through Playwright MCP.
 
 ```text
-Use Playwright MCP and only http://127.0.0.1:3000 or http://localhost:3000.
+Use Playwright MCP and only http://localhost:3000 (127.0.0.1 needs allowedDevOrigins in
+next.config.mjs; it is configured, but localhost is the tested host).
 Read docs/qa/local-supabase-browser-runbook.md and execute its requested mode.
 
 Do not read .env, .env.local, shell history, or any secret. Do not request, print,
@@ -47,9 +48,13 @@ must ask the operator to change user if a case requires a different authenticate
   fixture users to that value whenever Track 01 is run.
 - Never commit `.env*`, browser storage state, fixture password, Secret, service key,
   screenshots containing secrets, or test reports with secrets.
-- Do not run `supabase test db` against browser fixtures. Its database fixtures collide
-  with them. Reset the local database before the database suite, then bootstrap browser
-  fixtures again if they are needed.
+- Do not run `supabase test db` against browser fixtures. Measured 2026-08-02: with the
+  full Track 01-05 data present it reports `Files=20, Tests=354` (against 21/436 clean) and
+  fails in `040_engineering_identity`, `042_spooling_apply` and `051_weld_progress`, the
+  cause being `on conflict do nothing` on shared `system_reference_entries` codes. Every
+  test file ends in `rollback`, so the conflict runs one way only: bootstrap data breaks
+  pgTAP, never the reverse. Reset the local database before the database suite, then
+  bootstrap browser fixtures again if they are needed.
 - A fixture bootstrap is idempotent for its reference data, but it does **not** undo
   fabrication events already recorded by a browser workflow. Use a clean database when
   replaying a completed golden path.
