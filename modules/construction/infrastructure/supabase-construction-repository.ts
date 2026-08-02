@@ -273,15 +273,21 @@ export async function loadMaterialCheckItems(
   client: SupabaseClient<Database>,
   spoolRevisionId: string,
 ): Promise<{ identCode: string; traceNumber: string; quantity: number | null }[]> {
+  // material_check_items records a link, not a description: the ident code lives on the
+  // bill-of-materials line and the accepted trace number on the PML record. Selecting
+  // ident_code/trace_number/quantity from this table answers 400 and takes the whole
+  // material-check screen down with it.
   const { data, error } = await client
     .from("material_check_items")
-    .select("ident_code, trace_number, quantity, material_check_records!inner(spool_revision_id)")
-    .eq("material_check_records.spool_revision_id", spoolRevisionId)
+    .select(
+      "checked_quantity, spool_revision_materials!inner(ident_code, spool_revision_id), piping_material_records!inner(trace_number)",
+    )
+    .eq("spool_revision_materials.spool_revision_id", spoolRevisionId)
   fail(error)
   return (data ?? []).map((row: Row) => ({
-    identCode: row.ident_code,
-    traceNumber: row.trace_number,
-    quantity: toNumber(row.quantity),
+    identCode: row.spool_revision_materials?.ident_code ?? "",
+    traceNumber: row.piping_material_records?.trace_number ?? "",
+    quantity: toNumber(row.checked_quantity),
   }))
 }
 
