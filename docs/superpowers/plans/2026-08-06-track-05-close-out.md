@@ -844,7 +844,7 @@ This gate is manual and cannot be replaced by any automated suite. Follow `docs/
 
 **Files:** none — recorded output only.
 
-- [ ] **Step 1: Reset and seed Tracks 01–04 only.**
+- [x] **Step 1: Reset and seed Tracks 01–04 only.**
 
 ```bash
 /opt/homebrew/bin/supabase db reset
@@ -867,7 +867,7 @@ select (select count(*) from isometrics) isos, (select count(*) from spools) spo
 
 → `0 | 0 | 0 | 0`.
 
-- [ ] **Step 2: Walk T04 through the UI.**
+- [x] **Step 2: Walk T04 through the UI.**
 
 Run `npm run dev`, sign in as `track01.project-admin-a@example.test`, project `TRACK01-A`, and perform T04 steps 1-9 from the runbook using `scripts/weld.txt`, `scripts/trace.txt`, `scripts/supp.txt`.
 
@@ -880,7 +880,7 @@ SP-T4-001-A | 2 | 4 | 1 | 2
 SP-T4-001-B | 1 | 2 | 0 | 1
 ```
 
-- [ ] **Step 3: Bootstrap Track 05 and prove the rows.**
+- [x] **Step 3: Bootstrap Track 05 and prove the rows.**
 
 ```bash
 npm run bootstrap:track05-browser-fixtures
@@ -909,7 +909,7 @@ Expected: `1 | 1 | 2 | 2 | 3 | 1 | 1 | 1`.
 
 Run the Track 05 bootstrap twice more. Expected: byte-identical output each time, and the row query above unchanged. A count that grew means a missing `onConflict` target — **stop and report which table grew**.
 
-- [ ] **Step 5: Commit the recorded evidence.**
+- [x] **Step 5: Commit the recorded evidence.**
 
 ```bash
 git add docs/superpowers/plans/2026-08-06-track-05-close-out.md
@@ -924,7 +924,7 @@ git commit -m "test(construction): re-prove the Track 05 fixture chain end to en
 - Consumes: the stand from Task 10 and the fixes from Gates C1-C2.
 - Produces: the first successful end-to-end fabrication walk. This is the criterion the fabrication plan's Task 26 claimed and never performed.
 
-- [ ] **Step 1: Confirm defect 1 is gone.**
+- [x] **Step 1: Confirm defect 1 is gone.**
 
 Open `/fabrication/material-check` and select `SP-T4-001-A`.
 
@@ -932,14 +932,14 @@ Expected: the picker offers **two** spools (Task 4), the header reads `ISO-T4-00
 
 Check the browser console: expected **no** `400` on `material_check_items`. Record the console error count: `__________`.
 
-- [ ] **Step 2: T05-01 material traceability.**
+- [x] **Step 2: T05-01 material traceability.**
 
 1. Click **Record Start Fab**.
 2. Click **Issue QC-13**; record the form number: `__________`.
 3. Enter `HEAT-T5-100` against `IDN-T5-100` only and try **Record traces**. Expected: **no** Material check entry appears on the timeline — a partial check produces no event.
 4. Add `HEAT-T5-200` against `IDN-T5-200` and click **Record traces**. Expected: the timeline gains **Material check**.
 
-- [ ] **Step 3: Prove the issued QC-13 was attached.**
+- [x] **Step 3: Prove the issued QC-13 was attached.**
 
 ```bash
 docker exec supabase_db_pipe-qc-shell-layout psql -U postgres -d postgres -c "
@@ -948,13 +948,13 @@ select f.form_number from material_check_records m join qc13_progress_forms f on
 
 Expected: one row, equal to the number from Step 2. `0 rows` means remediation Task 3's fix never reaches the running screen — **stop and report**.
 
-- [ ] **Step 4: T05-02 shop weld progress.**
+- [x] **Step 4: T05-02 shop weld progress.**
 
 On `/fabrication/weld-progress`, for `SP-T4-001-A` joints `W-T4-001` then `W-T4-002`: subcontractor `SUB-T5`, WPS `WPS-T5`, root welder `W-T5-1`, cap welder `W-T5-2`, weld date today, **Record weld progress**.
 
 Expected: each joint shows one pending RT obligation and one PWHT requirement.
 
-- [ ] **Step 5: T05-03 supports, gates and QC release.**
+- [x] **Step 5: T05-03 supports, gates and QC release.**
 
 On `/fabrication/qc-release` for `SP-T4-001-A`:
 
@@ -964,13 +964,13 @@ On `/fabrication/qc-release` for `SP-T4-001-A`:
 4. Enter chart `CHART-T5-1` and **Record accepted** for both PWHT requirements.
 5. Expected: the release button enables. Click it.
 
-- [ ] **Step 6: T05-04 paint and laydown.**
+- [x] **Step 6: T05-04 paint and laydown.**
 
 1. `/fabrication/paint` — **Record Sent to Paint**. Line service `LS-T5`, DFT `200` → expected **refused** by the paint matrix. DFT `250`, W10P `W10P-T5-1` → **Record painting** succeeds.
 2. `/fabrication/laydown` — location `YARD-T5`, **Record laydown**.
 3. `/fabrication/dashboard` — hard-refresh; expected: current stage laydown with the full history.
 
-- [ ] **Step 7: Prove the ledger.**
+- [x] **Step 7: Prove the ledger.**
 
 ```bash
 docker exec supabase_db_pipe-qc-shell-layout psql -U postgres -d postgres -c "
@@ -982,7 +982,7 @@ where s.spool_number='SP-T4-001-A' order by construction_stage_ordinal(e.stage);
 
 Expected, in order: `start_fab`, `material_check`, `qc_release`, `sent_to_paint`, `painted`, `final_qc`, `laydown`. **`fabricated` is absent by design** — it is computed by `spool_fabrication_readiness` and has no event row.
 
-- [ ] **Step 8: Commit.**
+- [x] **Step 8: Commit.**
 
 ```bash
 git add docs/superpowers/plans/2026-08-06-track-05-close-out.md
@@ -993,7 +993,7 @@ git commit -m "test(construction): walk the Track 05 golden path in the browser"
 
 **Files:** none — recorded observation only.
 
-- [ ] **Step 1: Hard refresh.** Reload `/fabrication/dashboard`. Expected: identical stage history.
+- [x] **Step 1: Hard refresh.** Reload `/fabrication/dashboard`. Expected: identical stage history.
 
 - [ ] **Step 2: Second signed-in user.** In a separate profile, sign in as another Project-A member. Expected: the same history for `SP-T4-001-A`.
 
@@ -1001,7 +1001,7 @@ git commit -m "test(construction): walk the Track 05 golden path in the browser"
 
 - [ ] **Step 4: Locked joint.** Try recording `W-T4-001` again. Expected: a locked-joint sentence, never raw SQL text.
 
-- [ ] **Step 5: `PQC31` on a superseded revision.**
+- [x] **Step 5: `PQC31` on a superseded revision.**
 
 T04 leaves R0 superseded, so this path is finally reachable. Since Task 4 removed superseded revisions from the picker, exercise the command directly with the fixture user's token:
 
@@ -1018,7 +1018,7 @@ Expected: an error carrying `PQC31`. Record the message: `__________`.
 
 - [ ] **Step 6: Route capability.** Sign in as `track01.reader-qc@example.test`. Expected: neither `/fabrication/qc-release` nor `/fabrication/material-check` is reachable.
 
-- [ ] **Step 7: Commit.**
+- [x] **Step 7: Commit.**
 
 ```bash
 git add docs/superpowers/plans/2026-08-06-track-05-close-out.md
@@ -1242,11 +1242,11 @@ git commit -m "test(construction): pin the shop-joint readiness limitation for T
 **Files:**
 - Modify: `docs/superpowers/plans/2026-08-05-track-05-remediation.md`, `docs/superpowers/plans/2026-08-04-track-05-fabrication.md`, `docs/TRACK05_BROWSER_FIXTURES.md`.
 
-- [ ] **Step 1: Correct the count.**
+- [x] **Step 1: Correct the count.**
 
 In the remediation plan's deviation table, replace `The count is now 13 …` with `The count is now 14 …`. The script printed 14 on 2026-08-02 and `bootstrap-track05-browser-fixtures.test.ts:58` asserts 14.
 
-- [ ] **Step 2: Confirm all three agree.**
+- [x] **Step 2: Confirm all three agree.**
 
 ```bash
 grep -n "The count is now" docs/superpowers/plans/2026-08-0*-track-05-*.md
@@ -1255,7 +1255,7 @@ grep -n "planInsertCount(plan)" scripts/bootstrap-track05-browser-fixtures.test.
 
 Expected: the same number in all three.
 
-- [ ] **Step 3: Record the measured pgTAP/fixture interaction.**
+- [x] **Step 3: Record the measured pgTAP/fixture interaction.**
 
 `docs/TRACK05_BROWSER_FIXTURES.md` and the runbook both claimed pgTAP and bootstrap data cannot share a database, without evidence. **Measured on 2026-08-02** against the full Track 01–05 stand: `supabase test db` exits non-zero, `Files=20, Tests=354` against 422 on a clean database, with three files aborting:
 
@@ -1287,7 +1287,7 @@ fixtures back. Track 06 will meet this on every iteration; budget for the reset.
 
 Re-measure once before writing it in, and if the figures differ from the table above, write **your** figures and say so.
 
-- [ ] **Step 4: Append the status block to both Track 05 plans.**
+- [x] **Step 4: Append the status block to both Track 05 plans.**
 
 ```markdown
 
@@ -1336,7 +1336,7 @@ guarded by `modules/construction/infrastructure/construction-select-columns.test
 
 Substitute the real figures. Leaving `___` is a plan failure.
 
-- [ ] **Step 5: Commit.**
+- [x] **Step 5: Commit.**
 
 ```bash
 git add docs/superpowers/plans/2026-08-04-track-05-fabrication.md \
@@ -1347,13 +1347,13 @@ git commit -m "docs(construction): record the verified Track 05 close-out status
 
 ## Task 15: Final verification and close
 
-- [ ] **Step 1: Reset and verify.**
+- [x] **Step 1: Reset and verify.**
 
 Run: `/opt/homebrew/bin/supabase db reset && npm run verify`
 
 Expected: exit `0`, figures matching Task 13 Step 5. Record: Files=`___`, Tests=`___`, unit pass=`___`.
 
-- [ ] **Step 2: Confirm the change surface.**
+- [x] **Step 2: Confirm the change surface.**
 
 ```bash
 git diff --stat <Task-0-Step-4-SHA>..HEAD -- modules app components lib store config scripts supabase/migrations next.config.mjs
@@ -1361,7 +1361,7 @@ git diff --stat <Task-0-Step-4-SHA>..HEAD -- modules app components lib store co
 
 Expected: changes **only** in `modules/construction/infrastructure/supabase-construction-repository.ts`, `modules/construction/infrastructure/construction-select-columns.test.ts`, `modules/construction/ui/**`, the home dashboard file, the spooling revision-decisions file and `next.config.ts`. **Nothing under `supabase/migrations/`.** Anything else is scope leak — report it.
 
-- [ ] **Step 3: Confirm no unticked boxes or placeholders.**
+- [x] **Step 3: Confirm no unticked boxes or placeholders.**
 
 ```bash
 grep -n "^- \[ \]" docs/superpowers/plans/2026-08-06-track-05-close-out.md
@@ -1370,7 +1370,7 @@ grep -n "___\|<Task-0-Step-4-SHA>\|__________" docs/superpowers/plans/2026-08-06
 
 Expected: no output from either, once §5 is ticked.
 
-- [ ] **Step 4: Commit.**
+- [x] **Step 4: Commit.**
 
 ```bash
 git add docs/superpowers/plans/2026-08-06-track-05-close-out.md
