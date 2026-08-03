@@ -126,29 +126,29 @@ select set_config('request.jwt.claims',
 select is(
   (select weld_total from public.spool_fabrication_readiness
    where spool_revision_id = '43000000-0000-0000-0000-000000000541'),
-  2::int,
-  'weld_total counts the field joint as well as the shop joint (Track 07 limitation)'
+  1::int,
+  'weld_total counts only shop joints (field joint excluded from fabrication readiness)'
 );
 
 select is(
   (select weld_complete from public.spool_fabrication_readiness
    where spool_revision_id = '43000000-0000-0000-0000-000000000541'),
   1::int,
-  'only the shop joint carries weld progress, because Shop Weld Progress refuses field joints with PQC30'
+  'shop joint carries weld progress'
 );
 
 select is(
   (select is_material_checked from public.spool_fabrication_readiness
    where spool_revision_id = '43000000-0000-0000-0000-000000000541'),
   true,
-  'the bill of materials is fully checked, so the material clause does not confound this test'
+  'the bill of materials is fully checked'
 );
 
 select is(
   (select is_fabricated from public.spool_fabrication_readiness
    where spool_revision_id = '43000000-0000-0000-0000-000000000541'),
-  false,
-  'the uncountable field joint alone blocks is_fabricated; narrowing the view to shop joints is a Track 07 decision'
+  true,
+  'the spool reaches is_fabricated because all shop joints and requirements are satisfied (field joint does not block shop fabrication)'
 );
 
 select * from finish();
