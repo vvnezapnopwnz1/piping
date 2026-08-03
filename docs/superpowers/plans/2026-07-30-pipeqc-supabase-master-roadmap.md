@@ -1317,9 +1317,13 @@ Track 05 занимает коды `PQC30`–`PQC39`; Track 06 начинает 
 - Shop/Assembly/Field используют один Quality context.
 - Truth table проходит domain unit и pgTAP behavioral suites.
 
-## 19. T7 — Assembly & Erection
+## 19. T7 — Erection (Assembly — опциональный, отложенный модуль)
 
-**Цель:** завершить construction chain через first-class Assembly и Erection, переиспользуя Construction/Quality contracts.
+**Цель:** завершить construction chain через first-class Erection, переиспользуя Construction/Quality contracts.
+
+> **Assembly в объём T7 не входит.** Оригинальный Easy Piping (Technip) поставлялся без него — модуль был только в планах. Схема это уже отражает: `project_assembly_settings.enabled` по умолчанию `false` (`20260801090000_complete_project_referentials.sql:155`), а `assert_project_setup_ready` требует `nde_matrix_assembly` и веса фазы `assembly` **только** при включённом флаге. Экраны `modules/construction/ui/assembly/` не пишутся, команды фазы `assembly` не реализуются; фаза остаётся в enum `construction_phase` как точка расширения.
+>
+> При этом `weld_location` допускает `shop`, `assembly`, `field`: SpoolGen может прислать монтажный стык независимо от флага. Такой шов не должен блокировать цеховую готовность — сужение счёта в `spool_fabrication_readiness` до `weld_location = 'shop'` выполняется в Track 06 Task 1, где эта view и так заменяется.
 
 **Отдельный execution plan:** `docs/superpowers/plans/2026-08-06-track-07-assembly-erection.md`.
 

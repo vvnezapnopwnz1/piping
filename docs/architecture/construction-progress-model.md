@@ -96,8 +96,12 @@ Custom application errors raised by PL/pgSQL functions:
 
 - `spool_fabrication_readiness` counts every non-removed weld joint of a spool, not only
   `weld_location = 'shop'`. A spool carrying a field or assembly joint can therefore never
-  become `is_fabricated` through Shop Weld Progress alone. Track 07 owns those joints and
-  must either widen the recording surface or narrow this count.
+  become `is_fabricated` through Shop Weld Progress alone. **Track 06 owns the fix**, not
+  Track 07: Task 1 of `docs/superpowers/plans/2026-08-07-track-06-nde-quality.md` replaces this
+  view anyway for the `disposition` vocabulary, and narrowing the weld count in the same
+  statement is one predicate. Assembly is an opt-in module that ships disabled
+  (`project_assembly_settings.enabled` defaults to `false`), so a non-shop joint is not a
+  hypothetical — it simply waits for Erection.
 - `effective_stage_date(uuid, construction_stage)` is a deprecated fabrication-only
   delegate. Track 07 must call
   `effective_stage_date(uuid, construction_phase, construction_stage)`.
