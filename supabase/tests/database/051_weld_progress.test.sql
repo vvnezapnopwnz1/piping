@@ -1,5 +1,5 @@
 begin;
-select plan(34);
+select plan(36);
 
 insert into auth.users (id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at)
 values
@@ -170,10 +170,22 @@ select is(
   'a 100 percent coverage is a full obligation'
 );
 select is(
+  (select category_code from public.nde_obligations
+   where weld_joint_revision_id = '47000000-0000-0000-0000-000000000511' and method = 'rt'),
+  'NDE100',
+  'a 100 percent coverage produces NDE100 category'
+);
+select is(
   (select selection_mode from public.nde_obligations
    where weld_joint_revision_id = '47000000-0000-0000-0000-000000000511' and method = 'ut'),
   'spot',
   'a partial coverage is a spot obligation'
+);
+select is(
+  (select category_code from public.nde_obligations
+   where weld_joint_revision_id = '47000000-0000-0000-0000-000000000511' and method = 'ut'),
+  'S',
+  'a partial coverage produces standard S category'
 );
 select is(
   (select count(*)::int from public.pwht_requirements
