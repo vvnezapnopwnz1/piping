@@ -1231,7 +1231,7 @@ Active spool revision
 
 **Цель:** реализовать канонический Quality/NDE aggregate и закрыть самый рискованный набор QC правил.
 
-**Отдельный execution plan:** `docs/superpowers/plans/2026-08-07-track-06-nde-quality.md` (ещё не написан).
+**Отдельный execution plan:** `docs/superpowers/plans/2026-08-07-track-06-nde-quality.md`.
 
 ### Database
 
