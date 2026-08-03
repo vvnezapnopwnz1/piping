@@ -22,39 +22,65 @@ import {
   closeNdeBatch,
   createNdeBatch,
   issueNdeBatch,
+  loadJointWelderIds,
   loadNdeBatches,
   loadNdeObligations,
+  loadQualityReferentials,
   recordNdeResult,
   type NdeBatch,
   type NdeObligation,
   type NdtMethod,
+  type QualityReferentials,
 } from "../infrastructure/supabase-quality-repository"
+import { NDT_METHODS } from "../domain/nde-batch"
+
+const METHOD_LABELS: Record<NdtMethod, string> = {
+  rt: "RT (Radiographic Testing)",
+  ut: "UT (Ultrasonic Testing)",
+  mt: "MT (Magnetic Particle)",
+  pt: "PT (Penetrant Testing)",
+  pmi: "PMI (Positive Material Identification)",
+  ht: "HT (Hardness Testing)",
+  vt: "VT (Visual Testing)",
+}
+
+const CATEGORY_CODES = ["S", "SS", "NR", "H", "HS", "NDE100"] as const
 
 export function NdeBatchScreen({ projectId }: { projectId: string }) {
   const [batches, setBatches] = useState<NdeBatch[]>([])
   const [obligations, setObligations] = useState<NdeObligation[]>([])
+  const [referentials, setReferentials] = useState<QualityReferentials>({
+    welders: [],
+    reworkCodes: [],
+  })
   const [loading, setLoading] = useState(true)
 
   // Create Batch Form
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [method, setMethod] = useState<NdtMethod>("rt")
-  const [categoryCode, setCategoryCode] = useState("NDE100")
+  const [categoryCode, setCategoryCode] = useState<string>("NDE100")
+  const [targetPercentage, setTargetPercentage] = useState("100")
 
   // Record Result Form
   const [selectedObligationId, setSelectedObligationId] = useState<string | null>(null)
   const [outcome, setOutcome] = useState<"accepted" | "rejected">("accepted")
   const [examinedOn, setExaminedOn] = useState(new Date().toISOString().slice(0, 10))
   const [reportNumber, setReportNumber] = useState("")
+  const [defectReworkCodeId, setDefectReworkCodeId] = useState("")
+  const [responsibleWelderId, setResponsibleWelderId] = useState("")
+  const [jointWelderIds, setJointWelderIds] = useState<string[]>([])
 
   const reload = useCallback(async () => {
     try {
       const client = getSupabaseBrowserClient()
-      const [bData, oData] = await Promise.all([
+      const [bData, oData, refs] = await Promise.all([
         loadNdeBatches(client, projectId),
         loadNdeObligations(client, projectId),
+        loadQualityReferentials(client, projectId),
       ])
       setBatches(bData)
       setObligations(oData)
+      setReferentials(refs)
     } catch (err: any) {
       toast.error(err.message || "Failed to load NDE data")
     } finally {
@@ -65,6 +91,33 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
   useEffect(() => {
     void reload()
   }, [reload])
+
+  // record_nde_result refuses a welder who is not on the joint (PQC42), so the
+  // form offers exactly the welders who welded it.
+  const openResultDialog = useCallback(
+    async (obligation: NdeObligation) => {
+      setSelectedObligationId(obligation.id)
+      setOutcome("accepted")
+      setDefectReworkCodeId("")
+      setResponsibleWelderId("")
+      setJointWelderIds([])
+      try {
+        const ids = await loadJointWelderIds(
+          getSupabaseBrowserClient(),
+          obligation.weldJointRevisionId,
+        )
+        setJointWelderIds(ids)
+      } catch (err: any) {
+        toast.error(err.message || "Could not load the welders on this joint")
+      }
+    },
+    [],
+  )
+
+  const jointWelders = referentials.welders.filter((welder) =>
+    jointWelderIds.includes(welder.id),
+  )
+  const rejectionNeedsDefectCode = outcome === "rejected" && defectReworkCodeId === ""
 
   const handleCreateBatch = async () => {
     try {
@@ -87,10 +140,15 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
   }
 
   const handleAllocateCandidates = async (batchId: string) => {
+    const percentage = Number(targetPercentage)
+    if (!Number.isFinite(percentage) || percentage <= 0 || percentage > 100) {
+      toast.error("The coverage percentage must be between 1 and 100.")
+      return
+    }
     try {
       const client = getSupabaseBrowserClient()
-      await allocateNdeBatchCandidates(client, batchId)
-      toast.success("Candidates allocated to batch")
+      await allocateNdeBatchCandidates(client, batchId, percentage, crypto.randomUUID())
+      toast.success(`Candidates allocated to batch at ${percentage}% coverage`)
       void reload()
     } catch (err: any) {
       toast.error(err.message || "Candidate allocation failed")
@@ -100,7 +158,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
   const handleIssueBatch = async (batchId: string) => {
     try {
       const client = getSupabaseBrowserClient()
-      await issueNdeBatch(client, batchId)
+      await issueNdeBatch(client, batchId, crypto.randomUUID())
       toast.success("NDE Batch issued")
       void reload()
     } catch (err: any) {
@@ -111,7 +169,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
   const handleCloseBatch = async (batchId: string) => {
     try {
       const client = getSupabaseBrowserClient()
-      await closeNdeBatch(client, batchId)
+      await closeNdeBatch(client, batchId, crypto.randomUUID())
       toast.success("NDE Batch closed")
       void reload()
     } catch (err: any) {
@@ -121,6 +179,12 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
 
   const handleRecordResult = async () => {
     if (!selectedObligationId) return
+    // The command refuses a rejection with no defect code (PQC42); catching it
+    // here keeps the form from sending a request that can only fail.
+    if (rejectionNeedsDefectCode) {
+      toast.error("A rejected result must carry a defect code.")
+      return
+    }
     try {
       const client = getSupabaseBrowserClient()
       await recordNdeResult(
@@ -129,8 +193,9 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
         outcome,
         examinedOn,
         reportNumber || null,
-        null,
-        null
+        outcome === "rejected" ? defectReworkCodeId : null,
+        responsibleWelderId || null,
+        crypto.randomUUID()
       )
       toast.success(`Result recorded: ${outcome}`)
       setSelectedObligationId(null)
@@ -170,22 +235,27 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
                   value={method}
                   onChange={(e) => setMethod(e.target.value as NdtMethod)}
                 >
-                  <option value="rt">RT (Radiographic Testing)</option>
-                  <option value="ut">UT (Ultrasonic Testing)</option>
-                  <option value="pt">PT (Penetrant Testing)</option>
-                  <option value="mt">MT (Magnetic Particle)</option>
-                  <option value="vt">VT (Visual Testing)</option>
+                  {NDT_METHODS.map((value) => (
+                    <option key={value} value={value}>
+                      {METHOD_LABELS[value]}
+                    </option>
+                  ))}
                 </select>
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Category Code</label>
-                <input
+                <select
                   className="w-full rounded-md border p-2 text-sm"
                   value={categoryCode}
                   onChange={(e) => setCategoryCode(e.target.value)}
-                  placeholder="e.g. NDE100, S, SS"
-                />
+                >
+                  {CATEGORY_CODES.map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <Button onClick={() => void handleCreateBatch()} className="w-full">
@@ -243,6 +313,15 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
                       <TableCell className="text-right space-x-2">
                         {b.status === "draft" && (
                           <>
+                            <Input
+                              type="number"
+                              min={1}
+                              max={100}
+                              aria-label="Coverage percentage"
+                              className="inline-block w-20 align-middle"
+                              value={targetPercentage}
+                              onChange={(e) => setTargetPercentage(e.target.value)}
+                            />
                             <Button
                               size="sm"
                               variant="outline"
@@ -331,7 +410,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => setSelectedObligationId(ob.id)}
+                            onClick={() => void openResultDialog(ob)}
                           >
                             Record Result
                           </Button>
@@ -386,7 +465,54 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
               />
             </div>
 
-            <Button onClick={() => void handleRecordResult()} className="w-full">
+            {outcome === "rejected" && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Defect code</label>
+                <select
+                  className="w-full rounded-md border p-2 text-sm"
+                  value={defectReworkCodeId}
+                  onChange={(e) => setDefectReworkCodeId(e.target.value)}
+                >
+                  <option value="">Select a defect code…</option>
+                  {referentials.reworkCodes.map((code) => (
+                    <option key={code.id} value={code.id}>
+                      {code.code}
+                      {code.description ? ` — ${code.description}` : ""}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  A rejected result must carry a defect code.
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Responsible welder</label>
+              <select
+                className="w-full rounded-md border p-2 text-sm"
+                value={responsibleWelderId}
+                onChange={(e) => setResponsibleWelderId(e.target.value)}
+              >
+                <option value="">The report does not name a welder</option>
+                {jointWelders.map((welder) => (
+                  <option key={welder.id} value={welder.id}>
+                    {welder.welderCode}
+                    {welder.fullName ? ` — ${welder.fullName}` : ""}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Only the welders on this joint may be named. Leaving it unnamed still
+                forces the repair and its tracers, but counts no penalty against anyone.
+              </p>
+            </div>
+
+            <Button
+              onClick={() => void handleRecordResult()}
+              className="w-full"
+              disabled={rejectionNeedsDefectCode}
+            >
               Save Result
             </Button>
           </div>

@@ -117,20 +117,26 @@ export async function createNdeBatch(
 
 export async function allocateNdeBatchCandidates(
   client: SupabaseClient<Database>,
-  batchId: string
+  batchId: string,
+  targetPercentage: number,
+  idempotencyKey: string
 ): Promise<void> {
   const { error } = await client.rpc("allocate_nde_batch_candidates", {
     target_batch_id: batchId,
+    target_percentage: targetPercentage,
+    idempotency_key: idempotencyKey,
   })
   fail(error)
 }
 
 export async function issueNdeBatch(
   client: SupabaseClient<Database>,
-  batchId: string
+  batchId: string,
+  idempotencyKey: string
 ): Promise<void> {
   const { error } = await client.rpc("issue_nde_batch", {
     target_batch_id: batchId,
+    idempotency_key: idempotencyKey,
   })
   fail(error)
 }
@@ -142,7 +148,8 @@ export async function recordNdeResult(
   examinedOn: string,
   reportNumber: string | null,
   defectReworkCodeId: string | null,
-  responsibleWelderQualificationId: string | null
+  responsibleWelderQualificationId: string | null,
+  idempotencyKey: string
 ): Promise<NdeResult> {
   const { data, error } = await client.rpc("record_nde_result", {
     target_obligation_id: obligationId,
@@ -151,6 +158,7 @@ export async function recordNdeResult(
     report_number: reportNumber ?? undefined,
     defect_rework_code_id: defectReworkCodeId ?? undefined,
     responsible_welder_qualification_id: responsibleWelderQualificationId ?? undefined,
+    idempotency_key: idempotencyKey,
   })
   fail(error)
   const row = required(data) as Row
@@ -171,12 +179,72 @@ export async function recordNdeResult(
 
 export async function closeNdeBatch(
   client: SupabaseClient<Database>,
-  batchId: string
+  batchId: string,
+  idempotencyKey: string
 ): Promise<void> {
   const { error } = await client.rpc("close_nde_batch", {
     target_batch_id: batchId,
+    idempotency_key: idempotencyKey,
   })
   fail(error)
+}
+
+export interface QualityReferentials {
+  welders: { id: string; welderCode: string; fullName: string | null }[]
+  reworkCodes: { id: string; code: string; description: string | null }[]
+}
+
+export async function loadQualityReferentials(
+  client: SupabaseClient<Database>,
+  projectId: string
+): Promise<QualityReferentials> {
+  const [welders, reworkCodes] = await Promise.all([
+    client
+      .from("welder_qualifications")
+      .select("id, welder_code, full_name")
+      .eq("project_id", projectId)
+      .eq("status", "active")
+      .order("welder_code"),
+    client
+      .from("project_rework_codes")
+      .select("id, code, description")
+      .eq("project_id", projectId)
+      .eq("status", "active")
+      .order("code"),
+  ])
+  fail(welders.error)
+  fail(reworkCodes.error)
+
+  return {
+    welders: (welders.data ?? []).map((row: Row) => ({
+      id: row.id as string,
+      welderCode: row.welder_code as string,
+      fullName: (row.full_name as string) ?? null,
+    })),
+    reworkCodes: (reworkCodes.data ?? []).map((row: Row) => ({
+      id: row.id as string,
+      code: row.code as string,
+      description: (row.description as string) ?? null,
+    })),
+  }
+}
+
+/**
+ * record_nde_result refuses (PQC42) a welder who is not on the joint's weld
+ * points, so the result form must only offer the welders who actually welded it.
+ */
+export async function loadJointWelderIds(
+  client: SupabaseClient<Database>,
+  weldJointRevisionId: string
+): Promise<string[]> {
+  const { data, error } = await client
+    .from("weld_point_assignments")
+    .select("welder_qualification_id, weld_progress_records!inner(weld_joint_revision_id)")
+    .eq("weld_progress_records.weld_joint_revision_id", weldJointRevisionId)
+  fail(error)
+  return Array.from(
+    new Set((data ?? []).map((row: Row) => row.welder_qualification_id as string))
+  )
 }
 
 export async function loadNdeKpis(

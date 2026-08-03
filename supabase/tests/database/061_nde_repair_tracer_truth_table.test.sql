@@ -1,6 +1,6 @@
 -- 061: NDE Repair and Tracer Truth Table
 begin;
-select plan(7);
+select plan(12);
 
 insert into auth.users (id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at)
 values
@@ -74,7 +74,11 @@ values ('41000000-0000-0000-0000-000000000611', '30000000-0000-0000-0000-0000000
 insert into public.weld_joints (id, project_id, weld_number)
 values
   ('46000000-0000-0000-0000-000000000611', '30000000-0000-0000-0000-000000000611', 'W-0611-01'),
-  ('46000000-0000-0000-0000-000000000612', '30000000-0000-0000-0000-000000000611', 'W-0611-02');
+  ('46000000-0000-0000-0000-000000000612', '30000000-0000-0000-0000-000000000611', 'W-0611-02'),
+  -- Row 2 needs two other joints in the same population for the two mandatory
+  -- first-level tracers to land on.
+  ('46000000-0000-0000-0000-000000000613', '30000000-0000-0000-0000-000000000611', 'W-0611-03'),
+  ('46000000-0000-0000-0000-000000000614', '30000000-0000-0000-0000-000000000611', 'W-0611-04');
 
 insert into public.isometric_revisions (
   id, isometric_id, revision_number, revision_ordinal, status, service_class_id, accepted_at)
@@ -91,12 +95,18 @@ values
   ('47000000-0000-0000-0000-000000000611', '46000000-0000-0000-0000-000000000611',
    '43000000-0000-0000-0000-000000000611', '52000000-0000-0000-0000-000000000611', 'shop', 6, 8),
   ('47000000-0000-0000-0000-000000000612', '46000000-0000-0000-0000-000000000612',
+   '43000000-0000-0000-0000-000000000611', '52000000-0000-0000-0000-000000000611', 'shop', 6, 8),
+  ('47000000-0000-0000-0000-000000000613', '46000000-0000-0000-0000-000000000613',
+   '43000000-0000-0000-0000-000000000611', '52000000-0000-0000-0000-000000000611', 'shop', 6, 8),
+  ('47000000-0000-0000-0000-000000000614', '46000000-0000-0000-0000-000000000614',
    '43000000-0000-0000-0000-000000000611', '52000000-0000-0000-0000-000000000611', 'shop', 6, 8);
 
 insert into public.weld_points (id, weld_joint_revision_id, point_type, sequence_number)
 values
   ('48000000-0000-0000-0000-000000000611', '47000000-0000-0000-0000-000000000611', 'root', 1),
-  ('48000000-0000-0000-0000-000000000612', '47000000-0000-0000-0000-000000000612', 'root', 1);
+  ('48000000-0000-0000-0000-000000000612', '47000000-0000-0000-0000-000000000612', 'root', 1),
+  ('48000000-0000-0000-0000-000000000613', '47000000-0000-0000-0000-000000000613', 'root', 1),
+  ('48000000-0000-0000-0000-000000000614', '47000000-0000-0000-0000-000000000614', 'root', 1);
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000612', true);
@@ -121,6 +131,23 @@ select public.record_weld_progress(
 select public.create_nde_batch('30000000-0000-0000-0000-000000000611', 'rt'::public.ndt_method, 'NDE100', null, null, 'BATCH-TT-1');
 select public.allocate_nde_batch_candidates(id) from public.nde_batches where batch_number = 'BATCH-TT-1';
 select public.issue_nde_batch(id) from public.nde_batches where batch_number = 'BATCH-TT-1';
+
+-- Welded after the batch was issued, so these two stay `pending` and are the
+-- tracer population. Their weld dates sort ahead of joint 611's so the
+-- deterministic (welded_on, weld_number) pick is unambiguous.
+select public.record_weld_progress(
+  '47000000-0000-0000-0000-000000000613',
+  '50000000-0000-0000-0000-000000000611',
+  '56000000-0000-0000-0000-000000000611',
+  '[{"point_type":"root","welder_qualification_id":"57000000-0000-0000-0000-000000000611","completion_percent":100,"welded_on":"2026-08-03"}]'::jsonb,
+  '{"weld_on":"2026-08-03"}'::jsonb);
+
+select public.record_weld_progress(
+  '47000000-0000-0000-0000-000000000614',
+  '50000000-0000-0000-0000-000000000611',
+  '56000000-0000-0000-0000-000000000611',
+  '[{"point_type":"root","welder_qualification_id":"57000000-0000-0000-0000-000000000611","completion_percent":100,"welded_on":"2026-08-04"}]'::jsonb,
+  '{"weld_on":"2026-08-04"}'::jsonb);
 
 -- Row 1: Original accepted -> Obligation satisfied; no repair, no tracer
 select is(
@@ -150,6 +177,45 @@ select lives_ok(
       'rejected', date '2026-08-06', 'RPT-TT-2', '59000000-0000-0000-0000-000000000611', '57000000-0000-0000-0000-000000000611'
     )$$,
   'Original rejected'
+);
+
+select is(
+  (select count(*)::int from public.nde_obligations
+   where cycle_kind = 'repair' and cycle_ordinal = 1
+     and weld_joint_revision_id = '47000000-0000-0000-0000-000000000612'),
+  1,
+  'Row 2: a rejected original creates R1 and it is mandatory'
+);
+
+select is(
+  (select count(*)::int from public.nde_obligations
+   where cycle_kind = 'tracer' and cycle_ordinal = 1
+     and parent_obligation_id = (
+       select id from public.nde_obligations
+       where category_code = 'NDE100' and cycle_kind = 'original'
+         and weld_joint_revision_id = '47000000-0000-0000-0000-000000000612')),
+  2,
+  'Row 2: a rejected original creates two first-level tracer obligations'
+);
+
+select is(
+  (select array_agg(wj.weld_number order by wj.weld_number)
+   from public.nde_obligations o
+   join public.weld_joint_revisions wjr on wjr.id = o.weld_joint_revision_id
+   join public.weld_joints wj on wj.id = wjr.weld_joint_id
+   where o.cycle_kind = 'tracer' and o.cycle_ordinal = 1),
+  array['W-0611-03', 'W-0611-04'],
+  'Row 2: tracers are picked deterministically by (welded_on, weld_number)'
+);
+
+select is(
+  (select count(*)::int from public.nde_obligations
+   where cycle_kind <> 'original'
+     and (method <> 'rt' or category_code <> 'NDE100'
+          or responsible_welder_qualification_id
+             is distinct from '57000000-0000-0000-0000-000000000611'::uuid)),
+  0,
+  'Row 2: every derived obligation inherits method, category and the responsible welder'
 );
 
 -- Row 3: R1 rejected → R2 created per policy; a rejected R2 raises PQC44
@@ -187,11 +253,28 @@ select is(
   'T1 or T2 accepted: No escalation'
 );
 
--- Row 5: Second-level tracer rejected -> NDE100 escalation created
--- Checked via evaluate_nde_penalty or penalty test
+-- Row 5: Second-level tracer rejected -> NDE100 escalation created.
+-- Asserted end to end in 064, which builds a population whose only possible
+-- trigger is the T2 rejection (three rejections, so the fourth-rejection rule
+-- cannot account for it).
 
--- Row 8: Result for another project or a superseded revision -> Refused with PQC45
--- Verified via scope guard / validation
+-- Row 8: Result for another project or a superseded revision -> Refused with PQC45.
+-- The R2 obligation is issued and still has no result, so the only thing that
+-- changes below is the revision status.
+set local role postgres;
+update public.isometric_revisions set status = 'superseded', superseded_at = now()
+where id = '42000000-0000-0000-0000-000000000611';
+set local role authenticated;
+
+select throws_ok(
+  $$select public.record_nde_result(
+      (select id from public.nde_obligations where cycle_kind = 'repair' and cycle_ordinal = 2
+         and weld_joint_revision_id = '47000000-0000-0000-0000-000000000612'),
+      'accepted', date '2026-08-09', 'RPT-TT-5', null, '57000000-0000-0000-0000-000000000611'
+    )$$,
+  'PQC45', null,
+  'Row 8: a result against a superseded revision is refused with PQC45'
+);
 
 select * from finish();
 rollback;

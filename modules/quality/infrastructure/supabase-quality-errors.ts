@@ -1,38 +1,32 @@
 const GENERIC = "The NDE quality action could not be completed. Please try again."
 
 /**
- * Plan section 3.13. PQC4x codes are reserved for Track 06 NDE quality.
+ * Track 06 plan section 4. PQC40-PQC47 are the Quality codes; the sentence for
+ * each one is quoted from that table, because the table is what the refusal
+ * means to a QC engineer. PQC48/PQC49 stay free for Track 06 follow-ups.
  */
+export const QUALITY_ERROR_SENTENCES: Record<string, string> = {
+  PQC40: "A batch must cover one method, one category and one welder. Split this selection.",
+  PQC41: "This batch is not in a state that allows that action. Reload it and check its status.",
+  PQC42:
+    "That obligation is not in this batch, already has a result, or names a welder who did not weld this joint.",
+  PQC43:
+    "That joint cannot serve as a tracer: it is already used, or outside the eligible population.",
+  PQC44: "This repair cycle is not allowed. R2 follows a rejected R1; there is no R3.",
+  PQC45: "That obligation belongs to another project or to a superseded revision.",
+  PQC46: "The NDE100 population snapshot is missing or empty.",
+  PQC47: "This spool has an outstanding PWHT requirement and cannot be quality released.",
+  "42501": "You do not have permission to record this NDE work.",
+  "23505": "That record already exists for this obligation.",
+  "23514": "One of the values entered is not allowed by the project rules.",
+  "23503": "A referenced value does not exist in this project.",
+}
+
 export function mapSupabaseQualityError(
   error: { code?: string; message?: string } | null | undefined,
 ): string {
-  if (!error) return GENERIC
-  switch (error.code) {
-    case "PQC40":
-      return "That NDE batch or obligation could not be found, or it does not belong to this project."
-    case "PQC41":
-      return "The NDE batch cannot be issued while it has no items allocated to it."
-    case "PQC42":
-      return "An NDE result has already been recorded for this obligation."
-    case "PQC43":
-      return "The NDE batch status does not allow this action."
-    case "PQC44":
-      return "The second repair attempt also failed. This joint must be cut out and replaced."
-    case "PQC45":
-      return "That weld joint is outside your project scope, or the revision has been superseded."
-    case "PQC46":
-      return "The NDE result cannot be recorded: the obligation belongs to another project."
-    case "PQC47":
-      return "This spool has an outstanding PWHT requirement and cannot be quality released."
-    case "42501":
-      return "You do not have permission to record this NDE work."
-    case "23505":
-      return "That record already exists for this obligation."
-    case "23514":
-      return "One of the values entered is not allowed by the project rules."
-    case "23503":
-      return "A referenced value does not exist in this project."
-    default:
-      return GENERIC
-  }
+  if (!error?.code) return GENERIC
+  return QUALITY_ERROR_SENTENCES[error.code] ?? GENERIC
 }
+
+export const GENERIC_QUALITY_ERROR = GENERIC

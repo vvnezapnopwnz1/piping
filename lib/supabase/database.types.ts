@@ -5462,6 +5462,14 @@ export type Database = {
         Args: { target_membership_id: string }
         Returns: Json
       }
+      nde_batch_candidates: {
+        Args: { target_batch_id: string }
+        Returns: {
+          candidate_obligation_id: string
+          candidate_weld_number: string
+          candidate_welded_on: string
+        }[]
+      }
       preview_spooling_import: {
         Args: { target_job_id: string }
         Returns: {

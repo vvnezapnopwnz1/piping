@@ -1,6 +1,11 @@
 // NDE batch domain types
 
-export type NdtMethod = "rt" | "ut" | "pt" | "mt" | "vt"
+// Every label of the public.ndt_method enum. "pmi" and "ht" were missing, so a
+// PMI or heat-treatment batch could not be typed at all; nde-method-parity.test.ts
+// pins this list against the generated types.
+export const NDT_METHODS = ["rt", "ut", "mt", "pt", "pmi", "ht", "vt"] as const
+
+export type NdtMethod = (typeof NDT_METHODS)[number]
 export type BatchStatus = "draft" | "issued" | "returned" | "closed"
 export type ObligationDisposition =
   | "pending"
