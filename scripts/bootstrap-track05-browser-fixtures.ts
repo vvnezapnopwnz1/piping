@@ -43,6 +43,12 @@ export interface Track05FixturePlan {
     trace_number: string
   }[]
   locationCategories: { project_id: string; code: string; description: string }[]
+  // Track 06 makes a defect code mandatory on a rejected NDE result
+  // (record_nde_result raises PQC42 without one), and no earlier bootstrap wrote
+  // project_rework_codes. Without these the browser stand can record an
+  // acceptance but never a rejection, so the repair and tracer cascade cannot be
+  // walked at all - which is how the 2026-08-04 Gate D5 run found this gap.
+  reworkCodes: { project_id: string; code: string; description: string }[]
   locations: { project_id: string; category_id: string; code: string; description: string }[]
   lineServices: { project_id: string; code: string; description: string }[]
   ralCodes: {
@@ -123,6 +129,12 @@ export function buildTrack05FixturePlan(
       { project_id: projectId, mrr_number: "MRR-T5-1", ident_code: "IDN-T5-200", trace_number: "HEAT-T5-200" },
       { project_id: projectId, mrr_number: "MRR-T5-1", ident_code: "IDN-T5-300", trace_number: "HEAT-T5-300" },
     ],
+    reworkCodes: [
+      { project_id: projectId, code: "POR", description: "Porosity" },
+      { project_id: projectId, code: "CRK", description: "Crack" },
+      { project_id: projectId, code: "LOF", description: "Lack of fusion" },
+      { project_id: projectId, code: "SLG", description: "Slag inclusion" },
+    ],
     locationCategories: [
       { project_id: projectId, code: "CAT-T5", description: "Track 05 laydown areas" },
     ],
@@ -167,6 +179,7 @@ export const planInsertCount = (plan: Track05FixturePlan): number =>
   plan.welderWpsLinks.length +
   plan.pmlRecords.length +
   plan.locationCategories.length +
+  plan.reworkCodes.length +
   plan.locations.length +
   plan.lineServices.length +
   plan.ralCodes.length +
@@ -217,6 +230,7 @@ async function run(): Promise<void> {
     client.from("project_location_categories").upsert(empty.locationCategories, { onConflict: "project_id,code" }),
     client.from("project_line_services").upsert(empty.lineServices, { onConflict: "project_id,code" }),
     client.from("piping_material_records").upsert(empty.pmlRecords, { onConflict: "project_id,ident_code,trace_number" }),
+    client.from("project_rework_codes").upsert(empty.reworkCodes, { onConflict: "project_id,code" }),
   ])
   for (const result of firstWave) if (result.error) throw new Error(result.error.message)
 

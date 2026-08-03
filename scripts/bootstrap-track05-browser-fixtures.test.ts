@@ -54,5 +54,13 @@ assert.ok(
 
 // planInsertCount must count only what the script writes, so the log line is honest.
 // 1 subcontractor + 1 WPS + 2 welders + 2 links + 3 PML + 1 category + 1 location
-// + 1 line service + 1 RAL + 1 paint rule = 14.
-assert.equal(planInsertCount(plan), 14)
+// + 1 line service + 1 RAL + 1 paint rule + 4 rework codes = 18.
+assert.equal(planInsertCount(plan), 18)
+
+// Track 06 refuses a rejected NDE result that carries no defect code (PQC42), so
+// the stand cannot walk the repair and tracer cascade without these.
+assert.ok(plan.reworkCodes.length >= 1, "the plan must seed at least one defect code")
+assert.ok(
+  plan.reworkCodes.every((row) => row.project_id === "project-1" && row.code.trim().length > 0),
+  "every rework code belongs to the project and carries a code",
+)

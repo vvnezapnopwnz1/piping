@@ -9,7 +9,7 @@
 --     in a population holding only three rejections so the fourth-rejection
 --     rule cannot account for the escalation
 begin;
-select plan(10);
+select plan(13);
 
 -- ─── Fixture: two projects, so a cross-project leak is visible ──────────────
 insert into auth.users (id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at)
@@ -350,6 +350,48 @@ select is(
      and welder_qualification_id = '57000000-0000-0000-0000-000000000641'),
   'second_level_tracer',
   'Row 5: a rejected second-level tracer creates the NDE100 escalation'
+);
+
+-- ─── An accepted repair closes out what it repaired ────────────────────────
+-- Gate D5, 2026-08-04: without this a single rejection made a spool permanently
+-- unreleasable, because the rejected cycle never left the `rejected` disposition
+-- and spool_fabrication_readiness counts everything that is not satisfied,
+-- waived or superseded.
+set local role postgres;
+update public.nde_obligations set disposition = 'issued'
+where cycle_kind = 'repair' and cycle_ordinal = 1
+  and weld_joint_revision_id = '47000000-0000-0000-0000-000000000641';
+set local role authenticated;
+
+select is(
+  (select disposition from public.nde_obligations
+   where cycle_kind = 'original'
+     and weld_joint_revision_id = '47000000-0000-0000-0000-000000000641'),
+  'rejected',
+  'the rejected original is still outstanding while its repair is open'
+);
+
+select public.record_nde_result(
+  (select id from public.nde_obligations
+   where cycle_kind = 'repair' and cycle_ordinal = 1
+     and weld_joint_revision_id = '47000000-0000-0000-0000-000000000641'),
+  'accepted', date '2026-08-10', 'RPT-COR-R1', null,
+  '57000000-0000-0000-0000-000000000641');
+
+select is(
+  (select disposition from public.nde_obligations
+   where cycle_kind = 'original'
+     and weld_joint_revision_id = '47000000-0000-0000-0000-000000000641'),
+  'superseded',
+  'an accepted repair supersedes the cycle it repaired'
+);
+
+select is(
+  (select count(*)::int from public.nde_obligations
+   where weld_joint_revision_id = '47000000-0000-0000-0000-000000000641'
+     and disposition not in ('satisfied', 'waived', 'superseded')),
+  0,
+  'the repaired joint no longer holds the spool unreleasable'
 );
 
 -- ─── The manual's joint status, derived and identical on both sides ─────────

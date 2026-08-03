@@ -6034,6 +6034,10 @@ export type Database = {
         Args: { object_name: string }
         Returns: string
       }
+      supersede_repaired_ancestors: {
+        Args: { satisfied_obligation_id: string }
+        Returns: number
+      }
       update_project_member_access: {
         Args: {
           requested_access_role: string
