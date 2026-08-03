@@ -1007,6 +1007,132 @@ export type Database = {
           },
         ]
       }
+      nde_batch_items: {
+        Row: {
+          batch_id: string
+          created_at: string
+          id: string
+          obligation_id: string
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string
+          id?: string
+          obligation_id: string
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          id?: string
+          obligation_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nde_batch_items_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "nde_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nde_batch_items_obligation_id_fkey"
+            columns: ["obligation_id"]
+            isOneToOne: true
+            referencedRelation: "nde_obligations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nde_batches: {
+        Row: {
+          batch_number: string
+          category_code: string
+          closed_on: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          issued_on: string | null
+          method: Database["public"]["Enums"]["ndt_method"]
+          ndt_subcontractor_id: string | null
+          project_id: string
+          receipt_id: string | null
+          report_number: string | null
+          responsible_welder_qualification_id: string | null
+          returned_on: string | null
+          status: string
+        }
+        Insert: {
+          batch_number: string
+          category_code: string
+          closed_on?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          issued_on?: string | null
+          method: Database["public"]["Enums"]["ndt_method"]
+          ndt_subcontractor_id?: string | null
+          project_id: string
+          receipt_id?: string | null
+          report_number?: string | null
+          responsible_welder_qualification_id?: string | null
+          returned_on?: string | null
+          status?: string
+        }
+        Update: {
+          batch_number?: string
+          category_code?: string
+          closed_on?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          issued_on?: string | null
+          method?: Database["public"]["Enums"]["ndt_method"]
+          ndt_subcontractor_id?: string | null
+          project_id?: string
+          receipt_id?: string | null
+          report_number?: string | null
+          responsible_welder_qualification_id?: string | null
+          returned_on?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nde_batches_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nde_batches_ndt_subcontractor_id_fkey"
+            columns: ["ndt_subcontractor_id"]
+            isOneToOne: false
+            referencedRelation: "project_subcontractors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nde_batches_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nde_batches_receipt_id_fkey"
+            columns: ["receipt_id"]
+            isOneToOne: false
+            referencedRelation: "command_receipts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nde_batches_responsible_welder_qualification_id_fkey"
+            columns: ["responsible_welder_qualification_id"]
+            isOneToOne: false
+            referencedRelation: "welder_qualifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nde_matrix_rules: {
         Row: {
           created_at: string
@@ -1091,12 +1217,17 @@ export type Database = {
       }
       nde_obligations: {
         Row: {
+          category_code: string
           created_at: string
+          cycle_kind: string
+          cycle_ordinal: number
           disposition: string
           id: string
           method: Database["public"]["Enums"]["ndt_method"]
+          parent_obligation_id: string | null
           project_id: string
           required_coverage: number
+          responsible_welder_qualification_id: string | null
           satisfied_at: string | null
           satisfied_by: string | null
           selection_mode: string
@@ -1105,12 +1236,17 @@ export type Database = {
           weld_joint_revision_id: string
         }
         Insert: {
+          category_code?: string
           created_at?: string
+          cycle_kind?: string
+          cycle_ordinal?: number
           disposition?: string
           id?: string
           method: Database["public"]["Enums"]["ndt_method"]
+          parent_obligation_id?: string | null
           project_id: string
           required_coverage: number
+          responsible_welder_qualification_id?: string | null
           satisfied_at?: string | null
           satisfied_by?: string | null
           selection_mode: string
@@ -1119,12 +1255,17 @@ export type Database = {
           weld_joint_revision_id: string
         }
         Update: {
+          category_code?: string
           created_at?: string
+          cycle_kind?: string
+          cycle_ordinal?: number
           disposition?: string
           id?: string
           method?: Database["public"]["Enums"]["ndt_method"]
+          parent_obligation_id?: string | null
           project_id?: string
           required_coverage?: number
+          responsible_welder_qualification_id?: string | null
           satisfied_at?: string | null
           satisfied_by?: string | null
           selection_mode?: string
@@ -1134,10 +1275,24 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "nde_obligations_parent_obligation_id_fkey"
+            columns: ["parent_obligation_id"]
+            isOneToOne: false
+            referencedRelation: "nde_obligations"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "nde_obligations_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nde_obligations_responsible_welder_qualification_id_fkey"
+            columns: ["responsible_welder_qualification_id"]
+            isOneToOne: false
+            referencedRelation: "welder_qualifications"
             referencedColumns: ["id"]
           },
           {
@@ -1188,6 +1343,199 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "weld_progress_summary"
             referencedColumns: ["weld_joint_revision_id"]
+          },
+        ]
+      }
+      nde_penalty_population_members: {
+        Row: {
+          created_at: string
+          id: string
+          penalty_population_id: string
+          weld_joint_revision_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          penalty_population_id: string
+          weld_joint_revision_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          penalty_population_id?: string
+          weld_joint_revision_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nde_penalty_population_members_penalty_population_id_fkey"
+            columns: ["penalty_population_id"]
+            isOneToOne: false
+            referencedRelation: "nde_penalty_populations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nde_penalty_population_members_weld_joint_revision_id_fkey"
+            columns: ["weld_joint_revision_id"]
+            isOneToOne: false
+            referencedRelation: "weld_joint_revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nde_penalty_population_members_weld_joint_revision_id_fkey"
+            columns: ["weld_joint_revision_id"]
+            isOneToOne: false
+            referencedRelation: "weld_progress_summary"
+            referencedColumns: ["weld_joint_revision_id"]
+          },
+        ]
+      }
+      nde_penalty_populations: {
+        Row: {
+          category_code: string
+          created_at: string
+          id: string
+          project_id: string
+          snapshot_taken_at: string
+          triggered_by_obligation_id: string | null
+          welder_qualification_id: string
+        }
+        Insert: {
+          category_code: string
+          created_at?: string
+          id?: string
+          project_id: string
+          snapshot_taken_at?: string
+          triggered_by_obligation_id?: string | null
+          welder_qualification_id: string
+        }
+        Update: {
+          category_code?: string
+          created_at?: string
+          id?: string
+          project_id?: string
+          snapshot_taken_at?: string
+          triggered_by_obligation_id?: string | null
+          welder_qualification_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nde_penalty_populations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nde_penalty_populations_triggered_by_obligation_id_fkey"
+            columns: ["triggered_by_obligation_id"]
+            isOneToOne: false
+            referencedRelation: "nde_obligations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nde_penalty_populations_welder_qualification_id_fkey"
+            columns: ["welder_qualification_id"]
+            isOneToOne: false
+            referencedRelation: "welder_qualifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nde_results: {
+        Row: {
+          batch_item_id: string | null
+          comment: string | null
+          created_at: string
+          defect_rework_code_id: string | null
+          examined_on: string
+          id: string
+          obligation_id: string
+          outcome: string
+          project_id: string
+          receipt_id: string | null
+          recorded_by: string | null
+          report_number: string | null
+          responsible_welder_qualification_id: string | null
+        }
+        Insert: {
+          batch_item_id?: string | null
+          comment?: string | null
+          created_at?: string
+          defect_rework_code_id?: string | null
+          examined_on: string
+          id?: string
+          obligation_id: string
+          outcome: string
+          project_id: string
+          receipt_id?: string | null
+          recorded_by?: string | null
+          report_number?: string | null
+          responsible_welder_qualification_id?: string | null
+        }
+        Update: {
+          batch_item_id?: string | null
+          comment?: string | null
+          created_at?: string
+          defect_rework_code_id?: string | null
+          examined_on?: string
+          id?: string
+          obligation_id?: string
+          outcome?: string
+          project_id?: string
+          receipt_id?: string | null
+          recorded_by?: string | null
+          report_number?: string | null
+          responsible_welder_qualification_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nde_results_batch_item_id_fkey"
+            columns: ["batch_item_id"]
+            isOneToOne: false
+            referencedRelation: "nde_batch_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nde_results_defect_rework_code_id_fkey"
+            columns: ["defect_rework_code_id"]
+            isOneToOne: false
+            referencedRelation: "project_rework_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nde_results_obligation_id_fkey"
+            columns: ["obligation_id"]
+            isOneToOne: true
+            referencedRelation: "nde_obligations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nde_results_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nde_results_receipt_id_fkey"
+            columns: ["receipt_id"]
+            isOneToOne: false
+            referencedRelation: "command_receipts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nde_results_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nde_results_responsible_welder_qualification_id_fkey"
+            columns: ["responsible_welder_qualification_id"]
+            isOneToOne: false
+            referencedRelation: "welder_qualifications"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -4527,6 +4875,14 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      allocate_nde_batch_candidates: {
+        Args: {
+          idempotency_key?: string
+          target_batch_id: string
+          target_percentage?: number
+        }
+        Returns: number
+      }
       apply_import_job: {
         Args: { confirm_conflicts?: boolean; target_job_id: string }
         Returns: {
@@ -4611,6 +4967,38 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      assign_tracer_obligation: {
+        Args: {
+          idempotency_key?: string
+          target_parent_obligation_id: string
+          tracer_weld_joint_revision_id: string
+        }
+        Returns: {
+          category_code: string
+          created_at: string
+          cycle_kind: string
+          cycle_ordinal: number
+          disposition: string
+          id: string
+          method: Database["public"]["Enums"]["ndt_method"]
+          parent_obligation_id: string | null
+          project_id: string
+          required_coverage: number
+          responsible_welder_qualification_id: string | null
+          satisfied_at: string | null
+          satisfied_by: string | null
+          selection_mode: string
+          source_matrix_rule_id: string | null
+          spool_revision_id: string
+          weld_joint_revision_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "nde_obligations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       can_administer_project: {
         Args: { target_project_id: string }
         Returns: boolean
@@ -4654,6 +5042,37 @@ export type Database = {
           target_project_id: string
         }
         Returns: Json
+      }
+      close_nde_batch: {
+        Args: {
+          idempotency_key?: string
+          report_number_override?: string
+          returned_on_date?: string
+          target_batch_id: string
+        }
+        Returns: {
+          batch_number: string
+          category_code: string
+          closed_on: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          issued_on: string | null
+          method: Database["public"]["Enums"]["ndt_method"]
+          ndt_subcontractor_id: string | null
+          project_id: string
+          receipt_id: string | null
+          report_number: string | null
+          responsible_welder_qualification_id: string | null
+          returned_on: string | null
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "nde_batches"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       compatibility_membership_role: {
         Args: {
@@ -4787,6 +5206,40 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_nde_batch: {
+        Args: {
+          batch_number_override?: string
+          category_code: string
+          idempotency_key?: string
+          method: Database["public"]["Enums"]["ndt_method"]
+          subcontractor_id?: string
+          target_project_id: string
+          welder_id?: string
+        }
+        Returns: {
+          batch_number: string
+          category_code: string
+          closed_on: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          issued_on: string | null
+          method: Database["public"]["Enums"]["ndt_method"]
+          ndt_subcontractor_id: string | null
+          project_id: string
+          receipt_id: string | null
+          report_number: string | null
+          responsible_welder_qualification_id: string | null
+          returned_on: string | null
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "nde_batches"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_spooling_import_job: {
         Args: { job_comment?: string; target_project_id: string }
         Returns: {
@@ -4839,6 +5292,10 @@ export type Database = {
         Args: { target_project_id: string; target_subcontractor_id: string }
         Returns: boolean
       }
+      derive_repair_and_tracers: {
+        Args: { rejected_obligation_id: string }
+        Returns: boolean
+      }
       effective_stage_date:
         | {
             Args: {
@@ -4855,8 +5312,21 @@ export type Database = {
             }
             Returns: string
           }
+      eligible_tracer_candidates: {
+        Args: { target_obligation_id: string }
+        Returns: {
+          spool_number: string
+          weld_joint_revision_id: string
+          weld_number: string
+          weld_on: string
+        }[]
+      }
       engineering_numeric: { Args: { value: string }; Returns: number }
       engineering_numeric_key: { Args: { value: number }; Returns: string }
+      evaluate_nde_penalty: {
+        Args: { category: string; target_project_id: string; welder_id: string }
+        Returns: boolean
+      }
       generate_weld_obligations: {
         Args: { ctx: Database["public"]["CompositeTypes"]["weld_context"] }
         Returns: number
@@ -4888,9 +5358,42 @@ export type Database = {
         Returns: boolean
       }
       is_platform_admin: { Args: never; Returns: boolean }
+      is_welder_on_joint: {
+        Args: {
+          target_weld_joint_revision_id: string
+          target_welder_qualification_id: string
+        }
+        Returns: boolean
+      }
       isometric_revision_project_id: {
         Args: { revision_id: string }
         Returns: string
+      }
+      issue_nde_batch: {
+        Args: { idempotency_key?: string; target_batch_id: string }
+        Returns: {
+          batch_number: string
+          category_code: string
+          closed_on: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          issued_on: string | null
+          method: Database["public"]["Enums"]["ndt_method"]
+          ndt_subcontractor_id: string | null
+          project_id: string
+          receipt_id: string | null
+          report_number: string | null
+          responsible_welder_qualification_id: string | null
+          returned_on: string | null
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "nde_batches"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       legacy_access_role: {
         Args: { legacy_role: Database["public"]["Enums"]["app_role"] }
@@ -5083,29 +5586,35 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      record_nde_obligation_outcome: {
+      record_nde_result: {
         Args: {
-          chosen_disposition: string
+          comment?: string
+          defect_rework_code_id?: string
+          examined_on: string
           idempotency_key?: string
+          outcome: string
+          report_number?: string
+          responsible_welder_qualification_id?: string
           target_obligation_id: string
         }
         Returns: {
+          batch_item_id: string | null
+          comment: string | null
           created_at: string
-          disposition: string
+          defect_rework_code_id: string | null
+          examined_on: string
           id: string
-          method: Database["public"]["Enums"]["ndt_method"]
+          obligation_id: string
+          outcome: string
           project_id: string
-          required_coverage: number
-          satisfied_at: string | null
-          satisfied_by: string | null
-          selection_mode: string
-          source_matrix_rule_id: string | null
-          spool_revision_id: string
-          weld_joint_revision_id: string
+          receipt_id: string | null
+          recorded_by: string | null
+          report_number: string | null
+          responsible_welder_qualification_id: string | null
         }
         SetofOptions: {
           from: "*"
-          to: "nde_obligations"
+          to: "nde_results"
           isOneToOne: true
           isSetofReturn: false
         }
