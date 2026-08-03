@@ -357,8 +357,9 @@ For each joint `W-T4-001`, then `W-T4-002`:
 4. Set weld date to today and click **Record weld progress**.
 5. **PASS:** the joint shows one pending RT obligation and one PWHT requirement.
 
-Negative check: select `SP-T4-001-B` / `W-T4-003`, allocate two points to 90% total.
-**PASS:** allocation error is displayed before the browser sends a request.
+Negative check: select `SP-T4-001-B` / `W-T4-003` and choose the same welder for root and cap.
+**PASS:** the allocation error is displayed before the browser sends a request. A root+cap total
+other than 100 is not reachable from this screen — the card derives the cap as `100 − root`.
 
 #### T05-03 — Support, NDE/PWHT gates and QC release
 
@@ -376,8 +377,9 @@ Negative check: select `SP-T4-001-B` / `W-T4-003`, allocate two points to 90% to
 1. **URL:** `/fabrication/paint`; choose `SP-T4-001-A`; click **Record Sent to Paint**.
 2. Choose line service `LS-T5`, enter DFT `200` and a W10P number.
    **PASS:** paint-matrix refusal appears.
-3. Enter DFT `250` and W10P `W10P-T5-1`; click **Record painting**.
-   **PASS:** painting succeeds.
+3. Enter DFT `250`, W10P `W10P-T5-1` **and a Final QC on date** — that field starts empty, and
+   without it `record_laydown` refuses in step 4. Click **Record painting**.
+   **PASS:** Painted and Final QC both gain their dates.
 4. **URL:** `/fabrication/laydown`; choose `SP-T4-001-A`, location `YARD-T5`, then click
    **Record laydown**.
 5. **URL:** `/fabrication/dashboard`; hard-refresh.

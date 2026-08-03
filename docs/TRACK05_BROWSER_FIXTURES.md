@@ -111,16 +111,18 @@ Supabase mode. The spool picker on every screen below offers `SP-T4-001-A`.
    `CHART-T5-1` and click **Record accepted** for both PWHT requirements. The release
    button enables; click **QC release spool**.
 4. **`/fabrication/paint`** — select `SP-T4-001-A`. Click **Record Sent to Paint**. Choose
-   line service `LS-T5`, enter measured DFT `250` µm and W10P number `W10P-T5-1`, then
-   click **Record painting**. Entering `200` µm must be refused with the paint-matrix
-   message before you enter `250`.
+   line service `LS-T5`, enter measured DFT `250` µm, W10P number `W10P-T5-1` and a
+   **Final QC on** date, then click **Record painting**. Entering `200` µm must be refused
+   with the paint-matrix message before you enter `250`. **Final QC on** starts empty and
+   nothing prompts for it, but `record_laydown` refuses without it, so step 5 depends on it.
 5. **`/fabrication/laydown`** — select `SP-T4-001-A`, choose location `YARD-T5` and click
    **Record laydown**.
 6. **`/fabrication/dashboard`** — `SP-T4-001-A` shows the full stage history.
 
 ### Negative paths worth clicking
 
-- On `/fabrication/weld-progress`, try joint `W-T4-003` of `SP-T4-001-B` with two points
-  totalling 90 % — the allocation message appears before the request is sent.
+- On `/fabrication/weld-progress`, try joint `W-T4-003` of `SP-T4-001-B` with the same welder
+  on root and cap — the allocation message appears before the request is sent. A root+cap total
+  other than 100 cannot be reached from this screen: the cap is derived as `100 − root`.
 - Sign in as `track01.reader-qc@example.test`; `/fabrication/qc-release` must not be
   reachable.
