@@ -128,7 +128,7 @@ select public.record_weld_progress(
   '{"weld_on":"2026-08-05"}'::jsonb);
 
 -- Batch 1 & 2
-select public.create_nde_batch('30000000-0000-0000-0000-000000000611', 'rt'::public.ndt_method, 'NDE100', null, null, 'BATCH-TT-1');
+select public.create_nde_batch('30000000-0000-0000-0000-000000000611', 'rt'::public.ndt_method, 'mandatory_100', null, null, 'BATCH-TT-1');
 select public.allocate_nde_batch_candidates(id) from public.nde_batches where batch_number = 'BATCH-TT-1';
 select public.issue_nde_batch(id) from public.nde_batches where batch_number = 'BATCH-TT-1';
 
@@ -151,14 +151,14 @@ select public.record_weld_progress(
 
 -- Row 1: Original accepted -> Obligation satisfied; no repair, no tracer
 select is(
-  (select disposition from public.nde_obligations where category_code = 'NDE100' and weld_joint_revision_id = '47000000-0000-0000-0000-000000000611'),
+  (select disposition from public.nde_obligations where coverage_regime = 'mandatory_100' and weld_joint_revision_id = '47000000-0000-0000-0000-000000000611'),
   'issued',
   'Row 1 test setup: original obligation is issued'
 );
 
 select lives_ok(
   $$select public.record_nde_result(
-      (select id from public.nde_obligations where category_code = 'NDE100' and weld_joint_revision_id = '47000000-0000-0000-0000-000000000611'),
+      (select id from public.nde_obligations where coverage_regime = 'mandatory_100' and weld_joint_revision_id = '47000000-0000-0000-0000-000000000611'),
       'accepted', date '2026-08-06', 'RPT-TT-1', null, '57000000-0000-0000-0000-000000000611'
     )$$,
   'Original accepted'
@@ -173,7 +173,7 @@ select is(
 -- Row 2: Original rejected -> R1 created and mandatory, plus two first-level tracer obligations
 select lives_ok(
   $$select public.record_nde_result(
-      (select id from public.nde_obligations where category_code = 'NDE100' and weld_joint_revision_id = '47000000-0000-0000-0000-000000000612'),
+      (select id from public.nde_obligations where coverage_regime = 'mandatory_100' and weld_joint_revision_id = '47000000-0000-0000-0000-000000000612'),
       'rejected', date '2026-08-06', 'RPT-TT-2', '59000000-0000-0000-0000-000000000611', '57000000-0000-0000-0000-000000000611'
     )$$,
   'Original rejected'
@@ -192,7 +192,7 @@ select is(
    where cycle_kind = 'tracer' and cycle_ordinal = 1
      and parent_obligation_id = (
        select id from public.nde_obligations
-       where category_code = 'NDE100' and cycle_kind = 'original'
+       where coverage_regime = 'mandatory_100' and cycle_kind = 'original'
          and weld_joint_revision_id = '47000000-0000-0000-0000-000000000612')),
   2,
   'Row 2: a rejected original creates two first-level tracer obligations'
@@ -211,7 +211,7 @@ select is(
 select is(
   (select count(*)::int from public.nde_obligations
    where cycle_kind <> 'original'
-     and (method <> 'rt' or category_code <> 'NDE100'
+     and (method <> 'rt' or coverage_regime <> 'mandatory_100'
           or responsible_welder_qualification_id
              is distinct from '57000000-0000-0000-0000-000000000611'::uuid)),
   0,

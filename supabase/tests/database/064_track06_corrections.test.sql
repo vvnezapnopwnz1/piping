@@ -9,7 +9,7 @@
 --     in a population holding only three rejections so the fourth-rejection
 --     rule cannot account for the escalation
 begin;
-select plan(9);
+select plan(10);
 
 -- ─── Fixture: two projects, so a cross-project leak is visible ──────────────
 insert into auth.users (id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at)
@@ -210,7 +210,7 @@ $$;
 -- Six pending rt/NDE100 obligations in project A. 50 % must take three.
 select public.create_nde_batch(
   '30000000-0000-0000-0000-000000000641', 'rt'::public.ndt_method,
-  'NDE100', null, null, 'BATCH-COR-PCT');
+  'mandatory_100', null, null, 'BATCH-COR-PCT');
 
 select is(
   (select public.allocate_nde_batch_candidates(id, 50)
@@ -236,7 +236,7 @@ select is(
 -- list — Gate D2 asks for reproducibility, not a pasted screenshot of it.
 select public.create_nde_batch(
   '30000000-0000-0000-0000-000000000641', 'rt'::public.ndt_method,
-  'NDE100', null, null, 'BATCH-COR-REST');
+  'mandatory_100', null, null, 'BATCH-COR-REST');
 
 select is(
   (select array_agg(c.candidate_weld_number order by c.candidate_weld_number)
@@ -248,18 +248,18 @@ select is(
 
 -- ─── PQC40 is a heterogeneous batch ────────────────────────────────────────
 set local role postgres;
-update public.nde_obligations set category_code = 'H'
+update public.nde_obligations set coverage_regime = 'spot'
 where weld_joint_revision_id = '47000000-0000-0000-0000-000000000643';
 set local role authenticated;
 
 select throws_ok(
   $$select public.issue_nde_batch(id) from public.nde_batches where batch_number = 'BATCH-COR-PCT'$$,
   'PQC40', null,
-  'a batch mixing categories is refused with PQC40'
+  'a batch mixing coverage regimes is refused with PQC40'
 );
 
 set local role postgres;
-update public.nde_obligations set category_code = 'NDE100'
+update public.nde_obligations set coverage_regime = 'mandatory_100'
 where weld_joint_revision_id = '47000000-0000-0000-0000-000000000643';
 set local role authenticated;
 
@@ -345,12 +345,30 @@ select is(
 );
 
 select is(
-  (select count(*)::int from public.nde_penalty_populations
+  (select escalation_reason from public.nde_penalty_populations
    where project_id = '30000000-0000-0000-0000-000000000641'
-     and welder_qualification_id = '57000000-0000-0000-0000-000000000641'
-     and category_code = 'NDE100'),
-  1,
+     and welder_qualification_id = '57000000-0000-0000-0000-000000000641'),
+  'second_level_tracer',
   'Row 5: a rejected second-level tracer creates the NDE100 escalation'
+);
+
+-- ─── The manual's joint status, derived and identical on both sides ─────────
+-- The same table is asserted in modules/quality/domain/joint-status-label.test.ts.
+select is(
+  (select array_agg(label order by ord) from (values
+    (1, public.nde_joint_status_label('pending',   'original', 0::smallint, 'spot')),
+    (2, public.nde_joint_status_label('issued',    'original', 0::smallint, 'spot')),
+    (3, public.nde_joint_status_label('satisfied', 'original', 0::smallint, 'spot')),
+    (4, public.nde_joint_status_label('pending',   'original', 0::smallint, 'mandatory_100')),
+    (5, public.nde_joint_status_label('issued',    'original', 0::smallint, 'mandatory_100')),
+    (6, public.nde_joint_status_label('pending',   'tracer',   1::smallint, 'spot')),
+    (7, public.nde_joint_status_label('issued',    'tracer',   1::smallint, 'spot')),
+    (8, public.nde_joint_status_label('issued',    'tracer',   2::smallint, 'spot')),
+    (9, public.nde_joint_status_label('issued',    'repair',   1::smallint, 'mandatory_100')),
+    (10, public.nde_joint_status_label('pending',  'repair',   2::smallint, 'mandatory_100'))
+  ) as t(ord, label)),
+  array['S', 'SS', 'NR', 'H', 'HS', 'T1', 'T1S', 'T2S', 'R1', 'R2'],
+  'nde_joint_status_label spells the manual 19.6 statuses'
 );
 
 select * from finish();

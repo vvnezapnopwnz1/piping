@@ -112,7 +112,7 @@ select is(
 
 -- Test 1: Create NDE Batch
 select lives_ok(
-  $$select public.create_nde_batch('30000000-0000-0000-0000-000000000601', 'rt'::public.ndt_method, 'NDE100', null, null, 'BATCH-001')$$,
+  $$select public.create_nde_batch('30000000-0000-0000-0000-000000000601', 'rt'::public.ndt_method, 'mandatory_100', null, null, 'BATCH-001')$$,
   'create_nde_batch creates a draft batch'
 );
 
@@ -136,7 +136,7 @@ select lives_ok(
 );
 
 select is(
-  (select disposition from public.nde_obligations where category_code = 'NDE100' and weld_joint_revision_id = '47000000-0000-0000-0000-000000000601'),
+  (select disposition from public.nde_obligations where coverage_regime = 'mandatory_100' and weld_joint_revision_id = '47000000-0000-0000-0000-000000000601'),
   'issued',
   'obligation disposition updated to issued'
 );
@@ -158,14 +158,14 @@ select throws_ok(
 -- Test 6: Record Result
 select lives_ok(
   $$select public.record_nde_result(
-      (select id from public.nde_obligations where category_code = 'NDE100' and weld_joint_revision_id = '47000000-0000-0000-0000-000000000601'),
+      (select id from public.nde_obligations where coverage_regime = 'mandatory_100' and weld_joint_revision_id = '47000000-0000-0000-0000-000000000601'),
       'accepted', date '2026-08-06', 'RPT-001', null, '57000000-0000-0000-0000-000000000601'
     )$$,
   'record_nde_result records accepted result'
 );
 
 select is(
-  (select disposition from public.nde_obligations where category_code = 'NDE100' and weld_joint_revision_id = '47000000-0000-0000-0000-000000000601'),
+  (select disposition from public.nde_obligations where coverage_regime = 'mandatory_100' and weld_joint_revision_id = '47000000-0000-0000-0000-000000000601'),
   'satisfied',
   'accepted obligation disposition becomes satisfied'
 );

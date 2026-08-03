@@ -16,6 +16,43 @@ export type ObligationDisposition =
   | "superseded"
 export type CycleKind = "original" | "repair" | "tracer"
 
+/**
+ * What the NDE matrix rule demands of a joint: a spot rate (10 %, 20 %) or
+ * mandatory 100 % coverage. This is the population an obligation belongs to.
+ *
+ * It replaced `category_code`, which held S / SS / NR / H / HS / NDE100. Those
+ * are not populations: per the Easy Piping manual (dossier section 19.6) they
+ * are the *selection status of a joint inside a batch* - a candidate becomes
+ * selected becomes released. jointStatusLabel below derives them.
+ */
+export type CoverageRegime = "spot" | "mandatory_100"
+
+export const COVERAGE_REGIMES: { value: CoverageRegime; label: string }[] = [
+  { value: "spot", label: "Spot rate (10 % / 20 %)" },
+  { value: "mandatory_100", label: "Mandatory 100 %" },
+]
+
+/**
+ * The manual's joint status, mirroring public.nde_joint_status_label. Derived
+ * from disposition and cycle, never stored, so it cannot contradict them.
+ */
+export function jointStatusLabel(obligation: {
+  disposition: ObligationDisposition
+  cycleKind: CycleKind
+  cycleOrdinal: number
+  coverageRegime: CoverageRegime
+}): string {
+  const { disposition, cycleKind, cycleOrdinal, coverageRegime } = obligation
+  if (cycleKind === "tracer") {
+    return `T${cycleOrdinal}${disposition === "pending" ? "" : "S"}`
+  }
+  if (cycleKind === "repair") return `R${cycleOrdinal}`
+  if (coverageRegime === "mandatory_100") return disposition === "pending" ? "H" : "HS"
+  if (disposition === "satisfied") return "NR"
+  if (disposition === "pending") return "S"
+  return "SS"
+}
+
 export interface NdeObligation {
   id: string
   projectId: string
@@ -24,7 +61,7 @@ export interface NdeObligation {
   method: NdtMethod
   requiredCoverage: number
   selectionMode: string
-  categoryCode: string
+  coverageRegime: CoverageRegime
   disposition: ObligationDisposition
   cycleKind: CycleKind
   cycleOrdinal: number
@@ -37,7 +74,7 @@ export interface NdeBatch {
   projectId: string
   batchNumber: string
   method: NdtMethod
-  categoryCode: string
+  coverageRegime: CoverageRegime
   responsibleWelderQualificationId: string | null
   ndtSubcontractorId: string | null
   status: BatchStatus
@@ -46,6 +83,9 @@ export interface NdeBatch {
   closedOn: string | null
   reportNumber: string | null
   createdAt: string
+  /** Manual 19.10: set when the batch was escalated to 100 % control. */
+  escalatedAt: string | null
+  escalationReason: "four_rejections" | "second_level_tracer" | null
 }
 
 export interface NdeBatchItem {

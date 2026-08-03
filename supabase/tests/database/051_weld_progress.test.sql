@@ -170,10 +170,10 @@ select is(
   'a 100 percent coverage is a full obligation'
 );
 select is(
-  (select category_code from public.nde_obligations
+  (select coverage_regime from public.nde_obligations
    where weld_joint_revision_id = '47000000-0000-0000-0000-000000000511' and method = 'rt'),
-  'NDE100',
-  'a 100 percent coverage produces NDE100 category'
+  'mandatory_100',
+  'a 100 percent coverage rule produces a mandatory_100 obligation'
 );
 select is(
   (select selection_mode from public.nde_obligations
@@ -182,10 +182,10 @@ select is(
   'a partial coverage is a spot obligation'
 );
 select is(
-  (select category_code from public.nde_obligations
+  (select coverage_regime from public.nde_obligations
    where weld_joint_revision_id = '47000000-0000-0000-0000-000000000511' and method = 'ut'),
-  'S',
-  'a partial coverage produces standard S category'
+  'spot',
+  'a partial coverage rule produces a spot obligation'
 );
 select is(
   (select count(*)::int from public.pwht_requirements
@@ -326,7 +326,7 @@ do $$
 declare
   b_id uuid;
 begin
-  perform public.create_nde_batch('30000000-0000-0000-0000-000000000511', 'rt'::public.ndt_method, 'NDE100', null, null, 'BATCH-511-1');
+  perform public.create_nde_batch('30000000-0000-0000-0000-000000000511', 'rt'::public.ndt_method, 'mandatory_100', null, null, 'BATCH-511-1');
   select id into b_id from public.nde_batches where batch_number = 'BATCH-511-1';
   perform public.allocate_nde_batch_candidates(b_id);
   perform public.issue_nde_batch(b_id);

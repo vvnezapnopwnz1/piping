@@ -1,6 +1,6 @@
 -- 062: NDE Penalty Escalation
 begin;
-select plan(6);
+select plan(9);
 
 -- ─── Fixture setup ───────────────────────────────────────────────────────────
 insert into auth.users (id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at)
@@ -131,7 +131,7 @@ $$;
 -- Create batch and issue all 5 joints
 select public.create_nde_batch(
   '30000000-0000-0000-0000-000000000621', 'rt'::public.ndt_method,
-  'NDE100', '57000000-0000-0000-0000-000000000621',
+  'mandatory_100', '57000000-0000-0000-0000-000000000621',
   null, 'BATCH-PEN-1'
 );
 select public.allocate_nde_batch_candidates(id)
@@ -147,7 +147,7 @@ declare
 begin
   for n in 1..3 loop
     select id into ob_id from public.nde_obligations
-    where category_code = 'NDE100'
+    where coverage_regime = 'mandatory_100'
       and weld_joint_revision_id = ('47000000-0000-0000-0000-00000000062' || n)::uuid
       and cycle_kind = 'original';
     perform public.record_nde_result(
@@ -166,13 +166,24 @@ select is(
   'Row 7: Three rejections in that population → NDE100 NOT created'
 );
 
+-- Before the escalation the welder still owes five spot ut obligations, so the
+-- "flipped to mandatory_100" assertion further down cannot pass vacuously.
+select is(
+  (select count(*)::int from public.nde_obligations o
+   where o.project_id = '30000000-0000-0000-0000-000000000621'
+     and o.coverage_regime = 'spot'
+     and not exists (select 1 from public.nde_results r where r.obligation_id = o.id)),
+  5,
+  'before the escalation five spot obligations are outstanding'
+);
+
 -- Row 6: Fourth rejection in same population → NDE100 created
 do $$
 declare
   ob_id uuid;
 begin
   select id into ob_id from public.nde_obligations
-  where category_code = 'NDE100'
+  where coverage_regime = 'mandatory_100'
     and weld_joint_revision_id = '47000000-0000-0000-0000-000000000624'
     and cycle_kind = 'original';
   perform public.record_nde_result(
@@ -198,12 +209,30 @@ select ok(
   'NDE100 population snapshot contains members'
 );
 
+-- The escalation has to *do* something. Manual 19.10: every remaining weld of
+-- that welder is selected at 100 %. The fixture's matrix rule is rt 100 / ut 10,
+-- so before the escalation this welder owed five spot ut obligations.
+select is(
+  (select count(*)::int from public.nde_obligations o
+   where o.project_id = '30000000-0000-0000-0000-000000000621'
+     and o.coverage_regime = 'spot'
+     and not exists (select 1 from public.nde_results r where r.obligation_id = o.id)),
+  0,
+  'the escalation flips every outstanding spot obligation of that welder to mandatory_100'
+);
+
+select is(
+  (select escalation_reason from public.nde_batches where batch_number = 'BATCH-PEN-1'),
+  'four_rejections',
+  'the batch records why it escalated'
+);
+
 -- A second call to evaluate_nde_penalty does not create a duplicate
 select lives_ok(
   $$select public.evaluate_nde_penalty(
       '30000000-0000-0000-0000-000000000621',
       '57000000-0000-0000-0000-000000000621',
-      'NDE100'
+      (select id from public.nde_batches where batch_number = 'BATCH-PEN-1')
     )$$,
   'evaluate_nde_penalty is idempotent (no duplicate population created)'
 );

@@ -1046,10 +1046,12 @@ export type Database = {
       nde_batches: {
         Row: {
           batch_number: string
-          category_code: string
           closed_on: string | null
+          coverage_regime: string
           created_at: string
           created_by: string | null
+          escalated_at: string | null
+          escalation_reason: string | null
           id: string
           issued_on: string | null
           method: Database["public"]["Enums"]["ndt_method"]
@@ -1063,10 +1065,12 @@ export type Database = {
         }
         Insert: {
           batch_number: string
-          category_code: string
           closed_on?: string | null
+          coverage_regime?: string
           created_at?: string
           created_by?: string | null
+          escalated_at?: string | null
+          escalation_reason?: string | null
           id?: string
           issued_on?: string | null
           method: Database["public"]["Enums"]["ndt_method"]
@@ -1080,10 +1084,12 @@ export type Database = {
         }
         Update: {
           batch_number?: string
-          category_code?: string
           closed_on?: string | null
+          coverage_regime?: string
           created_at?: string
           created_by?: string | null
+          escalated_at?: string | null
+          escalation_reason?: string | null
           id?: string
           issued_on?: string | null
           method?: Database["public"]["Enums"]["ndt_method"]
@@ -1217,7 +1223,7 @@ export type Database = {
       }
       nde_obligations: {
         Row: {
-          category_code: string
+          coverage_regime: string
           created_at: string
           cycle_kind: string
           cycle_ordinal: number
@@ -1236,7 +1242,7 @@ export type Database = {
           weld_joint_revision_id: string
         }
         Insert: {
-          category_code?: string
+          coverage_regime?: string
           created_at?: string
           cycle_kind?: string
           cycle_ordinal?: number
@@ -1255,7 +1261,7 @@ export type Database = {
           weld_joint_revision_id: string
         }
         Update: {
-          category_code?: string
+          coverage_regime?: string
           created_at?: string
           cycle_kind?: string
           cycle_ordinal?: number
@@ -1391,29 +1397,32 @@ export type Database = {
       }
       nde_penalty_populations: {
         Row: {
-          category_code: string
           created_at: string
+          escalation_reason: string | null
           id: string
           project_id: string
           snapshot_taken_at: string
+          source_batch_id: string | null
           triggered_by_obligation_id: string | null
           welder_qualification_id: string
         }
         Insert: {
-          category_code: string
           created_at?: string
+          escalation_reason?: string | null
           id?: string
           project_id: string
           snapshot_taken_at?: string
+          source_batch_id?: string | null
           triggered_by_obligation_id?: string | null
           welder_qualification_id: string
         }
         Update: {
-          category_code?: string
           created_at?: string
+          escalation_reason?: string | null
           id?: string
           project_id?: string
           snapshot_taken_at?: string
+          source_batch_id?: string | null
           triggered_by_obligation_id?: string | null
           welder_qualification_id?: string
         }
@@ -1423,6 +1432,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nde_penalty_populations_source_batch_id_fkey"
+            columns: ["source_batch_id"]
+            isOneToOne: false
+            referencedRelation: "nde_batches"
             referencedColumns: ["id"]
           },
           {
@@ -4974,7 +4990,7 @@ export type Database = {
           tracer_weld_joint_revision_id: string
         }
         Returns: {
-          category_code: string
+          coverage_regime: string
           created_at: string
           cycle_kind: string
           cycle_ordinal: number
@@ -5052,10 +5068,12 @@ export type Database = {
         }
         Returns: {
           batch_number: string
-          category_code: string
           closed_on: string | null
+          coverage_regime: string
           created_at: string
           created_by: string | null
+          escalated_at: string | null
+          escalation_reason: string | null
           id: string
           issued_on: string | null
           method: Database["public"]["Enums"]["ndt_method"]
@@ -5209,7 +5227,7 @@ export type Database = {
       create_nde_batch: {
         Args: {
           batch_number_override?: string
-          category_code: string
+          coverage_regime: string
           idempotency_key?: string
           method: Database["public"]["Enums"]["ndt_method"]
           subcontractor_id?: string
@@ -5218,10 +5236,12 @@ export type Database = {
         }
         Returns: {
           batch_number: string
-          category_code: string
           closed_on: string | null
+          coverage_regime: string
           created_at: string
           created_by: string | null
+          escalated_at: string | null
+          escalation_reason: string | null
           id: string
           issued_on: string | null
           method: Database["public"]["Enums"]["ndt_method"]
@@ -5324,7 +5344,11 @@ export type Database = {
       engineering_numeric: { Args: { value: string }; Returns: number }
       engineering_numeric_key: { Args: { value: number }; Returns: string }
       evaluate_nde_penalty: {
-        Args: { category: string; target_project_id: string; welder_id: string }
+        Args: {
+          source_batch_id: string
+          target_project_id: string
+          welder_id: string
+        }
         Returns: boolean
       }
       generate_weld_obligations: {
@@ -5373,10 +5397,12 @@ export type Database = {
         Args: { idempotency_key?: string; target_batch_id: string }
         Returns: {
           batch_number: string
-          category_code: string
           closed_on: string | null
+          coverage_regime: string
           created_at: string
           created_by: string | null
+          escalated_at: string | null
+          escalation_reason: string | null
           id: string
           issued_on: string | null
           method: Database["public"]["Enums"]["ndt_method"]
@@ -5469,6 +5495,15 @@ export type Database = {
           candidate_weld_number: string
           candidate_welded_on: string
         }[]
+      }
+      nde_joint_status_label: {
+        Args: {
+          coverage_regime: string
+          cycle_kind: string
+          cycle_ordinal: number
+          disposition: string
+        }
+        Returns: string
       }
       preview_spooling_import: {
         Args: { target_job_id: string }

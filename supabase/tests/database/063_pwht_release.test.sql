@@ -145,7 +145,7 @@ declare
 begin
   perform public.create_nde_batch(
     '30000000-0000-0000-0000-000000000631', 'rt'::public.ndt_method,
-    'NDE100', null, null, 'BATCH-PWHT-1'
+    'mandatory_100', null, null, 'BATCH-PWHT-1'
   );
   select id into batch_id from public.nde_batches where batch_number = 'BATCH-PWHT-1';
   perform public.allocate_nde_batch_candidates(batch_id);

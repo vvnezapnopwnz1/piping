@@ -198,7 +198,7 @@ do $$
 declare
   b_id uuid;
 begin
-  perform public.create_nde_batch('30000000-0000-0000-0000-000000000521', 'rt'::public.ndt_method, 'NDE100', null, null, 'BATCH-521-1');
+  perform public.create_nde_batch('30000000-0000-0000-0000-000000000521', 'rt'::public.ndt_method, 'mandatory_100', null, null, 'BATCH-521-1');
   select id into b_id from public.nde_batches where batch_number = 'BATCH-521-1';
   perform public.allocate_nde_batch_candidates(b_id);
   perform public.issue_nde_batch(b_id);

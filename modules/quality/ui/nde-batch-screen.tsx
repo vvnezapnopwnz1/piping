@@ -32,7 +32,12 @@ import {
   type NdtMethod,
   type QualityReferentials,
 } from "../infrastructure/supabase-quality-repository"
-import { NDT_METHODS } from "../domain/nde-batch"
+import {
+  COVERAGE_REGIMES,
+  NDT_METHODS,
+  jointStatusLabel,
+  type CoverageRegime,
+} from "../domain/nde-batch"
 
 const METHOD_LABELS: Record<NdtMethod, string> = {
   rt: "RT (Radiographic Testing)",
@@ -43,8 +48,6 @@ const METHOD_LABELS: Record<NdtMethod, string> = {
   ht: "HT (Hardness Testing)",
   vt: "VT (Visual Testing)",
 }
-
-const CATEGORY_CODES = ["S", "SS", "NR", "H", "HS", "NDE100"] as const
 
 export function NdeBatchScreen({ projectId }: { projectId: string }) {
   const [batches, setBatches] = useState<NdeBatch[]>([])
@@ -58,7 +61,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
   // Create Batch Form
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [method, setMethod] = useState<NdtMethod>("rt")
-  const [categoryCode, setCategoryCode] = useState<string>("NDE100")
+  const [coverageRegime, setCoverageRegime] = useState<CoverageRegime>("mandatory_100")
   const [targetPercentage, setTargetPercentage] = useState("100")
 
   // Record Result Form
@@ -118,6 +121,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
     jointWelderIds.includes(welder.id),
   )
   const rejectionNeedsDefectCode = outcome === "rejected" && defectReworkCodeId === ""
+  const escalatedBatches = batches.filter((b) => b.escalatedAt !== null)
 
   const handleCreateBatch = async () => {
     try {
@@ -126,7 +130,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
         client,
         projectId,
         method,
-        categoryCode,
+        coverageRegime,
         null,
         null,
         crypto.randomUUID()
@@ -244,15 +248,15 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Category Code</label>
+                <label className="text-sm font-medium">Coverage regime</label>
                 <select
                   className="w-full rounded-md border p-2 text-sm"
-                  value={categoryCode}
-                  onChange={(e) => setCategoryCode(e.target.value)}
+                  value={coverageRegime}
+                  onChange={(e) => setCoverageRegime(e.target.value as CoverageRegime)}
                 >
-                  {CATEGORY_CODES.map((value) => (
-                    <option key={value} value={value}>
-                      {value}
+                  {COVERAGE_REGIMES.map((regime) => (
+                    <option key={regime.value} value={regime.value}>
+                      {regime.label}
                     </option>
                   ))}
                 </select>
@@ -266,6 +270,27 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
         </Dialog>
       </div>
 
+      {escalatedBatches.length > 0 && (
+        <div
+          role="status"
+          className="rounded-md border border-red-500/50 bg-red-500/10 px-4 py-3 text-sm"
+        >
+          <p className="font-medium">Penalty shoot: 100 % control in force</p>
+          <ul className="mt-1 list-disc pl-5 text-muted-foreground">
+            {escalatedBatches.map((b) => (
+              <li key={b.id}>
+                Batch <span className="font-mono">{b.batchNumber}</span> escalated on{" "}
+                {b.escalatedAt?.slice(0, 10)} because{" "}
+                {b.escalationReason === "four_rejections"
+                  ? "it reached four rejected joints"
+                  : "a second-level tracer was rejected"}
+                . Every remaining joint of that welder is now examined at 100 %.
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="grid gap-6">
         <Card>
           <CardHeader>
@@ -277,7 +302,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
                 <TableRow>
                   <TableHead>Batch #</TableHead>
                   <TableHead>Method</TableHead>
-                  <TableHead>Category</TableHead>
+                  <TableHead>Regime</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Issued On</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -295,7 +320,9 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
                     <TableRow key={b.id}>
                       <TableCell className="font-mono font-medium">{b.batchNumber}</TableCell>
                       <TableCell className="uppercase">{b.method}</TableCell>
-                      <TableCell>{b.categoryCode}</TableCell>
+                      <TableCell>
+                        {b.coverageRegime === "mandatory_100" ? "100 %" : "Spot"}
+                      </TableCell>
                       <TableCell>
                         <Badge
                           variant={
@@ -365,7 +392,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
               <TableHeader>
                 <TableRow>
                   <TableHead>Method</TableHead>
-                  <TableHead>Category</TableHead>
+                  <TableHead>Status (manual)</TableHead>
                   <TableHead>Cycle</TableHead>
                   <TableHead>Coverage</TableHead>
                   <TableHead>Disposition</TableHead>
@@ -383,7 +410,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
                   obligations.map((ob) => (
                     <TableRow key={ob.id}>
                       <TableCell className="uppercase font-mono">{ob.method}</TableCell>
-                      <TableCell>{ob.categoryCode}</TableCell>
+                      <TableCell className="font-mono">{jointStatusLabel(ob)}</TableCell>
                       <TableCell>
                         <Badge variant="outline">
                           {ob.cycleKind === "original"

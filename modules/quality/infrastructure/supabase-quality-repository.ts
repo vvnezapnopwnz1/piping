@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/database.types"
 import type {
+  CoverageRegime,
   NdeBatch,
   NdeObligation,
   NdeResult,
@@ -10,6 +11,7 @@ import type {
 import { mapSupabaseQualityError } from "./supabase-quality-errors"
 
 export type {
+  CoverageRegime,
   NdeBatch,
   NdeObligation,
   NdeResult,
@@ -34,7 +36,7 @@ function toBatch(row: Row): NdeBatch {
     projectId: row.project_id as string,
     batchNumber: row.batch_number as string,
     method: row.method as NdtMethod,
-    categoryCode: row.category_code as string,
+    coverageRegime: row.coverage_regime as CoverageRegime,
     responsibleWelderQualificationId: (row.responsible_welder_qualification_id as string) ?? null,
     ndtSubcontractorId: (row.ndt_subcontractor_id as string) ?? null,
     status: row.status as NdeBatch["status"],
@@ -43,6 +45,8 @@ function toBatch(row: Row): NdeBatch {
     closedOn: (row.closed_on as string) ?? null,
     reportNumber: (row.report_number as string) ?? null,
     createdAt: row.created_at as string,
+    escalatedAt: (row.escalated_at as string) ?? null,
+    escalationReason: (row.escalation_reason as NdeBatch["escalationReason"]) ?? null,
   }
 }
 
@@ -55,7 +59,7 @@ function toObligation(row: Row): NdeObligation {
     method: row.method as NdtMethod,
     requiredCoverage: row.required_coverage as number,
     selectionMode: row.selection_mode as string,
-    categoryCode: row.category_code as string,
+    coverageRegime: row.coverage_regime as CoverageRegime,
     disposition: row.disposition as NdeObligation["disposition"],
     cycleKind: row.cycle_kind as NdeObligation["cycleKind"],
     cycleOrdinal: row.cycle_ordinal as number,
@@ -72,7 +76,7 @@ export async function loadNdeBatches(
   const { data, error } = await client
     .from("nde_batches")
     .select(
-      "id, project_id, batch_number, method, category_code, responsible_welder_qualification_id, ndt_subcontractor_id, status, issued_on, returned_on, closed_on, report_number, created_at"
+      "id, project_id, batch_number, method, coverage_regime, responsible_welder_qualification_id, ndt_subcontractor_id, status, issued_on, returned_on, closed_on, report_number, created_at, escalated_at, escalation_reason"
     )
     .eq("project_id", projectId)
     .order("created_at", { ascending: false })
@@ -87,7 +91,7 @@ export async function loadNdeObligations(
   const { data, error } = await client
     .from("nde_obligations")
     .select(
-      "id, project_id, weld_joint_revision_id, spool_revision_id, method, required_coverage, selection_mode, category_code, disposition, cycle_kind, cycle_ordinal, parent_obligation_id, responsible_welder_qualification_id"
+      "id, project_id, weld_joint_revision_id, spool_revision_id, method, required_coverage, selection_mode, coverage_regime, disposition, cycle_kind, cycle_ordinal, parent_obligation_id, responsible_welder_qualification_id"
     )
     .eq("project_id", projectId)
   fail(error)
@@ -98,7 +102,7 @@ export async function createNdeBatch(
   client: SupabaseClient<Database>,
   projectId: string,
   method: NdtMethod,
-  categoryCode: string,
+  coverageRegime: CoverageRegime,
   welderQualificationId: string | null,
   subcontractorId: string | null,
   idempotencyKey: string
@@ -106,7 +110,7 @@ export async function createNdeBatch(
   const { data, error } = await client.rpc("create_nde_batch", {
     target_project_id: projectId,
     method: method,
-    category_code: categoryCode,
+    coverage_regime: coverageRegime,
     welder_id: welderQualificationId ?? undefined,
     subcontractor_id: subcontractorId ?? undefined,
     idempotency_key: idempotencyKey,
