@@ -194,10 +194,21 @@ select throws_ok(
   'QC release is refused while an NDE obligation is outstanding'
 );
 
-select public.record_nde_obligation_outcome(
+do $$
+declare
+  b_id uuid;
+begin
+  perform public.create_nde_batch('30000000-0000-0000-0000-000000000521', 'rt'::public.ndt_method, 'NDE100', null, null, 'BATCH-521-1');
+  select id into b_id from public.nde_batches where batch_number = 'BATCH-521-1';
+  perform public.allocate_nde_batch_candidates(b_id);
+  perform public.issue_nde_batch(b_id);
+end;
+$$;
+
+select public.record_nde_result(
   (select id from public.nde_obligations
    where spool_revision_id = '43000000-0000-0000-0000-000000000521' and method = 'rt'),
-  'satisfied');
+  'accepted', date '2026-08-01');
 
 select is(
   (select is_releasable from public.spool_fabrication_readiness

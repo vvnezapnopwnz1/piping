@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import Link from "next/link"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
@@ -24,7 +25,6 @@ import {
   loadReadiness,
   loadSpoolStatus,
   loadSupports,
-  recordNdeObligationOutcome,
   recordPwhtResult,
   recordSupportProgress,
   releaseQualityRecord,
@@ -208,6 +208,7 @@ export function QcReleaseScreen({ projectId }: { projectId: string }) {
                   <TableRow>
                     <TableHead>Joint</TableHead>
                     <TableHead>Method</TableHead>
+                    <TableHead>Cycle</TableHead>
                     <TableHead>Coverage</TableHead>
                     <TableHead>Selection</TableHead>
                     <TableHead>Status</TableHead>
@@ -219,41 +220,31 @@ export function QcReleaseScreen({ projectId }: { projectId: string }) {
                     <TableRow key={obligation.id}>
                       <TableCell className="font-mono text-xs">{obligation.weldNumber}</TableCell>
                       <TableCell className="uppercase">{obligation.method}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {obligation.cycleKind === "original"
+                            ? "Original"
+                            : `${obligation.cycleKind} (${obligation.cycleKind === "repair" ? "R" : "T"}${obligation.cycleOrdinal})`}
+                        </Badge>
+                      </TableCell>
                       <TableCell>{obligation.requiredCoverage}%</TableCell>
                       <TableCell>{obligation.selectionMode}</TableCell>
                       <TableCell>
                         <Badge variant="outline">{obligation.disposition}</Badge>
                       </TableCell>
                       <TableCell>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          disabled={obligation.disposition !== "pending"}
-                          onClick={() =>
-                            void run(
-                              () =>
-                                recordNdeObligationOutcome(
-                                  getSupabaseBrowserClient(),
-                                  obligation.id,
-                                  "satisfied",
-                                  crypto.randomUUID(),
-                                ),
-                              "The obligation is satisfied.",
-                              "The obligation could not be closed.",
-                            )
-                          }
-                        >
-                          Mark accepted
-                        </Button>
+                        <Link href="/nde">
+                          <Button type="button" size="sm" variant="outline">
+                            Manage in NDE
+                          </Button>
+                        </Link>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
               <p className="mt-2 text-xs text-muted-foreground">
-                Closing obligations here is an interim action. Track 06 replaces it with NDE
-                batches and results.
+                NDE obligations are managed through NDE inspection batches.
               </p>
             </CardContent>
           </Card>

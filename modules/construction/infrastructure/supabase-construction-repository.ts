@@ -174,6 +174,8 @@ export interface ObligationRow {
   requiredCoverage: number
   selectionMode: string
   disposition: string
+  cycleKind: string
+  cycleOrdinal: number
 }
 
 export interface PwhtRow {
@@ -377,7 +379,7 @@ export async function loadObligations(
 ): Promise<ObligationRow[]> {
   const { data, error } = await client
     .from("nde_obligations")
-    .select("id, weld_joint_revision_id, method, required_coverage, selection_mode, disposition, weld_joint_revisions(weld_joints(weld_number))")
+    .select("id, weld_joint_revision_id, method, required_coverage, selection_mode, disposition, cycle_kind, cycle_ordinal, weld_joint_revisions(weld_joints(weld_number))")
     .eq("spool_revision_id", spoolRevisionId)
     .order("method")
   fail(error)
@@ -389,6 +391,8 @@ export async function loadObligations(
     requiredCoverage: Number(row.required_coverage),
     selectionMode: row.selection_mode,
     disposition: row.disposition,
+    cycleKind: row.cycle_kind ?? "original",
+    cycleOrdinal: Number(row.cycle_ordinal ?? 0),
   }))
 }
 
@@ -590,20 +594,6 @@ export async function recordSupportProgress(
   const { error } = await client.rpc("record_support_progress", {
     target_support_revision_id: supportRevisionId,
     installed_on: installedOn,
-    idempotency_key: idempotencyKey,
-  })
-  fail(error)
-}
-
-export async function recordNdeObligationOutcome(
-  client: SupabaseClient<Database>,
-  obligationId: string,
-  disposition: "satisfied" | "waived",
-  idempotencyKey: string,
-): Promise<void> {
-  const { error } = await client.rpc("record_nde_obligation_outcome", {
-    target_obligation_id: obligationId,
-    chosen_disposition: disposition,
     idempotency_key: idempotencyKey,
   })
   fail(error)

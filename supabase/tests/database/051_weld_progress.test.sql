@@ -322,12 +322,23 @@ select is(
   'a welded joint starts unlocked'
 );
 
+do $$
+declare
+  b_id uuid;
+begin
+  perform public.create_nde_batch('30000000-0000-0000-0000-000000000511', 'rt'::public.ndt_method, 'NDE100', null, null, 'BATCH-511-1');
+  select id into b_id from public.nde_batches where batch_number = 'BATCH-511-1';
+  perform public.allocate_nde_batch_candidates(b_id);
+  perform public.issue_nde_batch(b_id);
+end;
+$$;
+
 -- Accepting the first obligation locks the joint
 select lives_ok(
-  format($$select public.record_nde_obligation_outcome(%L, 'satisfied')$$,
+  format($$select public.record_nde_result(%L, 'accepted', date '2026-08-01')$$,
     (select id from public.nde_obligations
      where weld_joint_revision_id = '47000000-0000-0000-0000-000000000511' and method = 'rt')),
-  'the RT obligation is satisfied'
+  'the RT obligation result is accepted'
 );
 select is(
   (select is_locked from public.weld_progress_records
