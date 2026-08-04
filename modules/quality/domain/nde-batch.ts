@@ -67,6 +67,13 @@ export interface NdeObligation {
   cycleOrdinal: number
   parentObligationId: string | null
   responsibleWelderQualificationId: string | null
+  /**
+   * The joint and spool this obligation is about. Without them the table is a list of
+   * indistinguishable rows: a repair, a tracer and an original all carry the same method
+   * and coverage, and only the joint number says which weld an inspector is looking at.
+   */
+  weldNumber: string
+  spoolNumber: string
 }
 
 export interface NdeBatch {

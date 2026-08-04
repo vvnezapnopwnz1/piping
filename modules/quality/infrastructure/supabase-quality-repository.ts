@@ -66,6 +66,11 @@ function toObligation(row: Row): NdeObligation {
     parentObligationId: (row.parent_obligation_id as string) ?? null,
     responsibleWelderQualificationId:
       (row.responsible_welder_qualification_id as string) ?? null,
+    weldNumber:
+      ((row.weld_joint_revisions as Row | null)?.weld_joints as Row | null)?.weld_number as string ??
+      "",
+    spoolNumber:
+      ((row.spool_revisions as Row | null)?.spools as Row | null)?.spool_number as string ?? "",
   }
 }
 
@@ -91,11 +96,21 @@ export async function loadNdeObligations(
   const { data, error } = await client
     .from("nde_obligations")
     .select(
-      "id, project_id, weld_joint_revision_id, spool_revision_id, method, required_coverage, selection_mode, coverage_regime, disposition, cycle_kind, cycle_ordinal, parent_obligation_id, responsible_welder_qualification_id"
+      "id, project_id, weld_joint_revision_id, spool_revision_id, method, required_coverage, selection_mode, coverage_regime, disposition, cycle_kind, cycle_ordinal, parent_obligation_id, responsible_welder_qualification_id, weld_joint_revisions(weld_joints(weld_number)), spool_revisions(spools(spool_number))"
     )
     .eq("project_id", projectId)
   fail(error)
-  return required(data).map(toObligation)
+  // Spool then joint, so a repair and its tracers read in the order an inspector walks
+  // the line rather than in whatever order PostgREST returns them.
+  return required(data)
+    .map(toObligation)
+    .sort(
+      (left, right) =>
+        left.spoolNumber.localeCompare(right.spoolNumber) ||
+        left.weldNumber.localeCompare(right.weldNumber) ||
+        left.cycleKind.localeCompare(right.cycleKind) ||
+        left.cycleOrdinal - right.cycleOrdinal,
+    )
 }
 
 export async function createNdeBatch(

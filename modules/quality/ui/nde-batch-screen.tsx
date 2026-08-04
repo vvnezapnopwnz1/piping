@@ -104,6 +104,10 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
       setDefectReworkCodeId("")
       setResponsibleWelderId("")
       setJointWelderIds([])
+      // The report number is per examination, not per session. Carrying the previous
+      // joint's number over is how a report gets filed against the wrong weld.
+      setReportNumber("")
+      setExaminedOn(new Date().toISOString().slice(0, 10))
       try {
         const ids = await loadJointWelderIds(
           getSupabaseBrowserClient(),
@@ -121,6 +125,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
     jointWelderIds.includes(welder.id),
   )
   const rejectionNeedsDefectCode = outcome === "rejected" && defectReworkCodeId === ""
+  const selectedObligation = obligations.find((ob) => ob.id === selectedObligationId) ?? null
   const escalatedBatches = batches.filter((b) => b.escalatedAt !== null)
 
   const handleCreateBatch = async () => {
@@ -223,7 +228,21 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
           </p>
         </div>
 
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        {/*
+          Reopening the dialog resets it. Keeping the previous regime made the 2026-08-04
+          walk create a Spot batch where a 100 % batch was meant, twice, and the mistake
+          only surfaced later as a PQC41 refusal on an empty issue.
+        */}
+        <Dialog
+          open={isCreateOpen}
+          onOpenChange={(open) => {
+            if (open) {
+              setMethod("rt")
+              setCoverageRegime("mandatory_100")
+            }
+            setIsCreateOpen(open)
+          }}
+        >
           <DialogTrigger asChild>
             <Button>Create Batch</Button>
           </DialogTrigger>
@@ -391,6 +410,8 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Spool</TableHead>
+                  <TableHead>Joint</TableHead>
                   <TableHead>Method</TableHead>
                   <TableHead>Status (manual)</TableHead>
                   <TableHead>Cycle</TableHead>
@@ -402,13 +423,15 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
               <TableBody>
                 {obligations.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground">
                       No NDE obligations found.
                     </TableCell>
                   </TableRow>
                 ) : (
                   obligations.map((ob) => (
                     <TableRow key={ob.id}>
+                      <TableCell className="font-mono">{ob.spoolNumber}</TableCell>
+                      <TableCell className="font-mono font-medium">{ob.weldNumber}</TableCell>
                       <TableCell className="uppercase font-mono">{ob.method}</TableCell>
                       <TableCell className="font-mono">{jointStatusLabel(ob)}</TableCell>
                       <TableCell>
@@ -459,7 +482,11 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Record NDE Result</DialogTitle>
+            <DialogTitle>
+              {selectedObligation
+                ? `Record NDE Result — ${selectedObligation.weldNumber} (${jointStatusLabel(selectedObligation)})`
+                : "Record NDE Result"}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">

@@ -41,26 +41,42 @@ function readSelects(source: string): { relation: string; select: string }[] {
   return found
 }
 
-function topLevelNames(select: string): string[] {
-  const names: string[] = []
-  let depth = 0
+interface SelectNode {
+  name: string
+  children: SelectNode[]
+}
+
+/**
+ * Parses a PostgREST select string into its tree of names, so an embedded relation is
+ * checked against its own columns rather than skipped. `spool_revisions(spools(spool_no))`
+ * compiles, passes a top-level-only check, and 400s at runtime — which is the whole class
+ * of defect this file exists to catch.
+ */
+function parseSelect(select: string): SelectNode[] {
+  const nodes: SelectNode[] = []
+  const stack: SelectNode[][] = [nodes]
   let token = ""
+  const flush = (): void => {
+    if (token.trim()) stack[stack.length - 1].push({ name: token.trim(), children: [] })
+    token = ""
+  }
   for (const character of select) {
     if (character === "(") {
-      if (depth === 0 && token.trim()) names.push(token.trim())
+      const parent: SelectNode = { name: token.trim(), children: [] }
+      stack[stack.length - 1].push(parent)
       token = ""
-      depth += 1
+      stack.push(parent.children)
     } else if (character === ")") {
-      depth -= 1
-    } else if (character === "," && depth === 0) {
-      if (token.trim()) names.push(token.trim())
-      token = ""
-    } else if (depth === 0) {
+      flush()
+      stack.pop()
+    } else if (character === ",") {
+      flush()
+    } else {
       token += character
     }
   }
-  if (token.trim()) names.push(token.trim())
-  return names
+  flush()
+  return nodes
 }
 
 const relations = readRelationColumns(typesSource)
@@ -76,19 +92,39 @@ assert.ok(ndeBatches.has("status"), "nde_batches must have status column")
 assert.ok(ndeBatches.has("batch_number"), "nde_batches must have batch_number column")
 assert.ok(!ndeBatches.has("batch_no"), "nde_batches must NOT have batch_no (wrong name)")
 
-for (const { relation, select } of selects) {
+function checkNodes(relation: string, nodes: SelectNode[], path: string): void {
   const columns = relations.get(relation)
-  assert.ok(columns, `${relation} is selected from but absent from the generated types`)
-  if (select.trim() === "*") continue
-  for (const name of topLevelNames(select)) {
-    const bare = name.replace(/!inner$/, "").replace(/!left$/, "")
-    if (relations.has(bare)) continue // an embedded relation, not a column
-    assert.ok(
-      columns.has(bare),
-      `${relation}.select names "${bare}", which is not a column of ${relation}`,
-    )
+  assert.ok(columns, `${path} embeds "${relation}", which is absent from the generated types`)
+  for (const node of nodes) {
+    const bare = node.name.replace(/!inner$/, "").replace(/!left$/, "")
+    if (node.children.length > 0) {
+      assert.ok(
+        relations.has(bare),
+        `${path} embeds "${bare}", which is not a relation in the generated types`,
+      )
+      checkNodes(bare, node.children, `${path} -> ${bare}`)
+      continue
+    }
+    if (relations.has(bare)) continue // an embedded relation selected whole
+    assert.ok(columns.has(bare), `${path} names "${bare}", which is not a column of ${relation}`)
   }
 }
+
+for (const { relation, select } of selects) {
+  assert.ok(
+    relations.get(relation),
+    `${relation} is selected from but absent from the generated types`,
+  )
+  if (select.trim() === "*") continue
+  checkNodes(relation, parseSelect(select), `${relation}.select`)
+}
+
+// The guard guards: a nested column that does not exist must be caught, not skipped.
+assert.throws(
+  () => checkNodes("nde_obligations", parseSelect("spool_revisions(spools(spool_no))"), "probe"),
+  /spool_no/,
+  "a wrong column inside an embedded relation must fail the guard",
+)
 
 console.log(
   `All quality-select-columns.test.ts assertions passed! (${selects.length} selects checked)`,
