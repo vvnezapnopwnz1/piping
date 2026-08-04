@@ -127,6 +127,61 @@ read-after-refresh state could remain undiscovered even though the RPC contracts
 
 **Risk if left.** Medium for demo readiness; low for the verified database contract.
 
+### T07-D2 — one spool revision can hold only one material check, whatever the phase
+
+**Missing.** `material_check_records.spool_revision_id` is `unique` (Track 05,
+`20260804091000_material_traceability.sql`), and `record_material_check` upserts
+`on conflict (spool_revision_id) do update`. A spool that is material-checked in the shop and
+again in the field therefore keeps **one** row: the field check overwrites `checked_on` and
+`checked_by` of the shop check. `spool_erection_readiness.field_line_*` reads that row with no
+phase filter, so it reports shop evidence as field evidence — the readiness view is not
+independently wrong, it is downstream of the table shape.
+
+**Covered today by.** The two phases are distinguishable everywhere else: the derived
+`construction_progress_events` row carries `phase`, and `072` pins that a field check is filed
+under `erection`. Nothing is lost from the ledger — only the record's own date and author are
+overwritten, and only when the same spool is checked twice.
+
+**Breaks if never done.** A spool checked in both phases loses its shop check date. The
+erection dashboard shows a green material column for a spool whose field material was never
+verified. Neither is detectable from the UI, which is what makes it worth a decision rather
+than a patch.
+
+**Trigger.** Deliberately held for a table-structure decision by the project owner: whether a
+field material check is a distinct record (add `phase` to `material_check_records`, drop the
+unique constraint for a composite one, phase-filter the readiness lateral) or the same check
+re-confirmed (keep one row, rename `field_line_*` to drop the false `field_` prefix). Do this
+before Track 10 builds a test pack that cites material evidence per phase.
+
+**Risk if left.** Medium. The data model is honest about phase everywhere except here.
+
+### T07-D3 — nine erection routes share one generic screen
+
+**Missing.** `modules/construction/ui/erection/erection-supabase-screen.tsx` (170 lines) serves
+every erection route, differing only by `title`/`action` props. It has no forms: the field weld
+action picks `referentials.welders[0]` and `[1]` and hardcodes 50/50 completion, the field
+material action submits the whole BOM at its expected trace numbers, and the stage actions post
+`new Date()` with no date field. The Track 05 fabrication screens
+(`modules/construction/ui/fabrication/`, ~1400 lines across seven files) are the shape these
+should have.
+
+**Covered today by.** Every rule is enforced in the database, not the screen: `070`–`072` pin
+the stage order, capability, PML evidence and RFT derivation, and `071` pins field/shop weld
+parity. The screen cannot record anything the commands would refuse. `scripts/bootstrap-track07-browser-fixtures.ts`
+produces erection data through the real RPCs, so downstream tracks have something to read.
+
+**Breaks if never done.** Erection cannot be operated by a real user — only demonstrated. Any
+weld recorded through it is attributed to the first two welders in the list, which is wrong
+data rather than missing data.
+
+**Trigger.** Before the erection screens are shown to anyone as working software, and before
+Track 09 adds flange progress to the same routes. The forms are adaptations of
+`fabrication/weld-progress-screen.tsx` and `fabrication/material-check-screen.tsx`, not new
+work; `fabrication/spool-picker.tsx` is already reusable as-is.
+
+**Risk if left.** High for the UI, none for the data contract. Track 08 reads
+`spool_erection_readiness`, which does not depend on these screens.
+
 ## Conventions
 
 - One heading per track, newest at the top of its track's section.
