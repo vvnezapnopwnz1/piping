@@ -1348,9 +1348,8 @@ Track 05 занимает коды `PQC30`–`PQC39`; Track 06 начинает 
 
 ### Tasks
 
-- [ ] Добавить Assembly navigation/routes/dashboard.
-- [ ] Реализовать phase policy для Fabrication/Assembly/Erection.
-- [ ] Assembly использовать структуру Erection, но собственные assignments/progress.
+- [x] Решение Track 07: Assembly остаётся отключённой extension point; в этот трек входит только Erection.
+- [ ] Реализовать phase policy для Fabrication/Erection.
 - [ ] Реализовать Erection sequence To Site → Erected → Welded/Bolted → Supported.
 - [ ] Связать Field Material Check с PML.
 - [ ] Писать field root/cap/multiple-welder progress через общий weld command.
@@ -1364,7 +1363,7 @@ Track 05 занимает коды `PQC30`–`PQC39`; Track 06 начинает 
 
 ### Exit criteria
 
-- Assembly присутствует как отдельная фаза и не подменяется Erection.
+- Assembly отсутствует в UI и командах Track 07, а включение остаётся отдельным будущим решением.
 - Field weld использует тот же Quality context, что shop weld.
 - RFT spool выводится из authoritative records.
 - Ни один Erection store не является persistence в Supabase mode.
