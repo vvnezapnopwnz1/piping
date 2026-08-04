@@ -67,7 +67,9 @@ not values inferred from source.
 
 ## Current execution note
 
-The fixture and application checks are automated and green. Browser acceptance, including the
-rejected-field-weld → accepted-repair sequence and Track 05/06 re-walk, remains **BLOCKED**
-until a local Supabase fixture stand is bootstrapped with operator credentials and a browser
-session is available. Do not mark these cases PASS from static code inspection.
+The fixture and application checks are automated and green. A browser smoke on 2026-08-04
+found and fixed the dashboard's Next.js client/metadata build error; the route now reaches the
+sign-in screen. Full browser acceptance, including the rejected-field-weld → accepted-repair
+sequence and Track 05/06 re-walk, remains **BLOCKED** until a local Supabase fixture stand is
+bootstrapped and an authorized browser session is available. Do not mark these cases PASS from
+static code inspection.

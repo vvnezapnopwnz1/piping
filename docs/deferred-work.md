@@ -115,8 +115,9 @@ session, so the field rejected-weld → accepted-repair path and Track 05/06 reg
 no browser evidence in this checkout.
 
 **Covered today by.** `070`–`072` pgTAP tests, repository/domain tests, the fixture invariant
-test and `npm run verify` cover the database and application contracts. The runbook explicitly
-labels the browser cases BLOCKED rather than inferring PASS from source.
+test, `npm run verify`, and an unauthenticated browser smoke that reaches the sign-in screen
+after fixing the dashboard build error. The runbook explicitly labels the browser cases
+BLOCKED rather than inferring PASS from source.
 
 **Breaks if never done.** A route-level integration defect, inaccessible control or stale
 read-after-refresh state could remain undiscovered even though the RPC contracts pass.
