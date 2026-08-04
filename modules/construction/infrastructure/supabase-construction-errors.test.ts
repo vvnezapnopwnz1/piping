@@ -1,6 +1,20 @@
 import assert from "node:assert/strict"
-
 import { mapSupabaseConstructionError } from "./supabase-construction-errors"
+
+const erectionMessages = new Map([
+  ["PQC50", "Assembly progress is not part of this demo."],
+  ["PQC51", "This weld location does not match the selected construction phase."],
+  ["PQC52", "Record the previous erection stage before continuing."],
+  ["PQC53", "Record the field weld before recording erection support."],
+  ["PQC54", "Record To Site before recording field work."],
+  ["PQC55", "RFT is derived automatically after all erection quality gates are closed."],
+  ["PQC56", "This field material check is not available for the selected spool."],
+  ["PQC57", "This support progress record is not available for the selected spool."],
+])
+
+for (const [code, expected] of erectionMessages) {
+  assert.equal(mapSupabaseConstructionError({ code }), expected)
+}
 
 const generic = mapSupabaseConstructionError(null)
 assert.match(generic, /could not be completed/)

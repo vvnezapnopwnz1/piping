@@ -30,8 +30,24 @@ export function mapSupabaseConstructionError(
       return "The same request is already being processed. Wait for it to finish before retrying."
     case "PQC39":
       return "A project referential this action depends on is missing or archived. Check the NDE matrix, paint matrix and material class mapping in project setup."
+    case "PQC50":
+      return "Assembly progress is not part of this demo."
+    case "PQC51":
+      return "This weld location does not match the selected construction phase."
+    case "PQC52":
+      return "Record the previous erection stage before continuing."
+    case "PQC53":
+      return "Record the field weld before recording erection support."
+    case "PQC54":
+      return "Record To Site before recording field work."
+    case "PQC55":
+      return "RFT is derived automatically after all erection quality gates are closed."
+    case "PQC56":
+      return "This field material check is not available for the selected spool."
+    case "PQC57":
+      return "This support progress record is not available for the selected spool."
     case "42501":
-      return "You do not have permission to record this fabrication work, or the spool is outside your scope."
+      return "You do not have permission to record this construction work, or the spool is outside your scope."
     case "23505":
       return "That record already exists for this spool or joint."
     case "23514":

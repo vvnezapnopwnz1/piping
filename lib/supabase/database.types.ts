@@ -154,6 +154,27 @@ export type Database = {
           },
         ]
       }
+      construction_phase_stages: {
+        Row: {
+          is_recordable: boolean
+          ordinal: number
+          phase: Database["public"]["Enums"]["construction_phase"]
+          stage: Database["public"]["Enums"]["construction_stage"]
+        }
+        Insert: {
+          is_recordable: boolean
+          ordinal: number
+          phase: Database["public"]["Enums"]["construction_phase"]
+          stage: Database["public"]["Enums"]["construction_stage"]
+        }
+        Update: {
+          is_recordable?: boolean
+          ordinal?: number
+          phase?: Database["public"]["Enums"]["construction_phase"]
+          stage?: Database["public"]["Enums"]["construction_stage"]
+        }
+        Relationships: []
+      }
       construction_progress_events: {
         Row: {
           actor_id: string | null
@@ -234,6 +255,13 @@ export type Database = {
             foreignKeyName: "construction_progress_events_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
             isOneToOne: false
+            referencedRelation: "spool_erection_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "construction_progress_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
             referencedRelation: "spool_fabrication_readiness"
             referencedColumns: ["spool_revision_id"]
           },
@@ -296,6 +324,13 @@ export type Database = {
             columns: ["spool_revision_id"]
             isOneToOne: false
             referencedRelation: "spool_construction_status"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "flange_joint_revisions_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_erection_readiness"
             referencedColumns: ["spool_revision_id"]
           },
           {
@@ -800,6 +835,13 @@ export type Database = {
             foreignKeyName: "laydown_records_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
             isOneToOne: true
+            referencedRelation: "spool_erection_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "laydown_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
             referencedRelation: "spool_fabrication_readiness"
             referencedColumns: ["spool_revision_id"]
           },
@@ -929,6 +971,13 @@ export type Database = {
             columns: ["spool_revision_id"]
             isOneToOne: true
             referencedRelation: "spool_construction_status"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "material_check_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "spool_erection_readiness"
             referencedColumns: ["spool_revision_id"]
           },
           {
@@ -1326,6 +1375,13 @@ export type Database = {
             foreignKeyName: "nde_obligations_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
             isOneToOne: false
+            referencedRelation: "spool_erection_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "nde_obligations_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
             referencedRelation: "spool_fabrication_readiness"
             referencedColumns: ["spool_revision_id"]
           },
@@ -1667,6 +1723,13 @@ export type Database = {
             columns: ["spool_revision_id"]
             isOneToOne: true
             referencedRelation: "spool_construction_status"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "paint_progress_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "spool_erection_readiness"
             referencedColumns: ["spool_revision_id"]
           },
           {
@@ -3241,6 +3304,13 @@ export type Database = {
             foreignKeyName: "pwht_requirements_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
             isOneToOne: false
+            referencedRelation: "spool_erection_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "pwht_requirements_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
             referencedRelation: "spool_fabrication_readiness"
             referencedColumns: ["spool_revision_id"]
           },
@@ -3379,6 +3449,13 @@ export type Database = {
             foreignKeyName: "qc13_progress_forms_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
             isOneToOne: false
+            referencedRelation: "spool_erection_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "qc13_progress_forms_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
             referencedRelation: "spool_fabrication_readiness"
             referencedColumns: ["spool_revision_id"]
           },
@@ -3471,6 +3548,13 @@ export type Database = {
             columns: ["spool_revision_id"]
             isOneToOne: true
             referencedRelation: "spool_construction_status"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "quality_release_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "spool_erection_readiness"
             referencedColumns: ["spool_revision_id"]
           },
           {
@@ -3672,6 +3756,13 @@ export type Database = {
             foreignKeyName: "revision_progress_copies_source_spool_revision_id_fkey"
             columns: ["source_spool_revision_id"]
             isOneToOne: false
+            referencedRelation: "spool_erection_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "revision_progress_copies_source_spool_revision_id_fkey"
+            columns: ["source_spool_revision_id"]
+            isOneToOne: false
             referencedRelation: "spool_fabrication_readiness"
             referencedColumns: ["spool_revision_id"]
           },
@@ -3687,6 +3778,13 @@ export type Database = {
             columns: ["target_spool_revision_id"]
             isOneToOne: false
             referencedRelation: "spool_construction_status"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "revision_progress_copies_target_spool_revision_id_fkey"
+            columns: ["target_spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_erection_readiness"
             referencedColumns: ["spool_revision_id"]
           },
           {
@@ -3799,6 +3897,13 @@ export type Database = {
             columns: ["spool_revision_id"]
             isOneToOne: false
             referencedRelation: "spool_construction_status"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_revision_materials_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_erection_readiness"
             referencedColumns: ["spool_revision_id"]
           },
           {
@@ -3961,6 +4066,13 @@ export type Database = {
             foreignKeyName: "support_progress_records_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
             isOneToOne: false
+            referencedRelation: "spool_erection_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "support_progress_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
             referencedRelation: "spool_fabrication_readiness"
             referencedColumns: ["spool_revision_id"]
           },
@@ -4014,6 +4126,13 @@ export type Database = {
             columns: ["spool_revision_id"]
             isOneToOne: false
             referencedRelation: "spool_construction_status"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "support_revisions_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_erection_readiness"
             referencedColumns: ["spool_revision_id"]
           },
           {
@@ -4204,6 +4323,13 @@ export type Database = {
             columns: ["spool_revision_id"]
             isOneToOne: false
             referencedRelation: "spool_construction_status"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "weld_joint_revisions_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_erection_readiness"
             referencedColumns: ["spool_revision_id"]
           },
           {
@@ -4482,6 +4608,13 @@ export type Database = {
             foreignKeyName: "weld_progress_records_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
             isOneToOne: false
+            referencedRelation: "spool_erection_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "weld_progress_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
             referencedRelation: "spool_fabrication_readiness"
             referencedColumns: ["spool_revision_id"]
           },
@@ -4655,6 +4788,42 @@ export type Database = {
           },
         ]
       }
+      spool_erection_readiness: {
+        Row: {
+          erected_on: string | null
+          field_line_checked: number | null
+          field_line_total: number | null
+          field_material_checked_on: string | null
+          field_support_recorded: number | null
+          field_support_total: number | null
+          field_weld_complete: number | null
+          field_weld_total: number | null
+          is_rft: boolean | null
+          iso_number: string | null
+          last_field_support_on: string | null
+          last_field_weld_on: string | null
+          nde_pending: number | null
+          project_id: string | null
+          pwht_pending: number | null
+          revision_number: string | null
+          revision_status: Database["public"]["Enums"]["revision_status"] | null
+          rft_on: string | null
+          spool_number: string | null
+          spool_revision_id: string | null
+          supported_on: string | null
+          to_site_on: string | null
+          welded_bolted_on: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "isometrics_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       spool_fabrication_readiness: {
         Row: {
           fabricated_on: string | null
@@ -4703,6 +4872,13 @@ export type Database = {
             columns: ["spool_revision_id"]
             isOneToOne: false
             referencedRelation: "spool_construction_status"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "construction_progress_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_erection_readiness"
             referencedColumns: ["spool_revision_id"]
           },
           {
@@ -4801,6 +4977,13 @@ export type Database = {
             foreignKeyName: "construction_progress_events_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
             isOneToOne: false
+            referencedRelation: "spool_erection_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "construction_progress_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
             referencedRelation: "spool_fabrication_readiness"
             referencedColumns: ["spool_revision_id"]
           },
@@ -4845,6 +5028,13 @@ export type Database = {
             columns: ["spool_revision_id"]
             isOneToOne: false
             referencedRelation: "spool_construction_status"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "weld_joint_revisions_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_erection_readiness"
             referencedColumns: ["spool_revision_id"]
           },
           {
@@ -5547,6 +5737,84 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      record_erection_progress: {
+        Args: {
+          target_idempotency_key?: string
+          target_occurred_on: string
+          target_payload?: Json
+          target_spool_revision_id: string
+          target_stage: Database["public"]["Enums"]["construction_stage"]
+        }
+        Returns: {
+          actor_id: string | null
+          compensates_event_id: string | null
+          created_at: string
+          id: string
+          occurred_on: string
+          payload: Json
+          phase: Database["public"]["Enums"]["construction_phase"]
+          project_id: string
+          source: string
+          spool_revision_id: string
+          stage: Database["public"]["Enums"]["construction_stage"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "construction_progress_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      record_field_material_check: {
+        Args: {
+          target_checked_on: string
+          target_idempotency_key?: string
+          target_items: Json
+          target_qc13_form_id?: string
+          target_spool_revision_id: string
+        }
+        Returns: {
+          checked_by: string | null
+          checked_on: string
+          command_receipt_id: string | null
+          created_at: string
+          id: string
+          project_id: string
+          qc13_form_id: string | null
+          spool_revision_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "material_check_records"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      record_field_support_progress: {
+        Args: {
+          idempotency_key?: string
+          installed_on: string
+          target_support_revision_id: string
+        }
+        Returns: {
+          created_at: string
+          id: string
+          installed_on: string
+          phase: Database["public"]["Enums"]["construction_phase"]
+          project_id: string
+          receipt_id: string | null
+          recorded_by: string | null
+          spool_revision_id: string
+          support_revision_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "support_progress_records"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       record_import_validation: {
         Args: { parsed_issues: Json; parsed_rows: Json; target_job_id: string }
         Returns: {
@@ -5806,47 +6074,90 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      record_weld_progress: {
-        Args: {
-          dates?: Json
-          idempotency_key?: string
-          points: Json
-          subcontractor_id: string
-          target_weld_joint_revision_id: string
-          welding_procedure_id: string
-        }
-        Returns: {
-          beveling_on: string | null
-          created_at: string
-          cutting_on: string | null
-          dwir_number: string | null
-          fitup_on: string | null
-          id: string
-          is_locked: boolean
-          locked_at: string | null
-          phase: Database["public"]["Enums"]["construction_phase"]
-          preheat_on: string | null
-          project_id: string
-          qc_form_number: string | null
-          qc13_form_id: string | null
-          receipt_id: string | null
-          recorded_by: string | null
-          rework_code_id: string | null
-          spool_revision_id: string
-          subcontractor_id: string
-          updated_at: string
-          version: number
-          weld_joint_revision_id: string
-          weld_on: string | null
-          welding_procedure_id: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "weld_progress_records"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
+      record_weld_progress:
+        | {
+            Args: {
+              dates?: Json
+              idempotency_key?: string
+              points: Json
+              subcontractor_id: string
+              target_phase: Database["public"]["Enums"]["construction_phase"]
+              target_weld_joint_revision_id: string
+              welding_procedure_id: string
+            }
+            Returns: {
+              beveling_on: string | null
+              created_at: string
+              cutting_on: string | null
+              dwir_number: string | null
+              fitup_on: string | null
+              id: string
+              is_locked: boolean
+              locked_at: string | null
+              phase: Database["public"]["Enums"]["construction_phase"]
+              preheat_on: string | null
+              project_id: string
+              qc_form_number: string | null
+              qc13_form_id: string | null
+              receipt_id: string | null
+              recorded_by: string | null
+              rework_code_id: string | null
+              spool_revision_id: string
+              subcontractor_id: string
+              updated_at: string
+              version: number
+              weld_joint_revision_id: string
+              weld_on: string | null
+              welding_procedure_id: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "weld_progress_records"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              dates?: Json
+              idempotency_key?: string
+              points: Json
+              subcontractor_id: string
+              target_weld_joint_revision_id: string
+              welding_procedure_id: string
+            }
+            Returns: {
+              beveling_on: string | null
+              created_at: string
+              cutting_on: string | null
+              dwir_number: string | null
+              fitup_on: string | null
+              id: string
+              is_locked: boolean
+              locked_at: string | null
+              phase: Database["public"]["Enums"]["construction_phase"]
+              preheat_on: string | null
+              project_id: string
+              qc_form_number: string | null
+              qc13_form_id: string | null
+              receipt_id: string | null
+              recorded_by: string | null
+              rework_code_id: string | null
+              spool_revision_id: string
+              subcontractor_id: string
+              updated_at: string
+              version: number
+              weld_joint_revision_id: string
+              weld_on: string | null
+              welding_procedure_id: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "weld_progress_records"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       register_spooling_import_file: {
         Args: {
           checksum: string
@@ -6093,6 +6404,11 @@ export type Database = {
         | "painted"
         | "final_qc"
         | "laydown"
+        | "to_site"
+        | "erected"
+        | "welded_bolted"
+        | "supported"
+        | "rft"
       engineering_entity_type:
         | "spool"
         | "weld_joint"
@@ -6293,6 +6609,11 @@ export const Constants = {
         "painted",
         "final_qc",
         "laydown",
+        "to_site",
+        "erected",
+        "welded_bolted",
+        "supported",
+        "rft",
       ],
       engineering_entity_type: [
         "spool",
