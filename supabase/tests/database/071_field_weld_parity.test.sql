@@ -1,5 +1,5 @@
 begin;
-select plan(8);
+select plan(15);
 
 select has_function('public', 'record_weld_progress',
   array['construction_phase', 'uuid', 'uuid', 'uuid', 'jsonb', 'jsonb', 'text'],
@@ -130,6 +130,69 @@ select throws_ok($$select public.record_weld_progress(
   '50000000-0000-0000-0000-000000000731', '56000000-0000-0000-0000-000000000731',
   '[]'::jsonb, '{}'::jsonb, null)$$,
   'PQC51', null, 'a field joint cannot be recorded as fabrication');
+
+select lives_ok($$select public.record_erection_progress(
+  '43000000-0000-0000-0000-000000000731',
+  'erected', date '2026-08-12', '{}'::jsonb, 'field-erected')$$,
+  'the field spool can record erected after to site');
+select lives_ok($$select public.record_erection_progress(
+  '43000000-0000-0000-0000-000000000731',
+  'welded_bolted', date '2026-08-13', '{}'::jsonb, 'field-welded')$$,
+  'the field spool can record welded or bolted after the joint weld');
+select lives_ok($$select public.record_erection_progress(
+  '43000000-0000-0000-0000-000000000731',
+  'supported', date '2026-08-14', '{}'::jsonb, 'field-supported')$$,
+  'the field spool can record supported after welded or bolted');
+select is(
+  (select nde_pending from public.spool_erection_readiness
+   where spool_revision_id = '43000000-0000-0000-0000-000000000731'),
+  2::int, 'both field obligations initially hold RFT'
+);
+
+set local role postgres;
+update public.nde_obligations
+set disposition = 'satisfied'
+where weld_joint_revision_id = '47000000-0000-0000-0000-000000000731' and method = 'ut';
+update public.nde_obligations
+set disposition = 'rejected'
+where weld_joint_revision_id = '47000000-0000-0000-0000-000000000731' and method = 'rt';
+insert into public.nde_obligations (
+  id, project_id, weld_joint_revision_id, spool_revision_id, method,
+  required_coverage, selection_mode, source_matrix_rule_id,
+  disposition, cycle_kind, cycle_ordinal, parent_obligation_id
+)
+select
+  '59000000-0000-0000-0000-000000000731', project_id, weld_joint_revision_id, spool_revision_id,
+  method, required_coverage, selection_mode, source_matrix_rule_id,
+  'pending', 'repair', 1, id
+from public.nde_obligations
+where weld_joint_revision_id = '47000000-0000-0000-0000-000000000731' and method = 'rt';
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000731', true);
+select set_config('request.jwt.claims', '{"sub":"10000000-0000-0000-0000-000000000731","role":"authenticated"}', true);
+select is(
+  (select is_rft from public.spool_erection_readiness
+   where spool_revision_id = '43000000-0000-0000-0000-000000000731'),
+  false, 'an open repair keeps RFT closed'
+);
+set local role postgres;
+update public.nde_obligations
+set disposition = 'superseded'
+where id = (select parent_obligation_id from public.nde_obligations
+            where id = '59000000-0000-0000-0000-000000000731');
+update public.nde_obligations set disposition = 'satisfied'
+where id = '59000000-0000-0000-0000-000000000731';
+set local role authenticated;
+select is(
+  (select nde_pending from public.spool_erection_readiness
+   where spool_revision_id = '43000000-0000-0000-0000-000000000731'),
+  0::int, 'accepted repair and superseded parent leave no outstanding field obligation'
+);
+select is(
+  (select is_rft from public.spool_erection_readiness
+   where spool_revision_id = '43000000-0000-0000-0000-000000000731'),
+  true, 'a repaired field joint no longer holds RFT after its repair is accepted'
+);
 
 select * from finish();
 rollback;

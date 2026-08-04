@@ -1,5 +1,5 @@
 begin;
-select plan(14);
+select plan(20);
 
 select has_function('public', 'record_erection_progress', array['uuid', 'construction_stage', 'date', 'jsonb', 'text'],
   'erection progress RPC exists');
@@ -7,6 +7,7 @@ select has_function('public', 'record_field_material_check', array['uuid', 'date
   'field material check RPC exists');
 select has_function('public', 'record_field_support_progress', array['uuid', 'date', 'text'],
   'field support RPC exists');
+select has_view('public', 'spool_erection_readiness', 'erection readiness view exists');
 
 insert into auth.users (id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at)
 values ('10000000-0000-0000-0000-000000000721', 'authenticated', 'authenticated',
@@ -99,6 +100,31 @@ select is(
    where spool_revision_id = '36000000-0000-0000-0000-000000000721'
      and phase = 'erection' and stage in ('to_site', 'erected')),
   2, 'erection events use the shared construction ledger'
+);
+select is(
+  (select field_line_total from public.spool_erection_readiness
+   where spool_revision_id = '36000000-0000-0000-0000-000000000721'),
+  1::int, 'erection readiness counts field material lines'
+);
+select is(
+  (select is_rft from public.spool_erection_readiness
+   where spool_revision_id = '36000000-0000-0000-0000-000000000721'),
+  false, 'RFT stays closed before welded or bolted and supported'
+);
+select lives_ok(
+  $$select public.record_erection_progress(
+    '36000000-0000-0000-0000-000000000721', 'welded_bolted', date '2026-08-14', '{}'::jsonb, 'erection-welded')$$,
+  'welded or bolted is recordable after erection'
+);
+select lives_ok(
+  $$select public.record_erection_progress(
+    '36000000-0000-0000-0000-000000000721', 'supported', date '2026-08-15', '{}'::jsonb, 'erection-supported')$$,
+  'supported is recordable after welded or bolted'
+);
+select is(
+  (select is_rft from public.spool_erection_readiness
+   where spool_revision_id = '36000000-0000-0000-0000-000000000721'),
+  true, 'RFT is derived when all predecessor stages and quality gates are clear'
 );
 
 select * from finish();
