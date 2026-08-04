@@ -3,8 +3,15 @@
 ## Purpose and scope
 
 This runbook lets a human or a browser agent verify the local Supabase implementation
-of Tracks 01–05. It is an acceptance procedure, not a substitute for `npm run verify`.
+of Tracks 01–06. It is an acceptance procedure, not a substitute for `npm run verify`.
 All mutations below are limited to local fixture data at `127.0.0.1` / `localhost`.
+
+Two execution scripts sit under this policy. Read this file for scope, safety and personas;
+read the script for the exact controls and expected values:
+
+- `docs/qa/tracks-01-05-agent-walkthrough.md` — access, referentials, imports, revisions and
+  the fabrication golden path.
+- `docs/qa/track-06-agent-walkthrough.md` — NDE batches, repairs, tracers and the escalation.
 
 The supported durable flow is:
 
@@ -12,9 +19,10 @@ The supported durable flow is:
 Access and referentials -> generic imports -> SpoolGen engineering definition -> fabrication
 ```
 
-The Erection, NDE, Tracking, Test Pack, Flange and Reports routes are included as UI
-smoke checks only. The Track 01–05 fixture chain does not create a complete, real-mode
-end-to-end data set for their business workflows.
+The Erection, Tracking, Test Pack, Flange and Reports routes are included as UI smoke checks
+only. The fixture chain does not create a complete, real-mode end-to-end data set for their
+business workflows. **NDE is no longer among them**: since Track 06 it has its own fixture and
+its own walkthrough.
 
 ## Agent operating contract
 
@@ -114,9 +122,10 @@ export SUPABASE_SERVICE_ROLE_KEY TRACK01_FIXTURE_PASSWORD
 
 ### 3. Full fixture chain and dev server
 
-This is the normal fast path for Track 01–05 acceptance. Track 05 writes the Track 05
-referentials and creates the accepted `ISO-T4-001/R0` engineering definition if it is
-absent.
+This is the normal fast path for acceptance. Track 05 writes the Track 05 referentials and
+creates the accepted `ISO-T4-001/R0` engineering definition if it is absent. Track 06 adds
+the NDE population — a second isometric of twelve already-welded shop joints — and is only
+needed for a Track 06 walk.
 
 ```zsh
 npm run bootstrap:track01-browser-fixtures &&
@@ -124,18 +133,28 @@ npm run bootstrap:track02-browser-fixtures &&
 npm run bootstrap:track03-browser-fixtures &&
 npm run bootstrap:track04-browser-fixtures &&
 npm run bootstrap:track05-browser-fixtures &&
+npm run bootstrap:track06-browser-fixtures &&   # Track 06 walks only
 npm run dev
 ```
 
-Expected Track 05 output on a clean local database:
+Expected Track 05 and Track 06 output on a clean local database:
 
 ```text
-Track 05 referentials reconciled: 14 rows upserted into project <uuid>.
+Track 05 referentials reconciled: 18 rows upserted into project <uuid>.
 Engineering definition imported: 7 rows applied to ISO-T4-001.
+Track 06 welders reconciled: 2 welders and 2 WPS links in project <uuid>.
+Engineering definition imported: 15 rows applied to ISO-T6-001.
+Weld progress recorded on 12 of 12 Track 06 joints; 12 NDE obligations now exist on ISO-T6-001.
 ```
 
-Open `http://127.0.0.1:3000`, sign in as Project Admin A and choose `TRACK01-A`.
-The application must not show a DEMO MODE label.
+**After `supabase db reset`, the Track 01 bootstrap can fail with a `findOrCreateUser` stack
+trace.** `db reset` restarts the containers and the script can beat GoTrue to the port. It is
+a race, not a defect: re-run the chain.
+
+Open `http://localhost:3000`, sign in as Project Admin A and choose `TRACK01-A`.
+The application must not show a DEMO MODE label. **Use `localhost`, never `127.0.0.1`** —
+Next.js blocks the latter as a cross-origin dev resource and the page never leaves
+"Loading PipeQC…".
 
 ### Clean replay of a completed golden path
 
@@ -397,6 +416,29 @@ other than 100 is not reachable from this screen — the card derives the cap as
 3. Sign in as Reader QC and open `/fabrication/qc-release`.
    **PASS:** route is forbidden/unreachable and no release control is visible.
 
+### T06 — NDE quality: batches, repairs, tracers and the escalation
+
+**Scope:** `/nde` and `/nde/dashboard`, plus the effect NDE has on `/fabrication/qc-release`.
+**Fixture:** `ISO-T6-001`, twelve already-welded shop joints — `npm run bootstrap:track06-browser-fixtures`.
+
+The full case-by-case script is **`docs/qa/track-06-agent-walkthrough.md`**, written against a
+real run. Do not paraphrase it here; run it. What this policy document adds:
+
+1. **Track 06 mutations are irreversible through the UI.** An NDE result cannot be un-recorded,
+   and a rejection cascades into repair and tracer obligations that no screen deletes. Replaying
+   the walk needs `supabase db reset` and the whole bootstrap chain, not a tidy-up.
+2. **Order is load-bearing.** The NDE100 escalation counts four rejections *inside one batch*
+   attributed to *one welder*. A case executed out of order does not merely fail, it makes every
+   later case meaningless.
+3. **The Track 06 population has its own welders on purpose.** `W-T6-1` and `W-T6-2` are
+   disjoint from Track 05's `W-T5-1`/`W-T5-2` so that an escalation raised in a Track 06 walk
+   cannot change what `/fabrication/qc-release` demands of `SP-T4-001-A`. If a walk ever shows
+   Track 05 obligations at 100 % coverage, stop: the populations have crossed.
+4. **Reader QC reaches `/nde` and is refused every mutation.** `project_reader` grants
+   `nde.view`; `current_user_has_capability` requires the *access* role to carry the capability,
+   and a functional role such as QC Engineer only lifts the gate on top of it. A reachable
+   `/nde` for Reader QC is correct, and so is the 403 on `create_nde_batch`.
+
 ### S01 — UI smoke-only route sweep
 
 **Actor:** Project Admin A unless a route guard says otherwise.
@@ -423,7 +465,7 @@ business support from this smoke pass.
 # Local Supabase Browser Acceptance — YYYY-MM-DD
 
 Mode: full chain | Track 04 UI-import mode
-App URL: http://127.0.0.1:3000
+App URL: http://localhost:3000
 Fixture project: TRACK01-A
 Run by: human | agent name
 
