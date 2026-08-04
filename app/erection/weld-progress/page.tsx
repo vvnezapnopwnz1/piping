@@ -9,6 +9,8 @@ import { FieldWeldDetailPanel } from "@/components/erection/field-weld-detail-pa
 import { FieldWeldTable } from "@/components/erection/field-weld-table";
 import { useErectionStore } from "@/store";
 import { cn } from "@/lib/utils";
+import { useAppMode } from "@/contexts/app-mode-context"
+import { ErectionSupabaseScreen } from "@/modules/construction/ui/erection/erection-supabase-screen"
 import {
   ERECTION_STATUS_OPTIONS,
   type ErectionStatus,
@@ -245,6 +247,10 @@ function ErectionWeldProgressInner() {
 }
 
 export default function ErectionWeldProgressPage() {
+  const mode = useAppMode()
+  if (mode !== "demo") {
+    return <ErectionSupabaseScreen title="Field Weld Progress" description="Record field joints through the shared weld and NDE quality context." action="weld" />
+  }
   return (
     <Suspense fallback={null}>
       <ErectionWeldProgressInner />

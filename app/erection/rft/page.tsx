@@ -2,8 +2,12 @@
 
 import { Suspense } from "react";
 import { RFTView } from "@/components/erection/rft-view";
+import { useAppMode } from "@/contexts/app-mode-context"
+import { ErectionSupabaseScreen } from "@/modules/construction/ui/erection/erection-supabase-screen"
 
 export default function RFTPage() {
+  const mode = useAppMode()
+  if (mode !== "demo") return <ErectionSupabaseScreen title="Ready For Test" description="Auto-derived from field weld, support, NDE and PWHT evidence." action="gate" />
   return (
     <div className="space-y-6">
       <div>

@@ -106,6 +106,26 @@ it is not what the Track 06 verification package was for.
 
 ---
 
+## Track 07 — Erection
+
+### T07-D1 — Browser Gate D is pending a bootstrapped local stand
+
+**Missing.** The Playwright walkthrough has not yet been executed against a live browser
+session, so the field rejected-weld → accepted-repair path and Track 05/06 regressions have
+no browser evidence in this checkout.
+
+**Covered today by.** `070`–`072` pgTAP tests, repository/domain tests, the fixture invariant
+test and `npm run verify` cover the database and application contracts. The runbook explicitly
+labels the browser cases BLOCKED rather than inferring PASS from source.
+
+**Breaks if never done.** A route-level integration defect, inaccessible control or stale
+read-after-refresh state could remain undiscovered even though the RPC contracts pass.
+
+**Trigger.** Bootstrap the local fixture chain with the operator credentials and run
+`docs/qa/track-07-agent-walkthrough.md` in Playwright before presenting the demo.
+
+**Risk if left.** Medium for demo readiness; low for the verified database contract.
+
 ## Conventions
 
 - One heading per track, newest at the top of its track's section.

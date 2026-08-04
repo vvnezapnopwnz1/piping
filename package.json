@@ -14,6 +14,7 @@
     "bootstrap:track04-browser-fixtures": "tsx scripts/bootstrap-track04-browser-fixtures.ts",
     "bootstrap:track05-browser-fixtures": "tsx scripts/bootstrap-track05-browser-fixtures.ts",
     "bootstrap:track06-browser-fixtures": "tsx scripts/bootstrap-track06-browser-fixtures.ts",
+    "bootstrap:track07-browser-fixtures": "tsx scripts/bootstrap-track07-browser-fixtures.ts",
     "typecheck": "tsc --noEmit --incremental false",
     "test:unit": "node --import tsx --test \"modules/**/*.test.ts\" \"lib/**/*.test.ts\" \"config/**/*.test.ts\" \"contexts/**/*.test.ts\" \"components/**/*.test.ts\" \"scripts/**/*.test.ts\" \"store/**/*.test.ts\"",
     "test:db": "supabase test db",
