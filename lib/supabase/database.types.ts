@@ -5876,6 +5876,7 @@ export type Database = {
           target_checked_on: string
           target_idempotency_key?: string
           target_items: Json
+          target_phase?: Database["public"]["Enums"]["construction_phase"]
           target_qc13_form_id?: string
           target_spool_revision_id: string
         }

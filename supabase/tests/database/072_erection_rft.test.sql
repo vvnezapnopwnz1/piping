@@ -1,5 +1,5 @@
 begin;
-select plan(20);
+select plan(21);
 
 select has_function('public', 'record_erection_progress', array['uuid', 'construction_stage', 'date', 'jsonb', 'text'],
   'erection progress RPC exists');
@@ -69,21 +69,28 @@ select throws_ok(
     '36000000-0000-0000-0000-000000000721', 'supported', date '2026-08-12', '{}'::jsonb, null)$$,
   'PQC53', null, 'supported requires the welded or bolted predecessor'
 );
-select lives_ok(
-  $$select public.record_construction_progress(
-    '36000000-0000-0000-0000-000000000721', 'fabrication', 'start_fab', date '2026-08-01', '{}'::jsonb, 'erection-fab-start')$$,
-  'fabrication remains available for the same spool'
-);
+-- Deliberately before any fabrication progress: a field check must not depend on start_fab,
+-- and this caller holds the fabrication capability too.
 select lives_ok(
   $$select public.record_field_material_check(
     '36000000-0000-0000-0000-000000000721', date '2026-08-12',
     '[{"ident_code":"IDN-07","trace_number":"HEAT-07","quantity":1}]'::jsonb, null, 'field-material')$$,
-  'field material check reuses PML evidence validation'
+  'field material check reuses PML evidence validation without a fabrication start'
 );
 select is(
   (select count(*)::int from public.material_check_records
    where spool_revision_id = '36000000-0000-0000-0000-000000000721'),
   1, 'field material evidence is durable on the spool'
+);
+select is(
+  (select phase from public.construction_progress_events
+   where spool_revision_id = '36000000-0000-0000-0000-000000000721' and stage = 'material_check'),
+  'erection'::public.construction_phase, 'the derived material-check event is filed under erection'
+);
+select lives_ok(
+  $$select public.record_construction_progress(
+    '36000000-0000-0000-0000-000000000721', 'fabrication', 'start_fab', date '2026-08-01', '{}'::jsonb, 'erection-fab-start')$$,
+  'fabrication remains available for the same spool'
 );
 select lives_ok(
   $$select public.record_field_support_progress(

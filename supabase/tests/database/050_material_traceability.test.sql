@@ -19,9 +19,12 @@ select has_function('public', 'effective_stage_date', array['uuid', 'constructio
 select has_function('public', 'record_construction_progress', array['uuid', 'construction_phase', 'construction_stage', 'date', 'jsonb', 'text'], 'manual progress RPC exists');
 select has_function('public', 'request_qc13_form', array['uuid', 'date', 'text'], 'QC-13 request RPC exists');
 select has_function('public', 'materialize_progress_copies', array['uuid', 'text'], 'revision-copy materialization RPC exists');
-select has_function('public', 'record_material_check', array['uuid', 'date', 'jsonb', 'uuid', 'text'], 'material-check RPC exists');
+select has_function('public', 'record_material_check',
+  array['uuid', 'date', 'jsonb', 'uuid', 'text', 'construction_phase'],
+  'material-check RPC exists and takes its phase as an argument');
 select ok(
-  position('pg_advisory_xact_lock' in pg_get_functiondef('public.record_material_check(uuid, date, jsonb, uuid, text)'::regprocedure)) > 0,
+  position('pg_advisory_xact_lock' in pg_get_functiondef(
+    'public.record_material_check(uuid, date, jsonb, uuid, text, construction_phase)'::regprocedure)) > 0,
   'material-check RPC serializes concurrent commands for one spool revision'
 );
 

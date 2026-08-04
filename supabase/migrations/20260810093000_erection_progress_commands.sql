@@ -94,12 +94,17 @@ as $$
   );
 $$;
 
-create or replace function public.record_material_check(
+-- The phase is an argument, not a guess. Inferring it from the caller's capabilities made a
+-- field check by anyone who also holds fabrication.progress.record take the fabrication branch.
+drop function if exists public.record_material_check(uuid, date, jsonb, uuid, text);
+
+create function public.record_material_check(
   target_spool_revision_id uuid,
   target_checked_on date,
   target_items jsonb,
   target_qc13_form_id uuid default null,
-  target_idempotency_key text default null
+  target_idempotency_key text default null,
+  target_phase public.construction_phase default 'fabrication'
 )
 returns public.material_check_records
 language plpgsql security definer set search_path = public, pg_temp
@@ -130,10 +135,12 @@ begin
   if target_project_id is null then
     raise exception 'Construction target is missing' using errcode = 'PQC30';
   end if;
-  required_capability := case
-    when public.current_user_has_capability(target_project_id, 'fabrication.progress.record')
-      then 'fabrication.progress.record'
-    else 'erection.progress.record'
+  if target_phase not in ('fabrication', 'erection') then
+    raise exception 'Assembly is not enabled on this project' using errcode = 'PQC50';
+  end if;
+  required_capability := case target_phase
+    when 'erection' then 'erection.progress.record'
+    else 'fabrication.progress.record'
   end;
   context := public.assert_construction_target(target_spool_revision_id, required_capability);
   claimed := public.claim_command_receipt(context.project_id, 'record_material_check', target_idempotency_key);
@@ -147,11 +154,11 @@ begin
      or coalesce(jsonb_array_length(target_items), 0) = 0 then
     raise exception 'A checked date and non-empty material item array are required' using errcode = '23514';
   end if;
-  if required_capability = 'fabrication.progress.record'
+  if target_phase = 'fabrication'
      and public.effective_stage_date(target_spool_revision_id, 'fabrication', 'start_fab') is null then
     raise exception 'Fabrication must start before material checking' using errcode = 'PQC32';
   end if;
-  if required_capability = 'erection.progress.record'
+  if target_phase = 'erection'
      and public.effective_stage_date(target_spool_revision_id, 'erection', 'to_site') is null then
     raise exception 'The spool must be recorded To Site before field material checking' using errcode = 'PQC54';
   end if;
@@ -283,9 +290,7 @@ begin
      and not exists (
        select 1 from public.construction_progress_events event
        where event.spool_revision_id = target_spool_revision_id
-         and event.phase = case when required_capability = 'erection.progress.record'
-                                then 'erection'::public.construction_phase
-                                else 'fabrication'::public.construction_phase end
+         and event.phase = target_phase
          and event.stage = 'material_check'
          and event.source <> 'compensation'
          and not exists (select 1 from public.construction_progress_events compensation where compensation.compensates_event_id = event.id)
@@ -293,10 +298,7 @@ begin
     insert into public.construction_progress_events (
       project_id, spool_revision_id, phase, stage, occurred_on, payload, source, actor_id
     ) values (
-      context.project_id, target_spool_revision_id,
-      case when required_capability = 'erection.progress.record'
-           then 'erection'::public.construction_phase
-           else 'fabrication'::public.construction_phase end,
+      context.project_id, target_spool_revision_id, target_phase,
       'material_check', target_checked_on,
       jsonb_build_object('material_check_record_id', record_row.id), 'derived', auth.uid()
     ) returning * into derived_event;
@@ -330,15 +332,10 @@ create or replace function public.record_field_material_check(
 returns public.material_check_records
 language plpgsql security definer set search_path = public, pg_temp
 as $$
-declare context public.spool_context;
 begin
-  context := public.assert_construction_target(target_spool_revision_id, 'erection.progress.record');
-  if public.effective_stage_date(target_spool_revision_id, 'erection', 'to_site') is null then
-    raise exception 'The spool must be recorded To Site before field material checking' using errcode = 'PQC54';
-  end if;
   return public.record_material_check(
     target_spool_revision_id, target_checked_on, target_items,
-    target_qc13_form_id, target_idempotency_key
+    target_qc13_form_id, target_idempotency_key, 'erection'
   );
 end;
 $$;
@@ -404,12 +401,15 @@ create policy "read support progress" on public.support_progress_records
     or public.current_user_has_capability(project_id, 'erection.view')
   );
 
+-- record_material_check was dropped and recreated above, so it needs its Track 05 grants back.
 revoke all on function
+  public.record_material_check(uuid, date, jsonb, uuid, text, public.construction_phase),
   public.record_erection_progress(uuid, public.construction_stage, date, jsonb, text),
   public.record_field_material_check(uuid, date, jsonb, uuid, text),
   public.record_field_support_progress(uuid, date, text)
 from public, anon;
 grant execute on function
+  public.record_material_check(uuid, date, jsonb, uuid, text, public.construction_phase),
   public.record_erection_progress(uuid, public.construction_stage, date, jsonb, text),
   public.record_field_material_check(uuid, date, jsonb, uuid, text),
   public.record_field_support_progress(uuid, date, text)
