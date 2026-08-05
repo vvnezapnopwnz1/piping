@@ -6,21 +6,21 @@ import {
   createProjectSubsystem,
 } from "./supabase-execution-reference-repository"
 
-function createFakeExecutionClient(projectId = "proj-1") {
+function createFakeExecutionClient(_projectId = "proj-1") {
   const queries: string[] = []
 
   const client: any = {
     from(table: string) {
       queries.push(`from:${table}`)
       return {
-        select(cols: string) {
+        select(_cols: string) {
           queries.push(`select:${table}`)
           return {
             eq(col: string, val: string) {
               queries.push(`eq:${col}:${val}`)
               return this
             },
-            order(col: string) {
+            order(_col: string) {
               return Promise.resolve({ data: [], error: null })
             },
             maybeSingle() {

@@ -1,7 +1,21 @@
 "use client"
 
+/*
+ * Five of this screen's eight sub-tabs can create their referential. That set is not arbitrary:
+ * it is exactly what a project needs before any real work can be recorded.
+ *
+ *   service class + weld type   `apply_spooling_import_job` rejects an unknown code
+ *   thickness / flange rule     SRV_THICKNESS_MISSING blocks the SpoolGen import
+ *   NDE matrix rule             SRV_NDE_MATRIX_MISSING blocks the import; PQC39 blocks welding
+ *   welder qualification        a weld cannot be recorded without a qualified root/cap welder
+ *   rework code                 PQC42 refuses a rejected NDE result with no defect code
+ *   PML record                  a material check cannot be accepted without matching evidence
+ *
+ * Joint categories stay read-only: nothing in the schema blocks on them (T02-D2).
+ */
+
 import { useCallback, useEffect, useRef, useState } from "react"
-import { AlertCircle, AlertTriangle, CheckCircle2, Plus, RefreshCw, Search } from "lucide-react"
+import { AlertCircle, AlertTriangle, Plus, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
@@ -36,7 +50,6 @@ import {
   createThicknessFlangeRule,
   createPipingMaterialRecord,
   createReworkCode,
-  createJointCategory,
   type LoadedWeldingQualityReferences,
 } from "../infrastructure/supabase-welding-quality-reference-repository"
 import {
@@ -47,7 +60,6 @@ import {
   validateThicknessFlangeRuleInput,
   validatePipingMaterialRecordInput,
   validateReworkCodeInput,
-  validateJointCategoryInput,
   evaluateNdeMatrixCoverage,
 } from "../domain/welding-quality-reference"
 import { ReferenceStatusBadge } from "./reference-status-badge"
@@ -65,9 +77,6 @@ export function WeldingQualityTabs({
   const [activeTab, setActiveTab] = useState<
     "service-classes" | "weld-types" | "welders" | "nde" | "thickness" | "pml" | "rework" | "joint-categories"
   >("service-classes")
-
-  // Search filter
-  const [search, setSearch] = useState("")
 
   // Add Service Class Dialog
   const [isAddScOpen, setIsAddScOpen] = useState(false)
@@ -102,6 +111,33 @@ export function WeldingQualityTabs({
   const [ndeErrors, setNdeErrors] = useState<Record<string, string>>({})
   const [isSubmittingNde, setIsSubmittingNde] = useState(false)
 
+  // Add Welder Qualification Dialog
+  const [isAddWelderOpen, setIsAddWelderOpen] = useState(false)
+  const [welderCode, setWelderCode] = useState("")
+  const [welderName, setWelderName] = useState("")
+  const [welderSubId, setWelderSubId] = useState("")
+  const [welderCert, setWelderCert] = useState("")
+  const [welderExpires, setWelderExpires] = useState("")
+  const [welderWpsIds, setWelderWpsIds] = useState<string[]>([])
+  const [welderErrors, setWelderErrors] = useState<Record<string, string>>({})
+  const [isSubmittingWelder, setIsSubmittingWelder] = useState(false)
+
+  // Add Thickness / Flange Rule Dialog
+  const [isAddThickOpen, setIsAddThickOpen] = useState(false)
+  const [thickScId, setThickScId] = useState("")
+  const [thickDia, setThickDia] = useState("")
+  const [thickMm, setThickMm] = useState("")
+  const [thickRating, setThickRating] = useState("")
+  const [thickErrors, setThickErrors] = useState<Record<string, string>>({})
+  const [isSubmittingThick, setIsSubmittingThick] = useState(false)
+
+  // Add Rework Code Dialog
+  const [isAddReworkOpen, setIsAddReworkOpen] = useState(false)
+  const [reworkCode, setReworkCode] = useState("")
+  const [reworkDesc, setReworkDesc] = useState("")
+  const [reworkErrors, setReworkErrors] = useState<Record<string, string>>({})
+  const [isSubmittingRework, setIsSubmittingRework] = useState(false)
+
   // Add PML Dialog
   const [isAddPmlOpen, setIsAddPmlOpen] = useState(false)
   const [pmlMrr, setPmlMrr] = useState("")
@@ -125,9 +161,9 @@ export function WeldingQualityTabs({
         setData(result)
         setLoading(false)
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (currentVersion === requestVersionRef.current) {
-        setError(err.message || "Failed to load welding quality references")
+        setError(err instanceof Error ? err.message : "Failed to load welding quality references")
         setLoading(false)
       }
     }
@@ -169,8 +205,8 @@ export function WeldingQualityTabs({
       setScDesc("")
       setScMatTypeId("")
       toast.success(`Service class "${newSc.code}" created successfully`)
-    } catch (err: any) {
-      toast.error(err.message || "Failed to create service class")
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to create service class")
     } finally {
       setIsSubmittingSc(false)
     }
@@ -206,11 +242,140 @@ export function WeldingQualityTabs({
       setIsAddWtOpen(false)
       setWtCode("")
       setWtDesc("")
+      setWtCountsDia(true)
       toast.success(`Weld type "${newWt.code}" created successfully`)
-    } catch (err: any) {
-      toast.error(err.message || "Failed to create weld type")
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to create weld type")
     } finally {
       setIsSubmittingWt(false)
+    }
+  }
+
+  const handleCreateWelder = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const validation = validateWelderQualificationInput({
+      welderCode,
+      fullName: welderName,
+      subcontractorId: welderSubId,
+      certificateNumber: welderCert || null,
+      expiresOn: welderExpires,
+      wpsIds: welderWpsIds,
+    })
+
+    if (!validation.ok) {
+      setWelderErrors(validation.errors)
+      return
+    }
+
+    setWelderErrors({})
+    setIsSubmittingWelder(true)
+
+    try {
+      const client = getSupabaseBrowserClient()
+      // null welderId means "create"; save_welder_qualification also serves the edit path,
+      // which this screen does not offer yet.
+      const newWelder = await saveWelderQualificationRpc(client, projectId, null, validation.value)
+      setData((prev) =>
+        prev
+          ? {
+              ...prev,
+              welderQualifications: [...prev.welderQualifications, newWelder].sort((a, b) =>
+                a.welderCode.localeCompare(b.welderCode)
+              ),
+            }
+          : null
+      )
+      setIsAddWelderOpen(false)
+      setWelderCode("")
+      setWelderName("")
+      setWelderSubId("")
+      setWelderCert("")
+      setWelderExpires("")
+      setWelderWpsIds([])
+      toast.success(`Welder "${newWelder.welderCode}" qualified successfully`)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to save welder qualification")
+    } finally {
+      setIsSubmittingWelder(false)
+    }
+  }
+
+  const handleCreateThicknessRule = async (e: React.FormEvent) => {
+    e.preventDefault()
+    // An empty field parses to NaN rather than 0, so the validator reports it instead of
+    // silently recording a zero-diameter rule.
+    const validation = validateThicknessFlangeRuleInput({
+      serviceClassId: thickScId,
+      diameterInch: thickDia === "" ? NaN : Number(thickDia),
+      thicknessMm: thickMm === "" ? NaN : Number(thickMm),
+      flangeRating: thickRating,
+    })
+
+    if (!validation.ok) {
+      setThickErrors(validation.errors)
+      return
+    }
+
+    setThickErrors({})
+    setIsSubmittingThick(true)
+
+    try {
+      const client = getSupabaseBrowserClient()
+      const newRule = await createThicknessFlangeRule(client, projectId, validation.value)
+      setData((prev) =>
+        prev
+          ? {
+              ...prev,
+              thicknessFlangeRules: [...prev.thicknessFlangeRules, newRule].sort(
+                (a, b) => a.diameterInch - b.diameterInch
+              ),
+            }
+          : null
+      )
+      setIsAddThickOpen(false)
+      setThickScId("")
+      setThickDia("")
+      setThickMm("")
+      setThickRating("")
+      toast.success("Thickness / flange rule created successfully")
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to create thickness rule")
+    } finally {
+      setIsSubmittingThick(false)
+    }
+  }
+
+  const handleCreateReworkCode = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const validation = validateReworkCodeInput({ code: reworkCode, description: reworkDesc })
+
+    if (!validation.ok) {
+      setReworkErrors(validation.errors)
+      return
+    }
+
+    setReworkErrors({})
+    setIsSubmittingRework(true)
+
+    try {
+      const client = getSupabaseBrowserClient()
+      const newCode = await createReworkCode(client, projectId, validation.value)
+      setData((prev) =>
+        prev
+          ? {
+              ...prev,
+              reworkCodes: [...prev.reworkCodes, newCode].sort((a, b) => a.code.localeCompare(b.code)),
+            }
+          : null
+      )
+      setIsAddReworkOpen(false)
+      setReworkCode("")
+      setReworkDesc("")
+      toast.success(`Defect code "${newCode.code}" created successfully`)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to create defect code")
+    } finally {
+      setIsSubmittingRework(false)
     }
   }
 
@@ -252,8 +417,8 @@ export function WeldingQualityTabs({
       )
       setIsAddNdeOpen(false)
       toast.success("NDE matrix rule created successfully")
-    } catch (err: any) {
-      toast.error(err.message || "Failed to create NDE matrix rule")
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to create NDE matrix rule")
     } finally {
       setIsSubmittingNde(false)
     }
@@ -291,8 +456,8 @@ export function WeldingQualityTabs({
       setPmlIdent("")
       setPmlTrace("")
       toast.success("Piping material record added successfully")
-    } catch (err: any) {
-      toast.error(err.message || "Failed to add piping material record")
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to add piping material record")
     } finally {
       setIsSubmittingPml(false)
     }
@@ -535,9 +700,16 @@ export function WeldingQualityTabs({
       {/* Welders View */}
       {activeTab === "welders" && (
         <Card>
-          <CardHeader>
-            <CardTitle>Welder Qualifications</CardTitle>
-            <CardDescription>Welder registry with certificate validity and approved WPS links.</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+            <div>
+              <CardTitle>Welder Qualifications</CardTitle>
+              <CardDescription>Welder registry with certificate validity and approved WPS links.</CardDescription>
+            </div>
+            {canManage && (
+              <Button size="sm" onClick={() => setIsAddWelderOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Add Welder
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
             <div className="rounded-md border overflow-x-auto">
@@ -668,9 +840,16 @@ export function WeldingQualityTabs({
       {/* Thickness / Flange Rules View */}
       {activeTab === "thickness" && (
         <Card>
-          <CardHeader>
-            <CardTitle>Thickness / Flange Rules</CardTitle>
-            <CardDescription>Piping thickness thresholds and required flange ratings per Service Class.</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+            <div>
+              <CardTitle>Thickness / Flange Rules</CardTitle>
+              <CardDescription>Piping thickness thresholds and required flange ratings per Service Class.</CardDescription>
+            </div>
+            {canManage && (
+              <Button size="sm" onClick={() => setIsAddThickOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Add Thickness Rule
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
             <div className="rounded-md border overflow-x-auto">
@@ -695,7 +874,7 @@ export function WeldingQualityTabs({
                     (data?.thicknessFlangeRules ?? []).map((rule) => (
                       <tr key={rule.id}>
                         <td className="p-3 font-mono font-medium">{rule.serviceClassCode || "—"}</td>
-                        <td className="p-3 font-mono">{rule.diameterInch}"</td>
+                        <td className="p-3 font-mono">{rule.diameterInch}&quot;</td>
                         <td className="p-3 font-mono">{rule.thicknessMm} mm</td>
                         <td className="p-3 font-mono">{rule.flangeRating}</td>
                         <td className="p-3">
@@ -765,9 +944,16 @@ export function WeldingQualityTabs({
       {/* Rework Codes View */}
       {activeTab === "rework" && (
         <Card>
-          <CardHeader>
-            <CardTitle>Rework Codes</CardTitle>
-            <CardDescription>Defect and repair categorization codes for NDE failures.</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+            <div>
+              <CardTitle>Rework Codes</CardTitle>
+              <CardDescription>Defect and repair categorization codes for NDE failures.</CardDescription>
+            </div>
+            {canManage && (
+              <Button size="sm" onClick={() => setIsAddReworkOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Add Defect Code
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
             <div className="rounded-md border overflow-x-auto">
@@ -944,6 +1130,23 @@ export function WeldingQualityTabs({
                 />
                 {wtErrors.description && <p className="text-xs text-destructive">{wtErrors.description}</p>}
               </div>
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="wt-counts-dia"
+                  checked={wtCountsDia}
+                  onCheckedChange={(checked) => setWtCountsDia(checked === true)}
+                  disabled={isSubmittingWt}
+                />
+                <div className="space-y-0.5">
+                  <Label htmlFor="wt-counts-dia" className="font-normal">
+                    Counts towards dia-inch progress
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Clear this for a weld type that is recorded but not earned, such as a support
+                    attachment. It cannot be changed once welds exist against the type.
+                  </p>
+                </div>
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => setIsAddWtOpen(false)} disabled={isSubmittingWt}>
@@ -951,6 +1154,517 @@ export function WeldingQualityTabs({
               </Button>
               <Button type="submit" disabled={isSubmittingWt}>
                 Add Weld Type
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Welder Qualification Dialog */}
+      <Dialog open={isAddWelderOpen} onOpenChange={setIsAddWelderOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
+          <form onSubmit={handleCreateWelder}>
+            <DialogHeader>
+              <DialogTitle>Add Welder</DialogTitle>
+              <DialogDescription>
+                Qualify a welder against the procedures they are approved for. A weld cannot be
+                recorded without a welder whose certificate is valid on the weld date.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="welder-code">Welder Stencil</Label>
+                <Input
+                  id="welder-code"
+                  placeholder="e.g. W-101"
+                  value={welderCode}
+                  onChange={(e) => setWelderCode(e.target.value)}
+                  disabled={isSubmittingWelder}
+                />
+                {welderErrors.welderCode && <p className="text-xs text-destructive">{welderErrors.welderCode}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="welder-name">Full Name</Label>
+                <Input
+                  id="welder-name"
+                  placeholder="e.g. Ivan Petrov"
+                  value={welderName}
+                  onChange={(e) => setWelderName(e.target.value)}
+                  disabled={isSubmittingWelder}
+                />
+                {welderErrors.fullName && <p className="text-xs text-destructive">{welderErrors.fullName}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label>Subcontractor</Label>
+                <Select value={welderSubId} onValueChange={setWelderSubId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select subcontractor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(data?.subcontractors ?? []).length === 0 ? (
+                      <SelectItem value="none" disabled>
+                        No active subcontractors — add one in Project Geography first
+                      </SelectItem>
+                    ) : (
+                      (data?.subcontractors ?? []).map((sub) => (
+                        <SelectItem key={sub.id} value={sub.id}>
+                          {sub.code} — {sub.name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                {welderErrors.subcontractorId && (
+                  <p className="text-xs text-destructive">{welderErrors.subcontractorId}</p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="welder-cert">Certificate Number (Optional)</Label>
+                <Input
+                  id="welder-cert"
+                  placeholder="e.g. CERT-2026-014"
+                  value={welderCert}
+                  onChange={(e) => setWelderCert(e.target.value)}
+                  disabled={isSubmittingWelder}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="welder-expires">Certificate Expires On</Label>
+                <Input
+                  id="welder-expires"
+                  type="date"
+                  value={welderExpires}
+                  onChange={(e) => setWelderExpires(e.target.value)}
+                  disabled={isSubmittingWelder}
+                />
+                {welderErrors.expiresOn && <p className="text-xs text-destructive">{welderErrors.expiresOn}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label>Approved WPS</Label>
+                {/* A multi-select, not a dropdown: `save_welder_qualification` takes a list, and a
+                    welder with no covering WPS is refused by the weld command later. */}
+                {(data?.weldingProcedures ?? []).length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    No active welding procedures — add a WPS on this page first.
+                  </p>
+                ) : (
+                  <div className="max-h-40 space-y-2 overflow-y-auto rounded-md border p-3">
+                    {(data?.weldingProcedures ?? []).map((wps) => (
+                      <div key={wps.id} className="flex items-center gap-2">
+                        <Checkbox
+                          id={`welder-wps-${wps.id}`}
+                          checked={welderWpsIds.includes(wps.id)}
+                          onCheckedChange={(checked) =>
+                            setWelderWpsIds((current) =>
+                              checked === true
+                                ? [...current, wps.id]
+                                : current.filter((id) => id !== wps.id)
+                            )
+                          }
+                          disabled={isSubmittingWelder}
+                        />
+                        <Label htmlFor={`welder-wps-${wps.id}`} className="font-mono font-normal">
+                          {wps.code}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {welderErrors.wpsIds && <p className="text-xs text-destructive">{welderErrors.wpsIds}</p>}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setIsAddWelderOpen(false)}
+                disabled={isSubmittingWelder}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmittingWelder}>
+                Add Welder
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Thickness / Flange Rule Dialog */}
+      <Dialog open={isAddThickOpen} onOpenChange={setIsAddThickOpen}>
+        <DialogContent>
+          <form onSubmit={handleCreateThicknessRule}>
+            <DialogHeader>
+              <DialogTitle>Add Thickness / Flange Rule</DialogTitle>
+              <DialogDescription>
+                One rule per service class and diameter. A SpoolGen import is refused
+                (`SRV_THICKNESS_MISSING`) for any weld joint whose class and diameter no active
+                rule covers.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-3">
+              <div className="space-y-1.5">
+                <Label>Service Class</Label>
+                <Select value={thickScId} onValueChange={setThickScId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select service class" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeServiceClasses.length === 0 ? (
+                      <SelectItem value="none" disabled>No active service classes</SelectItem>
+                    ) : (
+                      activeServiceClasses.map((sc) => (
+                        <SelectItem key={sc.id} value={sc.id}>
+                          {sc.code} — {sc.description}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                {thickErrors.serviceClassId && (
+                  <p className="text-xs text-destructive">{thickErrors.serviceClassId}</p>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="thick-dia">Diameter (inch)</Label>
+                  <Input
+                    id="thick-dia"
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    placeholder="e.g. 6"
+                    value={thickDia}
+                    onChange={(e) => setThickDia(e.target.value)}
+                    disabled={isSubmittingThick}
+                  />
+                  {thickErrors.diameterInch && (
+                    <p className="text-xs text-destructive">{thickErrors.diameterInch}</p>
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="thick-mm">Thickness (mm)</Label>
+                  <Input
+                    id="thick-mm"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    placeholder="e.g. 6.0"
+                    value={thickMm}
+                    onChange={(e) => setThickMm(e.target.value)}
+                    disabled={isSubmittingThick}
+                  />
+                  {thickErrors.thicknessMm && (
+                    <p className="text-xs text-destructive">{thickErrors.thicknessMm}</p>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="thick-rating">Flange Rating</Label>
+                <Input
+                  id="thick-rating"
+                  placeholder="e.g. 150#"
+                  value={thickRating}
+                  onChange={(e) => setThickRating(e.target.value)}
+                  disabled={isSubmittingThick}
+                />
+                {thickErrors.flangeRating && (
+                  <p className="text-xs text-destructive">{thickErrors.flangeRating}</p>
+                )}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setIsAddThickOpen(false)}
+                disabled={isSubmittingThick}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmittingThick}>
+                Add Rule
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add NDE Matrix Rule Dialog */}
+      <Dialog open={isAddNdeOpen} onOpenChange={setIsAddNdeOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+          <form onSubmit={handleCreateNdeRule}>
+            <DialogHeader>
+              <DialogTitle>Add NDE Matrix Rule</DialogTitle>
+              <DialogDescription>
+                Required inspection coverage for one service class, weld type and location. A
+                coverage of 100 % is mandatory inspection; anything between 1 and 99 is a spot rate.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-3">
+              <div className="space-y-1.5">
+                <Label>Service Class</Label>
+                <Select value={ndeScId} onValueChange={setNdeScId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select service class" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeServiceClasses.length === 0 ? (
+                      <SelectItem value="none" disabled>No active service classes</SelectItem>
+                    ) : (
+                      activeServiceClasses.map((sc) => (
+                        <SelectItem key={sc.id} value={sc.id}>
+                          {sc.code} — {sc.description}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                {ndeErrors.serviceClassId && (
+                  <p className="text-xs text-destructive">{ndeErrors.serviceClassId}</p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <Label>Weld Type</Label>
+                <Select value={ndeWtId} onValueChange={setNdeWtId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select weld type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeWeldTypes.length === 0 ? (
+                      <SelectItem value="none" disabled>No active weld types</SelectItem>
+                    ) : (
+                      activeWeldTypes.map((wt) => (
+                        <SelectItem key={wt.id} value={wt.id}>
+                          {wt.code} — {wt.description}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                {ndeErrors.weldTypeId && <p className="text-xs text-destructive">{ndeErrors.weldTypeId}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label>Weld Location</Label>
+                {/* Assembly is a disabled extension point: `PQC50` refuses an assembly weld, and
+                    the coverage check above only expects shop and field, so offering assembly here
+                    would invite a rule for work this project can never record. */}
+                <Select value={ndeLoc} onValueChange={(value) => setNdeLoc(value as "shop" | "field")}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="shop">Shop</SelectItem>
+                    <SelectItem value="field">Field</SelectItem>
+                  </SelectContent>
+                </Select>
+                {ndeErrors.weldLocation && <p className="text-xs text-destructive">{ndeErrors.weldLocation}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Coverage (%)</Label>
+                <div className="grid grid-cols-3 gap-3">
+                  {(
+                    [
+                      ["RT", ndeRt, setNdeRt, "rtCoverage"],
+                      ["UT", ndeUt, setNdeUt, "utCoverage"],
+                      ["MT", ndeMt, setNdeMt, "mtCoverage"],
+                      ["PT", ndePt, setNdePt, "ptCoverage"],
+                      ["PMI", ndePmi, setNdePmi, "pmiCoverage"],
+                      ["HT", ndeHt, setNdeHt, "htCoverage"],
+                    ] as const
+                  ).map(([label, value, setValue, errorKey]) => (
+                    <div key={label} className="space-y-1">
+                      <Label htmlFor={`nde-${label}`} className="text-xs font-normal">
+                        {label}
+                      </Label>
+                      <Input
+                        id={`nde-${label}`}
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={value}
+                        onChange={(e) => setValue(e.target.value)}
+                        disabled={isSubmittingNde}
+                      />
+                      {ndeErrors[errorKey] && <p className="text-xs text-destructive">{ndeErrors[errorKey]}</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="nde-trace-req"
+                  checked={ndeTraceReq}
+                  onCheckedChange={(checked) => setNdeTraceReq(checked === true)}
+                  disabled={isSubmittingNde}
+                />
+                <Label htmlFor="nde-trace-req" className="font-normal">
+                  Material traceability required
+                </Label>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="nde-pwht-req"
+                    checked={ndePwhtReq}
+                    onCheckedChange={(checked) => setNdePwhtReq(checked === true)}
+                    disabled={isSubmittingNde}
+                  />
+                  <Label htmlFor="nde-pwht-req" className="font-normal">
+                    PWHT required
+                  </Label>
+                </div>
+                {ndePwhtReq && (
+                  <div className="space-y-1.5 pl-6">
+                    <Label htmlFor="nde-pwht-thick">Thickness threshold in mm (Optional)</Label>
+                    <Input
+                      id="nde-pwht-thick"
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      placeholder="Leave empty to require PWHT at any thickness"
+                      value={ndePwhtThick}
+                      onChange={(e) => setNdePwhtThick(e.target.value)}
+                      disabled={isSubmittingNde}
+                    />
+                    {ndeErrors.pwhtThicknessThreshold && (
+                      <p className="text-xs text-destructive">{ndeErrors.pwhtThicknessThreshold}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setIsAddNdeOpen(false)}
+                disabled={isSubmittingNde}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmittingNde}>
+                Add NDE Rule
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add PML Record Dialog */}
+      <Dialog open={isAddPmlOpen} onOpenChange={setIsAddPmlOpen}>
+        <DialogContent>
+          <form onSubmit={handleCreatePml}>
+            <DialogHeader>
+              <DialogTitle>Add PML Record</DialogTitle>
+              <DialogDescription>
+                Received material, by ident code and heat number. A material check only accepts a
+                trace number that matches a record here.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="pml-mrr">MRR Number</Label>
+                <Input
+                  id="pml-mrr"
+                  placeholder="e.g. MRR-2026-0031"
+                  value={pmlMrr}
+                  onChange={(e) => setPmlMrr(e.target.value)}
+                  disabled={isSubmittingPml}
+                />
+                {pmlErrors.mrrNumber && <p className="text-xs text-destructive">{pmlErrors.mrrNumber}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="pml-ident">Ident Code</Label>
+                <Input
+                  id="pml-ident"
+                  placeholder="e.g. IDN-100"
+                  value={pmlIdent}
+                  onChange={(e) => setPmlIdent(e.target.value)}
+                  disabled={isSubmittingPml}
+                />
+                {pmlErrors.identCode && <p className="text-xs text-destructive">{pmlErrors.identCode}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="pml-trace">Trace / Heat Number</Label>
+                <Input
+                  id="pml-trace"
+                  placeholder="e.g. HEAT-4471"
+                  value={pmlTrace}
+                  onChange={(e) => setPmlTrace(e.target.value)}
+                  disabled={isSubmittingPml}
+                />
+                {pmlErrors.traceNumber && <p className="text-xs text-destructive">{pmlErrors.traceNumber}</p>}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setIsAddPmlOpen(false)}
+                disabled={isSubmittingPml}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmittingPml}>
+                Add PML Record
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Defect (Rework) Code Dialog */}
+      <Dialog open={isAddReworkOpen} onOpenChange={setIsAddReworkOpen}>
+        <DialogContent>
+          <form onSubmit={handleCreateReworkCode}>
+            <DialogHeader>
+              <DialogTitle>Add Defect Code</DialogTitle>
+              <DialogDescription>
+                A rejected NDE result must name a defect code (`PQC42`), so at least one has to
+                exist before any rejection can be recorded.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="rework-code">Code</Label>
+                <Input
+                  id="rework-code"
+                  placeholder="e.g. PO"
+                  value={reworkCode}
+                  onChange={(e) => setReworkCode(e.target.value)}
+                  disabled={isSubmittingRework}
+                />
+                {reworkErrors.code && <p className="text-xs text-destructive">{reworkErrors.code}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="rework-desc">Description</Label>
+                <Input
+                  id="rework-desc"
+                  placeholder="e.g. Porosity"
+                  value={reworkDesc}
+                  onChange={(e) => setReworkDesc(e.target.value)}
+                  disabled={isSubmittingRework}
+                />
+                {reworkErrors.description && (
+                  <p className="text-xs text-destructive">{reworkErrors.description}</p>
+                )}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setIsAddReworkOpen(false)}
+                disabled={isSubmittingRework}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmittingRework}>
+                Add Defect Code
               </Button>
             </DialogFooter>
           </form>

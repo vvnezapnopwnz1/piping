@@ -11,14 +11,14 @@ function createFakeWeightsClient() {
     from(table: string) {
       queries.push(`from:${table}`)
       return {
-        select(cols: string) {
+        select(_cols: string) {
           queries.push(`select:${table}`)
           return {
             eq(col: string, val: any) {
               queries.push(`eq:${col}:${val}`)
               return this
             },
-            order(col: string) {
+            order(_col: string) {
               return Promise.resolve({ data: [], error: null })
             },
             maybeSingle() {

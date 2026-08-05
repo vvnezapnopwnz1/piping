@@ -24,6 +24,14 @@ import { normalizeReferenceCode } from "../domain/reference"
 
 export interface LoadedWeldingQualityReferences {
   materialTypes: { id: string; code: string; description: string }[]
+  /**
+   * Subcontractors and welding procedures are not managed on this screen — they belong to the
+   * geography tab and to `SupabaseWpsTab`. They are read here because a welder qualification
+   * cannot be created without picking one of each, and `save_welder_qualification` requires at
+   * least one covering WPS.
+   */
+  subcontractors: { id: string; code: string; name: string }[]
+  weldingProcedures: { id: string; code: string }[]
   serviceClasses: ServiceClass[]
   weldTypes: WeldType[]
   welderQualifications: WelderQualification[]
@@ -38,11 +46,23 @@ export async function loadWeldingQualityReferences(
   client: SupabaseClient<Database>,
   projectId: string
 ): Promise<LoadedWeldingQualityReferences> {
-  const [mtRes, scRes, wtRes, weldersRes, linksRes, ndeRes, thickRes, pmlRes, reworkRes, jcRes] = await Promise.all([
+  const [mtRes, subRes, wpsRes, scRes, wtRes, weldersRes, linksRes, ndeRes, thickRes, pmlRes, reworkRes, jcRes] = await Promise.all([
     client
       .from("system_reference_entries")
       .select("id, code, description")
       .eq("kind", "material_type")
+      .eq("status", "active")
+      .order("code", { ascending: true }),
+    client
+      .from("project_subcontractors")
+      .select("id, code, description, status")
+      .eq("project_id", projectId)
+      .eq("status", "active")
+      .order("code", { ascending: true }),
+    client
+      .from("project_welding_procedures")
+      .select("id, code, status")
+      .eq("project_id", projectId)
       .eq("status", "active")
       .order("code", { ascending: true }),
     client
@@ -91,6 +111,8 @@ export async function loadWeldingQualityReferences(
   ])
 
   if (mtRes.error) throw new Error(mapSupabaseReferenceError(mtRes.error))
+  if (subRes.error) throw new Error(mapSupabaseReferenceError(subRes.error))
+  if (wpsRes.error) throw new Error(mapSupabaseReferenceError(wpsRes.error))
   if (scRes.error) throw new Error(mapSupabaseReferenceError(scRes.error))
   if (wtRes.error) throw new Error(mapSupabaseReferenceError(wtRes.error))
   if (weldersRes.error) throw new Error(mapSupabaseReferenceError(weldersRes.error))
@@ -205,8 +227,21 @@ export async function loadWeldingQualityReferences(
     description: row.description,
   }))
 
+  const subcontractors = (subRes.data ?? []).map((row) => ({
+    id: row.id,
+    code: row.code,
+    name: row.description,
+  }))
+
+  const weldingProcedures = (wpsRes.data ?? []).map((row) => ({
+    id: row.id,
+    code: row.code,
+  }))
+
   return {
     materialTypes,
+    subcontractors,
+    weldingProcedures,
     serviceClasses,
     weldTypes,
     welderQualifications,

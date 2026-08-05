@@ -1,10 +1,9 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { AlertCircle, Edit2, Plus, RefreshCw, Search } from "lucide-react"
+import { AlertCircle, Plus, RefreshCw, Search } from "lucide-react"
 import { toast } from "sonner"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -30,13 +29,20 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import {
   loadProjectGeography,
   createSubcontractor,
-  updateSubcontractorStatus,
   createPdsArea,
   type LoadedProjectGeography,
 } from "../infrastructure/supabase-project-geography-repository"
-import type { Subcontractor, PdsArea } from "../domain/project-geography"
 import { ReferenceStatusBadge } from "./reference-status-badge"
 import { validateSubcontractorInput, validatePdsAreaInput } from "../domain/project-geography"
+
+/**
+ * `<SelectItem value="">` makes Radix throw during render — an empty string is reserved for
+ * clearing a Select — so an optional reference uses this sentinel and maps it back to null.
+ */
+const NO_SELECTION = "__none__"
+
+const optionalId = (value: string): string | null =>
+  value === "" || value === NO_SELECTION ? null : value
 
 export function ProjectGeographyTabs({
   projectId,
@@ -156,10 +162,10 @@ export function ProjectGeographyTabs({
       {
         code: pdsCode,
         description: pdsDesc,
-        shopSubcontractorId: shopSubId || null,
-        assemblySubcontractorId: assemblySubId || null,
-        fieldSubcontractorId: fieldSubId || null,
-        areaClassificationId: areaClassId || null,
+        shopSubcontractorId: optionalId(shopSubId),
+        assemblySubcontractorId: optionalId(assemblySubId),
+        fieldSubcontractorId: optionalId(fieldSubId),
+        areaClassificationId: optionalId(areaClassId),
         environment: env,
         isUnit: isUnitFlag,
         isRack: isRackFlag,
@@ -194,6 +200,9 @@ export function ProjectGeographyTabs({
       setAssemblySubId("")
       setFieldSubId("")
       setAreaClassId("")
+      setEnv("above_ground")
+      setIsUnitFlag(false)
+      setIsRackFlag(false)
       setPdsCustomValues({})
       toast.success(`PDS Area "${newPds.code}" added successfully`)
     } catch (err: any) {
@@ -222,7 +231,6 @@ export function ProjectGeographyTabs({
   }
 
   const activeSubcontractors = (geography?.subcontractors ?? []).filter((s) => s.status === "active")
-  const activeAreaClassifications = (geography?.areaClassifications ?? []).filter((ac) => ac.status === "active")
   const activePdsCustomFields = (geography?.customFields ?? []).filter(
     (f) => f.scope === "pds_area" && f.status === "active"
   )
@@ -545,7 +553,7 @@ export function ProjectGeographyTabs({
                     <SelectValue placeholder="Select shop subcontractor" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">(None)</SelectItem>
+                    <SelectItem value={NO_SELECTION}>(None)</SelectItem>
                     {activeSubcontractors.map((s) => (
                       <SelectItem key={s.id} value={s.id}>
                         {s.code} — {s.description}
@@ -562,7 +570,7 @@ export function ProjectGeographyTabs({
                     <SelectValue placeholder="Select assembly subcontractor" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">(None)</SelectItem>
+                    <SelectItem value={NO_SELECTION}>(None)</SelectItem>
                     {activeSubcontractors.map((s) => (
                       <SelectItem key={s.id} value={s.id}>
                         {s.code} — {s.description}
@@ -579,7 +587,7 @@ export function ProjectGeographyTabs({
                     <SelectValue placeholder="Select field subcontractor" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">(None)</SelectItem>
+                    <SelectItem value={NO_SELECTION}>(None)</SelectItem>
                     {activeSubcontractors.map((s) => (
                       <SelectItem key={s.id} value={s.id}>
                         {s.code} — {s.description}
@@ -587,6 +595,69 @@ export function ProjectGeographyTabs({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Area Classification</Label>
+                <Select value={areaClassId} onValueChange={setAreaClassId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select area classification" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_SELECTION}>(None)</SelectItem>
+                    {(geography?.areaClassifications ?? [])
+                      .filter((ac) => ac.status === "active")
+                      .map((ac) => (
+                        <SelectItem key={ac.id} value={ac.id}>
+                          {ac.code} — {ac.description}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Environment, Unit and Rack had no control at all, so every PDS area created here
+                  was filed as above-ground, not a unit and not a rack, whatever it was. PDS area
+                  is a scoping dimension for access rights, so those defaults were not harmless. */}
+              <div className="space-y-1.5">
+                <Label>Environment</Label>
+                <Select
+                  value={env}
+                  onValueChange={(value) => setEnv(value as "above_ground" | "underground")}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="above_ground">Above ground</SelectItem>
+                    <SelectItem value="underground">Underground</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="pds-is-unit"
+                    checked={isUnitFlag}
+                    onCheckedChange={(checked) => setIsUnitFlag(checked === true)}
+                    disabled={isSubmittingPds}
+                  />
+                  <Label htmlFor="pds-is-unit" className="font-normal">
+                    This area is a process unit
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="pds-is-rack"
+                    checked={isRackFlag}
+                    onCheckedChange={(checked) => setIsRackFlag(checked === true)}
+                    disabled={isSubmittingPds}
+                  />
+                  <Label htmlFor="pds-is-rack" className="font-normal">
+                    This area is a pipe rack
+                  </Label>
+                </div>
               </div>
 
               {activePdsCustomFields.map((field) => (

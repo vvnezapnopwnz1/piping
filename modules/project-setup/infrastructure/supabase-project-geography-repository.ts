@@ -5,7 +5,6 @@ import type {
   SubcontractorInput,
   Unit,
   AreaClassification,
-  AreaClassificationInput,
   PdsArea,
   PdsAreaInput,
 } from "../domain/project-geography"

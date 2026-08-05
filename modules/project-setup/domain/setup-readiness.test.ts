@@ -2,7 +2,6 @@ import assert from "node:assert/strict"
 import {
   evaluateReadinessStatus,
   getRequirementDetails,
-  SETUP_REQUIREMENTS,
 } from "./setup-readiness"
 
 // Known code resolution

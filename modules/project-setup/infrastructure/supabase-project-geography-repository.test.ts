@@ -5,14 +5,14 @@ import {
   updateSubcontractorStatus,
 } from "./supabase-project-geography-repository"
 
-function createFakeGeographyClient(projectId = "proj-1") {
+function createFakeGeographyClient(_projectId = "proj-1") {
   const queries: string[] = []
 
   const client: any = {
     from(table: string) {
       queries.push(`from:${table}`)
       return {
-        select(cols: string) {
+        select(_cols: string) {
           queries.push(`select:${table}`)
           return {
             eq(col: string, val: string) {
@@ -23,7 +23,7 @@ function createFakeGeographyClient(projectId = "proj-1") {
               queries.push(`in:${col}:${vals.join(",")}`)
               return this
             },
-            order(col: string) {
+            order(_col: string) {
               return Promise.resolve({ data: [], error: null })
             },
           }

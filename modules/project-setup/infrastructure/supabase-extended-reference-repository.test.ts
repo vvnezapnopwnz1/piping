@@ -5,21 +5,21 @@ import {
   saveAssemblySettings,
 } from "./supabase-extended-reference-repository"
 
-function createFakeExtendedClient(projectId = "proj-1") {
+function createFakeExtendedClient(_projectId = "proj-1") {
   const queries: string[] = []
 
   const client: any = {
     from(table: string) {
       queries.push(`from:${table}`)
       return {
-        select(cols: string) {
+        select(_cols: string) {
           queries.push(`select:${table}`)
           return {
             eq(col: string, val: string) {
               queries.push(`eq:${col}:${val}`)
               return this
             },
-            order(col: string) {
+            order(_col: string) {
               return Promise.resolve({ data: [], error: null })
             },
             maybeSingle() {

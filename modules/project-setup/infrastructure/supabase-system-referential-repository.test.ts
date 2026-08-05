@@ -40,15 +40,15 @@ function createFakeClient(canManage = true) {
               }
               if (table === "system_film_quantity_rules") {
                 return {
-                  order(col2: string) {
+                  order(_col2: string) {
                     return Promise.resolve({
                       data: [
                         {
                           id: "film-1",
                           diameter_from_inch: 2,
                           diameter_to_inch: 4,
-                          thickness_from_mm: 1,
-                          thickness_to_mm: 2,
+                          thickness_from_m: 1,
+                          thickness_to_m: 2,
                           film_count: 2,
                         },
                       ],

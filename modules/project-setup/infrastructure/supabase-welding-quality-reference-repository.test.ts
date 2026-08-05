@@ -11,21 +11,21 @@ import {
   createJointCategory,
 } from "./supabase-welding-quality-reference-repository"
 
-function createFakeWeldingClient(projectId = "proj-1") {
+function createFakeWeldingClient(_projectId = "proj-1") {
   const queries: string[] = []
 
   const client: any = {
     from(table: string) {
       queries.push(`from:${table}`)
       return {
-        select(cols: string) {
+        select(_cols: string) {
           queries.push(`select:${table}`)
           return {
             eq(col: string, val: string) {
               queries.push(`eq:${col}:${val}`)
               return this
             },
-            order(col: string) {
+            order(_col: string) {
               return Promise.resolve({ data: [], error: null })
             },
           }
@@ -57,7 +57,7 @@ function createFakeWeldingClient(projectId = "proj-1") {
                       pwht_thickness_threshold: payload.pwht_thickness_threshold ?? null,
                       material_traceability_required: payload.material_traceability_required ?? true,
                       diameter_inch: payload.diameter_inch ?? 2,
-                      thickness_mm: payload.thickness_mm ?? 5,
+                      thickness_m: payload.thickness_m ?? 5,
                       flange_rating: payload.flange_rating || "150#",
                       mrr_number: payload.mrr_number || "MRR-1",
                       ident_code: payload.ident_code || "PIPE-1",
@@ -102,8 +102,14 @@ function createFakeWeldingClient(projectId = "proj-1") {
 async function runWeldingRepositoryTests() {
   const { client, queries } = createFakeWeldingClient("proj-1")
 
-  await loadWeldingQualityReferences(client, "proj-1")
+  const loaded = await loadWeldingQualityReferences(client, "proj-1")
   assert.ok(queries.includes("from:project_service_classes"))
+  // The welder dialog cannot be built without these two: save_welder_qualification needs a
+  // subcontractor and at least one covering WPS, and neither is managed on this screen.
+  assert.ok(queries.includes("from:project_subcontractors"))
+  assert.ok(queries.includes("from:project_welding_procedures"))
+  assert.deepEqual(loaded.subcontractors, [])
+  assert.deepEqual(loaded.weldingProcedures, [])
   assert.ok(queries.includes("from:project_weld_types"))
   assert.ok(queries.includes("from:welder_qualifications"))
   assert.ok(queries.includes("from:welder_wps_qualifications"))

@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { AlertCircle, Plus, RefreshCw, Search, Settings2 } from "lucide-react"
+import { AlertCircle, Plus, RefreshCw, Settings2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
@@ -23,7 +23,6 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -37,9 +36,7 @@ import {
 import {
   validateDeviceInput,
   validateAssemblySettingsInput,
-  validatePaintMatrixInput,
 } from "../domain/extended-reference"
-import { validateReferenceIdentity } from "../domain/reference"
 import { ReferenceStatusBadge } from "./reference-status-badge"
 
 export function ExtendedReferenceTabs({

@@ -362,7 +362,7 @@ export function SystemReferentialScreen() {
                 ) : (
                   (data?.filmQuantityRules ?? []).map((rule) => (
                     <tr key={rule.id}>
-                      <td className="p-3 font-mono">{rule.diameterFromInch}" – {rule.diameterToInch}"</td>
+                      <td className="p-3 font-mono">{rule.diameterFromInch}&quot; – {rule.diameterToInch}&quot;</td>
                       <td className="p-3 font-mono">{rule.thicknessFromMm} – {rule.thicknessToMm} mm</td>
                       <td className="p-3 font-mono font-medium">{rule.filmCount}</td>
                     </tr>
@@ -403,7 +403,7 @@ export function SystemReferentialScreen() {
                 ) : (
                   (data?.utCalculationRules ?? []).map((rule) => (
                     <tr key={rule.id}>
-                      <td className="p-3 font-mono">{rule.diameterFromInch}" – {rule.diameterToInch}"</td>
+                      <td className="p-3 font-mono">{rule.diameterFromInch}&quot; – {rule.diameterToInch}&quot;</td>
                       <td className="p-3 font-mono">{rule.coefficientDiameter}</td>
                       <td className="p-3 font-mono">{rule.coefficientRating}</td>
                     </tr>
