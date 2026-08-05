@@ -1,11 +1,11 @@
-import { NotOnSupabaseYet } from "@/components/pipeqc/not-on-supabase-yet"
+"use client"
+
+import { useSupabaseAuth } from "@/contexts/supabase-auth-context"
+import { FlangeManagementScreen } from "@/modules/flange/ui/flange-management-screen"
 
 export default function FlangePage() {
-  return (
-    <NotOnSupabaseYet
-      title="Flange Management"
-      track="Track 09"
-      summary="Flange joints, bolt-up progress and torque records, feeding test-pack readiness. The flange tables already exist from the engineering import; the module over them is not built."
-    />
-  )
+  const auth = useSupabaseAuth()
+  const projectId = auth?.access?.projectId
+  if (!projectId) return <p className="text-sm text-muted-foreground">Select a project to manage flange progress.</p>
+  return <FlangeManagementScreen projectId={projectId} canManage={false} mode="browse" />
 }

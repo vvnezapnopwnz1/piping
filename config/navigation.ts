@@ -333,7 +333,6 @@ export const navigationConfig: NavSection[] = [
       {
         title: 'Flange Management',
         href: '/flange',
-        planned: 'Track 09',
         icon: CircleDot,
       },
     ],

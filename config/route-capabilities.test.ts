@@ -11,6 +11,8 @@ assert.equal(requiredCapabilityForPath("/fabrication/dashboard"), "fabrication.v
 assert.equal(requiredCapabilityForPath("/fabrication/material-check"), "fabrication.progress.record")
 assert.equal(requiredCapabilityForPath("/fabrication/weld-progress"), "fabrication.progress.record")
 assert.equal(requiredCapabilityForPath("/fabrication/qc-release"), "fabrication.qc.release")
+assert.equal(requiredCapabilityForPath("/erection/flange-progress"), "flange.view")
+assert.equal(requiredCapabilityForPath("/erection/weld-progress"), "erection.view")
 assert.equal(requiredCapabilityForPath("/fabrication/pwht-release"), "fabrication.qc.release")
 assert.equal(requiredCapabilityForPath("/nde/batch/123"), "nde.view")
 assert.equal(

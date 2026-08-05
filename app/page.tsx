@@ -66,8 +66,7 @@ const MODULES: readonly ModuleLink[] = [
     href: "/flange",
     title: "Flange Management",
     description: "Flange joints, bolt-up progress and torque records.",
-    live: false,
-    note: "Track 09",
+    live: true,
   },
   {
     href: "/testpack",

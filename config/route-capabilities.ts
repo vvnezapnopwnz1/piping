@@ -14,6 +14,7 @@ export const ROUTE_CAPABILITIES = [
   ["/fabrication/qc-release", "fabrication.qc.release"],
   ["/fabrication/pwht-release", "fabrication.qc.release"],
   ["/fabrication", "fabrication.view"],
+  ["/erection/flange-progress", "flange.view"],
   ["/erection", "erection.view"],
   ["/tracking", "tracking.view"],
   ["/nde", "nde.view"],

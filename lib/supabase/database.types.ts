@@ -248,6 +248,20 @@ export type Database = {
             foreignKeyName: "construction_progress_events_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
             isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "construction_progress_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "construction_progress_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
             referencedRelation: "spool_construction_status"
             referencedColumns: ["spool_revision_id"]
           },
@@ -316,8 +330,36 @@ export type Database = {
             foreignKeyName: "flange_joint_revisions_flange_joint_id_fkey"
             columns: ["flange_joint_id"]
             isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["flange_joint_id"]
+          },
+          {
+            foreignKeyName: "flange_joint_revisions_flange_joint_id_fkey"
+            columns: ["flange_joint_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["flange_joint_id"]
+          },
+          {
+            foreignKeyName: "flange_joint_revisions_flange_joint_id_fkey"
+            columns: ["flange_joint_id"]
+            isOneToOne: false
             referencedRelation: "flange_joints"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_joint_revisions_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "flange_joint_revisions_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["spool_revision_id"]
           },
           {
             foreignKeyName: "flange_joint_revisions_spool_revision_id_fkey"
@@ -349,6 +391,69 @@ export type Database = {
           },
         ]
       }
+      flange_jointer_assignments: {
+        Row: {
+          assigned_at: string
+          id: string
+          jointer_code_snapshot: string
+          jointer_name_snapshot: string
+          jointer_team_id: string
+          progress_record_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          id?: string
+          jointer_code_snapshot: string
+          jointer_name_snapshot: string
+          jointer_team_id: string
+          progress_record_id: string
+        }
+        Update: {
+          assigned_at?: string
+          id?: string
+          jointer_code_snapshot?: string
+          jointer_name_snapshot?: string
+          jointer_team_id?: string
+          progress_record_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flange_jointer_assignments_jointer_team_id_fkey"
+            columns: ["jointer_team_id"]
+            isOneToOne: false
+            referencedRelation: "project_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_jointer_assignments_progress_record_id_fkey"
+            columns: ["progress_record_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["effective_progress_id"]
+          },
+          {
+            foreignKeyName: "flange_jointer_assignments_progress_record_id_fkey"
+            columns: ["progress_record_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["effective_progress_id"]
+          },
+          {
+            foreignKeyName: "flange_jointer_assignments_progress_record_id_fkey"
+            columns: ["progress_record_id"]
+            isOneToOne: false
+            referencedRelation: "flange_progress_history"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_jointer_assignments_progress_record_id_fkey"
+            columns: ["progress_record_id"]
+            isOneToOne: false
+            referencedRelation: "flange_progress_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       flange_joints: {
         Row: {
           created_at: string
@@ -374,6 +479,176 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flange_progress_records: {
+        Row: {
+          calculated_ut: number | null
+          flange_joint_revision_id: string
+          id: string
+          joint_category_id: string
+          joint_date: string
+          jointing_method_snapshot: string
+          jointing_value: number
+          project_id: string
+          recorded_at: string
+          recorded_by: string | null
+          report_number: string
+          source_import_job_id: string | null
+          source_kind: Database["public"]["Enums"]["flange_progress_source"]
+          source_revision_progress_copy_id: string | null
+          superseded_at: string | null
+          supersedes_record_id: string | null
+          tag_number: string
+          torquing_requirement_id: string
+          ut_coefficient_diameter: number | null
+          ut_coefficient_punch: number | null
+          ut_coefficient_rating: number | null
+          ut_formula_version: string
+          ut_project_quantity: number | null
+        }
+        Insert: {
+          calculated_ut?: number | null
+          flange_joint_revision_id: string
+          id?: string
+          joint_category_id: string
+          joint_date: string
+          jointing_method_snapshot: string
+          jointing_value: number
+          project_id: string
+          recorded_at?: string
+          recorded_by?: string | null
+          report_number: string
+          source_import_job_id?: string | null
+          source_kind?: Database["public"]["Enums"]["flange_progress_source"]
+          source_revision_progress_copy_id?: string | null
+          superseded_at?: string | null
+          supersedes_record_id?: string | null
+          tag_number: string
+          torquing_requirement_id: string
+          ut_coefficient_diameter?: number | null
+          ut_coefficient_punch?: number | null
+          ut_coefficient_rating?: number | null
+          ut_formula_version?: string
+          ut_project_quantity?: number | null
+        }
+        Update: {
+          calculated_ut?: number | null
+          flange_joint_revision_id?: string
+          id?: string
+          joint_category_id?: string
+          joint_date?: string
+          jointing_method_snapshot?: string
+          jointing_value?: number
+          project_id?: string
+          recorded_at?: string
+          recorded_by?: string | null
+          report_number?: string
+          source_import_job_id?: string | null
+          source_kind?: Database["public"]["Enums"]["flange_progress_source"]
+          source_revision_progress_copy_id?: string | null
+          superseded_at?: string | null
+          supersedes_record_id?: string | null
+          tag_number?: string
+          torquing_requirement_id?: string
+          ut_coefficient_diameter?: number | null
+          ut_coefficient_punch?: number | null
+          ut_coefficient_rating?: number | null
+          ut_formula_version?: string
+          ut_project_quantity?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flange_progress_records_flange_joint_revision_id_fkey"
+            columns: ["flange_joint_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["flange_joint_revision_id"]
+          },
+          {
+            foreignKeyName: "flange_progress_records_flange_joint_revision_id_fkey"
+            columns: ["flange_joint_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_progress_records_flange_joint_revision_id_fkey"
+            columns: ["flange_joint_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["flange_joint_revision_id"]
+          },
+          {
+            foreignKeyName: "flange_progress_records_joint_category_id_fkey"
+            columns: ["joint_category_id"]
+            isOneToOne: false
+            referencedRelation: "project_joint_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_progress_records_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_progress_records_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_progress_records_source_import_job_id_fkey"
+            columns: ["source_import_job_id"]
+            isOneToOne: false
+            referencedRelation: "import_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_progress_records_source_revision_progress_copy_id_fkey"
+            columns: ["source_revision_progress_copy_id"]
+            isOneToOne: false
+            referencedRelation: "revision_progress_copies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_progress_records_supersedes_record_id_fkey"
+            columns: ["supersedes_record_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["effective_progress_id"]
+          },
+          {
+            foreignKeyName: "flange_progress_records_supersedes_record_id_fkey"
+            columns: ["supersedes_record_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["effective_progress_id"]
+          },
+          {
+            foreignKeyName: "flange_progress_records_supersedes_record_id_fkey"
+            columns: ["supersedes_record_id"]
+            isOneToOne: false
+            referencedRelation: "flange_progress_history"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_progress_records_supersedes_record_id_fkey"
+            columns: ["supersedes_record_id"]
+            isOneToOne: false
+            referencedRelation: "flange_progress_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_progress_records_torquing_requirement_id_fkey"
+            columns: ["torquing_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "system_reference_entries"
             referencedColumns: ["id"]
           },
         ]
@@ -706,6 +981,20 @@ export type Database = {
             foreignKeyName: "isometric_revisions_isometric_id_fkey"
             columns: ["isometric_id"]
             isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "isometric_revisions_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "isometric_revisions_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
             referencedRelation: "isometrics"
             referencedColumns: ["id"]
           },
@@ -823,6 +1112,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laydown_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "laydown_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["spool_revision_id"]
           },
           {
             foreignKeyName: "laydown_records_spool_revision_id_fkey"
@@ -965,6 +1268,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "qc13_progress_forms"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_check_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "material_check_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["spool_revision_id"]
           },
           {
             foreignKeyName: "material_check_records_spool_revision_id_fkey"
@@ -1368,6 +1685,20 @@ export type Database = {
             foreignKeyName: "nde_obligations_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
             isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "nde_obligations_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "nde_obligations_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
             referencedRelation: "spool_construction_status"
             referencedColumns: ["spool_revision_id"]
           },
@@ -1717,6 +2048,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paint_progress_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "paint_progress_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["spool_revision_id"]
           },
           {
             foreignKeyName: "paint_progress_records_spool_revision_id_fkey"
@@ -3297,6 +3642,20 @@ export type Database = {
             foreignKeyName: "pwht_requirements_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
             isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "pwht_requirements_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "pwht_requirements_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
             referencedRelation: "spool_construction_status"
             referencedColumns: ["spool_revision_id"]
           },
@@ -3442,6 +3801,20 @@ export type Database = {
             foreignKeyName: "qc13_progress_forms_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
             isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "qc13_progress_forms_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "qc13_progress_forms_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
             referencedRelation: "spool_construction_status"
             referencedColumns: ["spool_revision_id"]
           },
@@ -3547,6 +3920,20 @@ export type Database = {
             foreignKeyName: "quality_release_records_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
             isOneToOne: true
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "quality_release_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "quality_release_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
             referencedRelation: "spool_construction_status"
             referencedColumns: ["spool_revision_id"]
           },
@@ -3620,6 +4007,20 @@ export type Database = {
           source_import_job_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "revision_change_items_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "revision_change_items_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["isometric_id"]
+          },
           {
             foreignKeyName: "revision_change_items_isometric_id_fkey"
             columns: ["isometric_id"]
@@ -3749,6 +4150,20 @@ export type Database = {
             foreignKeyName: "revision_progress_copies_source_spool_revision_id_fkey"
             columns: ["source_spool_revision_id"]
             isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "revision_progress_copies_source_spool_revision_id_fkey"
+            columns: ["source_spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "revision_progress_copies_source_spool_revision_id_fkey"
+            columns: ["source_spool_revision_id"]
+            isOneToOne: false
             referencedRelation: "spool_construction_status"
             referencedColumns: ["spool_revision_id"]
           },
@@ -3772,6 +4187,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "spool_revisions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revision_progress_copies_target_spool_revision_id_fkey"
+            columns: ["target_spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "revision_progress_copies_target_spool_revision_id_fkey"
+            columns: ["target_spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["spool_revision_id"]
           },
           {
             foreignKeyName: "revision_progress_copies_target_spool_revision_id_fkey"
@@ -3892,6 +4321,20 @@ export type Database = {
           unit?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "spool_revision_materials_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_revision_materials_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
           {
             foreignKeyName: "spool_revision_materials_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
@@ -4059,6 +4502,20 @@ export type Database = {
             foreignKeyName: "support_progress_records_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
             isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "support_progress_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "support_progress_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
             referencedRelation: "spool_construction_status"
             referencedColumns: ["spool_revision_id"]
           },
@@ -4121,6 +4578,20 @@ export type Database = {
           support_type?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "support_revisions_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "support_revisions_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
           {
             foreignKeyName: "support_revisions_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
@@ -4260,6 +4731,7 @@ export type Database = {
           created_at: string
           diameter_from_inch: number
           diameter_to_inch: number
+          flange_rating: string | null
           id: string
           updated_at: string
         }
@@ -4269,6 +4741,7 @@ export type Database = {
           created_at?: string
           diameter_from_inch: number
           diameter_to_inch: number
+          flange_rating?: string | null
           id?: string
           updated_at?: string
         }
@@ -4278,6 +4751,7 @@ export type Database = {
           created_at?: string
           diameter_from_inch?: number
           diameter_to_inch?: number
+          flange_rating?: string | null
           id?: string
           updated_at?: string
         }
@@ -4318,6 +4792,20 @@ export type Database = {
           weld_type_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "weld_joint_revisions_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "weld_joint_revisions_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
           {
             foreignKeyName: "weld_joint_revisions_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
@@ -4601,6 +5089,20 @@ export type Database = {
             foreignKeyName: "weld_progress_records_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
             isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "weld_progress_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "weld_progress_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
             referencedRelation: "spool_construction_status"
             referencedColumns: ["spool_revision_id"]
           },
@@ -4741,6 +5243,256 @@ export type Database = {
       }
     }
     Views: {
+      flange_joint_readiness: {
+        Row: {
+          bolt_quantity: number | null
+          bolt_size: string | null
+          calculated_ut: number | null
+          category_code: string | null
+          category_coefficient: number | null
+          diameter_inch: number | null
+          effective_progress_id: string | null
+          flange_joint_id: string | null
+          flange_joint_revision_id: string | null
+          flange_number: string | null
+          flange_rating: string | null
+          is_removed: boolean | null
+          iso_number: string | null
+          isometric_id: string | null
+          joint_category_id: string | null
+          joint_date: string | null
+          joint_type: string | null
+          jointing_method_snapshot: string | null
+          jointing_value: number | null
+          line_number: string | null
+          pds_area_id: string | null
+          pds_code: string | null
+          progress_state: string | null
+          reason: string | null
+          report_number: string | null
+          requires_reinstatement: boolean | null
+          revision_number: string | null
+          revision_status: Database["public"]["Enums"]["revision_status"] | null
+          service_class_code: string | null
+          spool_number: string | null
+          spool_revision_id: string | null
+          tag_number: string | null
+          timing: string | null
+          torquing_requirement_id: string | null
+          ut_formula_version: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flange_progress_records_joint_category_id_fkey"
+            columns: ["joint_category_id"]
+            isOneToOne: false
+            referencedRelation: "project_joint_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_progress_records_torquing_requirement_id_fkey"
+            columns: ["torquing_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "system_reference_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "isometric_revisions_pds_area_id_fkey"
+            columns: ["pds_area_id"]
+            isOneToOne: false
+            referencedRelation: "project_pds_areas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flange_joint_worklist: {
+        Row: {
+          bolt_quantity: number | null
+          bolt_size: string | null
+          calculated_ut: number | null
+          diameter_inch: number | null
+          effective_progress_id: string | null
+          flange_joint_id: string | null
+          flange_joint_revision_id: string | null
+          flange_number: string | null
+          flange_rating: string | null
+          is_removed: boolean | null
+          iso_number: string | null
+          isometric_id: string | null
+          joint_category_id: string | null
+          joint_date: string | null
+          joint_type: string | null
+          jointing_method_snapshot: string | null
+          jointing_value: number | null
+          line_number: string | null
+          pds_area_id: string | null
+          pds_code: string | null
+          progress_state: string | null
+          project_id: string | null
+          report_number: string | null
+          revision_number: string | null
+          revision_status: Database["public"]["Enums"]["revision_status"] | null
+          service_class_code: string | null
+          spool_number: string | null
+          spool_revision_id: string | null
+          tag_number: string | null
+          torquing_requirement_id: string | null
+          ut_formula_version: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flange_progress_records_joint_category_id_fkey"
+            columns: ["joint_category_id"]
+            isOneToOne: false
+            referencedRelation: "project_joint_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_progress_records_torquing_requirement_id_fkey"
+            columns: ["torquing_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "system_reference_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "isometric_revisions_pds_area_id_fkey"
+            columns: ["pds_area_id"]
+            isOneToOne: false
+            referencedRelation: "project_pds_areas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "isometrics_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flange_progress_history: {
+        Row: {
+          calculated_ut: number | null
+          flange_joint_revision_id: string | null
+          id: string | null
+          joint_category_id: string | null
+          joint_date: string | null
+          jointers: Json | null
+          jointing_method_snapshot: string | null
+          jointing_value: number | null
+          project_id: string | null
+          recorded_at: string | null
+          recorded_by: string | null
+          report_number: string | null
+          source_import_job_id: string | null
+          source_kind:
+            | Database["public"]["Enums"]["flange_progress_source"]
+            | null
+          source_revision_progress_copy_id: string | null
+          superseded_at: string | null
+          supersedes_record_id: string | null
+          tag_number: string | null
+          torquing_requirement_id: string | null
+          ut_coefficient_diameter: number | null
+          ut_coefficient_punch: number | null
+          ut_coefficient_rating: number | null
+          ut_formula_version: string | null
+          ut_project_quantity: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flange_progress_records_flange_joint_revision_id_fkey"
+            columns: ["flange_joint_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["flange_joint_revision_id"]
+          },
+          {
+            foreignKeyName: "flange_progress_records_flange_joint_revision_id_fkey"
+            columns: ["flange_joint_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_progress_records_flange_joint_revision_id_fkey"
+            columns: ["flange_joint_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["flange_joint_revision_id"]
+          },
+          {
+            foreignKeyName: "flange_progress_records_joint_category_id_fkey"
+            columns: ["joint_category_id"]
+            isOneToOne: false
+            referencedRelation: "project_joint_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_progress_records_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_progress_records_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_progress_records_source_import_job_id_fkey"
+            columns: ["source_import_job_id"]
+            isOneToOne: false
+            referencedRelation: "import_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_progress_records_source_revision_progress_copy_id_fkey"
+            columns: ["source_revision_progress_copy_id"]
+            isOneToOne: false
+            referencedRelation: "revision_progress_copies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_progress_records_supersedes_record_id_fkey"
+            columns: ["supersedes_record_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["effective_progress_id"]
+          },
+          {
+            foreignKeyName: "flange_progress_records_supersedes_record_id_fkey"
+            columns: ["supersedes_record_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["effective_progress_id"]
+          },
+          {
+            foreignKeyName: "flange_progress_records_supersedes_record_id_fkey"
+            columns: ["supersedes_record_id"]
+            isOneToOne: false
+            referencedRelation: "flange_progress_history"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_progress_records_supersedes_record_id_fkey"
+            columns: ["supersedes_record_id"]
+            isOneToOne: false
+            referencedRelation: "flange_progress_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_progress_records_torquing_requirement_id_fkey"
+            columns: ["torquing_requirement_id"]
+            isOneToOne: false
+            referencedRelation: "system_reference_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       spool_construction_status: {
         Row: {
           current_stage:
@@ -4871,6 +5623,20 @@ export type Database = {
             foreignKeyName: "construction_progress_events_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
             isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "construction_progress_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "construction_progress_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
             referencedRelation: "spool_construction_status"
             referencedColumns: ["spool_revision_id"]
           },
@@ -4970,6 +5736,20 @@ export type Database = {
             foreignKeyName: "construction_progress_events_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
             isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "construction_progress_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "construction_progress_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
             referencedRelation: "spool_construction_status"
             referencedColumns: ["spool_revision_id"]
           },
@@ -5022,6 +5802,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weld_joint_revisions_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "weld_joint_revisions_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["spool_revision_id"]
           },
           {
             foreignKeyName: "weld_joint_revisions_spool_revision_id_fkey"
@@ -5541,6 +6335,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      flange_revision_in_pds_scope: {
+        Args: { target_revision_id: string }
+        Returns: boolean
+      }
       generate_weld_obligations: {
         Args: { ctx: Database["public"]["CompositeTypes"]["weld_context"] }
         Returns: number
@@ -5666,6 +6464,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      materialize_flange_progress_copies: {
+        Args: { target_idempotency_key?: string; target_project_id: string }
+        Returns: Json
       }
       materialize_progress_copies: {
         Args: {
@@ -5811,6 +6613,71 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "support_progress_records"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      record_flange_progress: {
+        Args: {
+          target_flange_joint_revision_id: string
+          target_idempotency_key: string
+          target_joint_category_id: string
+          target_joint_date: string
+          target_jointer_ids: string[]
+          target_jointing_value: number
+          target_project_id: string
+          target_replaces_progress_id?: string
+          target_report_number: string
+          target_tag_number: string
+          target_torquing_requirement_id: string
+        }
+        Returns: Json
+      }
+      record_flange_progress_invariant: {
+        Args: {
+          target_actor_id?: string
+          target_flange_joint_revision_id: string
+          target_joint_category_id: string
+          target_joint_date: string
+          target_jointer_ids: string[]
+          target_jointing_value: number
+          target_project_id: string
+          target_replaces_progress_id?: string
+          target_report_number: string
+          target_source_import_job_id?: string
+          target_source_kind?: Database["public"]["Enums"]["flange_progress_source"]
+          target_source_revision_progress_copy_id?: string
+          target_tag_number: string
+          target_torquing_requirement_id: string
+        }
+        Returns: {
+          calculated_ut: number | null
+          flange_joint_revision_id: string
+          id: string
+          joint_category_id: string
+          joint_date: string
+          jointing_method_snapshot: string
+          jointing_value: number
+          project_id: string
+          recorded_at: string
+          recorded_by: string | null
+          report_number: string
+          source_import_job_id: string | null
+          source_kind: Database["public"]["Enums"]["flange_progress_source"]
+          source_revision_progress_copy_id: string | null
+          superseded_at: string | null
+          supersedes_record_id: string | null
+          tag_number: string
+          torquing_requirement_id: string
+          ut_coefficient_diameter: number | null
+          ut_coefficient_punch: number | null
+          ut_coefficient_rating: number | null
+          ut_formula_version: string
+          ut_project_quantity: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "flange_progress_records"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -6415,6 +7282,7 @@ export type Database = {
         | "weld_joint"
         | "support"
         | "flange_joint"
+      flange_progress_source: "manual" | "import" | "revision_copy"
       import_issue_severity: "blocker" | "conflict" | "warning"
       ndt_method: "rt" | "ut" | "mt" | "pt" | "pmi" | "ht" | "vt"
       pressure_unit: "bar" | "psi"
@@ -6622,6 +7490,7 @@ export const Constants = {
         "support",
         "flange_joint",
       ],
+      flange_progress_source: ["manual", "import", "revision_copy"],
       import_issue_severity: ["blocker", "conflict", "warning"],
       ndt_method: ["rt", "ut", "mt", "pt", "pmi", "ht", "vt"],
       pressure_unit: ["bar", "psi"],

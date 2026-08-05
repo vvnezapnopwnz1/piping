@@ -1,13 +1,11 @@
 "use client"
 
-import { ErectionReadinessScreen } from "@/modules/construction/ui/erection/erection-readiness-screen"
+import { useSupabaseAuth } from "@/contexts/supabase-auth-context"
+import { FlangeManagementScreen } from "@/modules/flange/ui/flange-management-screen"
 
 export default function FlangeProgressPage() {
-  return (
-    <ErectionReadinessScreen
-      title="Flange / Bolt Progress"
-      description="Field spool readiness and support evidence."
-      note="Flange and bolt-up progress itself is built in Track 09; this route shows the erection readiness it will hang off."
-    />
-  )
+  const auth = useSupabaseAuth()
+  const projectId = auth?.access?.projectId
+  if (!projectId) return <p className="text-sm text-muted-foreground">Select a project to record flange progress.</p>
+  return <FlangeManagementScreen projectId={projectId} canManage={auth.access?.capabilities.includes("flange.manage") ?? false} mode="operate" />
 }
