@@ -12,17 +12,24 @@ read the script for the exact controls and expected values:
 - `docs/qa/tracks-01-05-agent-walkthrough.md` — access, referentials, imports, revisions and
   the fabrication golden path.
 - `docs/qa/track-06-agent-walkthrough.md` — NDE batches, repairs, tracers and the escalation.
+- `docs/qa/track-07-agent-walkthrough.md` — the field erection chain and derived Ready For Test.
 
 The supported durable flow is:
 
 ```text
-Access and referentials -> generic imports -> SpoolGen engineering definition -> fabrication
+Access and referentials -> generic imports -> SpoolGen engineering definition
+  -> fabrication -> NDE -> field erection -> Ready For Test
 ```
 
-The Erection, Tracking, Test Pack, Flange and Reports routes are included as UI smoke checks
-only. The fixture chain does not create a complete, real-mode end-to-end data set for their
-business workflows. **NDE is no longer among them**: since Track 06 it has its own fixture and
-its own walkthrough.
+The Tracking, Test Pack, Flange and Reports routes have no implementation on this branch. They
+render a placeholder naming the track that builds them and are hidden from the sidebar, so there
+is nothing there to smoke-test beyond the placeholder itself. **NDE and Erection are no longer
+smoke checks**: since Track 06 and Track 07 each has its own fixture and its own walkthrough.
+
+There is also **no longer a mode switch**. The demo implementation, `lib/app-mode.ts` and every
+client-side store were removed in Track 07; Supabase is the only implementation. Any instruction
+below or in an older script to `export NEXT_PUBLIC_PIPEQC_MODE=supabase` is inert, and every
+"confirm there is no DEMO MODE label" step now passes trivially because the label cannot exist.
 
 ## Agent operating contract
 
@@ -98,7 +105,6 @@ set -a
 source .env.local
 set +a
 
-export NEXT_PUBLIC_PIPEQC_MODE=supabase
 export SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL:?NEXT_PUBLIC_SUPABASE_URL is missing in .env.local}"
 export SUPABASE_PUBLISHABLE_KEY="${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:?NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is missing in .env.local}"
 ```
@@ -129,11 +135,11 @@ needed for a Track 06 walk.
 
 ```zsh
 npm run bootstrap:track01-browser-fixtures &&
-npm run bootstrap:track02-browser-fixtures &&
 npm run bootstrap:track03-browser-fixtures &&
 npm run bootstrap:track04-browser-fixtures &&
 npm run bootstrap:track05-browser-fixtures &&
-npm run bootstrap:track06-browser-fixtures &&   # Track 06 walks only
+npm run bootstrap:track06-browser-fixtures &&   # Track 06 and Track 07 walks
+npm run bootstrap:track07-browser-fixtures &&   # Track 07 walks only
 npm run dev
 ```
 
@@ -175,7 +181,6 @@ Tracks 01–04 and the dev server first:
 
 ```zsh
 npm run bootstrap:track01-browser-fixtures &&
-npm run bootstrap:track02-browser-fixtures &&
 npm run bootstrap:track03-browser-fixtures &&
 npm run bootstrap:track04-browser-fixtures &&
 npm run dev

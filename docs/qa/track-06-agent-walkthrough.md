@@ -86,7 +86,6 @@ read -r -s "TRACK01_FIXTURE_PASSWORD?Fixture password (12+ chars): "; echo
 export SUPABASE_SERVICE_ROLE_KEY TRACK01_FIXTURE_PASSWORD
 
 npm run bootstrap:track01-browser-fixtures &&
-npm run bootstrap:track02-browser-fixtures &&
 npm run bootstrap:track03-browser-fixtures &&
 npm run bootstrap:track04-browser-fixtures &&
 npm run bootstrap:track05-browser-fixtures &&

@@ -12,9 +12,8 @@ upserted, and the SpoolGen import is skipped once `ISO-T4-001` has an accepted r
 Run the previous track bootstraps in order, with the same `TRACK01_FIXTURE_PASSWORD`:
 
 1. `npm run bootstrap:track01-browser-fixtures`
-2. `npm run bootstrap:track02-browser-fixtures`
-3. `npm run bootstrap:track03-browser-fixtures`
-4. `npm run bootstrap:track04-browser-fixtures`
+2. `npm run bootstrap:track03-browser-fixtures`
+3. `npm run bootstrap:track04-browser-fixtures`
 
 `scripts/bootstrap-track04-local-fixtures.sh` runs all five in order and prompts for the
 secrets. That file is gitignored, so check that your local copy runs tracks 01 through 05

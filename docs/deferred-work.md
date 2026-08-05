@@ -14,6 +14,104 @@ not deferred work — delete it.
 
 ---
 
+## Track 02–03 — project referentials
+
+Opened and largely closed on 2026-08-05. ESLint's first run over the tree (T07-D4) surfaced the
+first two; the third had already been recorded in the Track 01–02 audit of 2026-07-31 and simply
+never actioned. What they had in common is that TypeScript compiles all of them and the unit tests
+cover the domain validators and repository selects, which were correct: the break was in the
+wiring between them and the screen.
+
+**T02-D1 and T02-D2 are closed.** A project can now be configured end to end through the UI. The
+remaining entry is the read-only tail.
+
+### T02-D1 — closed: the Add PDS Area dialog
+
+**What was wrong.** Two defects in one dialog. `handleCreatePds` submitted `env`, `isUnitFlag` and
+`isRackFlag` for which no control existed, so every PDS area was filed as `above_ground`, not a
+unit and not a rack; and `areaClassId` had no control either, which ESLint could not see because
+the value was still being *reset* after submit. Worse, all three subcontractor selects rendered
+`<SelectItem value="">` for "(None)", and Radix Select **throws during render** on an empty item
+value — so the dialog crashed as soon as it was opened. PDS areas could not be created at all.
+
+**Fixed by.** A `NO_SELECTION` sentinel mapped back to null on submit, plus controls for area
+classification, environment, unit and rack.
+
+**Pinned by.** `modules/project-setup/ui/referential-dialogs.test.ts` asserts that no `.tsx` in
+the tree gives a `SelectItem` an empty value, and that each of the four PDS fields has a control
+bound to it. Neither the type checker nor ESLint can see either defect, which is why the guard is
+a source-scanning unit test rather than a rule.
+
+### T02-D2 — closed: five referentials had no create dialog
+
+**What was wrong.** `Add NDE Rule` and `Add PML Record` set their `isAdd…Open` state, but no
+`<Dialog>` read it, so clicking them did nothing at all; their submit handlers were complete and
+attached to no form. `Add Welder`, `Add Thickness Rule` and `Add Defect Code` had no button at
+all. `Add Weld Type` offered no control for `countsInDiaInch`, so every weld type was created
+counting towards dia-inch progress.
+
+**Why it mattered.** Each of those five blocks a documented server-side check when absent, so a
+project could only be configured by running a seeding script:
+
+| Missing referential | What refuses the work |
+| --- | --- |
+| Thickness / flange rule | `SRV_THICKNESS_MISSING` — the SpoolGen import is rejected |
+| NDE matrix rule | `SRV_NDE_MATRIX_MISSING` on import; `PQC39` on weld progress |
+| Welder qualification | a weld needs a qualified root and cap welder |
+| Defect (rework) code | `PQC42` refuses a rejected NDE result with no defect code |
+| PML record | a material check cannot accept a trace number with no matching record |
+
+**Fixed by.** Five dialogs in `modules/project-setup/ui/welding-quality-tabs.tsx`, three new
+handlers, and the dia-inch checkbox. `loadWeldingQualityReferences` now also reads
+`project_subcontractors` and `project_welding_procedures`, because a welder qualification cannot
+be created without picking one of each and neither is managed on that screen.
+
+**Pinned by.** `referential-dialogs.test.ts` asserts that every `setIsAdd…Open(true)` in the tree
+has a component reading it as `open={…}` — the general form of the dead-button defect — and that
+each of the seven create handlers is submitted by a form.
+
+**Deliberately not built.** Joint categories stay read-only: nothing in the schema blocks on them.
+The NDE location select offers shop and field only, never assembly, because `PQC50` refuses an
+assembly weld and the screen's own coverage check expects two locations. Edit and archive paths
+for all of these remain absent — this closed the create gap, not the full CRUD.
+
+### T02-D3 — closed by deletion: the Track 02 fixture bootstrap
+
+**What was wrong.** `scripts/bootstrap-track02-browser-fixtures.ts` built a plan of
+subcontractors, material types, service classes and weld types, then verified that `TRACK01-A`
+existed and printed `completed successfully` without inserting any of it. Its unit test asserted
+only the plan's shape. Recorded in `docs/audits/track_1_2_audit_31_07_2026.md` on 2026-07-31
+("Task 16 не выполнен"); ESLint's `no-unused-vars` on the orphaned `plan` local is what made it
+impossible to keep ignoring.
+
+**Closed by deleting it**, its test, its npm script and its references in the live runbooks.
+Seeding those referentials would have made the Track 01–05 walkthrough's own cases vacuous —
+creating them through the UI *is* that walkthrough's subject. `docs/TRACK02_BROWSER_FIXTURES.md`
+now records that there is no Track 02 bootstrap and where each referential actually comes from.
+The historical plans under `docs/superpowers/plans/` still reference the script; they are records
+of what was planned on a date and were left alone.
+
+### T02-D4 — the referential screens are create-only, and four sub-tabs are read-only
+
+**Missing.** No screen can edit or archive a referential it created; `updateSubcontractorStatus`
+exists in the repository with no caller, so a subcontractor cannot be deactivated. Joint
+categories, paint matrix entries, pressure units, unit/time references, line services, location
+categories and locations have no create flow at all — for the last five, no create command exists
+in the repository either.
+
+**Covered today by.** Nothing in the UI. None of them blocks a server-side check, which is why
+they were left out of the T02-D2 work.
+
+**Breaks if never done.** A typo in a referential code cannot be corrected, and a referential that
+should no longer be used cannot be retired — it stays in every dropdown. Locations matter to
+Track 08, which needs them out of hardcode and into the project referential.
+
+**Trigger.** Take the locations and location categories in Track 08, which needs them anyway.
+Take edit and archive when a pilot first mistypes a code — before that it is speculative, and
+archive needs an in-use check per referential that does not exist yet.
+
+**Risk if left.** Low now, medium at pilot: the first wrong code entered becomes permanent.
+
 ## Track 06 — NDE, repair, tracer and PWHT
 
 Closed 2026-08-04. Gate D5 walked to `laydown`; `docs/qa/track-06-agent-walkthrough.md` walks
@@ -108,79 +206,188 @@ it is not what the Track 06 verification package was for.
 
 ## Track 07 — Erection
 
-### T07-D1 — Browser Gate D is pending a bootstrapped local stand
+T07-D2 and T07-D3 were closed on 2026-08-04. The erection screens are real forms rather than one
+generic screen, and `spool_erection_readiness` names its material columns honestly; both are
+pinned by `073_material_check_phase_naming.test.sql` and by gate tests in
+`modules/construction/application/`. The same commit removed the demo implementation from this
+branch — `main` still holds it — so nothing here carries two implementations any more.
 
-**Missing.** The Playwright walkthrough has not yet been executed against a live browser
-session, so the field rejected-weld → accepted-repair path and Track 05/06 regressions have
-no browser evidence in this checkout.
+**T07-D4 and T07-D7 were closed on 2026-08-05.** ESLint is installed and `npm run lint` exits 0
+with zero errors; `npm run verify` now runs it first. `docs/qa/track-07-agent-walkthrough.md` is
+rewritten against the ten new screens and the Track 07 fixture was extended so the whole script is
+executable. What lint found on its first run is not all closed, though, and the two entries it
+opened are recorded under **Track 02** below, not here: they are Track 02/03 referential defects
+that had simply never been visible. IDs are retired, not reused.
 
-**Covered today by.** `070`–`072` pgTAP tests, repository/domain tests, the fixture invariant
-test, `npm run verify`, and an unauthenticated browser smoke that reaches the sign-in screen
-after fixing the dashboard build error. The runbook explicitly labels the browser cases
-BLOCKED rather than inferring PASS from source.
+### T07-D4 — two lint rules are warnings, not errors *(reduced from "lint does not run")*
 
-**Breaks if never done.** A route-level integration defect, inaccessible control or stale
-read-after-refresh state could remain undiscovered even though the RPC contracts pass.
+**Closed part.** `eslint@9` and `eslint-config-next@16.2.6` are installed, `eslint.config.mjs`
+exists, and `npm run lint` reports **0 errors**. `npm run verify` runs it before typecheck. The
+first run found 92 errors; all are fixed or explicitly exempted at the site with a reason.
 
-**Trigger.** Bootstrap the local fixture chain with the operator credentials and run
-`docs/qa/track-07-agent-walkthrough.md` in Playwright before presenting the demo.
+**Still deferred.** Two rules are set to `warn` rather than `error`, so 94 warnings remain:
+
+| Rule | Count | Why it is not an error yet |
+| --- | --- | --- |
+| `@typescript-eslint/no-explicit-any` | 65 in source (tests and scripts exempted) | Mostly the Supabase row boundary and `catch (err: any)`. Typing them is a mechanical but wide change, and `Row = Record<string, any>` in the repositories is a deliberate seam that `*-select-columns.test.ts` guards instead. `welding-quality-tabs.tsx` was converted to `catch (err: unknown)` while its dialogs were being built, which is the pattern the rest should follow. |
+| `react-hooks/set-state-in-effect` | 25 | Every one is the same load-on-mount pattern, `useEffect(() => { void reload() }, [reload])`, used by every data screen in the app. It is flagged by `eslint-plugin-react-hooks@7` as a cascading-render risk. Changing it is a data-loading refactor across 25 screens that needs browser verification, not a lint fix. |
+
+**Covered today by.** Both are visible in every `npm run lint` run rather than suppressed, and
+neither can hide a new occurrence of the *error*-level rules.
+
+**Breaks if never done.** Warning rot: 99 warnings is already enough that a hundredth would not be
+noticed. Neither rule protects against a wrong record.
+
+**Trigger.** Take `no-explicit-any` one module at a time, starting with
+`modules/project-setup/infrastructure/`, and promote the rule to `error` when the count reaches
+zero. Take `set-state-in-effect` when a track touches data loading anyway — Track 08's offline
+queue is the natural moment, since it changes how screens read.
+
+**Risk if left.** Low.
+
+### T07-D5 — the UI kit carries about forty unused primitives
+
+**Missing.** A reachability sweep from `app/`, `scripts/`, `supabase/` and every test finds 36
+files under `components/ui/` plus `components/theme-provider.tsx` that nothing imports —
+`calendar`, `carousel`, `chart`, `command`, `menubar`, `resizable` and the like.
+
+**Covered today by.** Nothing needs to cover it: they are inert. They were kept deliberately
+rather than deleted with the demo, because they are the shadcn design-system layer that Tracks
+08–11 draw from, not demo data. The duplicate toast system (`components/ui/toast.tsx`,
+`toaster.tsx`, `use-toast.ts`, `hooks/use-toast.ts`) *was* deleted, because the shell mounts
+sonner and a second toast implementation is a competing answer rather than an unused part.
+
+**Breaks if never done.** Nothing. It is bundle-irrelevant — unimported files are not compiled
+into the app.
+
+**Trigger.** Only if the design system is replaced, or if a primitive here starts disagreeing
+with one a track has adapted. Otherwise leave them.
+
+**Risk if left.** None.
+
+### T07-D6 — the header keeps three buttons that do nothing
+
+**Missing.** `components/pipeqc/top-nav.tsx` renders Search, Help and Settings icon buttons with
+no handler. The notification bell beside them was removed because it counted rows in the deleted
+demo store; these three were left because they were never demo-backed, only unfinished.
+
+**Covered today by.** Nothing. They are visible and inert.
+
+**Breaks if never done.** A user clicks and nothing happens — the same affordance defect as
+T06-D4, in the chrome rather than in a module.
+
+**Trigger.** Bundle with the first header change, or with Track 11 when notifications and reports
+give two of the three something to do.
+
+**Risk if left.** Low, and cosmetic, but it is on every screen.
+
+### T07-D7 — `app/documentation` still describes the previous UI *(runbook part closed)*
+
+**Closed part.** `docs/qa/track-07-agent-walkthrough.md` is rewritten: eleven cases against the
+ten screens, with the literal gate sentences each screen renders, and the stale
+`NEXT_PUBLIC_PIPEQC_MODE` instruction removed from it and from
+`docs/qa/local-supabase-browser-runbook.md`. The runbook's scope paragraph no longer calls Erection
+a smoke check.
+
+**Still deferred.** `app/documentation/page.tsx` is a 603-line hand-maintained status page listing
+which modules are live, partial or placeholder. It was written against the demo and has not been
+revised.
+
+**Covered today by.** `app/page.tsx` carries an accurate live/planned list per module and the
+sidebar hides planned routes, so a reader has a correct source inside the app.
+
+**Breaks if never done.** One page states things that are no longer true. It is linked from the
+header's Settings area, which is itself inert (T07-D6), so few readers reach it.
+
+**Trigger.** Revisit in Track 11, when generated documents give the page a real subject — or
+delete it in favour of the landing page, which is the cheaper answer.
+
+**Risk if left.** Low.
+
+### T07-D1 — the erection screens have not been walked in a browser
+
+**Missing.** No Playwright pass has been run against the erection routes. This was already open
+before the screens were rebuilt, and rebuilding them widened it: the field weld form, the field
+material form, the per-support recording and the four stage cards are all new surface, and the
+runbook that existed walked the generic screen they replaced.
+
+**Covered today by.** `070`–`073` pgTAP (549 database assertions pass on a clean reset), 99 unit
+tests including gate tests for every refusal each screen renders, `npx tsc --noEmit`, and
+`npm run build` compiling all 70 routes. Every rule the screens enforce is also enforced in the
+database, so a screen defect can produce a confusing refusal but not a wrong record.
+
+**Breaks if never done.** A route-level integration defect, an inaccessible control, or stale
+read-after-refresh state could survive even though the contracts pass. Specifically unproven on
+screen: that the readiness table refreshes after each of the six commands, and that the stage
+cards disable correctly for a reader who holds `erection.view` without
+`erection.progress.record`.
+
+**Trigger.** The script now exists and is executable: `docs/qa/track-07-agent-walkthrough.md`,
+eleven cases, T07-00 through T07-10. It has **never been run** — it was written from the source of
+the screens, not from observation, and says so at the top. Bootstrap the chain through
+`npm run bootstrap:track07-browser-fixtures` and hand the script to a browser agent before the
+erection module is shown to anyone. T07-01 and T07-09 are the two cases that close the specific
+gaps named above; T07-02 step 5, T07-06 step 10 and T07-08 step 9 are the in-place refresh
+assertions.
+
+**The fixture was extended on 2026-08-05 so the script could cover those cases.**
+`scripts/supp-t7.txt` adds `SU-T7-001` and `SU-T7-002` to the walk spool — without supports the
+Supported screen could only be walked as "this spool revision has no supports". `weld-t7.txt` and
+`trace-t7.txt` gained a second spool, `SP-T7-002-A`, and the bootstrap now seeds To Site and the
+material check on `SP-T7-001-A` **only**. A precondition cannot be observed on a spool that
+already satisfies it, and before this change every spool in the fixture was pre-advanced.
 
 **Risk if left.** Medium for demo readiness; low for the verified database contract.
 
-### T07-D2 — one spool revision can hold only one material check, whatever the phase
+## Cross-cutting
 
-**Missing.** `material_check_records.spool_revision_id` is `unique` (Track 05,
-`20260804091000_material_traceability.sql`), and `record_material_check` upserts
-`on conflict (spool_revision_id) do update`. A spool that is material-checked in the shop and
-again in the field therefore keeps **one** row: the field check overwrites `checked_on` and
-`checked_by` of the shop check. `spool_erection_readiness.field_line_*` reads that row with no
-phase filter, so it reports shop evidence as field evidence — the readiness view is not
-independently wrong, it is downstream of the table shape.
+Not a track's debt: introduced by one track and carried by all of them. The conventions below say
+one heading per track; this section is the exception, and entries here use an `XC-` prefix.
 
-**Covered today by.** The two phases are distinguishable everywhere else: the derived
-`construction_progress_events` row carries `phase`, and `072` pins that a field check is filed
-under `erection`. Nothing is lost from the ledger — only the record's own date and author are
-overwritten, and only when the same spool is checked twice.
+### XC-D1 — `audit_events` is written by 23 migrations and read by none
 
-**Breaks if never done.** A spool checked in both phases loses its shop check date. The
-erection dashboard shows a green material column for a spool whose field material was never
-verified. Neither is detectable from the UI, which is what makes it worth a decision rather
-than a patch.
+**Missing.** Every `SECURITY DEFINER` command inserts into `audit_events` — the table appears in 23
+migrations — and no module, screen or report ever selects from it. There is no read surface at all.
 
-**Trigger.** Deliberately held for a table-structure decision by the project owner: whether a
-field material check is a distinct record (add `phase` to `material_check_records`, drop the
-unique constraint for a composite one, phase-filter the readiness lateral) or the same check
-re-confirmed (keep one row, rename `field_line_*` to drop the false `field_` prefix). Do this
-before Track 10 builds a test pack that cites material evidence per phase.
+**Covered today by.** Nothing reads it, so nothing depends on it being right. The writes themselves
+are correct and cheap: they are inserts inside a transaction that is already open.
 
-**Risk if left.** Medium. The data model is honest about phase everywhere except here.
+**Breaks if never done.** Two ways, both quiet. The trail may be recording the wrong shape — nobody
+has had to consume `before_state`/`after_state` yet, so nobody has discovered a command that
+snapshots too little. And P0-09 in the master plan asks for an audit trail; a trail nobody can read
+does not satisfy an auditor.
 
-### T07-D3 — nine erection routes share one generic screen
+**Why it was not resolved here.** The two available moves both cost more than they save today.
+Deleting the writes would forfeit P0-09 and be expensive to reinstate across 23 migrations.
+Building a read surface is Track 11 work with a real design question behind it — who may read whose
+audit rows — that belongs with the documents and reports module, not with erection screens.
 
-**Missing.** `modules/construction/ui/erection/erection-supabase-screen.tsx` (170 lines) serves
-every erection route, differing only by `title`/`action` props. It has no forms: the field weld
-action picks `referentials.welders[0]` and `[1]` and hardcodes 50/50 completion, the field
-material action submits the whole BOM at its expected trace numbers, and the stage actions post
-`new Date()` with no date field. The Track 05 fabrication screens
-(`modules/construction/ui/fabrication/`, ~1400 lines across seven files) are the shape these
-should have.
+**Trigger.** Track 11, when report definitions are fixed. That is the first time a consumer exists
+and therefore the first time the recorded shape can be checked against a need.
 
-**Covered today by.** Every rule is enforced in the database, not the screen: `070`–`072` pin
-the stage order, capability, PML evidence and RFT derivation, and `071` pins field/shop weld
-parity. The screen cannot record anything the commands would refuse. `scripts/bootstrap-track07-browser-fixtures.ts`
-produces erection data through the real RPCs, so downstream tracks have something to read.
+**Risk if left.** Low today, rising with each track that adds writes to a shape no reader has
+validated.
 
-**Breaks if never done.** Erection cannot be operated by a real user — only demonstrated. Any
-weld recorded through it is attributed to the first two welders in the list, which is wrong
-data rather than missing data.
+### XC-D2 — `modules/quality/` still has no application layer while `modules/construction/` does
 
-**Trigger.** Before the erection screens are shown to anyone as working software, and before
-Track 09 adds flange progress to the same routes. The forms are adaptations of
-`fabrication/weld-progress-screen.tsx` and `fabrication/material-check-screen.tsx`, not new
-work; `fabrication/spool-picker.tsx` is already reusable as-is.
+**Missing.** T06-D1 records that `modules/quality/application/` was never created. The erection
+work widened the gap in the other direction: `modules/construction/application/` gained four more
+files (`record-erection-progress`, `record-field-material-check`, `record-field-weld-progress`,
+`describe-erection-readiness`), so the two modules now differ more than they did.
 
-**Risk if left.** High for the UI, none for the data contract. Track 08 reads
-`spool_erection_readiness`, which does not depend on these screens.
+**Covered today by.** The NDE rules live in `SECURITY DEFINER` functions pinned by `060`–`064`, and
+`modules/quality/ui/nde-batch-screen.tsx` calls the repository directly. Nothing can bypass them.
+
+**Why it was not resolved here.** The construction files exist because each one carries a real
+decision the screen needs before it calls the database — which predecessor stage is missing, whether
+To Site has been recorded, which capability the refusal should name. NDE has no equivalent: its
+screen has one caller and no pre-flight logic worth naming. Adding a layer that only forwards calls
+would be the ceremony this cleanup was meant to remove, not a reduction in complexity. The
+asymmetry is worth living with until T06-D1's own trigger fires.
+
+**Trigger.** Unchanged from T06-D1: the second caller of an NDE command.
+
+**Risk if left.** Low. Structural, and now documented as deliberate rather than accidental.
 
 ## Conventions
 

@@ -16,10 +16,9 @@ smallest population where all of that fits with joints to spare.
 Run the previous track bootstraps in order, with the same `TRACK01_FIXTURE_PASSWORD`:
 
 1. `npm run bootstrap:track01-browser-fixtures`
-2. `npm run bootstrap:track02-browser-fixtures`
-3. `npm run bootstrap:track03-browser-fixtures`
-4. `npm run bootstrap:track04-browser-fixtures`
-5. `npm run bootstrap:track05-browser-fixtures`
+2. `npm run bootstrap:track03-browser-fixtures`
+3. `npm run bootstrap:track04-browser-fixtures`
+4. `npm run bootstrap:track05-browser-fixtures`
 
 Track 06 reuses Track 05's subcontractor `SUB-T5` and procedure `WPS-T5`, and fails with a
 message naming them if the Track 05 bootstrap has not run.
