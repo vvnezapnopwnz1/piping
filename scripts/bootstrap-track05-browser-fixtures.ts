@@ -346,6 +346,7 @@ export async function seedEngineeringDefinition(
         weld: readFileSync(join(__dirname, "weld.txt"), "utf8"),
         trace: readFileSync(join(__dirname, "trace.txt"), "utf8"),
         supp: readFileSync(join(__dirname, "supp.txt"), "utf8"),
+        bolt: readFileSync(join(__dirname, "bolt.txt"), "utf8"),
       },
       "Track 05 fixture bootstrap",
     )
