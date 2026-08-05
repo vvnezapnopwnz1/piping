@@ -4791,9 +4791,6 @@ export type Database = {
       spool_erection_readiness: {
         Row: {
           erected_on: string | null
-          field_line_checked: number | null
-          field_line_total: number | null
-          field_material_checked_on: string | null
           field_support_recorded: number | null
           field_support_total: number | null
           field_weld_complete: number | null
@@ -4802,6 +4799,9 @@ export type Database = {
           iso_number: string | null
           last_field_support_on: string | null
           last_field_weld_on: string | null
+          material_checked_on: string | null
+          material_line_checked: number | null
+          material_line_total: number | null
           nde_pending: number | null
           project_id: string | null
           pwht_pending: number | null

@@ -19,7 +19,7 @@ function createFakeClient(overrides: Record<string, any> = {}) {
         error: null,
       })
     },
-    from(table: string) {
+    from(_table: string) {
       return {
         select() {
           return {

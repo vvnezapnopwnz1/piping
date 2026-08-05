@@ -3,7 +3,8 @@ export interface RftInputs {
   supportedOn: string | null
   ndePending: number
   pwhtPending: number
-  fieldMaterialCheckedOn?: string | null
+  /** Phase-agnostic: one material check per spool revision, from either phase (T07-D2). */
+  materialCheckedOn?: string | null
   lastFieldWeldOn?: string | null
   lastFieldSupportOn?: string | null
 }
@@ -25,7 +26,7 @@ export function deriveRft(input: RftInputs): RftResult {
   const dates = [
     input.weldedBoltedOn,
     input.supportedOn,
-    input.fieldMaterialCheckedOn ?? null,
+    input.materialCheckedOn ?? null,
     input.lastFieldWeldOn ?? null,
     input.lastFieldSupportOn ?? null,
   ].filter((date): date is string => Boolean(date))

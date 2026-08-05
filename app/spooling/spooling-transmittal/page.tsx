@@ -1,17 +1,11 @@
-"use client"
-
-import { SpoolingTransmittalView } from "@/components/spooling/spooling-transmittal-view"
+import { NotOnSupabaseYet } from "@/components/pipeqc/not-on-supabase-yet"
 
 export default function SpoolingTransmittalPage() {
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Spooling Transmittal</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Outbound ISO batches dispatched to Fabrication. Compose from Released ISOs.
-        </p>
-      </div>
-      <SpoolingTransmittalView />
-    </div>
+    <NotOnSupabaseYet
+      title="Spooling Transmittal"
+      track="Track 04 (remaining)"
+      summary="Outgoing transmittals that release spooled isometrics to the shop. The revision model is live; the transmittal document around it is the part of Track 04 still outstanding."
+    />
   )
 }

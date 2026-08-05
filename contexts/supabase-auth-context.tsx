@@ -3,7 +3,6 @@
 import * as React from "react"
 import type { Session, User } from "@supabase/supabase-js"
 
-import { useAppMode } from "@/contexts/app-mode-context"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import {
   listCurrentUserProjects,
@@ -56,7 +55,6 @@ function safelyWriteOrRemoveLocalStorage(key: string, projectId: string | null) 
 }
 
 export function SupabaseAuthProvider({ children }: { children: React.ReactNode }) {
-  const appMode = useAppMode()
   const [user, setUser] = React.useState<User | null>(null)
   const [projectAccesses, setProjectAccesses] = React.useState<
     ProjectAccessSummary[]
@@ -68,15 +66,6 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
     React.useState<SupabaseAccessState>("loading")
 
   React.useEffect(() => {
-    if (appMode === "demo") {
-      setUser(null)
-      setProjectAccesses([])
-      setAccess(null)
-      setError(null)
-      setAccessState("unauthenticated")
-      return
-    }
-
     const client = getSupabaseBrowserClient()
     let disposed = false
     let requestVersion = 0
@@ -171,11 +160,11 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
       requestVersion += 1
       subscription.unsubscribe()
     }
-  }, [appMode, reloadVersion])
+  }, [reloadVersion])
 
   const selectProject = React.useCallback(
     (projectId: string) => {
-      if (appMode !== "supabase" || !user) return
+      if (!user) return
 
       setProjectAccesses((currentProjectAccesses) => {
         const next = currentProjectAccesses.find(
@@ -191,34 +180,26 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
         return currentProjectAccesses
       })
     },
-    [appMode, user]
+    [user]
   )
 
   const reloadAccess = React.useCallback(() => {
-    if (appMode === "supabase") setReloadVersion((current) => current + 1)
-  }, [appMode])
+    setReloadVersion((current) => current + 1)
+  }, [])
 
   const signOut = React.useCallback(async () => {
-    if (appMode === "demo") {
-      return
-    }
-
     const { error: signOutError } = await getSupabaseBrowserClient().auth.signOut()
 
     if (signOutError) {
       setError(signOutError)
     }
-  }, [appMode])
+  }, [])
 
   const synchronizeProjectDisplay = React.useCallback(
     (
       projectId: string,
       project: Pick<ProjectAccessSummary, "activityCode" | "title">
     ) => {
-      if (appMode !== "supabase") {
-        return
-      }
-
       setProjectAccesses((currentProjectAccesses) =>
         currentProjectAccesses.map((item) =>
           item.projectId === projectId
@@ -235,7 +216,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
         synchronizeProjectAccessDisplay(current, projectId, project)
       )
     },
-    [appMode]
+    []
   )
 
   const value = React.useMemo(

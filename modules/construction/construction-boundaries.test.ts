@@ -3,7 +3,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs"
 import { join } from "node:path"
 
 const MODULE_ROOT = "modules/construction"
-const APP_ROOT = "app/fabrication"
+const APP_ROOTS = ["app/fabrication", "app/erection"]
 
 const walk = (directory: string): string[] =>
   readdirSync(directory).flatMap((entry) => {
@@ -15,7 +15,9 @@ const sources = walk(MODULE_ROOT).filter(
   (path) => path.endsWith(".ts") || path.endsWith(".tsx"),
 )
 
-// Plan section 3.15: the construction module never reaches into demo state.
+// Plan section 3.15: the construction module never reaches into demo state. `store/` is gone
+// from this branch, so this now guards against reintroducing it rather than against a live
+// parallel implementation.
 for (const path of sources) {
   const source = readFileSync(path, "utf8")
   assert.equal(
@@ -34,25 +36,30 @@ for (const path of sources.filter(
   assert.equal(/from "react"/.test(source), false, `${path} must not import React`)
 }
 
-// Every fabrication page must branch on the app mode rather than assume demo state.
-const RETIRED_STORES = [
-  "spools-store",
-  "welds-store",
-  "qc-release-store",
-  "paint-store",
-  "laydown-store",
-  "pwht-store",
-]
+// Construction routes read the database and nothing else.
+//
+// This assertion used to require the opposite: every fabrication page had to call `useAppMode`,
+// because a demo implementation sat beside the Supabase one and the page chose between them.
+// The demo is gone, so the invariant is now that no construction route holds client-side
+// project state at all — no `store/`, and no mode switch to bring one back.
+for (const root of APP_ROOTS) {
+  for (const path of walk(root).filter((candidate) => candidate.endsWith("page.tsx"))) {
+    const source = readFileSync(path, "utf8")
+    if (source.includes("redirect(")) continue
 
-for (const path of walk(APP_ROOT).filter((candidate) => candidate.endsWith("page.tsx"))) {
-  const source = readFileSync(path, "utf8")
-  if (source.includes("redirect(")) continue
-  assert.ok(source.includes("useAppMode"), `${path} must branch on the app mode`)
-  for (const store of RETIRED_STORES) {
     assert.equal(
-      source.includes(store),
+      /from "@\/store\//.test(source),
       false,
-      `${path} must not import ${store} directly; the demo component owns it`,
+      `${path} must not import from store/`,
+    )
+    assert.equal(
+      /useAppMode|app-mode/.test(source),
+      false,
+      `${path} must not reintroduce an app mode switch`,
+    )
+    assert.ok(
+      /@\/modules\//.test(source),
+      `${path} must render a module screen rather than inline its own reads`,
     )
   }
 }

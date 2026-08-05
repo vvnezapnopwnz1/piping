@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAppMode } from "@/contexts/app-mode-context";
 import { useSupabaseAuth } from "@/contexts/supabase-auth-context";
 import {
   type ProjectDefinition,
@@ -31,7 +30,6 @@ import {
 } from "@/modules/project-setup/infrastructure/supabase-project-branding";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
 import { formatDate } from "@/lib/utils";
-import { useAdminStore } from "@/store/admin-store";
 
 type ProjectDefinitionForm = Omit<
   ProjectDefinitionInput,
@@ -39,8 +37,6 @@ type ProjectDefinitionForm = Omit<
 > & {
   maxTransitTimeDays: string;
 };
-
-const ACTIVITY_CODE_RE = /^[A-Z0-9-]+$/;
 
 function toFormValue(definition: ProjectDefinition): ProjectDefinitionForm {
   return {
@@ -64,19 +60,16 @@ function toProjectDefinitionInput(
 }
 
 export default function ProjectDefinitionPage() {
-  const appMode = useAppMode();
   const { access, synchronizeProjectDisplay } = useSupabaseAuth();
-  const projectDefinition = useAdminStore((s) => s.projectDefinition);
-  const setProjectDefinition = useAdminStore((s) => s.setProjectDefinition);
 
   const [form, setForm] = useState<ProjectDefinitionForm>(() => ({
-    activityCode: projectDefinition.activityCode,
-    projectTitle: projectDefinition.projectTitle,
-    owner: projectDefinition.owner,
-    contractor: projectDefinition.contractor,
-    ownerLogoUrl: projectDefinition.ownerLogoUrl,
-    contractorLogoUrl: projectDefinition.contractorLogoUrl,
-    maxTransitTimeDays: String(projectDefinition.maxTransitTimeDays),
+    activityCode: "",
+    projectTitle: "",
+    owner: "",
+    contractor: "",
+    ownerLogoUrl: "",
+    contractorLogoUrl: "",
+    maxTransitTimeDays: "1",
   }));
   const [isSaving, setIsSaving] = useState(false);
   const [activityError, setActivityError] = useState("");
@@ -88,21 +81,7 @@ export default function ProjectDefinitionPage() {
   const [loadAttempt, setLoadAttempt] = useState(0);
 
   useEffect(() => {
-    if (appMode !== "demo") return;
-
-    setForm({
-      activityCode: projectDefinition.activityCode,
-      projectTitle: projectDefinition.projectTitle,
-      owner: projectDefinition.owner,
-      contractor: projectDefinition.contractor,
-      ownerLogoUrl: projectDefinition.ownerLogoUrl,
-      contractorLogoUrl: projectDefinition.contractorLogoUrl,
-      maxTransitTimeDays: String(projectDefinition.maxTransitTimeDays),
-    });
-  }, [appMode, projectDefinition]);
-
-  useEffect(() => {
-    if (appMode !== "supabase" || !access?.projectId) return;
+    if (!access?.projectId) return;
 
     let isCurrent = true;
     setIsLoading(true);
@@ -145,7 +124,7 @@ export default function ProjectDefinitionPage() {
     return () => {
       isCurrent = false;
     };
-  }, [appMode, loadAttempt, access?.projectId]);
+  }, [loadAttempt, access?.projectId]);
 
   const updateForm = <Field extends keyof ProjectDefinitionForm>(
     field: Field,
@@ -155,19 +134,6 @@ export default function ProjectDefinitionPage() {
   };
 
   const validateActivity = (value: string) => {
-    if (appMode === "demo") {
-      if (!value.trim()) {
-        setActivityError("Activity code is required");
-        return false;
-      }
-      if (!ACTIVITY_CODE_RE.test(value.trim())) {
-        setActivityError("Use uppercase letters, digits and hyphens only");
-        return false;
-      }
-      setActivityError("");
-      return true;
-    }
-
     const validation = validateProjectDefinition(
       toProjectDefinitionInput({ ...form, activityCode: value }),
     );
@@ -177,40 +143,6 @@ export default function ProjectDefinitionPage() {
   };
 
   const handleSave = async () => {
-    if (appMode === "demo") {
-      if (!validateActivity(form.activityCode)) return;
-      if (!form.projectTitle.trim()) {
-        toast.error("Project title is required");
-        return;
-      }
-      if (!form.owner.trim() || !form.contractor.trim()) {
-        toast.error("Owner and contractor are required");
-        return;
-      }
-      if (
-        !Number.isFinite(Number(form.maxTransitTimeDays)) ||
-        Number(form.maxTransitTimeDays) < 1
-      ) {
-        toast.error("Maximum transit time must be ≥ 1 day");
-        return;
-      }
-
-      setIsSaving(true);
-      await new Promise((resolve) => setTimeout(resolve, 400 + Math.random() * 200));
-      setProjectDefinition({
-        activityCode: form.activityCode.trim(),
-        projectTitle: form.projectTitle.trim(),
-        owner: form.owner.trim(),
-        contractor: form.contractor.trim(),
-        ownerLogoUrl: form.ownerLogoUrl.trim(),
-        contractorLogoUrl: form.contractorLogoUrl.trim(),
-        maxTransitTimeDays: Number(form.maxTransitTimeDays),
-      });
-      setIsSaving(false);
-      toast.success("Project definition saved");
-      return;
-    }
-
     if (!access?.projectId || !canEdit) return;
 
     const validation = validateProjectDefinition(toProjectDefinitionInput(form));
@@ -258,9 +190,8 @@ export default function ProjectDefinitionPage() {
     }
   };
 
-  const displayedDefinition =
-    appMode === "demo" ? projectDefinition : supabaseDefinition;
-  const isReadOnly = appMode === "supabase" && !canEdit;
+  const displayedDefinition = supabaseDefinition;
+  const isReadOnly = !canEdit;
 
   return (
     <div className="space-y-4">
@@ -269,14 +200,14 @@ export default function ProjectDefinitionPage() {
         description="Create and configure project identity, parties, logos, and maximum transit timing."
       />
 
-      {appMode === "supabase" && isLoading ? (
+      {isLoading ? (
         <ProjectDefinitionMessage
           title="Loading project definition"
           description="Retrieving the current project settings."
         />
       ) : null}
 
-      {appMode === "supabase" && loadError ? (
+      {loadError ? (
         <Card className="border-slate-200">
           <CardHeader>
             <CardTitle className="text-base">Unable to load project definition</CardTitle>
@@ -362,7 +293,6 @@ export default function ProjectDefinitionPage() {
                 activityError={activityError}
                 disabled={isReadOnly || isSaving}
                 form={form}
-                appMode={appMode}
                 onActivityBlur={() => validateActivity(form.activityCode)}
                 onActivityChange={(value) => {
                   updateForm("activityCode", value.toUpperCase());
@@ -408,7 +338,6 @@ function ProjectDefinitionFields({
   activityError,
   disabled,
   form,
-  appMode,
   onActivityBlur,
   onActivityChange,
   onChange,
@@ -417,7 +346,6 @@ function ProjectDefinitionFields({
   activityError: string;
   disabled: boolean;
   form: ProjectDefinitionForm;
-  appMode: string;
   onActivityBlur: () => void;
   onActivityChange: (value: string) => void;
   onChange: <Field extends keyof ProjectDefinitionForm>(
@@ -475,8 +403,7 @@ function ProjectDefinitionFields({
         />
       </div>
 
-      {appMode === "supabase" ? (
-        <>
+      <>
           <div className="grid gap-1.5">
             <Label htmlFor="pd-owner-logo-file">Owner Logo (Image Upload)</Label>
             <Input
@@ -514,34 +441,7 @@ function ProjectDefinitionFields({
               <p className="text-xs text-muted-foreground truncate">Current: {form.contractorLogoUrl}</p>
             )}
           </div>
-        </>
-      ) : (
-        <>
-          <div className="grid gap-1.5">
-            <Label htmlFor="pd-owner-logo">Owner Logo URL</Label>
-            <Input
-              id="pd-owner-logo"
-              type="url"
-              value={form.ownerLogoUrl}
-              onChange={(event) => onChange("ownerLogoUrl", event.target.value)}
-              placeholder="https://…"
-              disabled={disabled}
-            />
-          </div>
-
-          <div className="grid gap-1.5">
-            <Label htmlFor="pd-contractor-logo">Contractor Logo URL</Label>
-            <Input
-              id="pd-contractor-logo"
-              type="url"
-              value={form.contractorLogoUrl}
-              onChange={(event) => onChange("contractorLogoUrl", event.target.value)}
-              placeholder="https://…"
-              disabled={disabled}
-            />
-          </div>
-        </>
-      )}
+      </>
 
       <div className="grid gap-1.5">
         <Label htmlFor="pd-transit">Maximum Transit Time (days)</Label>

@@ -1,119 +1,123 @@
-"use client";
+import Link from "next/link"
 
-import Link from "next/link";
-import {
-  AlertCircle,
-  Scan,
-  Wrench,
-} from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import { NotificationsFeed } from "@/components/notifications/notifications-feed";
-import { useAppMode } from "@/contexts/app-mode-context";
-import { useWeldsKPIs } from "@/store/welds-store";
-import { useBatchesKPIs, useHydrateBatchesStore } from "@/store/batches-store";
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+/**
+ * The landing page deliberately carries no roll-up numbers.
+ *
+ * It used to read the demo stores, which meant that against a real project with no spools it
+ * reported "Welds requiring action 1" and "NDE batches active 4" — figures a reader had no way
+ * to tell were invented. A cross-module roll-up over `spool_construction_status` and
+ * `spool_erection_readiness` is Track 11 work; until it exists, this page routes to the module
+ * screens that hold the real figures rather than inventing its own.
+ */
+
+interface ModuleLink {
+  href: string
+  title: string
+  description: string
+  live: boolean
+  note?: string
+}
+
+const MODULES: readonly ModuleLink[] = [
+  {
+    href: "/admin",
+    title: "Administration",
+    description: "Project definition, referentials, access rights, imports and progress weights.",
+    live: true,
+  },
+  {
+    href: "/spooling/browse",
+    title: "Spooling",
+    description: "SpoolGen import, engineering definitions and revision history.",
+    live: true,
+    note: "ISO workflow and transmittals outstanding",
+  },
+  {
+    href: "/fabrication/dashboard",
+    title: "Fabrication",
+    description:
+      "Material traceability, shop weld progress, PWHT, painting, laydown and QC release.",
+    live: true,
+  },
+  {
+    href: "/nde",
+    title: "NDE",
+    description: "Batches, results, repair and tracer cascade, penalty escalation.",
+    live: true,
+  },
+  {
+    href: "/erection/dashboard",
+    title: "Erection",
+    description:
+      "To site, erected, field welds, field material, supports, and derived Ready For Test.",
+    live: true,
+  },
+  {
+    href: "/tracking",
+    title: "Spool Tracking",
+    description: "Movement history, current location and transit alerts.",
+    live: false,
+    note: "Track 08",
+  },
+  {
+    href: "/flange",
+    title: "Flange Management",
+    description: "Flange joints, bolt-up progress and torque records.",
+    live: false,
+    note: "Track 09",
+  },
+  {
+    href: "/testpack",
+    title: "Test Packs",
+    description: "Test pack assembly, readiness and the pressure-test workflow.",
+    live: false,
+    note: "Track 10",
+  },
+  {
+    href: "/reports",
+    title: "Reports & Forms",
+    description: "Generated reports and forms from durable records.",
+    live: false,
+    note: "Track 11",
+  },
+]
 
 export default function HomePage() {
-  const hasHydrated = useHydrateBatchesStore();
-  const kpis = useWeldsKPIs();
-  const batchKpis = useBatchesKPIs();
-  const appMode = useAppMode();
-
-  if (!hasHydrated) {
-    return null;
-  }
-
   return (
     <div className="space-y-6">
-      {/* This dashboard still reads the demo stores. In Supabase mode it therefore shows
-          invented figures next to real project data — a browser walk on 2026-08-02 found
-          it reporting "Welds requiring action 1" and "NDE batches active 4" against a
-          project with no spools at all. Rebuilding it on spool_construction_status is
-          Track 11; until then, say so rather than let the numbers read as real. */}
-      {appMode === "supabase" ? (
-        <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm">
-          This dashboard still shows demonstration figures and is not yet connected to
-          project data. Use the module screens for real numbers.
-        </div>
-      ) : null}
       <section>
-        <h1 className="text-2xl font-semibold">Good morning, QC Engineer</h1>
-        <p className="text-sm text-muted-foreground">
-          Qatar LNG Train 7 · Thursday, 14 May 2026
+        <h1 className="text-2xl font-semibold tracking-tight">PipeQC</h1>
+        <p className="text-muted-foreground mt-1 text-sm">
+          Industrial piping construction and quality control. Every screen reads its own figures
+          from the database; this page holds none of its own.
         </p>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Link href="/fabrication/weld-progress" className="group">
-          <Card className="h-auto p-4 transition-shadow hover:shadow-md">
-            <CardHeader className="gap-1 pb-2">
-              <CardDescription className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.08em] text-slate-500">
-                <Wrench className="h-3.5 w-3.5" />
-                Welds requiring action
-              </CardDescription>
-              <CardTitle className="text-[30px] font-semibold tracking-tight">
-                {kpis.rework + kpis.rejected}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-sm text-muted-foreground">Rework + Rejected</p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link href="/nde" className="group">
-          <Card className="h-auto p-4 transition-shadow hover:shadow-md">
-            <CardHeader className="gap-1 pb-2">
-              <CardDescription className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.08em] text-slate-500">
-                <Scan className="h-3.5 w-3.5" />
-                NDE batches active
-              </CardDescription>
-              <CardTitle className="text-[30px] font-semibold tracking-tight">
-                {batchKpis.active}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                {batchKpis.awaitingResults} awaiting results
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-
-        <Link href="/nde" className="group">
-          <Card
-            className={`h-auto p-4 transition-shadow hover:shadow-md ${
-              batchKpis.overdue > 0 ? "border-l-4 border-l-red-500" : ""
-            }`}
-          >
-            <CardHeader className="gap-1 pb-2">
-              <CardDescription className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.08em] text-slate-500">
-                <AlertCircle className="h-3.5 w-3.5" />
-                Overdue NDE batches
-              </CardDescription>
-              <CardTitle
-                className={`text-[30px] font-semibold tracking-tight ${
-                  batchKpis.overdue > 0 ? "text-red-600" : ""
-                }`}
-              >
-                {batchKpis.overdue}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Results &gt; 5 days late
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {MODULES.map((module) => (
+          <Link key={module.href} href={module.href} className="group">
+            <Card className="h-full transition-shadow hover:shadow-md">
+              <CardHeader className="gap-2">
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-base">{module.title}</CardTitle>
+                  <Badge variant={module.live ? "default" : "outline"}>
+                    {module.live ? "live" : (module.note ?? "planned")}
+                  </Badge>
+                </div>
+                <CardDescription>{module.description}</CardDescription>
+              </CardHeader>
+              {module.live && module.note ? (
+                <CardContent>
+                  <p className="text-muted-foreground text-xs">{module.note}</p>
+                </CardContent>
+              ) : null}
+            </Card>
+          </Link>
+        ))}
       </section>
-
-      <NotificationsFeed />
     </div>
-  );
+  )
 }

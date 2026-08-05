@@ -45,11 +45,53 @@ function relationAndNestedColumns(part: string): { relation: string; columns: st
   return { relation: match[1], columns: splitTopLevel(match[2]).map((column) => column.trim()) }
 }
 
+/**
+ * Column lists shared by more than one read live in a module-level constant, so resolve those
+ * too. Only literal single-string constants are understood: anything built at runtime is
+ * outside what this guard can check, and `assertResolvable` below fails rather than skipping it.
+ */
+function readStringConstants(input: string): Map<string, string> {
+  const result = new Map<string, string>()
+  for (const match of input.matchAll(
+    /^const (\w+)(?::\s*string)?\s*=\s*\n?\s*("(?:[^"\\]|\\.)*")\s*$/gm,
+  )) {
+    result.set(match[1], JSON.parse(match[2]) as string)
+  }
+  return result
+}
+
 const relations = readRelationColumns(types)
-const selects = [...source.matchAll(/\.from\("(\w+)"\)\s*\n?\s*\.select\(\s*\n?\s*("(?:[^"\\]|\\.)*")/g)].map(
-  (match) => ({ relation: match[1], select: JSON.parse(match[2]) as string }),
+const constants = readStringConstants(source)
+
+const selects = [
+  ...source.matchAll(/\.from\("(\w+)"\)\s*\n?\s*\.select\(\s*\n?\s*("(?:[^"\\]|\\.)*"|\w+)/g),
+].map((match) => {
+  const argument = match[2]
+  const select = argument.startsWith('"')
+    ? (JSON.parse(argument) as string)
+    : constants.get(argument)
+  assert.ok(
+    select !== undefined,
+    `.select(${argument}) does not resolve to a literal column list, so its columns are unchecked`,
+  )
+  return { relation: match[1], select }
+})
+// Both readiness reads — one spool, one project — must be found. The field weld and field
+// support reads that used to live here were copies of loadWeldSummaries and loadSupports and
+// are covered by construction-select-columns.test.ts instead.
+assert.ok(
+  selects.length >= 2,
+  `expected both erection readiness selects, found ${selects.length}`,
 )
-assert.ok(selects.length >= 3, "expected erection repository to contain several selects")
+// The readiness projection is the one this module exists for: if its column list stops being
+// resolvable, the guard silently checks nothing.
+assert.ok(
+  selects.some(
+    ({ relation, select }) =>
+      relation === "spool_erection_readiness" && select.includes("material_line_total"),
+  ),
+  "the erection readiness select must be checked, not skipped",
+)
 for (const { relation, select } of selects) {
   const columns = relations.get(relation)
   assert.ok(columns, `${relation} is selected from but absent from generated types`)

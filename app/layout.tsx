@@ -3,14 +3,12 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import {
-  Geist_Mono,
   Inter as V0_Font_Inter,
   Geist_Mono as V0_Font_Geist_Mono,
   Source_Serif_4 as V0_Font_Source_Serif_4,
 } from "next/font/google";
 
 import { AppShell } from "@/components/pipeqc/app-shell";
-import { AppModeProvider } from "@/contexts/app-mode-context";
 import { SupabaseAuthProvider } from "@/contexts/supabase-auth-context";
 
 // Initialize fonts
@@ -59,11 +57,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="bg-background">
       <body className="font-sans antialiased">
-        <AppModeProvider>
-          <SupabaseAuthProvider>
-            <AppShell>{children}</AppShell>
-          </SupabaseAuthProvider>
-        </AppModeProvider>
+        <SupabaseAuthProvider>
+          <AppShell>{children}</AppShell>
+        </SupabaseAuthProvider>
         {process.env.NODE_ENV === "production" && <Analytics />}
       </body>
     </html>

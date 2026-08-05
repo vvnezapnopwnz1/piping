@@ -1,21 +1,11 @@
-import { Suspense } from "react";
-import { FlangeBrowse } from "@/components/flange/flange-browse";
+import { NotOnSupabaseYet } from "@/components/pipeqc/not-on-supabase-yet"
 
 export default function FlangePage() {
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          Flange Management
-        </h1>
-        <p className="text-muted-foreground">
-          Browse bolted flange joints, track torquing progress, and record jointing
-          execution per Easy Piping §19.2.1.
-        </p>
-      </div>
-      <Suspense fallback={<div className="text-sm text-muted-foreground">Loading flange browser…</div>}>
-        <FlangeBrowse />
-      </Suspense>
-    </div>
-  );
+    <NotOnSupabaseYet
+      title="Flange Management"
+      track="Track 09"
+      summary="Flange joints, bolt-up progress and torque records, feeding test-pack readiness. The flange tables already exist from the engineering import; the module over them is not built."
+    />
+  )
 }

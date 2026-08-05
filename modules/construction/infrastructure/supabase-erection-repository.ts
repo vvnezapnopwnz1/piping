@@ -19,9 +19,14 @@ export interface ErectionReadiness {
   spoolNumber: string
   revisionNumber: string
   revisionStatus: string
-  fieldLineTotal: number
-  fieldLineChecked: number
-  fieldMaterialCheckedOn: string | null
+  /**
+   * Material evidence is phase-agnostic by design — one `material_check_records` row per spool
+   * revision — so these three say `material`, not `field`. See the view's own comment and
+   * T07-D2. The `field*` counters below are phase-filtered and do mean field-only work.
+   */
+  materialLineTotal: number
+  materialLineChecked: number
+  materialCheckedOn: string | null
   fieldWeldTotal: number
   fieldWeldComplete: number
   lastFieldWeldOn: string | null
@@ -48,9 +53,9 @@ export function toErectionReadiness(row: Row): ErectionReadiness {
     spoolNumber: row.spool_number,
     revisionNumber: row.revision_number,
     revisionStatus: row.revision_status ?? "accepted",
-    fieldLineTotal: numberOrZero(row.field_line_total),
-    fieldLineChecked: numberOrZero(row.field_line_checked),
-    fieldMaterialCheckedOn: row.field_material_checked_on ?? null,
+    materialLineTotal: numberOrZero(row.material_line_total),
+    materialLineChecked: numberOrZero(row.material_line_checked),
+    materialCheckedOn: row.material_checked_on ?? null,
     fieldWeldTotal: numberOrZero(row.field_weld_total),
     fieldWeldComplete: numberOrZero(row.field_weld_complete),
     lastFieldWeldOn: row.last_field_weld_on ?? null,
@@ -68,15 +73,21 @@ export function toErectionReadiness(row: Row): ErectionReadiness {
   }
 }
 
+/**
+ * One list, used by both reads. `@supabase/supabase-js` does not typecheck `.select()` strings
+ * (see `construction-select-columns.test.ts`), so a second copy of this list is a second place
+ * for a column name to rot unnoticed.
+ */
+const READINESS_COLUMNS =
+  "spool_revision_id, project_id, iso_number, spool_number, revision_number, revision_status, material_line_total, material_line_checked, material_checked_on, field_weld_total, field_weld_complete, last_field_weld_on, field_support_total, field_support_recorded, last_field_support_on, to_site_on, erected_on, welded_bolted_on, supported_on, nde_pending, pwht_pending, is_rft, rft_on"
+
 export async function loadErectionReadiness(
   client: SupabaseClient<Database>,
   spoolRevisionId: string,
 ): Promise<ErectionReadiness> {
   const { data, error } = await client
     .from("spool_erection_readiness")
-    .select(
-      "spool_revision_id, project_id, iso_number, spool_number, revision_number, revision_status, field_line_total, field_line_checked, field_material_checked_on, field_weld_total, field_weld_complete, last_field_weld_on, field_support_total, field_support_recorded, last_field_support_on, to_site_on, erected_on, welded_bolted_on, supported_on, nde_pending, pwht_pending, is_rft, rft_on",
-    )
+    .select(READINESS_COLUMNS)
     .eq("spool_revision_id", spoolRevisionId)
     .single()
   fail(error)
@@ -90,9 +101,7 @@ export async function loadErectionReadinessForProject(
 ): Promise<ErectionReadiness[]> {
   const { data, error } = await client
     .from("spool_erection_readiness")
-    .select(
-      "spool_revision_id, project_id, iso_number, spool_number, revision_number, revision_status, field_line_total, field_line_checked, field_material_checked_on, field_weld_total, field_weld_complete, last_field_weld_on, field_support_total, field_support_recorded, last_field_support_on, to_site_on, erected_on, welded_bolted_on, supported_on, nde_pending, pwht_pending, is_rft, rft_on",
-    )
+    .select(READINESS_COLUMNS)
     .eq("project_id", projectId)
     .order("iso_number")
     .order("spool_number")
@@ -164,29 +173,8 @@ export async function recordFieldWeldProgress(
   fail(error)
 }
 
-export async function loadFieldWelds(
-  client: SupabaseClient<Database>,
-  spoolRevisionId: string,
-): Promise<Row[]> {
-  const { data, error } = await client
-    .from("weld_progress_summary")
-    .select("weld_joint_revision_id, spool_revision_id, weld_number, spool_number, weld_location, weld_on, obligation_pending")
-    .eq("spool_revision_id", spoolRevisionId)
-    .eq("weld_location", "field")
-    .order("weld_number")
-  fail(error)
-  return (data ?? []) as Row[]
-}
-
-export async function loadFieldSupports(
-  client: SupabaseClient<Database>,
-  spoolRevisionId: string,
-): Promise<Row[]> {
-  const { data, error } = await client
-    .from("support_revisions")
-    .select("id, support_type, quantity, supports(support_number), support_progress_records(installed_on)")
-    .eq("spool_revision_id", spoolRevisionId)
-    .eq("is_removed", false)
-  fail(error)
-  return (data ?? []) as Row[]
-}
+// Field joints and field supports have no erection-specific read. `loadFieldWelds` and
+// `loadFieldSupports` used to live here as copies of `loadWeldSummaries` and `loadSupports`
+// from the construction repository; the screens now call those directly.
+// `loadWeldSummaries(client, spoolRevisionId, "field")` also returns the diameter, thickness,
+// WPS and lock state that the weld form needs and the removed copy did not select.

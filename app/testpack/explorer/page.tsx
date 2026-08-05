@@ -1,17 +1,11 @@
-import { TestpackExplorer } from "@/components/testpack/testpack-explorer"
+import { NotOnSupabaseYet } from "@/components/pipeqc/not-on-supabase-yet"
 
-export default function TestpackExplorerPage() {
+export default function TestPackExplorerPage() {
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          Testpack Explorer
-        </h1>
-        <p className="text-muted-foreground">
-          Drill down through systems, subsystems, test packs, and ISOs to track testing readiness.
-        </p>
-      </div>
-      <TestpackExplorer />
-    </div>
+    <NotOnSupabaseYet
+      title="Test Pack Explorer"
+      track="Track 10"
+      summary="Browse test packs with their contents, readiness shortfalls and pressure-test history."
+    />
   )
 }

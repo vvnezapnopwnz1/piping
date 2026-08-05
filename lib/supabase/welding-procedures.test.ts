@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { createClient } from '@supabase/supabase-js';
 import {
   loadWeldingProcedures,
   createWeldingProcedure,

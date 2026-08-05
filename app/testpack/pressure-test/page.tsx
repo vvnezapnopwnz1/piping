@@ -1,10 +1,11 @@
-import { PressureTestHomepage } from "@/components/testpack/pressure-test-homepage";
-
-export const metadata = {
-  title: "Pressure Test Management | PipeQC",
-  description: "Track readiness across all testing activities",
-};
+import { NotOnSupabaseYet } from "@/components/pipeqc/not-on-supabase-yet"
 
 export default function PressureTestPage() {
-  return <PressureTestHomepage />;
+  return (
+    <NotOnSupabaseYet
+      title="Pressure Test"
+      track="Track 10"
+      summary="The pressure-test workflow over a test pack: line check, blinding, testing, reinstatement and item clearance."
+    />
+  )
 }

@@ -207,6 +207,12 @@ export interface SupportRow {
   supportType: string | null
   quantity: number
   installedOn: string | null
+  /**
+   * Which phase recorded the installation. `support_progress_records` upserts on
+   * `support_revision_id`, so a support carries one record: a support installed in the shop
+   * shows here as `fabrication` and is counted out of `field_support_recorded`.
+   */
+  installedPhase: string | null
 }
 
 export interface WeldFormReferentials {
@@ -312,15 +318,22 @@ export async function loadMaterialCheckItems(
   }))
 }
 
+/**
+ * `weldLocation` narrows the joints to one phase's work — `field` for the erection screens,
+ * omitted for fabrication, which shows every joint on the spool and badges the ones that are
+ * not shop work.
+ */
 export async function loadWeldSummaries(
   client: SupabaseClient<Database>,
   spoolRevisionId: string,
+  weldLocation?: string,
 ): Promise<WeldSummary[]> {
-  const { data, error } = await client
+  let query = client
     .from("weld_progress_summary")
     .select("*")
     .eq("spool_revision_id", spoolRevisionId)
-    .order("weld_number")
+  if (weldLocation) query = query.eq("weld_location", weldLocation)
+  const { data, error } = await query.order("weld_number")
   fail(error)
   return (data ?? []).map(toWeldSummary)
 }
@@ -422,7 +435,9 @@ export async function loadSupports(
 ): Promise<SupportRow[]> {
   const { data, error } = await client
     .from("support_revisions")
-    .select("id, support_type, quantity, supports(support_number), support_progress_records(installed_on)")
+    .select(
+      "id, support_type, quantity, supports(support_number), support_progress_records(installed_on, phase)",
+    )
     .eq("spool_revision_id", spoolRevisionId)
     .eq("is_removed", false)
   fail(error)
@@ -432,6 +447,7 @@ export async function loadSupports(
     supportType: row.support_type ?? null,
     quantity: row.quantity ?? 1,
     installedOn: row.support_progress_records?.[0]?.installed_on ?? null,
+    installedPhase: row.support_progress_records?.[0]?.phase ?? null,
   }))
 }
 

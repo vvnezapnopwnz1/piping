@@ -109,9 +109,9 @@ select is(
   2, 'erection events use the shared construction ledger'
 );
 select is(
-  (select field_line_total from public.spool_erection_readiness
+  (select material_line_total from public.spool_erection_readiness
    where spool_revision_id = '36000000-0000-0000-0000-000000000721'),
-  1::int, 'erection readiness counts field material lines'
+  1::int, 'erection readiness counts the spool material lines'
 );
 select is(
   (select is_rft from public.spool_erection_readiness

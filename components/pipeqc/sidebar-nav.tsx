@@ -25,8 +25,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useRole } from "@/contexts/role-context";
-import { useAppMode } from "@/contexts/app-mode-context";
 import { getVisibleNavigation, type NavItem } from "@/config/navigation";
 import type { Capability } from "@/modules/access/domain/capability";
 import { useAccess } from "@/modules/access/ui/access-context";
@@ -209,20 +207,6 @@ function NavTreeSubItem({
   );
 }
 
-// NavItemLink is now replaced by NavTreeItem — keeping for backward compatibility if needed
-function NavItemLink({ item, isActive }: { item: NavItem; isActive: boolean }) {
-  return (
-    <SidebarMenuItem>
-      <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
-        <Link href={item.href}>
-          <item.icon className="size-4" />
-          <span>{item.title}</span>
-        </Link>
-      </SidebarMenuButton>
-    </SidebarMenuItem>
-  );
-}
-
 function NavigationSidebar({
   can,
 }: {
@@ -274,47 +258,7 @@ function NavigationSidebar({
   );
 }
 
-function SupabaseSidebarNav() {
+export function SidebarNav() {
   const { can } = useAccess()
   return <NavigationSidebar can={can} />
-}
-
-function DemoSidebarNav() {
-  const { currentRole } = useRole()
-  const can = React.useCallback(
-    (capability: Capability) => {
-      if (currentRole === "system_admin" || currentRole === "project_manager") {
-        return true
-      }
-
-      const roleCapabilities: Record<typeof currentRole, readonly Capability[]> = {
-        qc_engineer: [
-          "fabrication.view",
-          "erection.view",
-          "reports.view",
-          "testpack.view",
-          "flange.view",
-          "settings.view",
-        ],
-        nde_inspector: ["nde.view", "testpack.view", "flange.view", "settings.view"],
-        spooling_team: ["spooling.view", "settings.view"],
-        subcontractor: [
-          "fabrication.view",
-          "erection.view",
-          "tracking.view",
-          "settings.view",
-        ],
-      }
-
-      return roleCapabilities[currentRole].includes(capability)
-    },
-    [currentRole],
-  )
-
-  return <NavigationSidebar can={can} />
-}
-
-export function SidebarNav() {
-  const appMode = useAppMode()
-  return appMode === "demo" ? <DemoSidebarNav /> : <SupabaseSidebarNav />
 }

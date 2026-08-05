@@ -57,6 +57,7 @@ assert.deepEqual(
     points,
     welders,
     isLocked: false,
+    phase: "fabrication",
   }),
   { allowed: true, reason: null },
 )
@@ -69,6 +70,7 @@ const blocked = describeWeldProgressGate({
   points: [{ ...points[0], completionPercent: 30 }, points[1]],
   welders,
   isLocked: false,
+  phase: "fabrication",
 })
 assert.equal(blocked.allowed, false)
 assert.match(blocked.reason ?? "", /Root and Cap/)

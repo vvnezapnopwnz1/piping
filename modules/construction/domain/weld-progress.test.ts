@@ -116,10 +116,14 @@ assert.deepEqual(
     points,
     welders: [welderOne, welderTwo],
     isLocked: false,
+    phase: "fabrication",
   }),
   [],
 )
-// Dossier 16.5: shop joints only.
+// Dossier 16.5: a phase records its own joints only. A field joint is refused in fabrication
+// and accepted in erection — the same parity `071_field_weld_parity.test.sql` pins in the
+// database. Before Track 07 this rule was hardcoded to shop, which made the field screen
+// impossible to build against the domain.
 assert.equal(
   validateWeldProgress({
     joint: { ...joint, weldLocation: "field" },
@@ -129,8 +133,50 @@ assert.equal(
     points,
     welders: [welderOne, welderTwo],
     isLocked: false,
+    phase: "fabrication",
   }).length,
   1,
+)
+assert.deepEqual(
+  validateWeldProgress({
+    joint: { ...joint, weldLocation: "field" },
+    procedure: wps,
+    subcontractorId: "sub-1",
+    weldOn: "2026-08-05",
+    points,
+    welders: [welderOne, welderTwo],
+    isLocked: false,
+    phase: "erection",
+  }),
+  [],
+)
+// The mirror case: a shop joint on the erection screen.
+assert.deepEqual(
+  validateWeldProgress({
+    joint,
+    procedure: wps,
+    subcontractorId: "sub-1",
+    weldOn: "2026-08-05",
+    points,
+    welders: [welderOne, welderTwo],
+    isLocked: false,
+    phase: "erection",
+  }).map((issue) => issue.message),
+  ["This is a shop weld and belongs to the fabrication module."],
+)
+// Assembly is an unenabled extension point, so an assembly joint belongs to no phase.
+assert.deepEqual(
+  validateWeldProgress({
+    joint: { ...joint, weldLocation: "assembly" },
+    procedure: wps,
+    subcontractorId: "sub-1",
+    weldOn: "2026-08-05",
+    points,
+    welders: [welderOne, welderTwo],
+    isLocked: false,
+    phase: "erection",
+  }).map((issue) => issue.message),
+  ["Assembly welds cannot be recorded: assembly is not enabled on this project."],
 )
 // A point the definition does not have.
 assert.equal(
@@ -142,6 +188,7 @@ assert.equal(
     points,
     welders: [welderOne, welderTwo],
     isLocked: false,
+    phase: "fabrication",
   }).length,
   1,
 )
@@ -155,6 +202,7 @@ assert.equal(
     points,
     welders: [welderOne, welderTwo],
     isLocked: true,
+    phase: "fabrication",
   }).length,
   1,
 )

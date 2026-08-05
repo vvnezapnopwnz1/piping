@@ -7,7 +7,7 @@ const base = {
   supportedOn: "2026-08-13T10:00:00Z",
   ndePending: 0,
   pwhtPending: 0,
-  fieldMaterialCheckedOn: "2026-08-11T10:00:00Z",
+  materialCheckedOn: "2026-08-11T10:00:00Z",
   lastFieldWeldOn: "2026-08-12T12:00:00Z",
   lastFieldSupportOn: "2026-08-13T11:00:00Z",
 }

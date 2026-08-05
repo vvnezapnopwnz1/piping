@@ -107,6 +107,7 @@ export function WeldProgressScreen({ projectId }: { projectId: string }) {
           points,
           welders: referentials.welders,
           isLocked: selected.isLocked,
+          phase: "fabrication",
         })
       : { allowed: false, reason: "Select a joint, a subcontractor and a WPS." }
 

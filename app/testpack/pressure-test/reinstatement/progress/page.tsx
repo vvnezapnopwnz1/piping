@@ -1,14 +1,11 @@
-"use client";
+import { NotOnSupabaseYet } from "@/components/pipeqc/not-on-supabase-yet"
 
-import { Suspense } from "react";
-import { ProgressView } from "@/components/testpack/reinstatement/progress-view";
-
-export default function Page() {
+export default function ReinstatementProgressPage() {
   return (
-    <div className="h-[calc(100vh-64px)] p-4">
-      <Suspense fallback={<div className="p-8 text-sm text-slate-500">Loading…</div>}>
-        <ProgressView />
-      </Suspense>
-    </div>
-  );
+    <NotOnSupabaseYet
+      title="Reinstatement · Progress"
+      track="Track 10"
+      summary="Record each item as reinstated and close the request."
+    />
+  )
 }

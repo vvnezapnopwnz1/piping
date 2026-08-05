@@ -9,6 +9,10 @@ export { isLocalhost }
 export const TRACK07_ISO = "ISO-T7-001"
 export const TRACK07_ROOT_WELDER = "W-T7-FIELD-ROOT"
 export const TRACK07_CAP_WELDER = "W-T7-FIELD-CAP"
+/** Seeded to To Site with its material checked; the spool the walkthrough drives to RFT. */
+export const TRACK07_WALK_SPOOL = "SP-T7-001-A"
+/** Deliberately left with no erection progress, so the To Site preconditions can be observed. */
+export const TRACK07_GATE_SPOOL = "SP-T7-002-A"
 
 export interface Track07FixturePlan {
   welders: { project_id: string; subcontractor_id: string; welder_code: string; full_name: string; expires_on: string }[]
@@ -95,17 +99,29 @@ async function run(): Promise<void> {
     const definition = await importSpoolgenDefinition(imported, project.id, TRACK07_ISO, {
       weld: readFileSync(join(__dirname, "weld-t7.txt"), "utf8"),
       trace: readFileSync(join(__dirname, "trace-t7.txt"), "utf8"),
+      // Supports arrive through the import so the Supported screen has rows to record. Without
+      // them that screen can only be walked as "this spool revision has no supports".
+      supp: readFileSync(join(__dirname, "supp-t7.txt"), "utf8"),
     }, "Track 07 field erection fixture")
     const { data: iso, error: isoError } = await imported.from("isometrics").select("isometric_revisions(id, status)").eq("project_id", project.id).eq("iso_number", TRACK07_ISO).single()
     if (isoError || !iso) throw new Error(`The ${TRACK07_ISO} fixture was not imported.`)
     const revision = (iso as any).isometric_revisions.find((row: { id: string; status: string }) => row.status === "accepted")
-    const { data: spools } = await imported.from("spool_revisions").select("id").eq("isometric_revision_id", revision.id)
-    for (const spool of spools ?? []) {
+    const { data: spools } = await imported.from("spool_revisions").select("id, spools!inner(spool_number)").eq("isometric_revision_id", revision.id)
+    // Only the walk spool is advanced. SP-T7-002-A is left at "not started" on purpose: it is
+    // the only way the browser walk can prove the To Site precondition (PQC54) refuses a field
+    // weld and a field material check, and that the To Site screen records a first date.
+    const seedable = (spools ?? []).filter(
+      (spool) => (spool as any).spools?.spool_number === TRACK07_WALK_SPOOL,
+    )
+    if (seedable.length === 0) throw new Error(`The ${TRACK07_WALK_SPOOL} fixture spool was not imported.`)
+    for (const spool of seedable) {
       await imported.rpc("record_erection_progress", { target_spool_revision_id: spool.id, target_stage: "to_site", target_occurred_on: new Date().toISOString(), target_idempotency_key: `track07-to-site-${spool.id}` })
       const { data: lines } = await imported.from("spool_revision_materials").select("ident_code, quantity, trace_number").eq("spool_revision_id", spool.id)
       await imported.rpc("record_field_material_check", { target_spool_revision_id: spool.id, target_checked_on: new Date().toISOString(), target_items: (lines ?? []).map((line) => ({ ident_code: line.ident_code, trace_number: line.trace_number, quantity: line.quantity })), target_idempotency_key: `track07-material-${spool.id}` })
     }
-    console.log(definition.skipped ? `${TRACK07_ISO} already existed; fixture reconciled.` : `${TRACK07_ISO} imported; To Site and field material seeded, field weld left open for the browser walk.`)
+    console.log(definition.skipped
+      ? `${TRACK07_ISO} already existed; fixture reconciled.`
+      : `${TRACK07_ISO} imported. ${TRACK07_WALK_SPOOL}: To Site and field material seeded, field weld/supports left open. ${TRACK07_GATE_SPOOL}: nothing recorded, for the To Site precondition cases.`)
   } finally { await imported.auth.signOut() }
 }
 

@@ -1,18 +1,11 @@
-import { Suspense } from "react";
-import { PreparationView } from "@/components/testpack/blinding/preparation-view";
+import { NotOnSupabaseYet } from "@/components/pipeqc/not-on-supabase-yet"
 
 export default function BlindingPreparationPage() {
   return (
-    <div className="h-full p-6">
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-center h-full text-sm text-slate-500">
-            Loading…
-          </div>
-        }
-      >
-        <PreparationView />
-      </Suspense>
-    </div>
-  );
+    <NotOnSupabaseYet
+      title="Blinding · Preparation"
+      track="Track 10"
+      summary="Raise a blinding request and define the boundary to be blinded."
+    />
+  )
 }

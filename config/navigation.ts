@@ -43,6 +43,12 @@ export interface NavItem {
   href: string
   icon: LucideIcon
   children?: NavItem[]
+  /**
+   * The track that will build this module. Set means the route renders `NotOnSupabaseYet`, so
+   * the sidebar leaves it out: an entry that leads only to "not built" is a dead end. The route
+   * itself stays reachable by URL, and `app/page.tsx` lists what is planned.
+   */
+  planned?: string
 }
 
 export interface NavSection {
@@ -85,11 +91,6 @@ export const navigationConfig: NavSection[] = [
             icon: KeyRound,
           },
           {
-            title: 'Import Settings',
-            href: '/admin/import-settings',
-            icon: Inbox,
-          },
-          {
             title: 'Imports',
             href: '/admin/imports',
             icon: Inbox,
@@ -117,16 +118,19 @@ export const navigationConfig: NavSection[] = [
           {
             title: 'Engineering Transmittals',
             href: '/spooling/engineering-transmittals',
+            planned: 'Track 04',
             icon: Inbox,
           },
           {
             title: 'ISO Workflow',
             href: '/spooling/iso-workflow',
+            planned: 'Track 04',
             icon: GitBranch,
           },
           {
             title: 'Spooling Transmittal',
             href: '/spooling/spooling-transmittal',
+            planned: 'Track 04',
             icon: Send,
           },
         ],
@@ -251,6 +255,7 @@ export const navigationConfig: NavSection[] = [
       {
         title: 'Tracking',
         href: '/tracking',
+        planned: 'Track 08',
         icon: MapPin,
         children: [
           {
@@ -295,6 +300,7 @@ export const navigationConfig: NavSection[] = [
       {
         title: 'Reports',
         href: '/reports',
+        planned: 'Track 11',
         icon: FileText,
       },
     ],
@@ -304,6 +310,7 @@ export const navigationConfig: NavSection[] = [
       {
         title: 'Testpack',
         href: '/testpack',
+        planned: 'Track 10',
         icon: FlaskConical, // или TestTube2
         children: [
           {
@@ -326,6 +333,7 @@ export const navigationConfig: NavSection[] = [
       {
         title: 'Flange Management',
         href: '/flange',
+        planned: 'Track 09',
         icon: CircleDot,
       },
     ],
@@ -351,6 +359,9 @@ function getVisibleItem(
   item: NavItem,
   can: (capability: Capability) => boolean,
 ): NavItem | null {
+  // A route whose module is not built has nothing to navigate to.
+  if (item.planned) return null
+
   const children = item.children
     ?.map((child) => getVisibleItem(child, can))
     .filter((child): child is NavItem => child !== null)

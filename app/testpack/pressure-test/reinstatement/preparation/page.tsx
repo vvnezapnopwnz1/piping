@@ -1,18 +1,11 @@
-import { Suspense } from "react";
-import { PreparationView } from "@/components/testpack/reinstatement/preparation-view";
+import { NotOnSupabaseYet } from "@/components/pipeqc/not-on-supabase-yet"
 
-export default function Page() {
+export default function ReinstatementPreparationPage() {
   return (
-    <div className="h-[calc(100vh-64px)] p-4">
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-center h-full text-sm text-slate-500">
-            Loading…
-          </div>
-        }
-      >
-        <PreparationView />
-      </Suspense>
-    </div>
-  );
+    <NotOnSupabaseYet
+      title="Reinstatement · Preparation"
+      track="Track 10"
+      summary="Raise a reinstatement request over the items a pressure test disturbed."
+    />
+  )
 }

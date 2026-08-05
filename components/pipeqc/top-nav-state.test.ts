@@ -17,68 +17,51 @@ const projects = [
   },
 ]
 
-assert.deepEqual(
-  getTopNavDisplay("demo", {
-    access: {
-      projectId: "project-a",
-      activityCode: "PQ-010",
-      title: "Alpha",
-      accessLabels: ["Project Reader", "Project Manager"],
-    },
-    projectAccesses: projects,
-    email: "person@example.com",
-  }),
-  { kind: "demo" }
-)
+const alpha = projects[0]
 
+// More than one project access means the header offers a switcher.
 assert.deepEqual(
-  getTopNavDisplay("supabase", {
-    access: {
-      projectId: "project-a",
-      activityCode: "PQ-010",
-      title: "Alpha",
-      accessLabels: ["Project Reader", "Project Manager"],
-    },
+  getTopNavDisplay({
+    access: alpha,
     projectAccesses: projects,
     email: "person@example.com",
   }),
   {
-    kind: "supabase",
-    project: {
-      projectId: "project-a",
-      activityCode: "PQ-010",
-      title: "Alpha",
-      accessLabels: ["Project Reader", "Project Manager"],
-    },
+    project: alpha,
     projects,
     canSwitchProject: true,
     email: "person@example.com",
     accessLabels: ["Project Reader", "Project Manager"],
-  }
+  },
 )
 
+// A single access shows the project without a switcher.
 assert.deepEqual(
-  getTopNavDisplay("supabase", {
-    access: {
-      projectId: "project-a",
-      activityCode: "PQ-010",
-      title: "Alpha",
-      accessLabels: ["Project Reader", "Project Manager"],
-    },
-    projectAccesses: [projects[0]],
+  getTopNavDisplay({
+    access: alpha,
+    projectAccesses: [alpha],
     email: "person@example.com",
   }),
   {
-    kind: "supabase",
-    project: {
-      projectId: "project-a",
-      activityCode: "PQ-010",
-      title: "Alpha",
-      accessLabels: ["Project Reader", "Project Manager"],
-    },
-    projects: [projects[0]],
+    project: alpha,
+    projects: [alpha],
     canSwitchProject: false,
     email: "person@example.com",
     accessLabels: ["Project Reader", "Project Manager"],
-  }
+  },
 )
+
+// Before the access summary arrives the header must still render something honest rather than
+// an empty project name.
+assert.deepEqual(getTopNavDisplay({ access: null, projectAccesses: [], email: undefined }), {
+  project: {
+    projectId: "loading",
+    activityCode: "Project",
+    title: "Loading project…",
+    accessLabels: [],
+  },
+  projects: [],
+  canSwitchProject: false,
+  email: "Authenticated user",
+  accessLabels: [],
+})

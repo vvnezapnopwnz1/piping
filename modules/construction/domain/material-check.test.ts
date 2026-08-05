@@ -4,7 +4,6 @@ import {
   normalizeTrace,
   reconcileMaterialCheck,
   type BillLine,
-  type TraceEntry,
 } from "./material-check"
 
 const lines: BillLine[] = [

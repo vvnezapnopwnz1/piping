@@ -1,16 +1,13 @@
-"use client";
+"use client"
 
-import { Suspense } from "react";
-import { SupportedView } from "@/components/erection/supported-view";
-import { useAppMode } from "@/contexts/app-mode-context"
-import { ErectionSupabaseScreen } from "@/modules/construction/ui/erection/erection-supabase-screen"
+import { FieldSupportProgressScreen } from "@/modules/construction/ui/erection/field-support-progress-screen"
 
 export default function SupportedPage() {
-  const mode = useAppMode()
-  if (mode !== "demo") return <ErectionSupabaseScreen title="Supported" description="Record the field support milestone after field weld progress." action="support" />
   return (
-    <Suspense fallback={<div className="p-6 text-sm text-slate-500">Loading…</div>}>
-      <SupportedView />
-    </Suspense>
-  );
+    <FieldSupportProgressScreen
+      title="Supported"
+      description="Record each support as installed, then the Supported milestone that Ready For Test depends on."
+      stage="supported"
+    />
+  )
 }

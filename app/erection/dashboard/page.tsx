@@ -1,11 +1,12 @@
 "use client"
 
-import { ErectionDashboard } from "@/components/erection-dashboard"
-import { useAppMode } from "@/contexts/app-mode-context"
-import { ErectionSupabaseScreen } from "@/modules/construction/ui/erection/erection-supabase-screen"
+import { ErectionReadinessScreen } from "@/modules/construction/ui/erection/erection-readiness-screen"
 
-export default function DashboardPage() {
-  const mode = useAppMode()
-  if (mode === "demo") return <ErectionDashboard />
-  return <ErectionSupabaseScreen title="Erection Dashboard" description="Live field-spool progress from the Supabase construction ledger." action="gate" />
+export default function ErectionDashboardPage() {
+  return (
+    <ErectionReadinessScreen
+      title="Erection Dashboard"
+      description="Live field-spool progress from the Supabase construction ledger."
+    />
+  )
 }

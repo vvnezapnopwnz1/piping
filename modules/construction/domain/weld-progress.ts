@@ -1,3 +1,6 @@
+import type { ConstructionPhase } from "./construction-phase"
+import { constructionPhaseForWeldLocation } from "./phase-policy"
+
 export const WELD_POINT_TYPES = ["root", "hot", "fill", "cap"] as const
 export type WeldPointType = (typeof WELD_POINT_TYPES)[number]
 
@@ -50,6 +53,12 @@ export interface WeldProgressInput {
   points: readonly PointAssignment[]
   welders: readonly WelderQualification[]
   isLocked: boolean
+  /**
+   * Which phase is recording. Required rather than defaulted: `record_weld_progress` refuses a
+   * joint whose location does not match the phase, and a default here would let one screen's
+   * joints pass another screen's gate.
+   */
+  phase: ConstructionPhase
 }
 
 const sum = (points: readonly PointAssignment[], types: readonly WeldPointType[]): number =>
@@ -208,11 +217,20 @@ export function validateWeldProgress(input: WeldProgressInput): ValidationIssue[
     })
   }
 
-  // Dossier 16.5: Shop Weld Progress covers shop joints only.
-  if (input.joint.weldLocation !== "shop") {
+  // Dossier 16.5: a phase records its own joints only — shop work in fabrication, field work
+  // in erection. This mirrors `record_weld_progress`, which raises PQC51 when the joint's
+  // location does not match the phase, and PQC50 for an assembly joint on a project where
+  // assembly is not enabled (`constructionPhaseForWeldLocation` returns null for it).
+  const jointPhase = constructionPhaseForWeldLocation(input.joint.weldLocation)
+  if (jointPhase !== input.phase) {
     issues.push({
       field: "joint",
-      message: `This is a ${input.joint.weldLocation} weld and belongs to the assembly or erection module.`,
+      message:
+        jointPhase !== null
+          ? `This is a ${input.joint.weldLocation} weld and belongs to the ${jointPhase} module.`
+          : input.joint.weldLocation === "assembly"
+            ? "Assembly welds cannot be recorded: assembly is not enabled on this project."
+            : `"${input.joint.weldLocation}" is not a weld location this project records.`,
     })
   }
 
