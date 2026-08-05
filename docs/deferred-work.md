@@ -91,9 +91,9 @@ now records that there is no Track 02 bootstrap and where each referential actua
 The historical plans under `docs/superpowers/plans/` still reference the script; they are records
 of what was planned on a date and were left alone.
 
-### T02-D4 — four of Track 09's six referential dependencies cannot be populated
+### T02-D4 — four of Track 09's six referential dependencies cannot be populated (resolved 2026-08-05)
 
-**Reclassified 2026-08-05.** This entry was first written as "create-only screens, low risk until
+**Resolved for the Track 09 create-only scope 2026-08-05.** This entry was first written as "create-only screens, low risk until
 pilot". Checking it against `docs/superpowers/specs/2026-08-05-track-09-flange-management-design.md`
 §3.2 shows that is wrong: four of the six referentials Track 09 reuses have no way to get a row
 into them, so they are a **Track 09 prerequisite**, not later tidiness.
@@ -102,30 +102,27 @@ into them, so they are a **Track 09 prerequisite**, not later tidiness.
 | --- | --- |
 | `project_thickness_flange_rules` | **yes** — dialog added with T02-D2 |
 | `project_teams(team_type='jointer')` | **yes** — the Execution tab offers Jointer |
-| `project_joint_categories` | **no** — `createJointCategory` exists in the repository with zero callers |
-| `project_unit_time_references` | **no** — no create command exists at all |
-| `system_reference_entries(kind='torquing_requirement')` | **no** — `system-referential-screen.tsx` creates material types only; `torquing_requirement`, `film_quantity` and `ut_calculation` are in the enum but have no create path |
-| `system_ut_calculation_rules` | **no** — no create command, no seed migration, and RLS revokes all from `authenticated` |
+| `project_joint_categories` | **yes** — Track 09 create dialog calls the existing repository command |
+| `project_unit_time_references` | **yes** — Track 09 create-only dialog uses canonical `FLANGE_JOINTING` |
+| `system_reference_entries(kind='torquing_requirement')` | **yes** — platform-admin create path and policy |
+| `system_ut_calculation_rules` | **yes** — platform-admin rating-aware create path and policy |
 
-The last one needs a decision rather than a form. It is a *system* referential, and the capability
-catalog withholds `system_referential.manage` from `project_admin` and `site_admin`, so no project
-role can fill it. Track 09 §6 computes UT from it. Either it ships as seeded reference data in a
-migration, or the platform-admin screen grows a create path — that choice belongs in the Track 09
-plan, because §6 is unimplementable until it is made.
+The system referentials remain platform-admin-only; project admins cannot mutate them. Track 09
+now has the create paths and rating-aware RLS required to configure them without SQL.
 
-**Also still missing, and not a Track 09 blocker.** No screen can edit or archive a referential it
+**Still deferred, and not a Track 09 blocker.** No screen can edit or archive a referential it
 created; `updateSubcontractorStatus` exists with no caller, so a subcontractor cannot be
 deactivated. Paint matrix entries, pressure units, line services, location categories and
 locations have no create flow, and for the last three no create command either. Locations matter
 to Track 08, which needs them out of hardcode and into the project referential.
 
-**Covered today by.** The fixture bootstraps, which insert with the service key and therefore
+**Covered today by.** The Track 09 UI create paths, database policies/tests, and fixture bootstrap
+which insert with the service key and therefore
 bypass both the missing UI and the RLS grant. That is exactly why this went unnoticed: every
 walkthrough runs on seeded data.
 
-**Breaks if never done.** Track 09 cannot be walked on a project configured through the UI, and
-its UT calculation cannot be exercised at all. A first wrong referential code entered anywhere
-becomes permanent.
+**Remaining observation.** Edit/archive flows are still intentionally deferred; the browser
+walkthrough must prove the four create paths and the platform/project authorization boundary.
 
 **Trigger.** Decide the `system_ut_calculation_rules` question while writing the Track 09 plan,
 and carry the joint-category and unit/time-reference dialogs in that plan's scope — both are the

@@ -114,6 +114,8 @@ export interface UnitTimeReference {
   status: ReferenceStatus
 }
 
+export const FLANGE_JOINTING_ACTIVITY = "FLANGE_JOINTING"
+
 export function validateProjectTeamInput(input: ProjectTeamInput): ReferenceValidation<ProjectTeamInput> {
   const base = validateReferenceIdentity(input)
   if (!base.ok) return base
@@ -159,8 +161,12 @@ export function validatePressureUnitInput(input: PressureUnitInput): ReferenceVa
 export function validateUnitTimeReferenceInput(input: UnitTimeReferenceInput): ReferenceValidation<UnitTimeReferenceInput> {
   const code = input.activity.trim().toUpperCase()
   if (!code) return { ok: false, errors: { activity: "Activity code is required" } }
-  if (typeof input.projectUt !== "number" || input.projectUt <= 0) {
+  if (typeof input.projectUt !== "number" || !Number.isFinite(input.projectUt) || input.projectUt <= 0) {
     return { ok: false, errors: { projectUt: "Project UT must be a positive number" } }
   }
-  return { ok: true, value: { activity: code, projectUt: input.projectUt, standardReference: input.standardReference.trim() }, errors: {} }
+  const standardReference = input.standardReference.trim()
+  if (!standardReference) {
+    return { ok: false, errors: { standardReference: "Standard reference is required" } }
+  }
+  return { ok: true, value: { activity: code, projectUt: input.projectUt, standardReference }, errors: {} }
 }

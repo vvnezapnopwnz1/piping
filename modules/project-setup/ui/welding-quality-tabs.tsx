@@ -11,7 +11,7 @@
  *   rework code                 PQC42 refuses a rejected NDE result with no defect code
  *   PML record                  a material check cannot be accepted without matching evidence
  *
- * Joint categories stay read-only: nothing in the schema blocks on them (T02-D2).
+ * Joint categories are project-scoped inputs for Track 09 flange progress.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react"
@@ -50,6 +50,7 @@ import {
   createThicknessFlangeRule,
   createPipingMaterialRecord,
   createReworkCode,
+  createJointCategory,
   type LoadedWeldingQualityReferences,
 } from "../infrastructure/supabase-welding-quality-reference-repository"
 import {
@@ -60,6 +61,7 @@ import {
   validateThicknessFlangeRuleInput,
   validatePipingMaterialRecordInput,
   validateReworkCodeInput,
+  validateJointCategoryInput,
   evaluateNdeMatrixCoverage,
 } from "../domain/welding-quality-reference"
 import { ReferenceStatusBadge } from "./reference-status-badge"
@@ -145,6 +147,16 @@ export function WeldingQualityTabs({
   const [pmlTrace, setPmlTrace] = useState("")
   const [pmlErrors, setPmlErrors] = useState<Record<string, string>>({})
   const [isSubmittingPml, setIsSubmittingPml] = useState(false)
+
+  // Add Joint Category Dialog (Track 09 prerequisite)
+  const [isAddJointCategoryOpen, setIsAddJointCategoryOpen] = useState(false)
+  const [jointDefinition, setJointDefinition] = useState("")
+  const [jointTiming, setJointTiming] = useState<"before_pressure_test" | "before_precommissioning" | "after_precommissioning">("before_pressure_test")
+  const [jointCategoryCode, setJointCategoryCode] = useState("")
+  const [jointReason, setJointReason] = useState("")
+  const [jointCoefficient, setJointCoefficient] = useState("")
+  const [jointCategoryErrors, setJointCategoryErrors] = useState<Record<string, string>>({})
+  const [isSubmittingJointCategory, setIsSubmittingJointCategory] = useState(false)
 
   const requestVersionRef = useRef(0)
 
@@ -460,6 +472,39 @@ export function WeldingQualityTabs({
       toast.error(err instanceof Error ? err.message : "Failed to add piping material record")
     } finally {
       setIsSubmittingPml(false)
+    }
+  }
+
+  const handleCreateJointCategory = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const validation = validateJointCategoryInput({
+      jointDefinition,
+      timing: jointTiming,
+      categoryCode: jointCategoryCode,
+      reason: jointReason,
+      coefficient: jointCoefficient.trim() ? Number(jointCoefficient) : null,
+    })
+    if (!validation.ok) {
+      setJointCategoryErrors(validation.errors)
+      return
+    }
+
+    setJointCategoryErrors({})
+    setIsSubmittingJointCategory(true)
+    try {
+      const category = await createJointCategory(getSupabaseBrowserClient(), projectId, validation.value)
+      setData((prev) => prev ? { ...prev, jointCategories: [...prev.jointCategories, category].sort((a, b) => a.categoryCode.localeCompare(b.categoryCode)) } : null)
+      setJointDefinition("")
+      setJointTiming("before_pressure_test")
+      setJointCategoryCode("")
+      setJointReason("")
+      setJointCoefficient("")
+      setIsAddJointCategoryOpen(false)
+      toast.success(`Joint category "${category.categoryCode}" created successfully`)
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to create joint category")
+    } finally {
+      setIsSubmittingJointCategory(false)
     }
   }
 
@@ -993,9 +1038,16 @@ export function WeldingQualityTabs({
       {/* Joint Categories View */}
       {activeTab === "joint-categories" && (
         <Card>
-          <CardHeader>
-            <CardTitle>Joint Categories</CardTitle>
-            <CardDescription>Joint definitions, testing timing, category codes and coefficients.</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <div>
+              <CardTitle>Joint Categories</CardTitle>
+              <CardDescription>Joint definitions, testing timing, category codes and coefficients.</CardDescription>
+            </div>
+            {canManage && (
+              <Button size="sm" onClick={() => setIsAddJointCategoryOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Add Joint Category
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
             <div className="rounded-md border overflow-x-auto">
@@ -1666,6 +1718,55 @@ export function WeldingQualityTabs({
               <Button type="submit" disabled={isSubmittingRework}>
                 Add Defect Code
               </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isAddJointCategoryOpen} onOpenChange={(open) => { if (!open) setIsAddJointCategoryOpen(false) }}>
+        <DialogContent>
+          <form onSubmit={handleCreateJointCategory}>
+            <DialogHeader>
+              <DialogTitle>Add Joint Category</DialogTitle>
+              <DialogDescription>Configure the category and punch coefficient used by flange UT.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-3">
+              <div>
+                <Label htmlFor="joint-definition">Joint definition</Label>
+                <Input id="joint-definition" value={jointDefinition} onChange={(e) => setJointDefinition(e.target.value)} disabled={isSubmittingJointCategory} />
+                {jointCategoryErrors.jointDefinition && <p className="mt-1 text-xs text-destructive">{jointCategoryErrors.jointDefinition}</p>}
+              </div>
+              <div>
+                <Label htmlFor="joint-timing">Timing</Label>
+                <Select value={jointTiming} onValueChange={(value) => setJointTiming(value as typeof jointTiming)}>
+                  <SelectTrigger id="joint-timing"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="before_pressure_test">Before pressure test</SelectItem>
+                    <SelectItem value="before_precommissioning">Before precommissioning</SelectItem>
+                    <SelectItem value="after_precommissioning">After precommissioning</SelectItem>
+                  </SelectContent>
+                </Select>
+                {jointCategoryErrors.timing && <p className="mt-1 text-xs text-destructive">{jointCategoryErrors.timing}</p>}
+              </div>
+              <div>
+                <Label htmlFor="joint-category-code">Category X/Y/Z</Label>
+                <Input id="joint-category-code" placeholder="e.g. X" value={jointCategoryCode} onChange={(e) => setJointCategoryCode(e.target.value)} disabled={isSubmittingJointCategory} />
+                {jointCategoryErrors.categoryCode && <p className="mt-1 text-xs text-destructive">{jointCategoryErrors.categoryCode}</p>}
+              </div>
+              <div>
+                <Label htmlFor="joint-reason">Reason</Label>
+                <Input id="joint-reason" value={jointReason} onChange={(e) => setJointReason(e.target.value)} disabled={isSubmittingJointCategory} />
+                {jointCategoryErrors.reason && <p className="mt-1 text-xs text-destructive">{jointCategoryErrors.reason}</p>}
+              </div>
+              <div>
+                <Label htmlFor="joint-coefficient">Punch coefficient (optional)</Label>
+                <Input id="joint-coefficient" type="number" step="0.001" value={jointCoefficient} onChange={(e) => setJointCoefficient(e.target.value)} disabled={isSubmittingJointCategory} />
+                {jointCategoryErrors.coefficient && <p className="mt-1 text-xs text-destructive">{jointCategoryErrors.coefficient}</p>}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsAddJointCategoryOpen(false)} disabled={isSubmittingJointCategory}>Cancel</Button>
+              <Button type="submit" disabled={isSubmittingJointCategory}>{isSubmittingJointCategory ? "Creating…" : "Create"}</Button>
             </DialogFooter>
           </form>
         </DialogContent>

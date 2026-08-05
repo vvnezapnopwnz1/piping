@@ -12,7 +12,9 @@ import type {
   Location,
   PressureUnit,
   UnitTimeReference,
+  UnitTimeReferenceInput,
 } from "../domain/execution-reference"
+import { validateUnitTimeReferenceInput } from "../domain/execution-reference"
 import { mapSupabaseReferenceError } from "./supabase-reference-errors"
 import { normalizeReferenceCode } from "../domain/reference"
 
@@ -243,6 +245,39 @@ export async function createProjectSubsystem(
     systemId: data.system_id,
     code: data.code,
     description: data.description,
+    status: data.status,
+  }
+}
+
+export async function createUnitTimeReference(
+  client: SupabaseClient<Database>,
+  projectId: string,
+  input: UnitTimeReferenceInput
+): Promise<UnitTimeReference> {
+  const validation = validateUnitTimeReferenceInput(input)
+  if (!validation.ok) {
+    throw new Error(Object.values(validation.errors)[0] ?? "Invalid unit time reference")
+  }
+
+  const { data, error } = await client
+    .from("project_unit_time_references")
+    .insert({
+      project_id: projectId,
+      activity: validation.value.activity,
+      project_ut: validation.value.projectUt,
+      standard_reference: validation.value.standardReference,
+    })
+    .select("id, project_id, activity, project_ut, standard_reference, status")
+    .single()
+
+  if (error) throw new Error(mapSupabaseReferenceError(error))
+
+  return {
+    id: data.id,
+    projectId: data.project_id,
+    activity: data.activity,
+    projectUt: Number(data.project_ut),
+    standardReference: data.standard_reference,
     status: data.status,
   }
 }

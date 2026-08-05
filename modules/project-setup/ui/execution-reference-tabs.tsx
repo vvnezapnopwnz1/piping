@@ -32,11 +32,14 @@ import {
   createProjectTeam,
   createProjectSystem,
   createProjectSubsystem,
+  createUnitTimeReference,
   type LoadedExecutionReferences,
 } from "../infrastructure/supabase-execution-reference-repository"
 import {
+  FLANGE_JOINTING_ACTIVITY,
   validateProjectTeamInput,
   validateSubsystemInput,
+  validateUnitTimeReferenceInput,
   type ProjectTeamType,
 } from "../domain/execution-reference"
 import { validateReferenceIdentity } from "../domain/reference"
@@ -85,6 +88,13 @@ export function ExecutionReferenceTabs({
   const [subSystemId, setSubSystemId] = useState("")
   const [subErrors, setSubErrors] = useState<Record<string, string>>({})
   const [isSubmittingSubsystem, setIsSubmittingSubsystem] = useState(false)
+
+  // Flange unit-time create dialog (the activity is intentionally fixed)
+  const [isAddUnitTimeOpen, setIsAddUnitTimeOpen] = useState(false)
+  const [unitTimeUt, setUnitTimeUt] = useState("")
+  const [unitTimeStandard, setUnitTimeStandard] = useState("")
+  const [unitTimeErrors, setUnitTimeErrors] = useState<Record<string, string>>({})
+  const [isSubmittingUnitTime, setIsSubmittingUnitTime] = useState(false)
 
   // Line Service dialog state
   const [isAddLineServiceOpen, setIsAddLineServiceOpen] = useState(false)
@@ -219,6 +229,34 @@ export function ExecutionReferenceTabs({
       toast.error(err.message || "Failed to create line service")
     } finally {
       setIsSubmittingLineService(false)
+    }
+  }
+
+  const handleAddUnitTimeReference = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const validation = validateUnitTimeReferenceInput({
+      activity: FLANGE_JOINTING_ACTIVITY,
+      projectUt: Number(unitTimeUt),
+      standardReference: unitTimeStandard,
+    })
+    if (!validation.ok) {
+      setUnitTimeErrors(validation.errors)
+      return
+    }
+
+    setUnitTimeErrors({})
+    setIsSubmittingUnitTime(true)
+    try {
+      const unitTime = await createUnitTimeReference(getSupabaseBrowserClient(), projectId, validation.value)
+      setData((prev) => prev ? { ...prev, unitTimeReferences: [...prev.unitTimeReferences, unitTime].sort((a, b) => a.activity.localeCompare(b.activity)) } : null)
+      setUnitTimeUt("")
+      setUnitTimeStandard("")
+      setIsAddUnitTimeOpen(false)
+      toast.success("Flange unit-time reference created")
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create flange unit-time reference")
+    } finally {
+      setIsSubmittingUnitTime(false)
     }
   }
 
@@ -425,9 +463,16 @@ export function ExecutionReferenceTabs({
 
         {/* Unit of Time References */}
         <Card>
-          <CardHeader>
-            <CardTitle>Unit of Time References</CardTitle>
-            <CardDescription>Maximum transit time reference notes.</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <div>
+              <CardTitle>Unit of Time References</CardTitle>
+              <CardDescription>Project UT quantities used by progress formulas.</CardDescription>
+            </div>
+            {canManage && (
+              <Button size="sm" onClick={() => setIsAddUnitTimeOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Add Flange Unit Time
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
             {data.unitTimeReferences.length === 0 ? (
@@ -654,6 +699,37 @@ export function ExecutionReferenceTabs({
             <Button variant="outline" onClick={() => { setIsAddLineServiceOpen(false); setLsCode(""); setLsDesc(""); setLsErrors({}) }}>Cancel</Button>
             <Button onClick={handleAddLineService} disabled={isSubmittingLineService}>{isSubmittingLineService ? "Creating…" : "Create"}</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isAddUnitTimeOpen} onOpenChange={(open) => { if (!open) { setIsAddUnitTimeOpen(false); setUnitTimeUt(""); setUnitTimeStandard(""); setUnitTimeErrors({}) } }}>
+        <DialogContent>
+          <form onSubmit={handleAddUnitTimeReference}>
+            <DialogHeader>
+              <DialogTitle>Add Flange Unit Time</DialogTitle>
+              <DialogDescription>Configure the project quantity for FLANGE_JOINTING.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-3">
+              <div>
+                <Label htmlFor="unit-time-activity">Activity</Label>
+                <Input id="unit-time-activity" value={FLANGE_JOINTING_ACTIVITY} readOnly />
+              </div>
+              <div>
+                <Label htmlFor="unit-time-ut">Project UT</Label>
+                <Input id="unit-time-ut" type="number" step="0.001" value={unitTimeUt} onChange={(e) => setUnitTimeUt(e.target.value)} disabled={isSubmittingUnitTime} />
+                {unitTimeErrors.projectUt && <p className="mt-1 text-xs text-destructive">{unitTimeErrors.projectUt}</p>}
+              </div>
+              <div>
+                <Label htmlFor="unit-time-standard">Standard reference</Label>
+                <Input id="unit-time-standard" value={unitTimeStandard} onChange={(e) => setUnitTimeStandard(e.target.value)} disabled={isSubmittingUnitTime} />
+                {unitTimeErrors.standardReference && <p className="mt-1 text-xs text-destructive">{unitTimeErrors.standardReference}</p>}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsAddUnitTimeOpen(false)} disabled={isSubmittingUnitTime}>Cancel</Button>
+              <Button type="submit" disabled={isSubmittingUnitTime}>{isSubmittingUnitTime ? "Creating…" : "Create"}</Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </Tabs>

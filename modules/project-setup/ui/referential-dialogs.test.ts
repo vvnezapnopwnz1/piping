@@ -81,6 +81,15 @@ for (const path of sources) {
     )
   }
 
+  for (const [label, handler] of [
+    ["joint category", "handleCreateJointCategory"],
+  ] as const) {
+    assert.ok(
+      welding.includes(`onSubmit={${handler}}`),
+      `welding-quality-tabs.tsx defines ${handler} but no form submits it (${label})`,
+    )
+  }
+
   // Assembly is a disabled extension point (PQC50 refuses an assembly weld), and the coverage
   // check on this screen only expects shop and field. Offering it would invite a rule for work
   // the project can never record.
@@ -88,6 +97,32 @@ for (const path of sources) {
     /SelectItem value="assembly"/.test(welding),
     false,
     "the NDE matrix rule dialog must not offer the assembly weld location",
+  )
+}
+
+// Track 09 prerequisites must be creatable from the existing referential screens. These are
+// deliberately create-only controls: edit/archive remains outside the flange slice.
+{
+  const system = withoutComments(
+    readFileSync("modules/project-setup/ui/system-referential-screen.tsx", "utf8"),
+  )
+  for (const [label, handler] of [
+    ["torquing requirement", "handleAddTorquingRequirement"],
+    ["UT rule", "handleAddUtCalculationRule"],
+  ] as const) {
+    assert.ok(system.includes(`onSubmit={${handler}}`), `system referential has no ${label} create form`)
+  }
+
+  const execution = withoutComments(
+    readFileSync("modules/project-setup/ui/execution-reference-tabs.tsx", "utf8"),
+  )
+  assert.ok(
+    execution.includes("onSubmit={handleAddUnitTimeReference}"),
+    "execution references have no flange unit-time create form",
+  )
+  assert.ok(
+    execution.includes("FLANGE_JOINTING"),
+    "flange unit-time form must use the canonical activity",
   )
 }
 

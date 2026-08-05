@@ -34,11 +34,17 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import {
   loadSystemReferentials,
   createMaterialType,
+  createTorquingRequirement,
+  createUtCalculationRule,
   updateMaterialType,
   setMaterialTypeStatus,
   type LoadedSystemReferentials,
 } from "../infrastructure/supabase-system-referential-repository"
-import type { SystemReferenceEntry } from "../domain/system-referential"
+import {
+  validateTorquingRequirementInput,
+  validateUtCalculationRuleInput,
+  type SystemReferenceEntry,
+} from "../domain/system-referential"
 import { ReferenceStatusBadge } from "./reference-status-badge"
 import { validateReferenceIdentity, getReferenceStatusActions } from "../domain/reference"
 
@@ -52,6 +58,19 @@ export function SystemReferentialScreen() {
   const [addDescription, setAddDescription] = useState("")
   const [addErrors, setAddErrors] = useState<{ code?: string; description?: string }>({})
   const [isAdding, setIsAdding] = useState(false)
+
+  // Track 09 prerequisite forms (create-only)
+  const [torquingCode, setTorquingCode] = useState("")
+  const [torquingDescription, setTorquingDescription] = useState("")
+  const [torquingErrors, setTorquingErrors] = useState<Record<string, string>>({})
+  const [isAddingTorquing, setIsAddingTorquing] = useState(false)
+  const [utDiameterFrom, setUtDiameterFrom] = useState("")
+  const [utDiameterTo, setUtDiameterTo] = useState("")
+  const [utFlangeRating, setUtFlangeRating] = useState("")
+  const [utCoefficientDiameter, setUtCoefficientDiameter] = useState("")
+  const [utCoefficientRating, setUtCoefficientRating] = useState("")
+  const [utErrors, setUtErrors] = useState<Record<string, string>>({})
+  const [isAddingUt, setIsAddingUt] = useState(false)
 
   // Edit dialog state
   const [editingEntry, setEditingEntry] = useState<SystemReferenceEntry | null>(null)
@@ -121,6 +140,72 @@ export function SystemReferentialScreen() {
       toast.error(err.message || "Failed to add material type")
     } finally {
       setIsAdding(false)
+    }
+  }
+
+  const handleAddTorquingRequirement = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const validation = validateTorquingRequirementInput({
+      code: torquingCode,
+      description: torquingDescription,
+    })
+    if (!validation.ok) {
+      setTorquingErrors(validation.errors)
+      return
+    }
+
+    setTorquingErrors({})
+    setIsAddingTorquing(true)
+    try {
+      const entry = await createTorquingRequirement(getSupabaseBrowserClient(), validation.value)
+      setData((prev) =>
+        prev
+          ? { ...prev, torquingRequirements: [...prev.torquingRequirements, entry].sort((a, b) => a.code.localeCompare(b.code)) }
+          : null,
+      )
+      setTorquingCode("")
+      setTorquingDescription("")
+      toast.success(`Torquing requirement "${entry.code}" added successfully`)
+    } catch (err: any) {
+      toast.error(err.message || "Failed to add torquing requirement")
+    } finally {
+      setIsAddingTorquing(false)
+    }
+  }
+
+  const handleAddUtCalculationRule = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const validation = validateUtCalculationRuleInput({
+      diameterFromInch: Number(utDiameterFrom),
+      diameterToInch: Number(utDiameterTo),
+      flangeRating: utFlangeRating.trim() || null,
+      coefficientDiameter: Number(utCoefficientDiameter),
+      coefficientRating: Number(utCoefficientRating),
+    })
+    if (!validation.ok) {
+      setUtErrors(validation.errors)
+      return
+    }
+
+    setUtErrors({})
+    setIsAddingUt(true)
+    try {
+      const rule = await createUtCalculationRule(getSupabaseBrowserClient(), validation.value)
+      setData((prev) =>
+        prev
+          ? { ...prev, utCalculationRules: [...prev.utCalculationRules, rule].sort((a, b) => a.diameterFromInch - b.diameterFromInch) }
+          : null,
+      )
+      setUtDiameterFrom("")
+      setUtDiameterTo("")
+      setUtFlangeRating("")
+      setUtCoefficientDiameter("")
+      setUtCoefficientRating("")
+      toast.success("UT calculation rule added successfully")
+    } catch (err: any) {
+      toast.error(err.message || "Failed to add UT calculation rule")
+    } finally {
+      setIsAddingUt(false)
     }
   }
 
@@ -379,16 +464,47 @@ export function SystemReferentialScreen() {
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <div>
             <CardTitle>UT Calculation Rules</CardTitle>
-            <CardDescription>System-wide ultrasonic thickness assessment rules (read-only).</CardDescription>
+            <CardDescription>System-wide ultrasonic thickness assessment rules.</CardDescription>
           </div>
           <Badge variant="outline">System Rule</Badge>
         </CardHeader>
         <CardContent>
+          {canManage && (
+            <form onSubmit={handleAddUtCalculationRule} className="mb-4 grid gap-3 rounded-md border p-3 md:grid-cols-5">
+              <div className="space-y-1.5">
+                <Label htmlFor="ut-diameter-from">Diameter from (in)</Label>
+                <Input id="ut-diameter-from" type="number" step="0.001" value={utDiameterFrom} onChange={(e) => setUtDiameterFrom(e.target.value)} disabled={isAddingUt} />
+                {utErrors.diameterFromInch && <p className="text-xs text-destructive">{utErrors.diameterFromInch}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="ut-diameter-to">Diameter to (in)</Label>
+                <Input id="ut-diameter-to" type="number" step="0.001" value={utDiameterTo} onChange={(e) => setUtDiameterTo(e.target.value)} disabled={isAddingUt} />
+                {utErrors.diameterToInch && <p className="text-xs text-destructive">{utErrors.diameterToInch}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="ut-flange-rating">Flange rating (optional)</Label>
+                <Input id="ut-flange-rating" placeholder="e.g. 150#" value={utFlangeRating} onChange={(e) => setUtFlangeRating(e.target.value)} disabled={isAddingUt} />
+                {utErrors.flangeRating && <p className="text-xs text-destructive">{utErrors.flangeRating}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="ut-coefficient-diameter">Diameter coefficient</Label>
+                <Input id="ut-coefficient-diameter" type="number" step="0.001" value={utCoefficientDiameter} onChange={(e) => setUtCoefficientDiameter(e.target.value)} disabled={isAddingUt} />
+                {utErrors.coefficientDiameter && <p className="text-xs text-destructive">{utErrors.coefficientDiameter}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="ut-coefficient-rating">Rating coefficient</Label>
+                <Input id="ut-coefficient-rating" type="number" step="0.001" value={utCoefficientRating} onChange={(e) => setUtCoefficientRating(e.target.value)} disabled={isAddingUt} />
+                {utErrors.coefficientRating && <p className="text-xs text-destructive">{utErrors.coefficientRating}</p>}
+                <Button type="submit" className="w-full" disabled={isAddingUt}>{isAddingUt ? "Adding…" : "Add UT Calculation Rule"}</Button>
+              </div>
+            </form>
+          )}
           <div className="rounded-md border overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 border-b text-left">
                 <tr>
                   <th className="p-3 font-medium">Diameter Range (in)</th>
+                  <th className="p-3 font-medium">Flange Rating</th>
                   <th className="p-3 font-medium">Coeff. Diameter</th>
                   <th className="p-3 font-medium">Coeff. Rating</th>
                 </tr>
@@ -396,7 +512,7 @@ export function SystemReferentialScreen() {
               <tbody className="divide-y">
                 {(data?.utCalculationRules ?? []).length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="p-4 text-center text-muted-foreground">
+                    <td colSpan={4} className="p-4 text-center text-muted-foreground">
                       No UT calculation rules configured.
                     </td>
                   </tr>
@@ -404,6 +520,7 @@ export function SystemReferentialScreen() {
                   (data?.utCalculationRules ?? []).map((rule) => (
                     <tr key={rule.id}>
                       <td className="p-3 font-mono">{rule.diameterFromInch}&quot; – {rule.diameterToInch}&quot;</td>
+                      <td className="p-3 font-mono">{rule.flangeRating || "Any"}</td>
                       <td className="p-3 font-mono">{rule.coefficientDiameter}</td>
                       <td className="p-3 font-mono">{rule.coefficientRating}</td>
                     </tr>
@@ -419,17 +536,35 @@ export function SystemReferentialScreen() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <div>
-            <CardTitle>Torquing Methods</CardTitle>
-            <CardDescription>System-wide canonical bolting torque methods (read-only).</CardDescription>
+            <CardTitle>Torquing Requirements</CardTitle>
+            <CardDescription>System-wide jointing methods used by Flange Management.</CardDescription>
           </div>
           <Badge variant="outline">System Standard</Badge>
         </CardHeader>
         <CardContent>
+          {canManage && (
+            <form onSubmit={handleAddTorquingRequirement} className="mb-4 flex flex-col items-end gap-3 rounded-md border p-3 sm:flex-row">
+              <div className="w-full space-y-1.5 sm:flex-1">
+                <Label htmlFor="torquing-code">Code</Label>
+                <Input id="torquing-code" placeholder="e.g. TORQUE-MANUAL" value={torquingCode} onChange={(e) => setTorquingCode(e.target.value)} disabled={isAddingTorquing} />
+                {torquingErrors.code && <p className="text-xs text-destructive">{torquingErrors.code}</p>}
+              </div>
+              <div className="w-full space-y-1.5 sm:flex-[2]">
+                <Label htmlFor="torquing-description">Description</Label>
+                <Input id="torquing-description" placeholder="Manual torqueing" value={torquingDescription} onChange={(e) => setTorquingDescription(e.target.value)} disabled={isAddingTorquing} />
+                {torquingErrors.description && <p className="text-xs text-destructive">{torquingErrors.description}</p>}
+              </div>
+              <Button type="submit" disabled={isAddingTorquing}>{isAddingTorquing ? "Adding…" : "Add Torquing Requirement"}</Button>
+            </form>
+          )}
           <div className="flex flex-wrap gap-2">
-            {(data?.torquingMethods ?? []).map((method) => (
-              <Badge key={method} variant="secondary" className="px-3 py-1 text-sm">
-                {method}
+            {(data?.torquingRequirements ?? []).map((entry) => (
+              <Badge key={entry.id} variant="secondary" className="px-3 py-1 text-sm" title={entry.description}>
+                {entry.code}
               </Badge>
+            ))}
+            {(data?.torquingRequirements ?? []).length === 0 && (data?.torquingMethods ?? []).map((method) => (
+              <Badge key={method} variant="secondary" className="px-3 py-1 text-sm">{method}</Badge>
             ))}
           </div>
         </CardContent>

@@ -4,6 +4,8 @@ import {
   createProjectTeam,
   createProjectSystem,
   createProjectSubsystem,
+  createUnitTimeReference,
+  createPunchCode,
 } from "./supabase-execution-reference-repository"
 
 function createFakeExecutionClient(_projectId = "proj-1") {
@@ -36,12 +38,16 @@ function createFakeExecutionClient(_projectId = "proj-1") {
                 single() {
                   return Promise.resolve({
                     data: {
-                      id: "new-1",
+                      id: table === "project_unit_time_references" ? "ut-new" : "new-1",
                       project_id: payload.project_id,
                       code: payload.code,
                       description: payload.description,
                       team_type: payload.team_type || "line_check",
                       system_id: payload.system_id || "sys-1",
+                      activity: payload.activity,
+                      project_ut: payload.project_ut,
+                      standard_reference: payload.standard_reference,
+                      team_type: payload.team_type,
                       status: "active",
                     },
                     error: null,
@@ -70,6 +76,7 @@ async function runExecutionRepositoryTests() {
   assert.ok(queries.includes("from:project_locations"))
   assert.ok(queries.includes("from:project_pressure_units"))
   assert.ok(queries.includes("from:project_unit_time_references"))
+  assert.ok(queries.includes("from:project_punch_codes"))
 
   const team = await createProjectTeam(client, "proj-1", {
     code: "team-1",
@@ -90,6 +97,21 @@ async function runExecutionRepositoryTests() {
     description: "Subsystem 1",
   })
   assert.equal(sub.code, "SUB-1")
+
+  const unitTime = await createUnitTimeReference(client, "proj-1", {
+    activity: "flange_jointing",
+    projectUt: 12,
+    standardReference: "STD-FLANGE",
+  })
+  assert.equal(unitTime.id, "ut-new")
+  assert.equal(unitTime.activity, "FLANGE_JOINTING")
+
+  const punchCode = await createPunchCode(client, "proj-1", {
+    code: "p-001",
+    description: "Missing support",
+  })
+  assert.equal(punchCode.code, "P-001")
+  assert.equal(punchCode.description, "Missing support")
 
   console.log("All supabase-execution-reference-repository.test.ts assertions passed!")
 }

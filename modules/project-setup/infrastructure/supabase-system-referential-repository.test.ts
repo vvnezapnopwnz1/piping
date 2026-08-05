@@ -2,6 +2,8 @@ import assert from "node:assert/strict"
 import {
   loadSystemReferentials,
   createMaterialType,
+  createTorquingRequirement,
+  createUtCalculationRule,
   setMaterialTypeStatus,
 } from "./supabase-system-referential-repository"
 
@@ -66,6 +68,7 @@ function createFakeClient(canManage = true) {
                       diameter_to_inch: 4,
                       coefficient_diameter: 0.5,
                       coefficient_rating: 1.2,
+                      flange_rating: "150#",
                     },
                   ],
                   error: null,
@@ -82,7 +85,26 @@ function createFakeClient(canManage = true) {
               return {
                 single() {
                   return Promise.resolve({
-                    data: {
+                    data: table === "system_reference_entries" && payload.kind === "torquing_requirement"
+                      ? {
+                          id: "torque-new",
+                          kind: payload.kind,
+                          code: payload.code,
+                          description: payload.description,
+                          status: "active",
+                          created_at: "2026-01-01T00:00:00Z",
+                          updated_at: "2026-01-01T00:00:00Z",
+                        }
+                      : table === "system_ut_calculation_rules"
+                        ? {
+                            id: "ut-new",
+                            diameter_from_inch: payload.diameter_from_inch,
+                            diameter_to_inch: payload.diameter_to_inch,
+                            coefficient_diameter: payload.coefficient_diameter,
+                            coefficient_rating: payload.coefficient_rating,
+                            flange_rating: payload.flange_rating,
+                          }
+                        : {
                       id: "mat-new",
                       kind: "material_type",
                       code: payload.code,
@@ -155,6 +177,22 @@ async function runTests() {
   // Material type insert
   const created = await createMaterialType(client, { code: "ss", description: "Stainless Steel" })
   assert.equal(created.code, "SS")
+
+  const torquing = await createTorquingRequirement(client, {
+    code: "manual",
+    description: "Manual torqueing",
+  })
+  assert.equal(torquing.kind, "torquing_requirement")
+  assert.equal(torquing.code, "MANUAL")
+
+  const utRule = await createUtCalculationRule(client, {
+    diameterFromInch: 2,
+    diameterToInch: 4,
+    flangeRating: "150#",
+    coefficientDiameter: 0.5,
+    coefficientRating: 1.2,
+  })
+  assert.equal(utRule.flangeRating, "150#")
 
   // Material type status change
   const updated = await setMaterialTypeStatus(client, "mat-1", "archived")

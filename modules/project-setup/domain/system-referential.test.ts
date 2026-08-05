@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import {
   TORQUING_METHODS,
+  validateTorquingRequirementInput,
   validateFilmQuantityRuleInput,
   validateUtCalculationRuleInput,
 } from "./system-referential"
@@ -58,8 +59,34 @@ assert.equal(
     diameterToInch: 4,
     coefficientDiameter: 0.5,
     coefficientRating: 1.2,
+    flangeRating: "  150# ",
   }).ok,
   true
+)
+
+const torquingRequirement = validateTorquingRequirementInput({
+  code: "  torque-manual ",
+  description: " Manual torqueing ",
+})
+assert.equal(torquingRequirement.ok, true)
+assert.deepEqual(torquingRequirement.value, {
+  code: "TORQUE-MANUAL",
+  description: "Manual torqueing",
+})
+
+assert.equal(
+  validateTorquingRequirementInput({ code: " ", description: "Manual torqueing" }).ok,
+  false
+)
+assert.equal(
+  validateUtCalculationRuleInput({
+    diameterFromInch: 2,
+    diameterToInch: 4,
+    coefficientDiameter: Number.NaN,
+    coefficientRating: 1.2,
+    flangeRating: " ",
+  }).ok,
+  false
 )
 
 console.log("All system-referential.test.ts assertions passed!")
