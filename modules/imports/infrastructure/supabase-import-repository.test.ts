@@ -114,6 +114,10 @@ async function run() {
   const applied = rpcCalls.find((call) => call.name === "apply_import_job")
   assert.deepEqual(applied!.args, { target_job_id: "job-1", confirm_conflicts: true })
 
+  await applyImportJob(client, "job-1", false, "flange_progress")
+  const flangeApplied = rpcCalls.find((call) => call.name === "apply_flange_progress_import_job")
+  assert.deepEqual(flangeApplied!.args, { target_job_id: "job-1", confirm_conflicts: false })
+
   const history = await loadImportHistory(client, "proj-1")
   assert.equal(history.length, 1)
   assert.equal(history[0].appliedRowCount, 2)

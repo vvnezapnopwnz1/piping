@@ -18,6 +18,7 @@ function run() {
     mapSupabaseImportError({ code: "42501" }),
     "You do not have permission to manage imports for this project."
   )
+  assert.match(mapSupabaseImportError({ code: "PQC77" }), /conflict|state/i)
 
   // Raw SQL and parser detail must never reach the user.
   const raw = mapSupabaseImportError({

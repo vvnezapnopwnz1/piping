@@ -53,6 +53,15 @@ function run() {
   // PML rows with no type-specific defects produce nothing.
   assert.equal(applyTypeRules("piping_material_list", [row(1, { ident_code: "A", trace_number: "B" })]).length, 0)
 
+  const flange = applyTypeRules("flange_progress", [row(1, {
+    iso_number: "ISO-1", revision: "R0", bt_number: "BT-1", jointing_method: "TORQUE",
+    jointing_value: 120, joint_category: "X", reason: "normal", joint_date: "2026-08-04",
+    report_number: "R-1", jointer_codes: ["J-1", "j-1"], tag_number: "T-1",
+  })])
+  assert.equal(flange.some((issue) => issue.code === "DUPLICATE_JOINTER" && issue.severity === "blocker"), true)
+  assert.equal(flange.some((issue) => issue.code === "UT_CONFIGURATION_WARNING" && issue.severity === "warning"), true)
+  assert.equal(applyTypeRules("flange_progress", [row(2, { jointing_value: -1, joint_date: "bad", jointer_codes: [] })]).some((issue) => issue.severity === "blocker"), true)
+
   console.log("All rules.test.ts assertions passed!")
 }
 

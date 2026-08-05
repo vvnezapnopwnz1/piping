@@ -16,6 +16,7 @@ function run() {
       "welder_qualification",
       "thickness_flange",
       "nde_matrix",
+      "flange_progress",
     ]
   )
 
@@ -40,6 +41,11 @@ function run() {
     "thickness_mm",
     "flange_rating",
   ])
+  assert.deepEqual(templateHeaderRow("flange_progress"), [
+    "ISO Number", "Revision", "BT Number", "Jointing Method", "Jointing Value",
+    "Joint Category", "Reason", "Joint Date", "Report Number", "Jointer Codes", "Tag Number",
+  ])
+  assert.equal(getImportJobTypeLabel("flange_progress"), "Flange progress")
 
   assert.throws(() => getImportTypeDefinition("nope" as never), /Unknown import type/)
 

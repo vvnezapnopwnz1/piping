@@ -119,9 +119,11 @@ export async function recordImportValidation(
 export async function applyImportJob(
   client: SupabaseClient<Database>,
   jobId: string,
-  confirmConflicts: boolean
+  confirmConflicts: boolean,
+  importType?: ImportType,
 ): Promise<ImportJob> {
-  const { data, error } = await client.rpc("apply_import_job" as never, {
+  const rpcName = importType === "flange_progress" ? "apply_flange_progress_import_job" : "apply_import_job"
+  const { data, error } = await client.rpc(rpcName as never, {
     target_job_id: jobId,
     confirm_conflicts: confirmConflicts,
   } as never)

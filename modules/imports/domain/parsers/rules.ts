@@ -121,6 +121,24 @@ export function applyTypeRules(
         }
       }
     }
+
+    if (importType === "flange_progress") {
+      checkPositive(row, "jointing_value", "Jointing Value", issues)
+      const date = row.normalizedValues.joint_date
+      if (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(new Date(`${date}T00:00:00Z`).getTime())) {
+        issues.push({ rowNumber: row.rowNumber, columnName: "joint_date", severity: "blocker", code: "INVALID_DATE", message: "Joint Date must be a valid YYYY-MM-DD date." })
+      }
+      const jointerCodes = row.normalizedValues.jointer_codes
+      if (Array.isArray(jointerCodes)) {
+        const seen = new Set<string>()
+        for (const code of jointerCodes) {
+          const key = String(code).toUpperCase()
+          if (seen.has(key)) issues.push({ rowNumber: row.rowNumber, columnName: "jointer_codes", severity: "blocker", code: "DUPLICATE_JOINTER", message: "Jointer Codes must not repeat a jointer." })
+          seen.add(key)
+        }
+      }
+      issues.push({ rowNumber: row.rowNumber, columnName: "jointing_value", severity: "warning", code: "UT_CONFIGURATION_WARNING", message: "UT is calculated by the server from the active project configuration." })
+    }
   }
 
   checkDuplicateNaturalKeys(importType, rows, issues)

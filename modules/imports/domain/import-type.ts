@@ -4,6 +4,7 @@ export const IMPORT_TYPES = [
   "welder_qualification",
   "thickness_flange",
   "nde_matrix",
+  "flange_progress",
 ] as const
 
 export type ImportType = (typeof IMPORT_TYPES)[number]
@@ -85,6 +86,24 @@ const DEFINITIONS: Record<ImportType, ImportTypeDefinition> = {
       { key: "pt_coverage", header: "PT %", required: false, kind: "number" },
       { key: "pmi_coverage", header: "PMI %", required: false, kind: "number" },
       { key: "ht_coverage", header: "HT %", required: false, kind: "number" },
+    ],
+  },
+  flange_progress: {
+    importType: "flange_progress",
+    label: "Flange progress",
+    naturalKey: ["iso_number", "revision", "bt_number"],
+    columns: [
+      { key: "iso_number", header: "ISO Number", required: true, kind: "text" },
+      { key: "revision", header: "Revision", required: true, kind: "text" },
+      { key: "bt_number", header: "BT Number", required: true, kind: "text" },
+      { key: "jointing_method", header: "Jointing Method", required: true, kind: "text" },
+      { key: "jointing_value", header: "Jointing Value", required: true, kind: "number" },
+      { key: "joint_category", header: "Joint Category", required: true, kind: "text" },
+      { key: "reason", header: "Reason", required: true, kind: "text" },
+      { key: "joint_date", header: "Joint Date", required: true, kind: "text" },
+      { key: "report_number", header: "Report Number", required: true, kind: "text" },
+      { key: "jointer_codes", header: "Jointer Codes", required: true, kind: "textList" },
+      { key: "tag_number", header: "Tag Number", required: true, kind: "text" },
     ],
   },
 }

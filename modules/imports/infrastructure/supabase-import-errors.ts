@@ -16,6 +16,24 @@ export function mapSupabaseImportError(
       return "Some rows still have blocking errors. Fix them in the source file and upload it again."
     case "PQC14":
       return "This import overwrites existing records. Confirm the overwrite to continue."
+    case "PQC70":
+      return "Flange progress import needs both import and flange management permissions."
+    case "PQC71":
+      return "A flange progress row is outside the selected project or PDS scope."
+    case "PQC72":
+      return "A flange progress row targets a stale or removed revision."
+    case "PQC73":
+      return "A flange category, torquing requirement or engineering reference is missing."
+    case "PQC74":
+      return "A flange progress row contains an invalid value or date."
+    case "PQC75":
+      return "A flange progress row contains an empty, duplicate or unknown jointer."
+    case "PQC76":
+      return "A flange progress correction target is stale."
+    case "PQC77":
+      return "The flange progress import has an unresolved conflict or unsupported state."
+    case "PQC78":
+      return "A flange revision-copy authorization is missing or already materialized."
     case "42501":
       return "You do not have permission to manage imports for this project."
     case "23514":

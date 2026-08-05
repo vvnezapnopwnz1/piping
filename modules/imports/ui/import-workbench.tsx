@@ -135,7 +135,7 @@ export function ImportWorkbench({
       setBusy(true)
       try {
         const client = getSupabaseBrowserClient()
-        const applied = await applyImportJob(client, jobId, confirmConflicts)
+        const applied = await applyImportJob(client, jobId, confirmConflicts, importType)
         setStage("applied")
         toast.success(`Applied ${applied.appliedRowCount} rows.`)
         onApplied()
