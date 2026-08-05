@@ -1427,6 +1427,12 @@ Track 05 занимает коды `PQC30`–`PQC39`; Track 06 начинает 
 
 **Цель:** реализовать bolting definition/progress, revision safety, multiple jointers и dynamic UT.
 
+**Статус на 2026-08-05:** Track 09 реализован в текущем checkout: referentials, append-only
+progress ledger, single progress command, revision carry-over/readiness, import path и две
+Supabase UI-рoutes. Automated gates PASS (108 unit tests, 621 database assertions, build и
+diff-check); browser walkthrough остаётся BLOCKED до подключения browser backend и безопасного
+local fixture bootstrap.
+
 **Отдельный execution plan:** `docs/superpowers/plans/2026-08-08-track-09-flange.md`.
 
 ### Database

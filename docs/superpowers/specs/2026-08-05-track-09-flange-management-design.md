@@ -1,6 +1,6 @@
 # Track 09 Flange Management Design
 
-**Status:** approved direction; detailed implementation plan follows after review of this spec.
+**Status:** implemented on the current feature checkout; automated gates PASS. Browser acceptance is BLOCKED because no browser backend is connected and the fixture bootstrap refuses the current non-local Supabase URL.
 
 **Goal:** deliver the smallest complete Flange Management workflow supported by the Easy Piping manual: revision-bound flange definitions, manual and bulk progress entry, one or more jointers, reproducible UT, immutable history, and a published bolting-readiness fact for Track 10.
 
