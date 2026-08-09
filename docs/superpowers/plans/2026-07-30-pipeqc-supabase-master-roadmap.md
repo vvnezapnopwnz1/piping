@@ -1373,53 +1373,58 @@ Track 05 занимает коды `PQC30`–`PQC39`; Track 06 начинает 
 
 **Цель:** реализовать append-only spool movement history, device access и безопасную offline synchronization.
 
-**Отдельный execution plan:** `docs/superpowers/plans/2026-08-07-track-08-tracking-pwa.md`.
+**Статус на 2026-08-09:** manual-aligned online Track 08 реализован; clean migration replay и
+полный DB suite на known-clean local runtime проходят. Browser walkthrough остаётся единственным
+незакрытым exit gate. Offline PWA/sync, device revocation и managed image ingestion намеренно
+deferred.
+
+**Отдельный execution plan:** `docs/superpowers/plans/2026-08-10-track-08-tracking.md`.
 
 ### Database
 
-- `supabase/migrations/20260807090000_tracking_events.sql`;
-- `supabase/migrations/20260807091000_tracking_devices_sync.sql`;
-- `supabase/migrations/20260807092000_tracking_projections.sql`;
-- `supabase/tests/database/080_tracking_append_only.test.sql`;
-- `supabase/tests/database/081_tracking_scope_sync.test.sql`.
+- `20260814090000`–`20260814095200`: referential completion, append-only events, command
+  invariant, read models, scanner import, secure data dump, device management and active-only
+  occupancy;
+- focused pgTAP: `080_tracking_referentials` through `087_tracking_active_occupancy`.
 
-### Application/PWA
+### Application/UI
 
-- `modules/tracking/domain/location-event.ts`;
-- `modules/tracking/domain/tracking-inconsistency.ts`;
-- `modules/tracking/application/record-scan.ts`;
-- `modules/tracking/application/synchronize-scans.ts`;
+- `modules/tracking/domain/tracking.ts`;
+- `modules/tracking/application/manage-tracking.ts`;
+- `modules/tracking/application/export-tracking-data.ts`;
+- `modules/tracking/application/export-barcode-workbook.ts`;
 - `modules/tracking/infrastructure/supabase-tracking-repository.ts`;
-- `modules/tracking/infrastructure/offline-scan-queue.ts`;
 - `modules/tracking/ui/`;
-- `app/manifest.ts`;
-- PWA service worker/build integration;
-- IndexedDB/Dexie-backed offline queue.
+- `/tracking`, `/tracking/data-analysis`, `/tracking/print-barcodes`, `/tracking/devices`;
+- `scripts/bootstrap-track08-browser-fixtures.ts` and
+  `docs/qa/track-08-agent-walkthrough.md`.
 
 ### Tasks
 
-- [ ] Ввести append-only `spool_location_events`.
-- [ ] Разрешить correction только compensating event.
-- [ ] Вычислять current location по последнему accepted event.
-- [ ] Определять active spool по Start Fabrication/Erection facts из published contracts.
-- [ ] Реализовать IN/OUT/MANUAL semantics и inconsistency rules.
-- [ ] Реализовать transit-out по project maximum days.
-- [ ] Перенести locations/capacity из hardcoded `lib/spool-tracking.ts` в project referential.
-- [ ] Подключить Devices/PDA Users и device revocation.
-- [ ] Добавить QR/barcode payload с stable spool/revision identity.
+- [x] Ввести append-only `spool_location_events`.
+- [x] Разрешить correction только compensating event.
+- [x] Вычислять current location по последнему effective event.
+- [x] Определять active spool по Start Fabrication/Erection facts из published contracts.
+- [x] Реализовать IN/OUT/MANUAL semantics и inconsistency rules.
+- [x] Реализовать transit-out по project maximum days.
+- [x] Перенести locations/capacity в project referential.
+- [x] Подключить Devices/PDA Users и project-scoped usage/assignment projection.
+- [x] Добавить XLSX payload для внешнего Zebra workflow со stable spool number.
 - [ ] Реализовать offline queue с client event UUID/idempotency key.
 - [ ] Реализовать sync batch с per-item accepted/rejected/conflict result.
 - [ ] При revision/scope conflict не терять scan, а показывать resolution.
 - [ ] Сделать PWA installable и ограничить cached data effective scope.
-- [ ] Перевести tracking dashboard/data analysis/barcode screens на Supabase.
-- [ ] Удалить fail-open `pdsAreaCode: undefined`.
-- [ ] Удалить Supabase mode usage `spool-tracking-store`.
+- [x] Перевести tracking dashboard/data analysis/barcode/device screens на Supabase.
+- [x] Удалить fail-open project filtering: каждый query явно применяет `project_id`.
+- [x] Не использовать demo tracking store в Supabase screens.
+- [ ] Реализовать явное device revocation вместе с будущим offline-sync contract.
+- [ ] Добавить managed spool/design images только после определения storage/ingestion contract.
 
 ### Exit criteria
 
 - Два устройства не создают duplicate event при retry.
 - Out-of-scope device не скачивает и не отправляет чужие spools.
-- Offline scan синхронизируется после reconnect с понятным item result.
+- Online scanner file повторно применяется идемпотентно; offline reconnect sync остаётся deferred.
 - Current location, inconsistencies, transit alerts и capacity строятся из DB projections.
 - Event history нельзя переписать browser update/delete.
 

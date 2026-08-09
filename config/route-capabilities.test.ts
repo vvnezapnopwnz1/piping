@@ -2,6 +2,11 @@ import assert from "node:assert/strict"
 
 import { requiredCapabilityForPath } from "./route-capabilities"
 
+assert.equal(requiredCapabilityForPath("/tracking"), "tracking.view")
+assert.equal(requiredCapabilityForPath("/tracking/data-analysis"), "tracking.view")
+assert.equal(requiredCapabilityForPath("/tracking/print-barcodes"), "tracking.view")
+assert.equal(requiredCapabilityForPath("/tracking/devices"), "tracking.view")
+
 assert.equal(
   requiredCapabilityForPath("/admin/system-referential"),
   "system_referential.manage",

@@ -1,6 +1,6 @@
 # Track 08 — Tracking Implementation Plan
 
-> **Status:** ready for implementation after Track 07 and Track 10 automated gates. Browser acceptance remains a separate exit gate.
+> **Status:** Track 10 is closed, including its browser Gate D. Track 08 has its own browser acceptance exit gate; the final Track 12 pass will re-run the integrated application.
 
 ## Goal
 

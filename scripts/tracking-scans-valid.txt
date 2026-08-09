@@ -1,0 +1,3 @@
+ISO Number	Spool Number	Location Code	Direction	Occurred At	Device Code	Operator Email	External Event ID
+ISO-T8-001	SP-T8-TRANSIT	T8-YARD-B	in	2026-08-09T07:00:00Z	PDA-T8-01	track01.qc-editor@example.test	T8-SCAN-001
+ISO-T8-001	SP-T8-TRANSIT	T8-YARD-B	in	2026-08-09T07:00:00Z	PDA-T8-01	track01.qc-editor@example.test	T8-SCAN-001

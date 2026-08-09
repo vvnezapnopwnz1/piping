@@ -28,6 +28,16 @@ export interface DeviceUser {
   status: ReferenceStatus
 }
 
+export interface DeviceUserCandidate {
+  membershipId: string
+  fullName: string
+  email: string | null
+  deviceUserId: string | null
+  deviceId: string | null
+  deviceCode: string | null
+  isAssigned: boolean
+}
+
 export interface SpoolingMaterialTypeInput {
   code: string
   description: string
@@ -129,6 +139,12 @@ export function validateDeviceInput(input: DeviceInput): ReferenceValidation<Dev
   const base = validateReferenceIdentity(input)
   if (!base.ok) return base
   return { ok: true, value: base.value, errors: {} }
+}
+
+export function validateDeviceUserInput(input: DeviceUserInput): ReferenceValidation<DeviceUserInput> {
+  if (!input.membershipId) return { ok: false, errors: { membershipId: "Project member is required" } }
+  if (!input.deviceId) return { ok: false, errors: { deviceId: "Tracking device is required" } }
+  return { ok: true, value: input, errors: {} }
 }
 
 export function validateSpoolingMaterialClassInput(input: SpoolingMaterialClassInput): ReferenceValidation<SpoolingMaterialClassInput> {

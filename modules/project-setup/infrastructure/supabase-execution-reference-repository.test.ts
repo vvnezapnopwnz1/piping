@@ -6,6 +6,9 @@ import {
   createProjectSubsystem,
   createUnitTimeReference,
   createPunchCode,
+  createLocation,
+  createLocationCategory,
+  updateLocationCapacity,
 } from "./supabase-execution-reference-repository"
 
 function createFakeExecutionClient(_projectId = "proj-1") {
@@ -47,12 +50,27 @@ function createFakeExecutionClient(_projectId = "proj-1") {
                       activity: payload.activity,
                       project_ut: payload.project_ut,
                       standard_reference: payload.standard_reference,
+                      category_id: payload.category_id,
+                      mapped_progress_columns: payload.mapped_progress_columns,
+                      capacity: payload.capacity,
                       status: "active",
                     },
                     error: null,
                   })
                 },
               }
+            },
+          }
+        },
+        update(payload: any) {
+          queries.push(`update:${table}:${JSON.stringify(payload)}`)
+          return {
+            eq(col: string, val: string) {
+              queries.push(`eq:${col}:${val}`)
+              return this
+            },
+            then(resolve: (value: { error: null }) => void) {
+              resolve({ error: null })
             },
           }
         },
@@ -111,6 +129,25 @@ async function runExecutionRepositoryTests() {
   })
   assert.equal(punchCode.code, "P-001")
   assert.equal(punchCode.description, "Missing support")
+
+  const location = await createLocation(client, "proj-1", {
+    categoryId: "cat-1",
+    code: "yard-1",
+    description: "Yard 1",
+    mappedProgressColumns: ["start_fab"],
+    capacity: 25,
+  })
+  assert.equal(location.capacity, 25)
+  assert.ok(queries.some((query) => query.includes('"capacity":25')))
+
+  const category = await createLocationCategory(client, "proj-1", {
+    code: "yard",
+    description: "Laydown yard",
+  })
+  assert.equal(category.code, "YARD")
+
+  await updateLocationCapacity(client, "proj-1", "location-1", 30)
+  assert.ok(queries.includes('update:project_locations:{"capacity":30}'))
 
   console.log("All supabase-execution-reference-repository.test.ts assertions passed!")
 }

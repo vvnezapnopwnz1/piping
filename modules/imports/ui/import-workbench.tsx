@@ -184,7 +184,7 @@ export function ImportWorkbench({
 
           <input
             type="file"
-            accept=".xlsx,.xls,.csv"
+            accept=".xlsx,.xls,.csv,.txt"
             disabled={!canManage || busy}
             onChange={(event) => {
               const file = event.target.files?.[0]

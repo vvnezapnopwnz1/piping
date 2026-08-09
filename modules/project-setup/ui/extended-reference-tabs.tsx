@@ -30,12 +30,16 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import {
   loadExtendedReferences,
   createDevice,
+  listDeviceUserCandidates,
+  assignDeviceUser,
   saveAssemblySettings,
   type LoadedExtendedReferences,
 } from "../infrastructure/supabase-extended-reference-repository"
 import {
   validateDeviceInput,
   validateAssemblySettingsInput,
+  validateDeviceUserInput,
+  type DeviceUserCandidate,
 } from "../domain/extended-reference"
 import { ReferenceStatusBadge } from "./reference-status-badge"
 
@@ -58,6 +62,9 @@ export function ExtendedReferenceTabs({
   const [devDesc, setDevDesc] = useState("")
   const [devErrors, setDevErrors] = useState<Record<string, string>>({})
   const [isSubmittingDevice, setIsSubmittingDevice] = useState(false)
+  const [deviceUserCandidates, setDeviceUserCandidates] = useState<DeviceUserCandidate[]>([])
+  const [selectedMembershipId, setSelectedMembershipId] = useState("")
+  const [selectedDeviceId, setSelectedDeviceId] = useState("")
 
   // Assembly state
   const [assemblyEnabled, setAssemblyEnabled] = useState(false)
@@ -70,9 +77,13 @@ export function ExtendedReferenceTabs({
     setError(null)
     try {
       const client = getSupabaseBrowserClient()
-      const result = await loadExtendedReferences(client, projectId)
+      const [result, candidates] = await Promise.all([
+        loadExtendedReferences(client, projectId),
+        canManage ? listDeviceUserCandidates(client, projectId) : Promise.resolve([]),
+      ])
       if (version === requestVersionRef.current) {
         setData(result)
+        setDeviceUserCandidates(candidates)
         setAssemblyEnabled(result.assemblySettings.enabled)
         setAssemblySubId(result.assemblySettings.defaultSubcontractorId ?? "")
       }
@@ -81,7 +92,7 @@ export function ExtendedReferenceTabs({
     } finally {
       if (version === requestVersionRef.current) setLoading(false)
     }
-  }, [projectId])
+  }, [canManage, projectId])
 
   useEffect(() => {
     fetchAll()
@@ -106,6 +117,23 @@ export function ExtendedReferenceTabs({
       fetchAll()
     } catch (err: any) {
       toast.error(err.message || "Failed to create device")
+    } finally {
+      setIsSubmittingDevice(false)
+    }
+  }
+
+  const handleAssignDeviceUser = async () => {
+    const validation = validateDeviceUserInput({ membershipId: selectedMembershipId, deviceId: selectedDeviceId || null })
+    if (!validation.ok) { toast.error(Object.values(validation.errors).join(", ")); return }
+    setIsSubmittingDevice(true)
+    try {
+      await assignDeviceUser(getSupabaseBrowserClient(), projectId, validation.value)
+      toast.success("PDA user assigned")
+      setSelectedMembershipId("")
+      setSelectedDeviceId("")
+      await fetchAll()
+    } catch (err: any) {
+      toast.error(err.message || "Failed to assign PDA user")
     } finally {
       setIsSubmittingDevice(false)
     }
@@ -403,17 +431,24 @@ export function ExtendedReferenceTabs({
             <CardDescription>Project memberships linked to tracking devices.</CardDescription>
           </CardHeader>
           <CardContent>
-            {data.deviceUsers.length === 0 ? (
+            {canManage && (
+              <div className="mb-4 grid gap-3 rounded-md border p-3 md:grid-cols-[1fr_1fr_auto]">
+                <label className="text-xs text-muted-foreground">Project member<select className="mt-1 h-9 w-full rounded border bg-transparent px-3 text-sm" value={selectedMembershipId} onChange={(event) => setSelectedMembershipId(event.target.value)}><option value="">Select member</option>{deviceUserCandidates.map((candidate) => <option key={candidate.membershipId} value={candidate.membershipId}>{candidate.email ?? candidate.fullName} {candidate.deviceCode ? `— ${candidate.deviceCode}` : ""}</option>)}</select></label>
+                <label className="text-xs text-muted-foreground">Tracking device<select className="mt-1 h-9 w-full rounded border bg-transparent px-3 text-sm" value={selectedDeviceId} onChange={(event) => setSelectedDeviceId(event.target.value)}><option value="">Select device</option>{data.devices.filter((device) => device.status === "active").map((device) => <option key={device.id} value={device.id}>{device.code} — {device.description}</option>)}</select></label>
+                <Button className="self-end" onClick={handleAssignDeviceUser} disabled={isSubmittingDevice || !selectedMembershipId || !selectedDeviceId}>Assign</Button>
+              </div>
+            )}
+            {(canManage ? deviceUserCandidates.filter((candidate) => candidate.isAssigned) : data.deviceUsers).length === 0 ? (
               <p className="text-muted-foreground text-sm py-4 text-center">No PDA users assigned.</p>
             ) : (
               <div className="space-y-2">
-                {data.deviceUsers.map((du) => (
-                  <div key={du.id} className="flex items-center justify-between rounded-md border p-3">
+                {(canManage ? deviceUserCandidates.filter((candidate) => candidate.isAssigned) : data.deviceUsers).map((du) => (
+                  <div key={du.membershipId} className="flex items-center justify-between rounded-md border p-3">
                     <div className="flex items-center gap-3">
-                      {du.userEmail && <span className="text-sm">{du.userEmail}</span>}
+                      <span className="text-sm">{"email" in du ? du.email ?? du.fullName : du.userEmail ?? du.membershipId}</span>
                       {du.deviceCode && <Badge variant="secondary">{du.deviceCode}</Badge>}
                     </div>
-                    <ReferenceStatusBadge status={du.status} />
+                    {"status" in du ? <ReferenceStatusBadge status={du.status} /> : <Badge>Active</Badge>}
                   </div>
                 ))}
               </div>

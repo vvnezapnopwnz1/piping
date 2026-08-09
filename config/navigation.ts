@@ -255,7 +255,6 @@ export const navigationConfig: NavSection[] = [
       {
         title: 'Tracking',
         href: '/tracking',
-        planned: 'Track 08',
         icon: MapPin,
         children: [
           {
@@ -269,9 +268,14 @@ export const navigationConfig: NavSection[] = [
             icon: Activity,
           },
           {
-            title: 'Print Barcodes',
+            title: 'Barcode Printing',
             href: '/tracking/print-barcodes',
             icon: Scan,
+          },
+          {
+            title: 'Mobile Device Management',
+            href: '/tracking/devices',
+            icon: Gauge,
           },
         ],
       },

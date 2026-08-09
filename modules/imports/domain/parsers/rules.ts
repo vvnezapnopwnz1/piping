@@ -58,6 +58,7 @@ function checkDuplicateNaturalKeys(
   rows: readonly ParsedRow[],
   issues: ImportIssue[]
 ): void {
+  if (importType === "tracking_scan") return
   const naturalKey = getImportTypeDefinition(importType).naturalKey
   const seen = new Set<string>()
 

@@ -126,6 +126,8 @@ export async function applyImportJob(
     ? "apply_flange_progress_import_job"
     : importType === "test_pack_composition"
       ? "apply_test_pack_import_job"
+      : importType === "tracking_scan"
+        ? "apply_tracking_scan_import_job"
       : "apply_import_job"
   const { data, error } = await client.rpc(rpcName as never, {
     target_job_id: jobId,

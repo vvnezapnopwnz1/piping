@@ -124,6 +124,26 @@ for (const path of sources) {
     execution.includes("FLANGE_JOINTING"),
     "flange unit-time form must use the canonical activity",
   )
+  assert.ok(
+    execution.includes("onClick={handleAddLocationCategory}"),
+    "execution references have no location-category create action",
+  )
+  assert.ok(
+    execution.includes("onClick={handleAddLocation}"),
+    "execution references have no capacity-aware location create action",
+  )
+  assert.ok(
+    execution.includes("onClick={handleUpdateLocationCapacity}"),
+    "execution references have no legacy-capacity repair action",
+  )
+
+  const extended = withoutComments(
+    readFileSync("modules/project-setup/ui/extended-reference-tabs.tsx", "utf8"),
+  )
+  assert.ok(
+    extended.includes("onClick={handleAssignDeviceUser}"),
+    "extended references have no PDA-user assignment action",
+  )
 }
 
 // PDS area is a scoping dimension for access rights, so its dialog must let the user say what

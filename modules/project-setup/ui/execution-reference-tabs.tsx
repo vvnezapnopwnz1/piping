@@ -34,6 +34,9 @@ import {
   createProjectSubsystem,
   createUnitTimeReference,
   createPunchCode,
+  createLocation,
+  createLocationCategory,
+  updateLocationCapacity,
   setPunchCodeStatus,
   type LoadedExecutionReferences,
 } from "../infrastructure/supabase-execution-reference-repository"
@@ -43,6 +46,8 @@ import {
   validateSubsystemInput,
   validateUnitTimeReferenceInput,
   validatePunchCodeInput,
+  validateLocationInput,
+  validateLocationCapacity,
   type ProjectTeamType,
 } from "../domain/execution-reference"
 import { validateReferenceIdentity } from "../domain/reference"
@@ -113,6 +118,21 @@ export function ExecutionReferenceTabs({
   const [punchErrors, setPunchErrors] = useState<Record<string, string>>({})
   const [isSubmittingPunchCode, setIsSubmittingPunchCode] = useState(false)
 
+  // Tracking-location dialog state
+  const [isAddLocationCategoryOpen, setIsAddLocationCategoryOpen] = useState(false)
+  const [locationCategoryCode, setLocationCategoryCode] = useState("")
+  const [locationCategoryDescription, setLocationCategoryDescription] = useState("")
+  const [isAddLocationOpen, setIsAddLocationOpen] = useState(false)
+  const [locationCategoryId, setLocationCategoryId] = useState("")
+  const [locationCode, setLocationCode] = useState("")
+  const [locationDescription, setLocationDescription] = useState("")
+  const [locationProgressColumns, setLocationProgressColumns] = useState("")
+  const [locationCapacity, setLocationCapacity] = useState("")
+  const [locationErrors, setLocationErrors] = useState<Record<string, string>>({})
+  const [capacityLocationId, setCapacityLocationId] = useState<string | null>(null)
+  const [capacityValue, setCapacityValue] = useState("")
+  const [isSubmittingLocation, setIsSubmittingLocation] = useState(false)
+
   // Search
   const [teamSearch, setTeamSearch] = useState("")
 
@@ -162,6 +182,73 @@ export function ExecutionReferenceTabs({
     setTeamDesc("")
     setTeamType("line_check")
     setTeamErrors({})
+  }
+
+  const handleAddLocationCategory = async () => {
+    const validation = validateReferenceIdentity({ code: locationCategoryCode, description: locationCategoryDescription })
+    if (!validation.ok) { setLocationErrors(validation.errors); return }
+    setIsSubmittingLocation(true)
+    try {
+      await createLocationCategory(getSupabaseBrowserClient(), projectId, validation.value)
+      toast.success("Location category created")
+      setIsAddLocationCategoryOpen(false)
+      setLocationCategoryCode("")
+      setLocationCategoryDescription("")
+      setLocationErrors({})
+      await fetchAll()
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create location category")
+    } finally {
+      setIsSubmittingLocation(false)
+    }
+  }
+
+  const handleAddLocation = async () => {
+    const input = {
+      categoryId: locationCategoryId,
+      code: locationCode,
+      description: locationDescription,
+      mappedProgressColumns: locationProgressColumns.split(",").map((value) => value.trim()).filter(Boolean),
+      capacity: Number(locationCapacity),
+    }
+    const validation = validateLocationInput(input)
+    if (!validation.ok) { setLocationErrors(validation.errors); return }
+    setIsSubmittingLocation(true)
+    try {
+      await createLocation(getSupabaseBrowserClient(), projectId, validation.value)
+      toast.success("Location created")
+      setIsAddLocationOpen(false)
+      setLocationCategoryId("")
+      setLocationCode("")
+      setLocationDescription("")
+      setLocationProgressColumns("")
+      setLocationCapacity("")
+      setLocationErrors({})
+      await fetchAll()
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create location")
+    } finally {
+      setIsSubmittingLocation(false)
+    }
+  }
+
+  const handleUpdateLocationCapacity = async () => {
+    if (!capacityLocationId) return
+    const validation = validateLocationCapacity(Number(capacityValue))
+    if (!validation.ok) { setLocationErrors(validation.errors); return }
+    setIsSubmittingLocation(true)
+    try {
+      await updateLocationCapacity(getSupabaseBrowserClient(), projectId, capacityLocationId, validation.value.capacity)
+      toast.success("Location capacity updated")
+      setCapacityLocationId(null)
+      setCapacityValue("")
+      setLocationErrors({})
+      await fetchAll()
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update location capacity")
+    } finally {
+      setIsSubmittingLocation(false)
+    }
   }
 
   // ── System creation ──
@@ -585,8 +672,10 @@ export function ExecutionReferenceTabs({
       <TabsContent value="tracking" className="mt-4 space-y-4">
         <Card>
           <CardHeader>
-            <CardTitle>Location Categories</CardTitle>
-            <CardDescription>High-level location groupings.</CardDescription>
+            <div className="flex items-center justify-between gap-3">
+              <div><CardTitle>Location Categories</CardTitle><CardDescription>High-level location groupings.</CardDescription></div>
+              {canManage && <Button size="sm" onClick={() => setIsAddLocationCategoryOpen(true)}><Plus className="mr-2 h-4 w-4" /> Add Category</Button>}
+            </div>
           </CardHeader>
           <CardContent>
             {data.locationCategories.length === 0 ? (
@@ -609,8 +698,10 @@ export function ExecutionReferenceTabs({
 
         <Card>
           <CardHeader>
-            <CardTitle>Locations</CardTitle>
-            <CardDescription>Tracking locations with progress column mapping.</CardDescription>
+            <div className="flex items-center justify-between gap-3">
+              <div><CardTitle>Locations</CardTitle><CardDescription>Tracking locations with progress column mapping and real capacity.</CardDescription></div>
+              {canManage && <Button size="sm" onClick={() => { setLocationCategoryId(data.locationCategories[0]?.id ?? ""); setIsAddLocationOpen(true) }} disabled={data.locationCategories.length === 0}><Plus className="mr-2 h-4 w-4" /> Add Location</Button>}
+            </div>
           </CardHeader>
           <CardContent>
             {data.locations.length === 0 ? (
@@ -628,8 +719,14 @@ export function ExecutionReferenceTabs({
                           {loc.mappedProgressColumns.join(", ")}
                         </Badge>
                       )}
+                      <Badge variant={loc.capacity === null ? "outline" : "secondary"}>
+                        Capacity: {loc.capacity ?? "Not configured"}
+                      </Badge>
                     </div>
-                    <ReferenceStatusBadge status={loc.status} />
+                    <div className="flex items-center gap-2">
+                      {canManage && <Button size="sm" variant="outline" onClick={() => { setCapacityLocationId(loc.id); setCapacityValue(loc.capacity?.toString() ?? "") }}>Edit capacity</Button>}
+                      <ReferenceStatusBadge status={loc.status} />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -659,6 +756,39 @@ export function ExecutionReferenceTabs({
       </TabsContent>
 
       {/* ─── Dialogs ─── */}
+
+      <Dialog open={isAddLocationCategoryOpen} onOpenChange={setIsAddLocationCategoryOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Add Location Category</DialogTitle><DialogDescription>Create a project-scoped tracking location category.</DialogDescription></DialogHeader>
+          <div className="space-y-4">
+            <div><Label htmlFor="location-category-code">Code</Label><Input id="location-category-code" value={locationCategoryCode} onChange={(event) => setLocationCategoryCode(event.target.value)} />{locationErrors.code && <p className="text-xs text-destructive">{locationErrors.code}</p>}</div>
+            <div><Label htmlFor="location-category-description">Description</Label><Input id="location-category-description" value={locationCategoryDescription} onChange={(event) => setLocationCategoryDescription(event.target.value)} />{locationErrors.description && <p className="text-xs text-destructive">{locationErrors.description}</p>}</div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setIsAddLocationCategoryOpen(false)}>Cancel</Button><Button onClick={handleAddLocationCategory} disabled={isSubmittingLocation}>Create</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isAddLocationOpen} onOpenChange={setIsAddLocationOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Add Tracking Location</DialogTitle><DialogDescription>Capacity is required for new locations.</DialogDescription></DialogHeader>
+          <div className="space-y-4">
+            <div><Label htmlFor="location-category">Category</Label><Select value={locationCategoryId} onValueChange={setLocationCategoryId}><SelectTrigger id="location-category"><SelectValue placeholder="Select category" /></SelectTrigger><SelectContent>{data.locationCategories.map((category) => <SelectItem key={category.id} value={category.id}>{category.code} — {category.description}</SelectItem>)}</SelectContent></Select>{locationErrors.categoryId && <p className="text-xs text-destructive">{locationErrors.categoryId}</p>}</div>
+            <div><Label htmlFor="location-code">Code</Label><Input id="location-code" value={locationCode} onChange={(event) => setLocationCode(event.target.value)} />{locationErrors.code && <p className="text-xs text-destructive">{locationErrors.code}</p>}</div>
+            <div><Label htmlFor="location-description">Description</Label><Input id="location-description" value={locationDescription} onChange={(event) => setLocationDescription(event.target.value)} />{locationErrors.description && <p className="text-xs text-destructive">{locationErrors.description}</p>}</div>
+            <div><Label htmlFor="location-capacity">Capacity</Label><Input id="location-capacity" type="number" min="1" value={locationCapacity} onChange={(event) => setLocationCapacity(event.target.value)} />{locationErrors.capacity && <p className="text-xs text-destructive">{locationErrors.capacity}</p>}</div>
+            <div><Label htmlFor="location-progress">Progress columns</Label><Input id="location-progress" value={locationProgressColumns} onChange={(event) => setLocationProgressColumns(event.target.value)} placeholder="start_fab, erected" /></div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setIsAddLocationOpen(false)}>Cancel</Button><Button onClick={handleAddLocation} disabled={isSubmittingLocation}>Create</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={capacityLocationId !== null} onOpenChange={(open) => { if (!open) { setCapacityLocationId(null); setCapacityValue(""); setLocationErrors({}) } }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit Location Capacity</DialogTitle><DialogDescription>Repair a legacy location or update its operating capacity.</DialogDescription></DialogHeader>
+          <div><Label htmlFor="edit-location-capacity">Capacity</Label><Input id="edit-location-capacity" type="number" min="1" value={capacityValue} onChange={(event) => setCapacityValue(event.target.value)} />{locationErrors.capacity && <p className="text-xs text-destructive">{locationErrors.capacity}</p>}</div>
+          <DialogFooter><Button variant="outline" onClick={() => setCapacityLocationId(null)}>Cancel</Button><Button onClick={handleUpdateLocationCapacity} disabled={isSubmittingLocation}>Save</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Team Dialog */}
       <Dialog open={isAddTeamOpen} onOpenChange={(open) => { if (!open) { setIsAddTeamOpen(false); resetTeamForm() } }}>

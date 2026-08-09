@@ -4,10 +4,13 @@ import {
   validateSpoolingMaterialClassInput,
   validatePaintMatrixInput,
   validateAssemblySettingsInput,
+  validateDeviceUserInput,
 } from "./extended-reference"
 
 // Device validation
 assert.equal(validateDeviceInput({ code: "dev-1", description: "Device 1" }).ok, true)
+assert.equal(validateDeviceUserInput({ membershipId: "member-1", deviceId: "device-1" }).ok, true)
+assert.equal(validateDeviceUserInput({ membershipId: "", deviceId: "device-1" }).ok, false)
 
 // Spooling class validation
 assert.equal(

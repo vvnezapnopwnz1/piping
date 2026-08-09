@@ -18,6 +18,7 @@ function run() {
       "nde_matrix",
       "flange_progress",
       "test_pack_composition",
+      "tracking_scan",
     ]
   )
 
@@ -47,6 +48,14 @@ function run() {
     "Joint Category", "Reason", "Joint Date", "Report Number", "Jointer Codes", "Tag Number",
   ])
   assert.equal(getImportJobTypeLabel("flange_progress"), "Flange progress")
+
+  assert.deepEqual(templateHeaderRow("tracking_scan"), [
+    "ISO Number", "Spool Number", "Location Code", "Direction", "Occurred At",
+    "Device Code", "Operator Email", "External Event ID",
+  ])
+  assert.deepEqual(getImportTypeDefinition("tracking_scan").naturalKey, [
+    "spool_number", "occurred_at", "direction", "location_code", "device_code",
+  ])
 
   const testPack = getImportTypeDefinition("test_pack_composition")
   assert.equal(testPack.label, "Test Pack composition")

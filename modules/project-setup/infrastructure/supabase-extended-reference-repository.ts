@@ -4,6 +4,8 @@ import type {
   Device,
   DeviceInput,
   DeviceUser,
+  DeviceUserCandidate,
+  DeviceUserInput,
   SpoolingMaterialType,
   SpoolingMaterialClass,
   SpoolingChecklistItem,
@@ -11,6 +13,7 @@ import type {
   PaintMatrixRule,
   AssemblySettings,
 } from "../domain/extended-reference"
+import { validateDeviceUserInput } from "../domain/extended-reference"
 import { mapSupabaseReferenceError } from "./supabase-reference-errors"
 import { normalizeReferenceCode } from "../domain/reference"
 
@@ -199,6 +202,41 @@ export async function createDevice(
     description: data.description,
     status: data.status,
   }
+}
+
+export async function listDeviceUserCandidates(
+  client: SupabaseClient<Database>,
+  projectId: string,
+): Promise<DeviceUserCandidate[]> {
+  const { data, error } = await client.rpc("list_tracking_device_user_candidates", { p_project_id: projectId })
+  if (error) throw new Error(mapSupabaseReferenceError(error))
+  return (data ?? []).map((row) => ({
+    membershipId: row.membership_id,
+    fullName: row.full_name,
+    email: row.email,
+    deviceUserId: row.device_user_id,
+    deviceId: row.device_id,
+    deviceCode: row.device_code,
+    isAssigned: row.is_assigned,
+  }))
+}
+
+export async function assignDeviceUser(
+  client: SupabaseClient<Database>,
+  projectId: string,
+  input: DeviceUserInput,
+): Promise<void> {
+  const validation = validateDeviceUserInput(input)
+  if (!validation.ok) throw new Error(Object.values(validation.errors)[0] ?? "Invalid device assignment")
+  const { error } = await client
+    .from("project_device_users")
+    .upsert({
+      project_id: projectId,
+      membership_id: validation.value.membershipId,
+      device_id: validation.value.deviceId,
+      status: "active",
+    }, { onConflict: "project_id,membership_id" })
+  if (error) throw new Error(mapSupabaseReferenceError(error))
 }
 
 export async function saveAssemblySettings(

@@ -74,6 +74,29 @@ function run() {
   assert.equal(testPack.rows[0].normalizedValues.iso_number, "ISO-1")
   assert.equal(blankLine.issues.length, 0)
 
+  const tracking = parseSheet("tracking_scan", [
+    ["ISO Number", "Spool Number", "Location Code", "Direction", "Occurred At", "Device Code", "Operator Email", "External Event ID"],
+    ["iso-1", "sp-1", "yard-1", "OUT", "2026-08-01T09:00:00+06:00", "pda-1", "Operator@Example.Test", " event-1 "],
+  ])
+  assert.equal(tracking.issues.length, 0)
+  assert.deepEqual(tracking.rows[0].normalizedValues, {
+    iso_number: "ISO-1",
+    spool_number: "SP-1",
+    location_code: "YARD-1",
+    direction: "out",
+    occurred_at: "2026-08-01T03:00:00.000Z",
+    device_code: "PDA-1",
+    operator_email: "operator@example.test",
+    external_event_id: "event-1",
+  })
+
+  const badTracking = parseSheet("tracking_scan", [
+    ["ISO Number", "Spool Number", "Location Code", "Direction", "Occurred At", "Device Code", "Operator Email", "External Event ID"],
+    ["ISO-1", "SP-1", "YARD-1", "sideways", "2026-08-01", "PDA-1", "operator@example.test", ""],
+  ])
+  assert.equal(badTracking.issues.some((issue) => issue.code === "TRACKING_DIRECTION"), true)
+  assert.equal(badTracking.issues.some((issue) => issue.code === "TRACKING_TIMESTAMP"), true)
+
   // An empty sheet is a sheet-level blocker.
   const empty = parseSheet("piping_material_list", [])
   assert.equal(empty.issues[0].code, "EMPTY_SHEET")

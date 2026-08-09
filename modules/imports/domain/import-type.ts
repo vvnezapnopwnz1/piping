@@ -6,6 +6,7 @@ export const IMPORT_TYPES = [
   "nde_matrix",
   "flange_progress",
   "test_pack_composition",
+  "tracking_scan",
 ] as const
 
 export type ImportType = (typeof IMPORT_TYPES)[number]
@@ -129,6 +130,21 @@ const DEFINITIONS: Record<ImportType, ImportTypeDefinition> = {
       { key: "iso_revision", header: "ISO Revision", required: true, kind: "text" },
       { key: "spool_number", header: "Spool Number", required: true, kind: "text" },
       { key: "spool_revision", header: "Spool Revision", required: true, kind: "text" },
+    ],
+  },
+  tracking_scan: {
+    importType: "tracking_scan",
+    label: "Tracking scanner events",
+    naturalKey: ["spool_number", "occurred_at", "direction", "location_code", "device_code"],
+    columns: [
+      { key: "iso_number", header: "ISO Number", required: true, kind: "text" },
+      { key: "spool_number", header: "Spool Number", required: true, kind: "text" },
+      { key: "location_code", header: "Location Code", required: true, kind: "text" },
+      { key: "direction", header: "Direction", required: true, kind: "text" },
+      { key: "occurred_at", header: "Occurred At", required: true, kind: "text" },
+      { key: "device_code", header: "Device Code", required: true, kind: "text" },
+      { key: "operator_email", header: "Operator Email", required: true, kind: "text" },
+      { key: "external_event_id", header: "External Event ID", required: false, kind: "text" },
     ],
   },
 }

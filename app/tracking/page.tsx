@@ -1,11 +1,10 @@
-import { NotOnSupabaseYet } from "@/components/pipeqc/not-on-supabase-yet"
+"use client"
+
+import { useSupabaseAuth } from "@/contexts/supabase-auth-context"
+import { TrackingDashboardScreen } from "@/modules/tracking/ui/tracking-dashboard-screen"
 
 export default function TrackingPage() {
-  return (
-    <NotOnSupabaseYet
-      title="Spool Tracking"
-      track="Track 08"
-      summary="Append-only spool movement history, current location per spool, transit alerts and capacity per laydown area, recorded by scanning on site."
-    />
-  )
+  const projectId = useSupabaseAuth().access?.projectId
+  if (!projectId) return <p className="p-6 text-sm text-muted-foreground">Select a project to view Tracking.</p>
+  return <TrackingDashboardScreen projectId={projectId} />
 }

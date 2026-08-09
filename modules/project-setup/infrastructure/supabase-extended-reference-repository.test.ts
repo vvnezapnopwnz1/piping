@@ -3,12 +3,21 @@ import {
   loadExtendedReferences,
   createDevice,
   saveAssemblySettings,
+  listDeviceUserCandidates,
+  assignDeviceUser,
 } from "./supabase-extended-reference-repository"
 
 function createFakeExtendedClient(_projectId = "proj-1") {
   const queries: string[] = []
 
   const client: any = {
+    rpc(name: string, payload: any) {
+      queries.push(`rpc:${name}:${JSON.stringify(payload)}`)
+      return Promise.resolve({
+        data: [{ membership_id: "member-1", full_name: "Operator", email: "operator@example.test", device_user_id: null, device_id: null, device_code: null, is_assigned: false }],
+        error: null,
+      })
+    },
     from(table: string) {
       queries.push(`from:${table}`)
       return {
@@ -48,7 +57,8 @@ function createFakeExtendedClient(_projectId = "proj-1") {
             },
           }
         },
-        upsert(payload: any) {
+        upsert(payload: any, options?: any) {
+          queries.push(`upsert-options:${table}:${JSON.stringify(options ?? {})}`)
           queries.push(`upsert:${table}:${JSON.stringify(payload)}`)
           return {
             select() {
@@ -93,6 +103,14 @@ async function runExtendedRepositoryTests() {
     description: "PDA Unit 1",
   })
   assert.equal(dev.code, "PDA-1")
+
+  const candidates = await listDeviceUserCandidates(client, "proj-1")
+  assert.equal(candidates[0]?.email, "operator@example.test")
+  assert.ok(queries.some((query) => query.startsWith("rpc:list_tracking_device_user_candidates:")))
+
+  await assignDeviceUser(client, "proj-1", { membershipId: "member-1", deviceId: "dev-1" })
+  assert.ok(queries.some((query) => query.includes('upsert:project_device_users:{"project_id":"proj-1","membership_id":"member-1","device_id":"dev-1","status":"active"}')))
+  assert.ok(queries.includes('upsert-options:project_device_users:{"onConflict":"project_id,membership_id"}'))
 
   const assembly = await saveAssemblySettings(client, "proj-1", true, "sub-1")
   assert.equal(assembly.enabled, true)

@@ -77,6 +77,7 @@ export interface LocationInput {
   code: string
   description: string
   mappedProgressColumns: string[]
+  capacity: number
 }
 
 export interface Location {
@@ -87,6 +88,7 @@ export interface Location {
   code: string
   description: string
   mappedProgressColumns: string[]
+  capacity: number | null
   status: ReferenceStatus
 }
 
@@ -153,15 +155,26 @@ export function validateLocationInput(input: LocationInput): ReferenceValidation
   if (!input.categoryId) {
     return { ok: false, errors: { categoryId: "Location category is required" } }
   }
+  if (!Number.isInteger(input.capacity) || input.capacity <= 0) {
+    return { ok: false, errors: { capacity: "Location capacity must be a positive integer" } }
+  }
   return {
     ok: true,
     value: {
       ...base.value,
       categoryId: input.categoryId,
       mappedProgressColumns: input.mappedProgressColumns || [],
+      capacity: input.capacity,
     },
     errors: {},
   }
+}
+
+export function validateLocationCapacity(capacity: number): ReferenceValidation<{ capacity: number }> {
+  if (!Number.isInteger(capacity) || capacity <= 0) {
+    return { ok: false, errors: { capacity: "Location capacity must be a positive integer" } }
+  }
+  return { ok: true, value: { capacity }, errors: {} }
 }
 
 export function validatePressureUnitInput(input: PressureUnitInput): ReferenceValidation<PressureUnitInput> {

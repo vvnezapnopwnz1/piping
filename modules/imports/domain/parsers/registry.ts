@@ -32,6 +32,18 @@ function normalizeCompositionDate(value: string): string {
   return match ? `${match[3]}-${match[2]}-${match[1]}` : value
 }
 
+function normalizeTrackingValue(key: string, value: string): string | null {
+  if (["iso_number", "spool_number", "location_code", "device_code"].includes(key)) return value.toUpperCase()
+  if (key === "direction") return value.toLowerCase()
+  if (key === "operator_email") return value.toLowerCase()
+  if (key === "occurred_at") {
+    if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value)) return null
+    const parsed = new Date(value)
+    return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString()
+  }
+  return value
+}
+
 export function parseSheet(importType: ImportType, sheet: SheetMatrix): ParseOutcome {
   const definition = getImportTypeDefinition(importType)
   const issues: ImportIssue[] = []
@@ -135,7 +147,28 @@ export function parseSheet(importType: ImportType, sheet: SheetMatrix): ParseOut
         continue
       }
 
-      if (importType === "test_pack_composition") {
+      if (importType === "tracking_scan") {
+        const normalized = normalizeTrackingValue(column.key, raw)
+        normalizedValues[column.key] = normalized
+        if (column.key === "direction" && !["in", "out"].includes(String(normalized))) {
+          issues.push({
+            rowNumber,
+            columnName: column.key,
+            severity: "blocker",
+            code: "TRACKING_DIRECTION",
+            message: '"Direction" must be either "in" or "out".',
+          })
+        }
+        if (column.key === "occurred_at" && normalized === null) {
+          issues.push({
+            rowNumber,
+            columnName: column.key,
+            severity: "blocker",
+            code: "TRACKING_TIMESTAMP",
+            message: '"Occurred At" must be a complete ISO-8601 timestamp with a timezone.',
+          })
+        }
+      } else if (importType === "test_pack_composition") {
         if (column.key === "planned_start_on" || column.key === "planned_end_on") {
           normalizedValues[column.key] = normalizeCompositionDate(raw)
         } else {

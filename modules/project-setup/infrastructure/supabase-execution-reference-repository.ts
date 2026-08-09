@@ -9,14 +9,21 @@ import type {
   ProjectSubsystemInput,
   LineService,
   LocationCategory,
+  LocationCategoryInput,
   Location,
+  LocationInput,
   PressureUnit,
   UnitTimeReference,
   UnitTimeReferenceInput,
   PunchCode,
   PunchCodeInput,
 } from "../domain/execution-reference"
-import { validatePunchCodeInput, validateUnitTimeReferenceInput } from "../domain/execution-reference"
+import {
+  validateLocationCapacity,
+  validateLocationInput,
+  validatePunchCodeInput,
+  validateUnitTimeReferenceInput,
+} from "../domain/execution-reference"
 import { mapSupabaseReferenceError } from "./supabase-reference-errors"
 import { normalizeReferenceCode, type ReferenceStatus } from "../domain/reference"
 
@@ -64,7 +71,7 @@ export async function loadExecutionReferences(
       .order("code", { ascending: true }),
     client
       .from("project_locations")
-      .select("id, project_id, category_id, code, description, mapped_progress_columns, status, project_location_categories(code)")
+      .select("id, project_id, category_id, code, description, mapped_progress_columns, capacity, status, project_location_categories(code)")
       .eq("project_id", projectId)
       .order("code", { ascending: true }),
     client
@@ -147,6 +154,7 @@ export async function loadExecutionReferences(
     mappedProgressColumns: Array.isArray(row.mapped_progress_columns)
       ? row.mapped_progress_columns.filter((value): value is string => typeof value === "string")
       : [],
+    capacity: row.capacity,
     status: row.status,
   }))
 
@@ -185,6 +193,82 @@ export async function loadExecutionReferences(
     unitTimeReferences,
     punchCodes,
   }
+}
+
+export async function createLocation(
+  client: SupabaseClient<Database>,
+  projectId: string,
+  input: LocationInput,
+): Promise<Location> {
+  const validation = validateLocationInput(input)
+  if (!validation.ok) throw new Error(Object.values(validation.errors)[0] ?? "Invalid location")
+
+  const { data, error } = await client
+    .from("project_locations")
+    .insert({
+      project_id: projectId,
+      category_id: validation.value.categoryId,
+      code: normalizeReferenceCode(validation.value.code),
+      description: validation.value.description.trim(),
+      mapped_progress_columns: validation.value.mappedProgressColumns,
+      capacity: validation.value.capacity,
+    })
+    .select("id, project_id, category_id, code, description, mapped_progress_columns, capacity, status")
+    .single()
+
+  if (error) throw new Error(mapSupabaseReferenceError(error))
+  return {
+    id: data.id,
+    projectId: data.project_id,
+    categoryId: data.category_id,
+    code: data.code,
+    description: data.description,
+    mappedProgressColumns: Array.isArray(data.mapped_progress_columns)
+      ? data.mapped_progress_columns.filter((value): value is string => typeof value === "string")
+      : [],
+    capacity: data.capacity,
+    status: data.status,
+  }
+}
+
+export async function createLocationCategory(
+  client: SupabaseClient<Database>,
+  projectId: string,
+  input: LocationCategoryInput,
+): Promise<LocationCategory> {
+  const { data, error } = await client
+    .from("project_location_categories")
+    .insert({
+      project_id: projectId,
+      code: normalizeReferenceCode(input.code),
+      description: input.description.trim(),
+    })
+    .select("id, project_id, code, description, status")
+    .single()
+  if (error) throw new Error(mapSupabaseReferenceError(error))
+  return {
+    id: data.id,
+    projectId: data.project_id,
+    code: data.code,
+    description: data.description,
+    status: data.status,
+  }
+}
+
+export async function updateLocationCapacity(
+  client: SupabaseClient<Database>,
+  projectId: string,
+  locationId: string,
+  capacity: number,
+): Promise<void> {
+  const validation = validateLocationCapacity(capacity)
+  if (!validation.ok) throw new Error(validation.errors.capacity)
+  const { error } = await client
+    .from("project_locations")
+    .update({ capacity: validation.value.capacity })
+    .eq("id", locationId)
+    .eq("project_id", projectId)
+  if (error) throw new Error(mapSupabaseReferenceError(error))
 }
 
 export async function createPunchCode(

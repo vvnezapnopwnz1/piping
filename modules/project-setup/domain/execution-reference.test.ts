@@ -23,8 +23,12 @@ assert.equal(
 
 // Location validation
 assert.equal(
-  validateLocationInput({ categoryId: "cat-1", code: "loc-1", description: "Location 1", mappedProgressColumns: ["prefabrication"] }).ok,
+  validateLocationInput({ categoryId: "cat-1", code: "loc-1", description: "Location 1", mappedProgressColumns: ["prefabrication"], capacity: 25 }).ok,
   true
+)
+assert.equal(
+  validateLocationInput({ categoryId: "cat-1", code: "loc-1", description: "Location 1", mappedProgressColumns: [], capacity: 0 }).ok,
+  false
 )
 
 // Pressure unit validation

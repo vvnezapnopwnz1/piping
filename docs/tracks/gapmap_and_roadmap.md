@@ -64,7 +64,7 @@ Viewed nde_inspector.md:1-432
 
 | Гэп / Функция | Статус | Приоритет | Влияние на роли | Решение | Описание / Что нужно сделать |
 | :--- | :---: | :---: | :--- | :---: | :--- |
-| **Spool Tracking Dashboard** | `❌ missing` | **P1** | PM, Spooling, Subcontractor | **build** | Дашборд с картой площадки/цеха, статусом нахождения спулов, флагами несоответствий (inconsistency flags) и предупреждениями о транзите. |
+| **Spool Tracking Dashboard** | `⚠ automated complete; browser pending` | **P1** | PM, Spooling, Subcontractor | **verify** | Track 08 реализует append-only ledger, current location, active occupancy/capacity, transit alerts, four-tab analysis, scanner import, CSV/XLSX exports и device usage. Карта не симулируется без managed images; browser gate выполняется по `docs/qa/track-08-agent-walkthrough.md`. |
 | **Iso Lifecycle & Transmittal Engine** | `⚠ partial` | **P1** | Spooling, PM | **build** | Полноценный конвейер изменений изометрик: импорт ревизий SpoolGen, выпуск трансмитталов на площадку, статус HOLD на измененные чертежи. |
 
 ---
@@ -131,7 +131,7 @@ graph TD
 **Цель:** Физический мир и финальный бумажный след.
 
 *   **4.1 Spool Tracking Dashboard (Track S):**
-    *   Карта цеха и площадки, отслеживание перемещений, флагов ошибок логистики.
+    *   **Automated implementation complete; browser acceptance pending.** Реальные project-scoped проекции отслеживают перемещения, capacity, transit и inconsistencies. Managed map/image ingestion отложен и не подменяется фиктивной картой.
 *   **4.2 Dossier Handover Generation (Track C / H):**
     *   Формирование итогового PDF-досье тестпака для сдачи заказчику.
 
