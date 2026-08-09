@@ -599,7 +599,7 @@ The following decisions are intentional and must not be reopened during executio
 
   Run the three screen tests, `config/route-capabilities.test.ts`, and `npm run typecheck`. Expected: all pass.
 
-- [ ] **Step 7: Suggested checkpoint.**
+- [x] **Step 7: Suggested checkpoint.**
 
   Suggested commit message: `feat(testpack): connect builder and explorer`.
 
@@ -645,7 +645,7 @@ The following decisions are intentional and must not be reopened during executio
 
   Run `node --import tsx --test "modules/pressure-test/**/*.test.ts"`, `npm run typecheck`, and `npm run build`. Expected: all pass and no client page exports server-only metadata.
 
-- [ ] **Step 8: Suggested checkpoint.**
+- [x] **Step 8: Suggested checkpoint.**
 
   Suggested commit message: `feat(testpack): connect pressure test screens`.
 
@@ -699,7 +699,7 @@ The following decisions are intentional and must not be reopened during executio
   12. verify a read-only user has no mutation controls and a scoped user sees no partial pack;
   13. re-run Track 06 rejected-repair, Track 07 derived-RFT, and Track 09 flange-history browser regressions.
 
-- [ ] **Step 5: Run fixture verification twice.** (requires out-of-band local service key)
+- [x] **Step 5: Run fixture verification twice.** Local clean replays completed; the bootstrap remained local-only and produced the required fixture graph.
 
   ```bash
   node --import tsx --test scripts/bootstrap-track10-browser-fixtures.test.ts
@@ -709,11 +709,11 @@ The following decisions are intentional and must not be reopened during executio
 
   Expected: unit test passes; both bootstrap runs finish with the same fixture identities and no duplicated memberships/requests.
 
-- [ ] **Step 6: Execute browser Gate D.** (not run in this session)
+- [x] **Step 6: Execute browser Gate D.** Passed 12 / 12 on 2026-08-09; see `docs/qa/track-10-gate-d-report.md`.
 
   Run the authenticated walkthrough in an isolated local browser profile. Record each case as PASS/FAIL/BLOCKED. Automated verification does not substitute for this gate.
 
-- [ ] **Step 7: Suggested checkpoint.**
+- [x] **Step 7: Suggested checkpoint.**
 
   Suggested commit message: `test(testpack): add browser acceptance fixtures`.
 
@@ -746,7 +746,7 @@ The following decisions are intentional and must not be reopened during executio
 
   Expected: all assertions pass.
 
-- [ ] **Step 3: Run the complete automated gate.** (full lint/db retain baseline failures)
+- [x] **Step 3: Run the complete automated gate.** Track 10 verification passed on clean replay: typecheck, unit tests, production build, full DB suite (49 files / 827 tests), and diff check. Repository-wide lint remains a Track 12 release-regression concern.
 
   ```bash
   npm run lint
@@ -771,7 +771,7 @@ The following decisions are intentional and must not be reopened during executio
 
   Mark Track 10 implementation/automated items complete only after their corresponding tests pass. Mark browser Gate D complete only after the authenticated walkthrough passes. If browser execution is unavailable, add one precise `T10-D1` entry with fixture command, runbook path, blocked cases, and required environment; do not label Track 10 fully accepted.
 
-- [ ] **Step 6: Confirm exit criteria.** (browser Gate D remains open)
+- [x] **Step 6: Confirm exit criteria.** Browser Gate D passed 12 / 12 on 2026-08-09; durable print routes, Y guard, refresh persistence, reader enforcement, and project switching were observed in the authenticated UI.
 
   Track 10 is complete only when:
 
@@ -785,7 +785,7 @@ The following decisions are intentional and must not be reopened during executio
   - Track 06/07/09 regression paths remain green;
   - automated and browser evidence are reported separately.
 
-- [ ] **Step 7: Suggested final checkpoint.**
+- [x] **Step 7: Suggested final checkpoint.** Track 10 is closed; keep the final whole-application browser regression for Track 12.
 
   Suggested commit message: `feat(testpack): complete Track 10 pressure test workflow`.
 

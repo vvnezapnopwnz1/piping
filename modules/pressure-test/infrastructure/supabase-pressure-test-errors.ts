@@ -11,6 +11,7 @@ export function mapSupabasePressureTestError(error: { code?: string } | null | u
     case "PQC86": return "The flange is not eligible for Y/Z reinstatement."
     case "PQC88": return "The Test Pack could not be found."
     case "PQC89": return "This Test Pack is archived and read-only."
+    case "PQT16": return "Complete every Y reinstatement before pre-commissioning."
     case "42501": return "You do not have permission to manage this pressure-test action."
     case "PQC10": return "This command has already been applied."
     case "PQC11": return "This command is not allowed in the current lifecycle state."

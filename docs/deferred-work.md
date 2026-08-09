@@ -362,26 +362,15 @@ already satisfies it, and before this change every spool in the fixture was pre-
 
 ## Track 10 — Test Pack & Pressure Test
 
-### T10-D1 — authenticated browser Gate D remains unexecuted
+### T10-D1 — CLOSED 2026-08-09: authenticated browser Gate D
 
-**Missing.** The Track 10 implementation, deterministic fixture bootstrap, and exact walkthrough now
-exist, but no authenticated local browser run has yet recorded the full Line Check → X clearance →
-RFT → Blinding → Testing/Pre-commissioning → Y/Z reinstatement sequence.
+The authenticated local browser walkthrough passed **12 / 12** cases. It recorded the full
+Line Check → X clearance → derived RFT → Blinding → Testing/Pre-commissioning → Y/Z reinstatement
+sequence, durable print URLs, refresh persistence, reader controls, and project-scope switching.
+See [Track 10 Gate D report](qa/track-10-gate-d-report.md).
 
-**Covered today by.** Tasks 1–7 pgTAP (108 tests across 100–105), 129 unit tests, typecheck, build,
-and the fixture contract test. `scripts/bootstrap-track10-browser-fixtures.ts` is local-only and
-idempotent; `docs/qa/track-10-agent-walkthrough.md` lists every required durable-state and negative
-case check.
-
-**Breaks if never done.** A browser can still expose wiring defects that automated tests cannot see:
-wrong project after a switch, disabled capability controls, stale worklists, incorrect print route,
-or a request that appears successful without surviving refresh. Track 10 must not be called fully
-accepted on automated evidence alone.
-
-**Trigger.** Run the fixture command twice and execute the walkthrough in an isolated authenticated
-local browser profile. Record each case PASS/FAIL/BLOCKED with durable IDs and screenshots.
-
-**Risk if left.** High for release confidence, low for the verified database contract.
+The final Track 12 whole-application browser regression and the product owner's manual walkthrough
+remain planned release activities; they are not deferred Track 10 work.
 
 ## Cross-cutting
 

@@ -1486,12 +1486,13 @@ local fixture bootstrap.
 
 **Отдельный execution plan:** `docs/superpowers/plans/2026-08-09-track-10-test-pack.md`.
 
-**Статус на 2026-08-05:** Tasks 1–9 реализованы в текущем checkout: database aggregate/RPCs,
-readiness projections, import, typed repository/application boundary, Builder/Explorer and
-pressure-test operational screens. Task 10 fixture bootstrap and walkthrough are present, but
-authenticated browser Gate D has not been executed. Task 11 generated types and documentation
-are updated; the complete DB suite still has the seven pre-existing fixture failures listed in
-the Track 10 execution plan. Do not label Track 10 fully accepted until Gate D is recorded.
+**Статус на 2026-08-10: CLOSED.** Database aggregate/RPCs, readiness projections, import, typed
+repository/application boundary, Builder/Explorer and pressure-test operational screens are complete.
+The authenticated local browser Gate D passed **12 / 12** cases on 2026-08-09, including durable
+print URLs, the Y-reinstatement pre-commissioning guard, refresh persistence, reader enforcement,
+and project switching. Clean-replay verification also passed the full DB suite (49 files / 827 tests).
+Evidence: `docs/qa/track-10-gate-d-report.md`. Track 12 will perform a final whole-application
+browser regression; it is not an open Track 10 condition.
 
 ### Database
 

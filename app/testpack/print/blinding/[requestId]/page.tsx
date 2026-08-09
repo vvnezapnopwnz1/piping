@@ -1,5 +1,6 @@
 import { RequestPrintView } from "@/modules/pressure-test/ui/request-print-view"
+import { resolvePrintRequestId } from "@/modules/pressure-test/ui/print-route-params"
 
-export default function BlindingPrintPage({ params }: { params: { requestId: string } }) {
-  return <RequestPrintView title="Blinding Form" requestId={params.requestId} expectedType="blinding" />
+export default async function BlindingPrintPage({ params }: { params: Promise<{ requestId: string }> }) {
+  return <RequestPrintView title="Blinding Form" requestId={await resolvePrintRequestId(params)} expectedType="blinding" />
 }
