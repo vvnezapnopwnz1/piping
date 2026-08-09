@@ -1481,15 +1481,21 @@ local fixture bootstrap.
 
 **Отдельный execution plan:** `docs/superpowers/plans/2026-08-09-track-10-test-pack.md`.
 
+**Статус на 2026-08-05:** Tasks 1–9 реализованы в текущем checkout: database aggregate/RPCs,
+readiness projections, import, typed repository/application boundary, Builder/Explorer and
+pressure-test operational screens. Task 10 fixture bootstrap and walkthrough are present, but
+authenticated browser Gate D has not been executed. Task 11 generated types and documentation
+are updated; the complete DB suite still has the seven pre-existing fixture failures listed in
+the Track 10 execution plan. Do not label Track 10 fully accepted until Gate D is recorded.
+
 ### Database
 
-- `supabase/migrations/20260809090000_test_pack_core.sql`;
-- `supabase/migrations/20260809091000_line_check_punch.sql`;
-- `supabase/migrations/20260809092000_pressure_test_workflow.sql`;
-- `supabase/migrations/20260809093000_test_pack_readiness_views.sql`;
-- `supabase/tests/database/100_test_pack_composition.test.sql`;
-- `supabase/tests/database/101_rft_truth_table.test.sql`;
-- `supabase/tests/database/102_pressure_test_transitions.test.sql`.
+- `supabase/migrations/20260813090000_test_pack_referentials.sql`;
+- `supabase/migrations/20260813091000_test_pack_core.sql`;
+- `supabase/migrations/20260813092000_test_pack_import.sql`;
+- `supabase/migrations/20260813093000_line_check_punch.sql`;
+- `supabase/migrations/20260813094000_test_pack_readiness.sql`;
+- `supabase/migrations/20260813095000_pressure_test_workflow.sql`.
 
 ### Modules
 
@@ -1505,26 +1511,26 @@ local fixture bootstrap.
 
 ### Tasks
 
-- [ ] Создать stable Test Pack aggregate и composition.
-- [ ] Запретить одному active ISO принадлежать нескольким active Test Pack.
-- [ ] Реализовать manual builder и import через T3.
-- [ ] Удалить статическую explorer model и оставить одну DB model.
-- [ ] Реализовать Line Check eligibility.
-- [ ] Реализовать Preparation → assigned request → Progress.
-- [ ] Создать punch X во время Line Check.
-- [ ] Реализовать X clearance requests/progress.
-- [ ] Создать authoritative `isometric_readiness` view.
-- [ ] Создать authoritative `test_pack_readiness` view.
-- [ ] Формула ISO RFT: complete + QC released + line check done + X cleared.
-- [ ] Явно исключить blinding из RFT.
-- [ ] Разрешить Blinding только после Test Pack RFT.
-- [ ] Реализовать Testing и Precommissioning transitions.
-- [ ] Реализовать Y/Z reinstatement requests/progress.
-- [ ] Включить Flange published readiness в соответствующие pressure-test gates.
-- [ ] Переподключить Builder/Explorer и все pressure-test screens.
-- [ ] Исправить remove/move ISO consistency.
-- [ ] Удалить `recordSpoolRFT` watcher и ручные `readyForTest`.
-- [ ] Удалить Supabase mode usage `testpack-store`.
+- [x] Создать stable Test Pack aggregate и composition.
+- [x] Запретить одному active ISO принадлежать нескольким active Test Pack.
+- [x] Реализовать manual builder и import через T3.
+- [x] Удалить статическую explorer model и оставить одну DB model.
+- [x] Реализовать Line Check eligibility.
+- [x] Реализовать Preparation → assigned request → Progress.
+- [x] Создать punch X во время Line Check.
+- [x] Реализовать X clearance requests/progress.
+- [x] Создать authoritative `isometric_readiness` view.
+- [x] Создать authoritative `test_pack_readiness` view.
+- [x] Формула ISO RFT: complete + QC released + line check done + X cleared.
+- [x] Явно исключить blinding из RFT.
+- [x] Разрешить Blinding только после Test Pack RFT.
+- [x] Реализовать Testing и Precommissioning transitions.
+- [x] Реализовать Y/Z reinstatement requests/progress.
+- [x] Включить Flange published readiness в соответствующие pressure-test gates.
+- [x] Переподключить Builder/Explorer и все pressure-test screens.
+- [x] Исправить remove/move ISO consistency.
+- [x] Удалить `recordSpoolRFT` watcher и ручные `readyForTest`.
+- [x] Удалить Supabase mode usage `testpack-store`.
 
 ### Mandatory RFT truth table
 

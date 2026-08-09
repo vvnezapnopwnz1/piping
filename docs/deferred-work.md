@@ -360,6 +360,29 @@ already satisfies it, and before this change every spool in the fixture was pre-
 
 **Risk if left.** Medium for demo readiness; low for the verified database contract.
 
+## Track 10 — Test Pack & Pressure Test
+
+### T10-D1 — authenticated browser Gate D remains unexecuted
+
+**Missing.** The Track 10 implementation, deterministic fixture bootstrap, and exact walkthrough now
+exist, but no authenticated local browser run has yet recorded the full Line Check → X clearance →
+RFT → Blinding → Testing/Pre-commissioning → Y/Z reinstatement sequence.
+
+**Covered today by.** Tasks 1–7 pgTAP (108 tests across 100–105), 129 unit tests, typecheck, build,
+and the fixture contract test. `scripts/bootstrap-track10-browser-fixtures.ts` is local-only and
+idempotent; `docs/qa/track-10-agent-walkthrough.md` lists every required durable-state and negative
+case check.
+
+**Breaks if never done.** A browser can still expose wiring defects that automated tests cannot see:
+wrong project after a switch, disabled capability controls, stale worklists, incorrect print route,
+or a request that appears successful without surviving refresh. Track 10 must not be called fully
+accepted on automated evidence alone.
+
+**Trigger.** Run the fixture command twice and execute the walkthrough in an isolated authenticated
+local browser profile. Record each case PASS/FAIL/BLOCKED with durable IDs and screenshots.
+
+**Risk if left.** High for release confidence, low for the verified database contract.
+
 ## Cross-cutting
 
 Not a track's debt: introduced by one track and carried by all of them. The conventions below say

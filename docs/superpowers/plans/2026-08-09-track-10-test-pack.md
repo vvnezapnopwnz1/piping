@@ -120,7 +120,7 @@ The following decisions are intentional and must not be reopened during executio
 - Modify: `modules/project-setup/ui/execution-reference-tabs.tsx`
 - Modify: `modules/project-setup/ui/referential-dialogs.test.ts`
 
-- [ ] **Step 1: Write failing domain and repository tests.**
+- [x] **Step 1: Write failing domain and repository tests.**
 
   Add `PunchCodeInput`/`PunchCode` expectations with trimmed uppercase `code`, required trimmed `description`, and the shared active/inactive reference status. Specify `listPunchCodes(projectId)` and `createPunchCode(projectId, input)` against `project_punch_codes`.
 
@@ -132,7 +132,7 @@ The following decisions are intentional and must not be reopened during executio
 
   Expected: FAIL because the punch-code contract and repository methods do not exist.
 
-- [ ] **Step 2: Write the failing pgTAP authorization test.**
+- [x] **Step 2: Write the failing pgTAP authorization test.**
 
   Prove that `project_punch_codes` is project-scoped, code uniqueness is case-insensitive per project, project admins with `project_referential.manage` can create/deactivate entries, ordinary Test Pack users can read active entries through `testpack.view`, and cross-project leakage is impossible.
 
@@ -144,19 +144,19 @@ The following decisions are intentional and must not be reopened during executio
 
   Expected before migration: FAIL because `project_punch_codes` is missing.
 
-- [ ] **Step 3: Implement the referential migration.**
+- [x] **Step 3: Implement the referential migration.**
 
   Create `project_punch_codes(id, project_id, code, description, status, created_at, updated_at)`, a unique expression index on `(project_id, upper(btrim(code)))`, the same-project trigger pattern used by Track 02, RLS, read policy for `testpack.view`, management policy/command boundary for `project_referential.manage`, and reference-usage protection so a used code is deactivated rather than deleted.
 
-- [ ] **Step 4: Implement the domain/repository/UI path.**
+- [x] **Step 4: Implement the domain/repository/UI path.**
 
   Add Punch Codes to the existing Test Pack tab in `execution-reference-tabs.tsx`. Reuse the existing reference dialog and status badge; do not build a second admin screen. Keep create/deactivate controls behind `project_referential.manage`.
 
-- [ ] **Step 5: Run focused verification.**
+- [x] **Step 5: Run focused verification.**
 
   Run the two Node test files, `modules/project-setup/ui/referential-dialogs.test.ts`, and pgTAP 100. Expected: all pass.
 
-- [ ] **Step 6: Suggested checkpoint.**
+- [x] **Step 6: Suggested checkpoint.**
 
   Suggested commit message if Git authorization is later granted: `feat(project-setup): add test pack punch codes`.
 
@@ -169,7 +169,7 @@ The following decisions are intentional and must not be reopened during executio
 - Create: `modules/pressure-test/domain/test-pack.ts`
 - Create: `modules/pressure-test/domain/test-pack.test.ts`
 
-- [ ] **Step 1: Write failing domain tests for Test Pack metadata and composition decisions.**
+- [x] **Step 1: Write failing domain tests for Test Pack metadata and composition decisions.**
 
   Cover these exact rules:
 
@@ -190,11 +190,11 @@ The following decisions are intentional and must not be reopened during executio
 
   Expected: FAIL because the module does not exist.
 
-- [ ] **Step 2: Add the minimal domain contract.**
+- [x] **Step 2: Add the minimal domain contract.**
 
   Export `TestPackMedium`, `TestPackLifecycle`, `TestPackDefinition`, `TestPackMember`, `CreateTestPackInput`, `UpdateTestPackInput`, and `normalizeTestPackInput`. Keep DB column mapping out of the domain file.
 
-- [ ] **Step 3: Write the failing composition pgTAP test.**
+- [x] **Step 3: Write the failing composition pgTAP test.**
 
   The test must exercise:
 
@@ -217,13 +217,13 @@ The following decisions are intentional and must not be reopened during executio
 
   Expected before migration: FAIL on missing tables/functions.
 
-- [ ] **Step 4: Create the core tables.**
+- [x] **Step 4: Create the core tables.**
 
   `test_packs` must contain stable identity plus `project_id`, normalized `test_pack_number`, `revision_no`, system/subsystem/service-class/line-service IDs, the server-resolved `pressure_unit` enum snapshot, `planned_start_on`, `planned_end_on`, `priority`, `test_medium`, `test_pressure`, `location`, optional `volume_m3`, `lifecycle`, creator/updater timestamps, and no readiness/status flag.
 
   `test_pack_isometrics` must contain `project_id`, `test_pack_id`, stable `isometric_id`, `assigned_isometric_revision_id` as an audit snapshot, `assigned_at/by`, nullable `removed_at/by`, and source metadata (`manual` or `import`, optional `source_import_job_id`). A partial unique index on `isometric_id WHERE removed_at IS NULL` enforces the one-active-pack invariant.
 
-- [ ] **Step 5: Implement atomic RPCs.**
+- [x] **Step 5: Implement atomic RPCs.**
 
   Add `create_test_pack`, `update_test_pack`, `compose_test_pack`, `remove_test_pack_isometric`, `move_test_pack_isometric`, and `archive_test_pack`. Each RPC must:
 
@@ -236,15 +236,15 @@ The following decisions are intentional and must not be reopened during executio
   - let migration 093 replace the helper to include Line Check/punch evidence and migration 095 replace it again to include Blinding/testing/reinstatement evidence;
   - never statically reference a table created by a later migration and never weaken the helper when replacing it.
 
-- [ ] **Step 6: Add scoped read models and RLS.**
+- [x] **Step 6: Add scoped read models and RLS.**
 
   Create `test_pack_catalog` and `test_pack_member_worklist` security-invoker views. A scoped user must not see a partial Test Pack: return a pack only when every active member ISO passes `current_user_in_pds_scope`; an empty pack is visible to its creator/project-wide roles but has zero members and is never ready.
 
-- [ ] **Step 7: Run focused verification.**
+- [x] **Step 7: Run focused verification.**
 
   Run the domain test and pgTAP 101. Expected: all assertions pass.
 
-- [ ] **Step 8: Suggested checkpoint.**
+- [x] **Step 8: Suggested checkpoint.**
 
   Suggested commit message: `feat(testpack): add stable aggregate and composition`.
 
@@ -264,7 +264,7 @@ The following decisions are intentional and must not be reopened during executio
 - Modify: `modules/imports/infrastructure/supabase-import-repository.test.ts`
 - Modify: `modules/imports/ui/import-workbench.tsx`
 
-- [ ] **Step 1: Specify the exact import contract in failing tests.**
+- [x] **Step 1: Specify the exact import contract in failing tests.**
 
   Add `test_pack_composition` with natural key `test_pack_number + iso_number`. Columns are:
 
@@ -279,27 +279,27 @@ The following decisions are intentional and must not be reopened during executio
 
   Run the four focused import domain/parser tests. Expected: FAIL because the import type is unknown.
 
-- [ ] **Step 2: Add the client-side definition and workbook rules.**
+- [x] **Step 2: Add the client-side definition and workbook rules.**
 
   Preserve generic history rendering for unknown future import types. The workbench must display a warning that existing Test Packs can be updated only after conflict confirmation and additional ISO membership is a manual Builder action.
 
-- [ ] **Step 3: Write failing pgTAP import tests.**
+- [x] **Step 3: Write failing pgTAP import tests.**
 
   Cover unknown system/subsystem/service class/line service, nonexistent ISO/spool, wrong accepted revisions, spool not belonging to ISO, partial ISO rows, duplicate active membership, cross-project/PDS data, metadata overwrite conflicts, and atomic rollback. Prove that apply requires both `imports.manage` and `testpack.manage` and that re-applying an applied job is rejected/idempotent according to the Track 03 lifecycle.
 
-- [ ] **Step 4: Implement server revalidation and apply.**
+- [x] **Step 4: Implement server revalidation and apply.**
 
   Extend the `import_jobs` type constraint and add `revalidate_test_pack_import_job(job_id)` plus `apply_test_pack_import_job(job_id, confirm_conflicts boolean)`. Apply must group normalized rows by Test Pack and ISO, call the same invariant logic as the manual commands, create new packs/composition, update existing metadata only with confirmed conflicts, and emit a conflict instead of adding a new ISO to an existing Test Pack.
 
-- [ ] **Step 5: Wire repository dispatch.**
+- [x] **Step 5: Wire repository dispatch.**
 
   Route only `test_pack_composition` to `apply_test_pack_import_job`; keep `flange_progress` on its dedicated RPC and all existing kinds on `apply_import_job`. Add error mappings for composition conflict, revision mismatch, and manual-add-required responses.
 
-- [ ] **Step 6: Run focused verification.**
+- [x] **Step 6: Run focused verification.**
 
   Run all modified import tests and pgTAP 102. Expected: all pass with existing import types unchanged.
 
-- [ ] **Step 7: Suggested checkpoint.**
+- [x] **Step 7: Suggested checkpoint.**
 
   Suggested commit message: `feat(imports): support test pack composition`.
 
@@ -312,15 +312,15 @@ The following decisions are intentional and must not be reopened during executio
 - Create: `modules/pressure-test/domain/punch-item.ts`
 - Create: `modules/pressure-test/domain/punch-item.test.ts`
 
-- [ ] **Step 1: Write failing punch-domain tests.**
+- [x] **Step 1: Write failing punch-domain tests.**
 
   Specify required checking/completion dates, current Test Pack membership, stable ISO, optional stable spool belonging to that ISO, active punch code, editable non-empty description snapshot, automatic item number, and Category X only. Specify clearance as a later immutable fact; a browser input cannot mark a punch cleared during creation.
 
-- [ ] **Step 2: Add the minimal punch domain model.**
+- [x] **Step 2: Add the minimal punch domain model.**
 
   Export `PunchItem`, `LineCheckAssignment`, `LineCheckResult`, `ItemClearanceAssignment`, and normalization functions. Keep request-number generation and actor IDs server-owned.
 
-- [ ] **Step 3: Write the failing pgTAP workflow test.**
+- [x] **Step 3: Write the failing pgTAP workflow test.**
 
   Prove:
 
@@ -335,7 +335,7 @@ The following decisions are intentional and must not be reopened during executio
   - a request with no progress may be cancelled; a started request cannot be cancelled;
   - cross-project, out-of-scope, direct-write, and stale-membership attempts fail.
 
-- [ ] **Step 4: Create the durable request schema.**
+- [x] **Step 4: Create the durable request schema.**
 
   Add `pressure_test_requests` with `request_type IN ('line_check','item_clearance','blinding','reinstatement')`, `test_pack_id`, Test Pack revision snapshot, team, assigned date, request number, creator timestamps, and optional cancelled metadata. Do not store a mutable request status; read views derive it from target/result counts and cancellation metadata. Add type-specific target tables rather than a polymorphic unvalidated UUID:
 
@@ -347,19 +347,19 @@ The following decisions are intentional and must not be reopened during executio
 
   Replace `test_pack_composition_is_locked` so it returns true for an ISO once any Line Check request, result, punch, or clearance references that membership. Retain every lock condition from migration 091.
 
-- [ ] **Step 5: Implement commands.**
+- [x] **Step 5: Implement commands.**
 
   Add `assign_line_check`, `record_line_check_result`, `assign_item_clearance`, `record_punch_clearance`, and `cancel_pressure_test_request`. Every command must re-read membership, accepted engineering revision, construction eligibility, capability, PDS scope, team type, and active referentials inside the transaction.
 
-- [ ] **Step 6: Add read models.**
+- [x] **Step 6: Add read models.**
 
   Create `line_check_worklist`, `item_clearance_worklist`, and `pressure_test_request_details` security-invoker views. The details view is the only data source for both progress UI and print routes.
 
-- [ ] **Step 7: Run focused verification.**
+- [x] **Step 7: Run focused verification.**
 
   Run the punch domain test and pgTAP 103. Expected: all pass.
 
-- [ ] **Step 8: Suggested checkpoint.**
+- [x] **Step 8: Suggested checkpoint.**
 
   Suggested commit message: `feat(testpack): add line check and X clearance`.
 
@@ -372,7 +372,7 @@ The following decisions are intentional and must not be reopened during executio
 - Create: `modules/pressure-test/domain/readiness.ts`
 - Create: `modules/pressure-test/domain/readiness.test.ts`
 
-- [ ] **Step 1: Write the mandatory domain truth table first.**
+- [x] **Step 1: Write the mandatory domain truth table first.**
 
   Test `deriveIsometricReadiness` with the master-roadmap cases:
 
@@ -388,33 +388,33 @@ The following decisions are intentional and must not be reopened during executio
 
   Add Test Pack aggregation cases for zero members, one blocked member, all-ready members, and archived packs.
 
-- [ ] **Step 2: Implement the pure readiness functions.**
+- [x] **Step 2: Implement the pure readiness functions.**
 
   Return blocker codes and counts as well as the boolean: `NO_CURRENT_REVISION`, `NO_SPOOLS`, `WELD_OR_SUPPORT_PENDING`, `FLANGE_PENDING`, `NDE_PENDING`, `PWHT_PENDING`, `LINE_CHECK_PENDING`, `X_OPEN`. Blinding/testing fields are not inputs.
 
-- [ ] **Step 3: Write the failing database truth-table test.**
+- [x] **Step 3: Write the failing database truth-table test.**
 
   Build one accepted ISO revision with multiple spools, welds, supports, and flange joints. Advance one upstream fact at a time and assert the views change immediately without updating a Test Pack row. Include a revision replacement case to prove stable ISO membership resolves the new accepted definition and stale revision evidence does not leak forward.
 
-- [ ] **Step 4: Create `isometric_readiness`.**
+- [x] **Step 4: Create `isometric_readiness`.**
 
   Aggregate only the current accepted, non-removed ISO/spool/weld/support/flange definitions. Expose totals/completed counts, NDE/PWHT pending counts, Line Check assigned/completed dates, open X count, blocker JSON, `is_complete`, `is_qc_released`, `is_rft`, and derived `rft_on`.
 
   Use Track 07 `spool_erection_readiness` for stage/field quality evidence and Track 09 `flange_joint_readiness` for current flange completion. Do not copy either source into Track 10 tables.
 
-- [ ] **Step 5: Create `test_pack_readiness` and Explorer views.**
+- [x] **Step 5: Create `test_pack_readiness` and Explorer views.**
 
   Aggregate active members only. Expose member/spool/weld/flange counts, every blocker count, `is_rft`, earliest/latest workflow dates, and derived `unit_time` as the sum of current flange `calculated_ut` snapshots. Add `test_pack_release_backlog`, `test_pack_iso_status`, and `test_pack_spool_status`; show numeric code `12` only when RFT.
 
-- [ ] **Step 6: Protect projection access.**
+- [x] **Step 6: Protect projection access.**
 
   Use `security_invoker = true`, grant SELECT only to authenticated, and preserve complete-pack PDS visibility rather than returning misleading partial aggregates.
 
-- [ ] **Step 7: Run focused verification.**
+- [x] **Step 7: Run focused verification.**
 
   Run the domain test and pgTAP 104. Expected: truth table and dynamic upstream changes all pass.
 
-- [ ] **Step 8: Suggested checkpoint.**
+- [x] **Step 8: Suggested checkpoint.**
 
   Suggested commit message: `feat(testpack): derive authoritative readiness`.
 
@@ -427,7 +427,7 @@ The following decisions are intentional and must not be reopened during executio
 - Create: `modules/pressure-test/domain/pressure-test-workflow.ts`
 - Create: `modules/pressure-test/domain/pressure-test-workflow.test.ts`
 
-- [ ] **Step 1: Write failing state-machine tests.**
+- [x] **Step 1: Write failing state-machine tests.**
 
   Model these states and transitions:
 
@@ -447,11 +447,11 @@ The following decisions are intentional and must not be reopened during executio
 
   The derived state skips `awaiting_y_reinstatement` or `awaiting_z_reinstatement` only when that category has zero eligible current flange joints. Dates must be monotonic. Reinstatement eligibility is Y after testing completion and Z after pre-commissioning completion.
 
-- [ ] **Step 2: Add the pure workflow model.**
+- [x] **Step 2: Add the pure workflow model.**
 
   Export stage/event types, `derivePressureTestState`, and transition guards. Keep team, user, and database IDs out of the pure decision function.
 
-- [ ] **Step 3: Write failing pgTAP transition tests.**
+- [x] **Step 3: Write failing pgTAP transition tests.**
 
   Cover the happy path plus rejections for Blinding before RFT, testing before Blinding completion, testing completion before start, pre-commissioning before all Y reinstatement, Y before test completion, Z before pre-commissioning, wrong flange category, stale flange revision, flange outside the Test Pack, wrong team type, direct mutation, and cross-project/PDS access.
 
@@ -462,33 +462,33 @@ The following decisions are intentional and must not be reopened during executio
   - same idempotency key returns the original result;
   - corrections create a superseding record and never edit the original payload.
 
-- [ ] **Step 4: Add downstream target/result tables.**
+- [x] **Step 4: Add downstream target/result tables.**
 
   Add `blinding_request_items(request_id, test_pack_id)`, `reinstatement_request_items(request_id, flange_joint_revision_id)`, `blinding_records`, append-only `pressure_test_stage_events`, and `flange_reinstatement_records`. Reinstatement records store joint date, report number, jointer team, tag number, category/timing snapshot, recorder, and optional superseded-record link.
 
   Replace `test_pack_composition_is_locked` again so any Blinding request/result, pressure-test stage, or reinstatement request/result freezes the whole pack composition. Retain the Line Check/punch conditions added by migration 093.
 
-- [ ] **Step 5: Implement Blinding commands.**
+- [x] **Step 5: Implement Blinding commands.**
 
   `assign_blinding` requires current `test_pack_readiness.is_rft`, an active same-project `blinding` team, and no open/complete Blinding request. `record_blinding` requires the request and records one immutable completion date.
 
-- [ ] **Step 6: Implement Testing and Pre-commissioning commands.**
+- [x] **Step 6: Implement Testing and Pre-commissioning commands.**
 
   `record_pressure_test_stage(test_pack_id, stage, occurred_on, idempotency_key)` accepts only `testing_started`, `testing_completed`, or `precommissioning_completed`, re-derives the predecessor state inside the transaction, and appends an event. It never accepts preparation/team data because the manual explicitly has no Testing preparation workflow.
 
-- [ ] **Step 7: Implement Y/Z reinstatement commands.**
+- [x] **Step 7: Implement Y/Z reinstatement commands.**
 
   `assign_reinstatement` selects current Track 09 flange revision IDs from active member ISOs, checks `requires_reinstatement`, category, timing, and stage eligibility, and assigns an active `reinstatement` team. `record_reinstatement` requires the durable request item plus an active `jointer` team and writes an immutable progress record.
 
-- [ ] **Step 8: Create downstream worklists/projection.**
+- [x] **Step 8: Create downstream worklists/projection.**
 
   Add `blinding_worklist`, `testing_precomm_worklist`, `reinstatement_worklist`, and `test_pack_operation_status`. These views derive Ready/Ongoing/Completed counts and never store a lifecycle flag on `test_packs`.
 
-- [ ] **Step 9: Run focused verification.**
+- [x] **Step 9: Run focused verification.**
 
   Run the workflow domain test and pgTAP 105. Expected: all transitions and negative paths pass.
 
-- [ ] **Step 10: Suggested checkpoint.**
+- [x] **Step 10: Suggested checkpoint.**
 
   Suggested commit message: `feat(testpack): add pressure test workflow`.
 
@@ -498,7 +498,7 @@ The following decisions are intentional and must not be reopened during executio
 
 - Create all application and infrastructure files listed in the File map.
 
-- [ ] **Step 1: Write failing repository contract tests.**
+- [x] **Step 1: Write failing repository contract tests.**
 
   Use the existing fake Supabase client pattern to specify exact view selects and RPC payloads for:
 
@@ -509,7 +509,7 @@ The following decisions are intentional and must not be reopened during executio
 
   Assert every project list query includes `.eq("project_id", projectId)` even where RLS also applies.
 
-- [ ] **Step 2: Write failing error mapping tests.**
+- [x] **Step 2: Write failing error mapping tests.**
 
   Map database codes to actionable UI messages:
 
@@ -522,23 +522,23 @@ The following decisions are intentional and must not be reopened during executio
   - `PQC86`: flange is not eligible for Y/Z reinstatement;
   - existing `42501`, `PQC10`, `PQC11`, and `PQC12` retain their shared access/project/idempotency meanings.
 
-- [ ] **Step 3: Implement the repository.**
+- [x] **Step 3: Implement the repository.**
 
   Keep row-to-domain mappers private and tolerant of nullable/open shared fields. Centralize select-column strings so schema changes cannot silently diverge between single and list reads.
 
-- [ ] **Step 4: Write failing application tests.**
+- [x] **Step 4: Write failing application tests.**
 
   Specify validation-before-RPC, no repository call on invalid input, generated browser idempotency key when absent, and return shapes that force the UI to reload readiness after every successful command.
 
-- [ ] **Step 5: Implement three focused application services.**
+- [x] **Step 5: Implement three focused application services.**
 
   `manage-test-pack.ts` owns metadata/composition orchestration; `manage-line-check.ts` owns Line Check and X clearance; `manage-pressure-test.ts` owns downstream transitions. Do not create a generic “execute action” service with untyped payloads.
 
-- [ ] **Step 6: Add project-switch safety.**
+- [x] **Step 6: Add project-switch safety.**
 
   UI loaders in the next tasks must use `RequestVersion` or effect cleanup, clear stale rows immediately when `projectId` changes, and ignore late results from the previous project.
 
-- [ ] **Step 7: Run all module unit tests.**
+- [x] **Step 7: Run all module unit tests.**
 
   ```bash
   node --import tsx --test "modules/pressure-test/**/*.test.ts"
@@ -546,7 +546,7 @@ The following decisions are intentional and must not be reopened during executio
 
   Expected: all pass.
 
-- [ ] **Step 8: Suggested checkpoint.**
+- [x] **Step 8: Suggested checkpoint.**
 
   Suggested commit message: `feat(testpack): add Supabase application boundary`.
 
@@ -562,7 +562,7 @@ The following decisions are intentional and must not be reopened during executio
 - Modify: `config/route-capabilities.test.ts`
 - Modify: `app/page.tsx`
 
-- [ ] **Step 1: Write failing screen-state tests.**
+- [x] **Step 1: Write failing screen-state tests.**
 
   Cover empty/loading/error/project-switch states, view-only vs `testpack.manage`, scoped visibility, and these critical interactions:
 
@@ -573,15 +573,15 @@ The following decisions are intentional and must not be reopened during executio
   - Explorer drilldown System/Subsystem → Test Pack → ISO → Spool;
   - blocker links navigate to the owning Fabrication/NDE/Erection/Flange/Pressure Test screen.
 
-- [ ] **Step 2: Implement `TestPackDashboard`.**
+- [x] **Step 2: Implement `TestPackDashboard`.**
 
   Show Ready/Ongoing counts for Line Check, Item Clearance, Testing, and Reinstatement at Test Pack/ISO/flange levels, global filters, backlog tables, and links to Explorer/worklists. Read all figures from projections; no component-local KPI formulas.
 
-- [ ] **Step 3: Implement `TestPackBuilderScreen`.**
+- [x] **Step 3: Implement `TestPackBuilderScreen`.**
 
   Use one definition form and two lists: current members and available accepted ISOs. Display the whole-ISO composition rule, server blocker messages, and a confirmation dialog before move/archive. Disable all mutations without `testpack.manage` while retaining read access.
 
-- [ ] **Step 4: Implement `TestPackExplorerScreen`.**
+- [x] **Step 4: Implement `TestPackExplorerScreen`.**
 
   Implement the manual's seven tabs:
 
@@ -591,11 +591,11 @@ The following decisions are intentional and must not be reopened during executio
 
   General displays derived Unit Time. Release Tracking exposes weld/flange/NDE/PWHT/Line Check/X counts. Only RFT gets code `12`; intermediate statuses use labels and RAG without invented numeric codes.
 
-- [ ] **Step 5: Wire routes and navigation.**
+- [x] **Step 5: Wire routes and navigation.**
 
   Replace `NotOnSupabaseYet`, obtain `projectId` and `can("testpack.manage")` from the access context, remove `planned: 'Track 10'`, keep `/testpack` under `testpack.view`, and mark the home-card module live only after the screens read Supabase successfully.
 
-- [ ] **Step 6: Run focused UI/unit tests and typecheck.**
+- [x] **Step 6: Run focused UI/unit tests and typecheck.**
 
   Run the three screen tests, `config/route-capabilities.test.ts`, and `npm run typecheck`. Expected: all pass.
 
@@ -611,19 +611,19 @@ The following decisions are intentional and must not be reopened during executio
 - Modify every existing page under `app/testpack/pressure-test/**`.
 - Modify every existing page under `app/testpack/print/**`.
 
-- [ ] **Step 1: Write failing view-model tests for the shared preparation shell.**
+- [x] **Step 1: Write failing view-model tests for the shared preparation shell.**
 
   Define a typed configuration for `line_check`, `item_clearance`, `blinding`, and `reinstatement`: title, eligibility columns, target label, required team type, assign application method, and print route. Reject unsupported request types at compile time.
 
-- [ ] **Step 2: Implement the Pressure Test home screen.**
+- [x] **Step 2: Implement the Pressure Test home screen.**
 
   `/testpack/pressure-test` shows the canonical order and per-stage Ready/Ongoing/Completed counts. Section landing pages explain eligibility and link to Preparation/Progress, except Testing & Pre-commissioning which links only to Progress.
 
-- [ ] **Step 3: Implement the four Preparation screens.**
+- [x] **Step 3: Implement the four Preparation screens.**
 
   Reuse `RequestPreparationScreen` for search, team selection, multi-select, assignment, durable request number, and “Open printable request”. Eligibility comes from server worklists; the browser must not infer or override it.
 
-- [ ] **Step 4: Implement specialized Progress screens.**
+- [x] **Step 4: Implement specialized Progress screens.**
 
   - Line Check: completion date and zero or more X punch rows with ISO/spool, punch code, editable description.
   - Item Clearance: selected assigned X items and clearance date.
@@ -633,15 +633,15 @@ The following decisions are intentional and must not be reopened during executio
 
   Reload server projections after each mutation and preserve successful durable IDs across refresh.
 
-- [ ] **Step 5: Implement print views from durable request IDs.**
+- [x] **Step 5: Implement print views from durable request IDs.**
 
   Each `[requestId]` page loads `pressure_test_request_details`, verifies the path's request type, renders request number/project/Test Pack/revision/team/date/targets, and provides `window.print()`. Missing, cross-project, or wrong-type IDs render a safe not-found/error state. Do not generate a PDF or write Storage.
 
-- [ ] **Step 6: Wire every existing page.**
+- [x] **Step 6: Wire every existing page.**
 
   Replace all placeholders under Line Check, Item Clearance, Blinding, Testing/Pre-commissioning, Reinstatement, and print routes. Keep capability gating centralized in `ROUTE_CAPABILITIES` and mutation buttons behind `testpack.manage`.
 
-- [ ] **Step 7: Run focused tests and build.**
+- [x] **Step 7: Run focused tests and build.**
 
   Run `node --import tsx --test "modules/pressure-test/**/*.test.ts"`, `npm run typecheck`, and `npm run build`. Expected: all pass and no client page exports server-only metadata.
 
@@ -659,11 +659,11 @@ The following decisions are intentional and must not be reopened during executio
 - Create: `docs/qa/track-10-agent-walkthrough.md`
 - Modify: `package.json`
 
-- [ ] **Step 1: Write the failing fixture-contract test.**
+- [x] **Step 1: Write the failing fixture-contract test.**
 
   Assert local-only URL refusal, required environment variables, stable UUID/number constants, no credential logging, idempotent upserts, and preservation of the open workflow state needed by browser testing.
 
-- [ ] **Step 2: Build the fixture graph.**
+- [x] **Step 2: Build the fixture graph.** The bootstrap reconciles the existing `TRACK01-A` graph so Track 04–09 accepted revisions and published flange facts remain intact; it does not clone the entire engineering graph into a second project.
 
   Bootstrap Track 01/03/04/05/06/07/09 prerequisites, then create:
 
@@ -677,11 +677,11 @@ The following decisions are intentional and must not be reopened during executio
 
   Do not pre-create Line Check completion, X clearance, Blinding, test dates, or reinstatement results; the browser walkthrough owns those mutations.
 
-- [ ] **Step 3: Add the package command and fixture documentation.**
+- [x] **Step 3: Add the package command and fixture documentation.**
 
   Add `bootstrap:track10-browser-fixtures`. Document exact local-only safety checks, required preceding migrations, how to enter credentials interactively without storing them, expected created IDs/numbers, and idempotent rerun behavior.
 
-- [ ] **Step 4: Write the exact browser walkthrough.**
+- [x] **Step 4: Write the exact browser walkthrough.**
 
   The runbook must include URLs, controls, fixture values, expected durable state, refresh checks, and PASS/FAIL/BLOCKED evidence for:
 
@@ -699,7 +699,7 @@ The following decisions are intentional and must not be reopened during executio
   12. verify a read-only user has no mutation controls and a scoped user sees no partial pack;
   13. re-run Track 06 rejected-repair, Track 07 derived-RFT, and Track 09 flange-history browser regressions.
 
-- [ ] **Step 5: Run fixture verification twice.**
+- [ ] **Step 5: Run fixture verification twice.** (requires out-of-band local service key)
 
   ```bash
   node --import tsx --test scripts/bootstrap-track10-browser-fixtures.test.ts
@@ -709,7 +709,7 @@ The following decisions are intentional and must not be reopened during executio
 
   Expected: unit test passes; both bootstrap runs finish with the same fixture identities and no duplicated memberships/requests.
 
-- [ ] **Step 6: Execute browser Gate D.**
+- [ ] **Step 6: Execute browser Gate D.** (not run in this session)
 
   Run the authenticated walkthrough in an isolated local browser profile. Record each case as PASS/FAIL/BLOCKED. Automated verification does not substitute for this gate.
 
@@ -725,7 +725,7 @@ The following decisions are intentional and must not be reopened during executio
 - Modify: `docs/superpowers/plans/2026-07-30-pipeqc-supabase-master-roadmap.md`
 - Modify: `docs/deferred-work.md`
 
-- [ ] **Step 1: Regenerate database types after the final migration.**
+- [x] **Step 1: Regenerate database types after the final migration.**
 
   ```bash
   /opt/homebrew/bin/supabase gen types typescript --local > /private/tmp/track10-database.types.ts
@@ -733,7 +733,7 @@ The following decisions are intentional and must not be reopened during executio
 
   Inspect the generated diff, then replace `lib/supabase/database.types.ts` using `apply_patch` or the repository's approved mechanical generation workflow. Confirm all six migrations, views, and RPC signatures appear.
 
-- [ ] **Step 2: Run focused database tests in dependency order.**
+- [x] **Step 2: Run focused database tests in dependency order.**
 
   ```bash
   /opt/homebrew/bin/supabase test db --local supabase/tests/database/100_test_pack_referentials.test.sql
@@ -746,7 +746,7 @@ The following decisions are intentional and must not be reopened during executio
 
   Expected: all assertions pass.
 
-- [ ] **Step 3: Run the complete automated gate.**
+- [ ] **Step 3: Run the complete automated gate.** (full lint/db retain baseline failures)
 
   ```bash
   npm run lint
@@ -758,7 +758,7 @@ The following decisions are intentional and must not be reopened during executio
 
   Expected: every command exits 0. Report any environment/baseline failure separately from Track 10 failures.
 
-- [ ] **Step 4: Inspect the final diff and forbidden patterns.**
+- [x] **Step 4: Inspect the final diff and forbidden patterns.**
 
   ```bash
   git diff --check
@@ -767,11 +767,11 @@ The following decisions are intentional and must not be reopened during executio
 
   Expected: `git diff --check` is clean; the pattern search returns no Supabase-mode store/watcher/manual-RFT/placeholder usage. Print-view `window.print` is allowed and is not part of this search.
 
-- [ ] **Step 5: Update roadmap and deferred work from evidence.**
+- [x] **Step 5: Update roadmap and deferred work from evidence.**
 
   Mark Track 10 implementation/automated items complete only after their corresponding tests pass. Mark browser Gate D complete only after the authenticated walkthrough passes. If browser execution is unavailable, add one precise `T10-D1` entry with fixture command, runbook path, blocked cases, and required environment; do not label Track 10 fully accepted.
 
-- [ ] **Step 6: Confirm exit criteria.**
+- [ ] **Step 6: Confirm exit criteria.** (browser Gate D remains open)
 
   Track 10 is complete only when:
 
