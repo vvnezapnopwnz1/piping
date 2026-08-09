@@ -1,11 +1,10 @@
-import { NotOnSupabaseYet } from "@/components/pipeqc/not-on-supabase-yet"
+"use client"
+
+import { useSupabaseAuth } from "@/contexts/supabase-auth-context"
+import { ReportsScreen } from "@/modules/documents/ui/reports-screen"
 
 export default function ReportsPage() {
-  return (
-    <NotOnSupabaseYet
-      title="Reports"
-      track="Track 11"
-      summary="Generated reports and forms — W24, W23, QC-13, examination, line check, blinding and reinstatement — produced from durable records with stored parameters and a checksum per artifact."
-    />
-  )
+  const project = useSupabaseAuth().access
+  if (!project) return <p className="p-6 text-sm text-muted-foreground">Select a project to view reports.</p>
+  return <ReportsScreen key={project.projectId} projectId={project.projectId} projectCode={project.activityCode} />
 }

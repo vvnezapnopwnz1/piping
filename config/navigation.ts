@@ -304,7 +304,6 @@ export const navigationConfig: NavSection[] = [
       {
         title: 'Reports',
         href: '/reports',
-        planned: 'Track 11',
         icon: FileText,
       },
     ],
