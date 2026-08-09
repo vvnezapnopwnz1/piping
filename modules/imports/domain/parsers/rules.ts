@@ -79,6 +79,56 @@ function checkDuplicateNaturalKeys(
   }
 }
 
+function checkIsoDate(row: ParsedRow, key: string, issues: ImportIssue[]): void {
+  const value = row.normalizedValues[key]
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    issues.push({ rowNumber: row.rowNumber, columnName: key, severity: "blocker", code: "INVALID_DATE", message: `${key} must be a valid YYYY-MM-DD date.` })
+    return
+  }
+  const parsed = new Date(`${value}T00:00:00Z`)
+  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) {
+    issues.push({ rowNumber: row.rowNumber, columnName: key, severity: "blocker", code: "INVALID_DATE", message: `${key} must be a valid YYYY-MM-DD date.` })
+  }
+}
+
+function checkCompositionRules(rows: readonly ParsedRow[], issues: ImportIssue[]): void {
+  const metadataKeys = [
+    "system", "subsystem", "test_pack_revision", "test_medium", "test_pressure",
+    "planned_start_on", "planned_end_on", "priority", "service_class", "line_service",
+    "volume_m3", "test_pack_location",
+  ]
+  const firstByPack = new Map<string, ParsedRow>()
+
+  for (const row of rows) {
+    const medium = row.normalizedValues.test_medium
+    if (typeof medium === "string" && !["H", "P", "V"].includes(medium)) {
+      issues.push({ rowNumber: row.rowNumber, columnName: "test_medium", severity: "blocker", code: "INVALID_VALUE", message: "Test Medium must be H, P, or V." })
+    }
+    checkPositive(row, "test_pressure", "Test Pressure", issues)
+    checkPositive(row, "volume_m3", "Volume m3", issues)
+    checkIsoDate(row, "planned_start_on", issues)
+    checkIsoDate(row, "planned_end_on", issues)
+    const start = row.normalizedValues.planned_start_on
+    const end = row.normalizedValues.planned_end_on
+    if (typeof start === "string" && typeof end === "string" && end < start) {
+      issues.push({ rowNumber: row.rowNumber, columnName: "planned_end_on", severity: "blocker", code: "INVALID_RANGE", message: "Planned End cannot be before Planned Start." })
+    }
+
+    const packNumber = String(row.normalizedValues.test_pack_number ?? "")
+    if (!packNumber) continue
+    const first = firstByPack.get(packNumber)
+    if (!first) {
+      firstByPack.set(packNumber, row)
+      continue
+    }
+    for (const key of metadataKeys) {
+      if (String(first.normalizedValues[key] ?? "") !== String(row.normalizedValues[key] ?? "")) {
+        issues.push({ rowNumber: row.rowNumber, columnName: key, severity: "blocker", code: "INCONSISTENT_TEST_PACK_METADATA", message: "Test Pack metadata must be consistent across all ISO rows." })
+      }
+    }
+  }
+}
+
 export function applyTypeRules(
   importType: ImportType,
   rows: readonly ParsedRow[]
@@ -139,9 +189,14 @@ export function applyTypeRules(
       }
       issues.push({ rowNumber: row.rowNumber, columnName: "jointing_value", severity: "warning", code: "UT_CONFIGURATION_WARNING", message: "UT is calculated by the server from the active project configuration." })
     }
+
+    if (importType === "test_pack_composition") {
+      // Row-level checks and cross-row metadata consistency run after parsing.
+    }
   }
 
   checkDuplicateNaturalKeys(importType, rows, issues)
+  if (importType === "test_pack_composition") checkCompositionRules(rows, issues)
 
   return issues
 }

@@ -17,6 +17,7 @@ function run() {
       "thickness_flange",
       "nde_matrix",
       "flange_progress",
+      "test_pack_composition",
     ]
   )
 
@@ -46,6 +47,16 @@ function run() {
     "Joint Category", "Reason", "Joint Date", "Report Number", "Jointer Codes", "Tag Number",
   ])
   assert.equal(getImportJobTypeLabel("flange_progress"), "Flange progress")
+
+  const testPack = getImportTypeDefinition("test_pack_composition")
+  assert.equal(testPack.label, "Test Pack composition")
+  assert.deepEqual(testPack.naturalKey, ["test_pack_number", "iso_number"])
+  assert.deepEqual(templateHeaderRow("test_pack_composition"), [
+    "System", "Subsystem", "Test Pack", "Test Pack Rev", "Test Medium",
+    "Test Pressure", "Planned Start", "Planned End", "Priority", "Service Class",
+    "Line Service", "Volume m3", "Test Pack Location", "ISO Number", "ISO Revision",
+    "Spool Number", "Spool Revision",
+  ])
 
   assert.throws(() => getImportTypeDefinition("nope" as never), /Unknown import type/)
 

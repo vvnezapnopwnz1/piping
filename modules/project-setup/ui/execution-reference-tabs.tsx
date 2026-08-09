@@ -33,6 +33,8 @@ import {
   createProjectSystem,
   createProjectSubsystem,
   createUnitTimeReference,
+  createPunchCode,
+  setPunchCodeStatus,
   type LoadedExecutionReferences,
 } from "../infrastructure/supabase-execution-reference-repository"
 import {
@@ -40,6 +42,7 @@ import {
   validateProjectTeamInput,
   validateSubsystemInput,
   validateUnitTimeReferenceInput,
+  validatePunchCodeInput,
   type ProjectTeamType,
 } from "../domain/execution-reference"
 import { validateReferenceIdentity } from "../domain/reference"
@@ -102,6 +105,13 @@ export function ExecutionReferenceTabs({
   const [lsDesc, setLsDesc] = useState("")
   const [lsErrors, setLsErrors] = useState<Record<string, string>>({})
   const [isSubmittingLineService, setIsSubmittingLineService] = useState(false)
+
+  // Punch-code dialog state
+  const [isAddPunchCodeOpen, setIsAddPunchCodeOpen] = useState(false)
+  const [punchCode, setPunchCode] = useState("")
+  const [punchDescription, setPunchDescription] = useState("")
+  const [punchErrors, setPunchErrors] = useState<Record<string, string>>({})
+  const [isSubmittingPunchCode, setIsSubmittingPunchCode] = useState(false)
 
   // Search
   const [teamSearch, setTeamSearch] = useState("")
@@ -260,6 +270,43 @@ export function ExecutionReferenceTabs({
     }
   }
 
+  const handleAddPunchCode = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const validation = validatePunchCodeInput({ code: punchCode, description: punchDescription })
+    if (!validation.ok) {
+      setPunchErrors(validation.errors)
+      return
+    }
+
+    setPunchErrors({})
+    setIsSubmittingPunchCode(true)
+    try {
+      const created = await createPunchCode(getSupabaseBrowserClient(), projectId, validation.value)
+      setData((prev) => prev ? { ...prev, punchCodes: [...prev.punchCodes, created].sort((a, b) => a.code.localeCompare(b.code)) } : null)
+      setPunchCode("")
+      setPunchDescription("")
+      setIsAddPunchCodeOpen(false)
+      toast.success("Punch code created")
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create punch code")
+    } finally {
+      setIsSubmittingPunchCode(false)
+    }
+  }
+
+  const handleDeactivatePunchCode = async (id: string) => {
+    try {
+      await setPunchCodeStatus(getSupabaseBrowserClient(), projectId, id, "inactive")
+      setData((prev) => prev ? {
+        ...prev,
+        punchCodes: prev.punchCodes.map((item) => item.id === id ? { ...item, status: "inactive" } : item),
+      } : null)
+      toast.success("Punch code deactivated")
+    } catch (err: any) {
+      toast.error(err.message || "Failed to deactivate punch code")
+    }
+  }
+
   if (loading) return <Skeleton className="h-64 w-full" />
   if (error || !data) {
     return (
@@ -341,6 +388,45 @@ export function ExecutionReferenceTabs({
                       </Badge>
                     </div>
                     <ReferenceStatusBadge status={team.status} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Punch codes */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <div>
+              <CardTitle>Punch Codes</CardTitle>
+              <CardDescription>Codes available when Line Check records Category X items.</CardDescription>
+            </div>
+            {canManage && (
+              <Button size="sm" onClick={() => setIsAddPunchCodeOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Add Punch Code
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent>
+            {data.punchCodes.length === 0 ? (
+              <p className="text-muted-foreground text-sm py-4 text-center">No punch codes defined.</p>
+            ) : (
+              <div className="space-y-2">
+                {data.punchCodes.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between rounded-md border p-3">
+                    <div className="flex items-center gap-3">
+                      <code className="text-xs font-mono bg-muted px-2 py-1 rounded">{item.code}</code>
+                      <span className="text-sm">{item.description}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <ReferenceStatusBadge status={item.status} />
+                      {canManage && item.status === "active" && (
+                        <Button variant="outline" size="sm" onClick={() => void handleDeactivatePunchCode(item.id)}>
+                          Deactivate
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -728,6 +814,33 @@ export function ExecutionReferenceTabs({
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsAddUnitTimeOpen(false)} disabled={isSubmittingUnitTime}>Cancel</Button>
               <Button type="submit" disabled={isSubmittingUnitTime}>{isSubmittingUnitTime ? "Creating…" : "Create"}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isAddPunchCodeOpen} onOpenChange={(open) => { if (!open) { setIsAddPunchCodeOpen(false); setPunchCode(""); setPunchDescription(""); setPunchErrors({}) } }}>
+        <DialogContent>
+          <form onSubmit={handleAddPunchCode}>
+            <DialogHeader>
+              <DialogTitle>Add Punch Code</DialogTitle>
+              <DialogDescription>Create a project code for Category X Line Check items.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-3">
+              <div>
+                <Label htmlFor="punch-code">Code</Label>
+                <Input id="punch-code" value={punchCode} onChange={(e) => setPunchCode(e.target.value)} disabled={isSubmittingPunchCode} />
+                {punchErrors.code && <p className="mt-1 text-xs text-destructive">{punchErrors.code}</p>}
+              </div>
+              <div>
+                <Label htmlFor="punch-description">Description</Label>
+                <Input id="punch-description" value={punchDescription} onChange={(e) => setPunchDescription(e.target.value)} disabled={isSubmittingPunchCode} />
+                {punchErrors.description && <p className="mt-1 text-xs text-destructive">{punchErrors.description}</p>}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsAddPunchCodeOpen(false)} disabled={isSubmittingPunchCode}>Cancel</Button>
+              <Button type="submit" disabled={isSubmittingPunchCode}>{isSubmittingPunchCode ? "Creating…" : "Create"}</Button>
             </DialogFooter>
           </form>
         </DialogContent>

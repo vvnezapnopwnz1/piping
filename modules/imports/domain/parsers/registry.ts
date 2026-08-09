@@ -20,6 +20,18 @@ function cellToString(value: unknown): string {
   return String(value).trim()
 }
 
+function normalizeCompositionText(key: string, value: string): string {
+  if (["system", "subsystem", "test_pack_number", "test_pack_revision", "test_medium", "service_class", "line_service", "iso_number", "iso_revision", "spool_number", "spool_revision"].includes(key)) {
+    return value.toUpperCase()
+  }
+  return value
+}
+
+function normalizeCompositionDate(value: string): string {
+  const match = /^(\d{2})-(\d{2})-(\d{4})$/.exec(value)
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : value
+}
+
 export function parseSheet(importType: ImportType, sheet: SheetMatrix): ParseOutcome {
   const definition = getImportTypeDefinition(importType)
   const issues: ImportIssue[] = []
@@ -123,7 +135,15 @@ export function parseSheet(importType: ImportType, sheet: SheetMatrix): ParseOut
         continue
       }
 
-      normalizedValues[column.key] = raw
+      if (importType === "test_pack_composition") {
+        if (column.key === "planned_start_on" || column.key === "planned_end_on") {
+          normalizedValues[column.key] = normalizeCompositionDate(raw)
+        } else {
+          normalizedValues[column.key] = normalizeCompositionText(column.key, raw)
+        }
+      } else {
+        normalizedValues[column.key] = raw
+      }
     }
 
     rows.push({ rowNumber, rawValues, normalizedValues, action: "create" })

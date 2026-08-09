@@ -5,6 +5,7 @@ export const IMPORT_TYPES = [
   "thickness_flange",
   "nde_matrix",
   "flange_progress",
+  "test_pack_composition",
 ] as const
 
 export type ImportType = (typeof IMPORT_TYPES)[number]
@@ -104,6 +105,30 @@ const DEFINITIONS: Record<ImportType, ImportTypeDefinition> = {
       { key: "report_number", header: "Report Number", required: true, kind: "text" },
       { key: "jointer_codes", header: "Jointer Codes", required: true, kind: "textList" },
       { key: "tag_number", header: "Tag Number", required: true, kind: "text" },
+    ],
+  },
+  test_pack_composition: {
+    importType: "test_pack_composition",
+    label: "Test Pack composition",
+    naturalKey: ["test_pack_number", "iso_number"],
+    columns: [
+      { key: "system", header: "System", required: true, kind: "text" },
+      { key: "subsystem", header: "Subsystem", required: true, kind: "text" },
+      { key: "test_pack_number", header: "Test Pack", required: true, kind: "text" },
+      { key: "test_pack_revision", header: "Test Pack Rev", required: true, kind: "text" },
+      { key: "test_medium", header: "Test Medium", required: true, kind: "text" },
+      { key: "test_pressure", header: "Test Pressure", required: true, kind: "number" },
+      { key: "planned_start_on", header: "Planned Start", required: true, kind: "text" },
+      { key: "planned_end_on", header: "Planned End", required: true, kind: "text" },
+      { key: "priority", header: "Priority", required: true, kind: "text" },
+      { key: "service_class", header: "Service Class", required: true, kind: "text" },
+      { key: "line_service", header: "Line Service", required: true, kind: "text" },
+      { key: "volume_m3", header: "Volume m3", required: false, kind: "number" },
+      { key: "test_pack_location", header: "Test Pack Location", required: true, kind: "text" },
+      { key: "iso_number", header: "ISO Number", required: true, kind: "text" },
+      { key: "iso_revision", header: "ISO Revision", required: true, kind: "text" },
+      { key: "spool_number", header: "Spool Number", required: true, kind: "text" },
+      { key: "spool_revision", header: "Spool Revision", required: true, kind: "text" },
     ],
   },
 }

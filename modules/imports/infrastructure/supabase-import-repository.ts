@@ -122,7 +122,11 @@ export async function applyImportJob(
   confirmConflicts: boolean,
   importType?: ImportType,
 ): Promise<ImportJob> {
-  const rpcName = importType === "flange_progress" ? "apply_flange_progress_import_job" : "apply_import_job"
+  const rpcName = importType === "flange_progress"
+    ? "apply_flange_progress_import_job"
+    : importType === "test_pack_composition"
+      ? "apply_test_pack_import_job"
+      : "apply_import_job"
   const { data, error } = await client.rpc(rpcName as never, {
     target_job_id: jobId,
     confirm_conflicts: confirmConflicts,

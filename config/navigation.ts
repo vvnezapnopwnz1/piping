@@ -310,7 +310,6 @@ export const navigationConfig: NavSection[] = [
       {
         title: 'Testpack',
         href: '/testpack',
-        planned: 'Track 10',
         icon: FlaskConical, // или TestTube2
         children: [
           {

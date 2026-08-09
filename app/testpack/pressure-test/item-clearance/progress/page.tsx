@@ -1,11 +1,5 @@
-import { NotOnSupabaseYet } from "@/components/pipeqc/not-on-supabase-yet"
+import { PressureTestProgressScreen } from "@/modules/pressure-test/ui/pressure-test-progress-screen"
 
 export default function ItemClearanceProgressPage() {
-  return (
-    <NotOnSupabaseYet
-      title="Item Clearance · Progress"
-      track="Track 10"
-      summary="Record each item as cleared and close the request."
-    />
-  )
+  return <PressureTestProgressScreen requestType="item_clearance" />
 }

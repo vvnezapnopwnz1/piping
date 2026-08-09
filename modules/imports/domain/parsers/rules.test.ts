@@ -62,6 +62,24 @@ function run() {
   assert.equal(flange.some((issue) => issue.code === "UT_CONFIGURATION_WARNING" && issue.severity === "warning"), true)
   assert.equal(applyTypeRules("flange_progress", [row(2, { jointing_value: -1, joint_date: "bad", jointer_codes: [] })]).some((issue) => issue.severity === "blocker"), true)
 
+  const compositionRows = [
+    row(1, {
+      test_pack_number: "TP-1", system: "SYS-1", subsystem: "SUB-1", test_pack_revision: "0", test_medium: "P",
+      test_pressure: 12, planned_start_on: "2026-08-10", planned_end_on: "2026-08-12", priority: "HIGH",
+      service_class: "SC-1", line_service: "LS-1", volume_m3: 10, test_pack_location: "UNIT 1", iso_number: "ISO-1",
+    }),
+    row(2, {
+      test_pack_number: "TP-1", system: "SYS-1", subsystem: "SUB-1", test_pack_revision: "0", test_medium: "X",
+      test_pressure: 0, planned_start_on: "2026-08-12", planned_end_on: "2026-08-11", priority: "LOW",
+      service_class: "SC-2", line_service: "LS-1", volume_m3: -1, test_pack_location: "UNIT 1", iso_number: "ISO-2",
+    }),
+  ]
+  const compositionIssues = applyTypeRules("test_pack_composition", compositionRows)
+  assert.equal(compositionIssues.some((issue) => issue.code === "INVALID_VALUE" && issue.columnName === "test_medium"), true)
+  assert.equal(compositionIssues.some((issue) => issue.code === "INCONSISTENT_TEST_PACK_METADATA"), true)
+  assert.equal(compositionIssues.some((issue) => issue.code === "INVALID_RANGE"), true)
+  assert.equal(compositionIssues.some((issue) => issue.code === "OUT_OF_RANGE" && issue.columnName === "test_pressure"), true)
+
   console.log("All rules.test.ts assertions passed!")
 }
 

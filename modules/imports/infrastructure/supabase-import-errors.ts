@@ -34,6 +34,24 @@ export function mapSupabaseImportError(
       return "The flange progress import has an unresolved conflict or unsupported state."
     case "PQC78":
       return "A flange revision-copy authorization is missing or already materialized."
+    case "PQC92":
+      return "Test Pack import needs both import and Test Pack management permissions."
+    case "PQC93":
+      return "A Test Pack import row is outside the selected project or PDS scope."
+    case "PQC94":
+      return "A Test Pack import row targets a stale or non-accepted ISO revision."
+    case "PQC95":
+      return "A Test Pack import reference is missing or inactive."
+    case "PQC96":
+      return "Test Pack import has an unresolved conflict or requires a manual ISO assignment."
+    case "PQC80":
+      return "The Test Pack import references an unknown system."
+    case "PQC81":
+      return "The Test Pack import references an unknown subsystem."
+    case "PQC82":
+      return "The Test Pack import references an unknown service class."
+    case "PQC83":
+      return "The Test Pack import references an unknown line service."
     case "42501":
       return "You do not have permission to manage imports for this project."
     case "23514":

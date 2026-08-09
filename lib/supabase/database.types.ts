@@ -85,6 +85,231 @@ export type Database = {
           },
         ]
       }
+      blinding_records: {
+        Row: {
+          completed_on: string
+          created_at: string
+          id: string
+          project_id: string
+          recorded_by: string | null
+          request_id: string
+          test_pack_id: string
+        }
+        Insert: {
+          completed_on: string
+          created_at?: string
+          id?: string
+          project_id: string
+          recorded_by?: string | null
+          request_id: string
+          test_pack_id: string
+        }
+        Update: {
+          completed_on?: string
+          created_at?: string
+          id?: string
+          project_id?: string
+          recorded_by?: string | null
+          request_id?: string
+          test_pack_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blinding_records_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blinding_records_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blinding_records_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "blinding_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "blinding_records_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "item_clearance_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "blinding_records_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "line_check_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "blinding_records_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "pressure_test_request_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blinding_records_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "pressure_test_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blinding_records_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "reinstatement_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "blinding_records_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blinding_records_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_readiness"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "blinding_records_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_release_backlog"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "blinding_records_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blinding_records_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "testing_precomm_worklist"
+            referencedColumns: ["test_pack_id"]
+          },
+        ]
+      }
+      blinding_request_items: {
+        Row: {
+          project_id: string
+          request_id: string
+          test_pack_id: string
+        }
+        Insert: {
+          project_id: string
+          request_id: string
+          test_pack_id: string
+        }
+        Update: {
+          project_id?: string
+          request_id?: string
+          test_pack_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blinding_request_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blinding_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "blinding_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "blinding_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "item_clearance_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "blinding_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "line_check_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "blinding_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "pressure_test_request_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blinding_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "pressure_test_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blinding_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: true
+            referencedRelation: "reinstatement_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "blinding_request_items_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blinding_request_items_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_readiness"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "blinding_request_items_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_release_backlog"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "blinding_request_items_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blinding_request_items_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "testing_precomm_worklist"
+            referencedColumns: ["test_pack_id"]
+          },
+        ]
+      }
       capabilities: {
         Row: {
           code: string
@@ -286,6 +511,13 @@ export type Database = {
             referencedRelation: "spool_revisions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "construction_progress_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_spool_status"
+            referencedColumns: ["spool_revision_id"]
+          },
         ]
       }
       flange_joint_revisions: {
@@ -388,6 +620,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "spool_revisions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_joint_revisions_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_spool_status"
+            referencedColumns: ["spool_revision_id"]
           },
         ]
       }
@@ -650,6 +889,156 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "system_reference_entries"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      flange_reinstatement_records: {
+        Row: {
+          category_snapshot: string
+          created_at: string
+          flange_joint_revision_id: string
+          id: string
+          joint_date: string
+          jointer_team_id: string
+          project_id: string
+          recorded_by: string | null
+          report_number: string
+          request_id: string
+          superseded_at: string | null
+          supersedes_record_id: string | null
+          tag_number: string
+          timing_snapshot: string
+        }
+        Insert: {
+          category_snapshot: string
+          created_at?: string
+          flange_joint_revision_id: string
+          id?: string
+          joint_date: string
+          jointer_team_id: string
+          project_id: string
+          recorded_by?: string | null
+          report_number: string
+          request_id: string
+          superseded_at?: string | null
+          supersedes_record_id?: string | null
+          tag_number: string
+          timing_snapshot: string
+        }
+        Update: {
+          category_snapshot?: string
+          created_at?: string
+          flange_joint_revision_id?: string
+          id?: string
+          joint_date?: string
+          jointer_team_id?: string
+          project_id?: string
+          recorded_by?: string | null
+          report_number?: string
+          request_id?: string
+          superseded_at?: string | null
+          supersedes_record_id?: string | null
+          tag_number?: string
+          timing_snapshot?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flange_reinstatement_records_flange_joint_revision_id_fkey"
+            columns: ["flange_joint_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["flange_joint_revision_id"]
+          },
+          {
+            foreignKeyName: "flange_reinstatement_records_flange_joint_revision_id_fkey"
+            columns: ["flange_joint_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_reinstatement_records_flange_joint_revision_id_fkey"
+            columns: ["flange_joint_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["flange_joint_revision_id"]
+          },
+          {
+            foreignKeyName: "flange_reinstatement_records_jointer_team_id_fkey"
+            columns: ["jointer_team_id"]
+            isOneToOne: false
+            referencedRelation: "project_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_reinstatement_records_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_reinstatement_records_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_reinstatement_records_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "blinding_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "flange_reinstatement_records_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "item_clearance_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "flange_reinstatement_records_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "line_check_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "flange_reinstatement_records_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "pressure_test_request_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_reinstatement_records_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "pressure_test_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_reinstatement_records_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "reinstatement_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "flange_reinstatement_records_supersedes_record_id_fkey"
+            columns: ["supersedes_record_id"]
+            isOneToOne: false
+            referencedRelation: "flange_reinstatement_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_reinstatement_records_supersedes_record_id_fkey"
+            columns: ["supersedes_record_id"]
+            isOneToOne: false
+            referencedRelation: "reinstatement_worklist"
+            referencedColumns: ["record_id"]
           },
         ]
       }
@@ -995,6 +1384,13 @@ export type Database = {
             foreignKeyName: "isometric_revisions_isometric_id_fkey"
             columns: ["isometric_id"]
             isOneToOne: false
+            referencedRelation: "isometric_readiness"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "isometric_revisions_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
             referencedRelation: "isometrics"
             referencedColumns: ["id"]
           },
@@ -1050,6 +1446,119 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      item_clearance_request_items: {
+        Row: {
+          project_id: string
+          punch_item_id: string
+          request_id: string
+          test_pack_id: string
+        }
+        Insert: {
+          project_id: string
+          punch_item_id: string
+          request_id: string
+          test_pack_id: string
+        }
+        Update: {
+          project_id?: string
+          punch_item_id?: string
+          request_id?: string
+          test_pack_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_clearance_request_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_clearance_request_items_punch_item_id_fkey"
+            columns: ["punch_item_id"]
+            isOneToOne: false
+            referencedRelation: "punch_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_clearance_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "blinding_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "item_clearance_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "item_clearance_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "item_clearance_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "line_check_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "item_clearance_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "pressure_test_request_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_clearance_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "pressure_test_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_clearance_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "reinstatement_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "item_clearance_request_items_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_clearance_request_items_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_readiness"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "item_clearance_request_items_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_release_backlog"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "item_clearance_request_items_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_clearance_request_items_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "testing_precomm_worklist"
+            referencedColumns: ["test_pack_id"]
           },
         ]
       }
@@ -1154,6 +1663,300 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "spool_revisions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "laydown_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "test_pack_spool_status"
+            referencedColumns: ["spool_revision_id"]
+          },
+        ]
+      }
+      line_check_request_items: {
+        Row: {
+          isometric_id: string
+          project_id: string
+          request_id: string
+          test_pack_id: string
+        }
+        Insert: {
+          isometric_id: string
+          project_id: string
+          request_id: string
+          test_pack_id: string
+        }
+        Update: {
+          isometric_id?: string
+          project_id?: string
+          request_id?: string
+          test_pack_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "line_check_request_items_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "line_check_request_items_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "line_check_request_items_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "isometric_readiness"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "line_check_request_items_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "isometrics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "line_check_request_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "line_check_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "blinding_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "line_check_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "item_clearance_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "line_check_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "line_check_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "line_check_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "pressure_test_request_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "line_check_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "pressure_test_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "line_check_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "reinstatement_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "line_check_request_items_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "line_check_request_items_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_readiness"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "line_check_request_items_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_release_backlog"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "line_check_request_items_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "line_check_request_items_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "testing_precomm_worklist"
+            referencedColumns: ["test_pack_id"]
+          },
+        ]
+      }
+      line_check_results: {
+        Row: {
+          completed_on: string
+          created_at: string
+          id: string
+          isometric_id: string
+          project_id: string
+          recorded_by: string | null
+          request_id: string
+          test_pack_id: string
+        }
+        Insert: {
+          completed_on: string
+          created_at?: string
+          id?: string
+          isometric_id: string
+          project_id: string
+          recorded_by?: string | null
+          request_id: string
+          test_pack_id: string
+        }
+        Update: {
+          completed_on?: string
+          created_at?: string
+          id?: string
+          isometric_id?: string
+          project_id?: string
+          recorded_by?: string | null
+          request_id?: string
+          test_pack_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "line_check_results_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "line_check_results_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "line_check_results_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "isometric_readiness"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "line_check_results_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "isometrics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "line_check_results_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "line_check_results_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "line_check_results_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "blinding_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "line_check_results_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "item_clearance_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "line_check_results_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "line_check_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "line_check_results_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "pressure_test_request_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "line_check_results_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "pressure_test_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "line_check_results_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "reinstatement_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "line_check_results_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "line_check_results_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_readiness"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "line_check_results_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_release_backlog"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "line_check_results_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "line_check_results_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "testing_precomm_worklist"
+            referencedColumns: ["test_pack_id"]
           },
         ]
       }
@@ -1310,6 +2113,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "spool_revisions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_check_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "test_pack_spool_status"
+            referencedColumns: ["spool_revision_id"]
           },
         ]
       }
@@ -1724,6 +2534,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "nde_obligations_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_spool_status"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
             foreignKeyName: "nde_obligations_weld_joint_revision_id_fkey"
             columns: ["weld_joint_revision_id"]
             isOneToOne: false
@@ -2091,6 +2908,13 @@ export type Database = {
             referencedRelation: "spool_revisions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "paint_progress_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "test_pack_spool_status"
+            referencedColumns: ["spool_revision_id"]
+          },
         ]
       }
       piping_material_records: {
@@ -2131,6 +2955,198 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      pressure_test_requests: {
+        Row: {
+          assigned_on: string
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          project_id: string
+          request_number: string
+          request_type: string
+          team_id: string
+          test_pack_id: string
+          test_pack_revision_no: number
+        }
+        Insert: {
+          assigned_on: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          project_id: string
+          request_number: string
+          request_type: string
+          team_id: string
+          test_pack_id: string
+          test_pack_revision_no: number
+        }
+        Update: {
+          assigned_on?: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          project_id?: string
+          request_number?: string
+          request_type?: string
+          team_id?: string
+          test_pack_id?: string
+          test_pack_revision_no?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pressure_test_requests_cancelled_by_fkey"
+            columns: ["cancelled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "project_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_readiness"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_release_backlog"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "testing_precomm_worklist"
+            referencedColumns: ["test_pack_id"]
+          },
+        ]
+      }
+      pressure_test_stage_events: {
+        Row: {
+          created_at: string
+          id: string
+          occurred_on: string
+          project_id: string
+          recorded_by: string | null
+          stage: string
+          test_pack_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          occurred_on: string
+          project_id: string
+          recorded_by?: string | null
+          stage: string
+          test_pack_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          occurred_on?: string
+          project_id?: string
+          recorded_by?: string | null
+          stage?: string
+          test_pack_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pressure_test_stage_events_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_stage_events_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_stage_events_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_stage_events_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_readiness"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "pressure_test_stage_events_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_release_backlog"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "pressure_test_stage_events_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_stage_events_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "testing_precomm_worklist"
+            referencedColumns: ["test_pack_id"]
           },
         ]
       }
@@ -2868,6 +3884,44 @@ export type Database = {
           },
         ]
       }
+      project_punch_codes: {
+        Row: {
+          code: string
+          created_at: string
+          description: string
+          id: string
+          project_id: string
+          status: Database["public"]["Enums"]["project_reference_status"]
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description: string
+          id?: string
+          project_id: string
+          status?: Database["public"]["Enums"]["project_reference_status"]
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string
+          id?: string
+          project_id?: string
+          status?: Database["public"]["Enums"]["project_reference_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_punch_codes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_ral_codes: {
         Row: {
           color_code: string
@@ -3595,6 +4649,240 @@ export type Database = {
         }
         Relationships: []
       }
+      punch_item_clearances: {
+        Row: {
+          cleared_by: string | null
+          cleared_on: string
+          created_at: string
+          id: string
+          project_id: string
+          punch_item_id: string
+          request_id: string
+        }
+        Insert: {
+          cleared_by?: string | null
+          cleared_on: string
+          created_at?: string
+          id?: string
+          project_id: string
+          punch_item_id: string
+          request_id: string
+        }
+        Update: {
+          cleared_by?: string | null
+          cleared_on?: string
+          created_at?: string
+          id?: string
+          project_id?: string
+          punch_item_id?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "punch_item_clearances_cleared_by_fkey"
+            columns: ["cleared_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punch_item_clearances_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punch_item_clearances_punch_item_id_fkey"
+            columns: ["punch_item_id"]
+            isOneToOne: true
+            referencedRelation: "punch_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punch_item_clearances_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "blinding_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "punch_item_clearances_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "item_clearance_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "punch_item_clearances_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "line_check_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "punch_item_clearances_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "pressure_test_request_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punch_item_clearances_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "pressure_test_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punch_item_clearances_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "reinstatement_worklist"
+            referencedColumns: ["request_id"]
+          },
+        ]
+      }
+      punch_items: {
+        Row: {
+          category: string
+          checking_date: string
+          completion_date: string | null
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          isometric_id: string
+          item_number: string
+          project_id: string
+          punch_code_id: string
+          spool_id: string | null
+          test_pack_id: string
+        }
+        Insert: {
+          category?: string
+          checking_date: string
+          completion_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          description: string
+          id?: string
+          isometric_id: string
+          item_number: string
+          project_id: string
+          punch_code_id: string
+          spool_id?: string | null
+          test_pack_id: string
+        }
+        Update: {
+          category?: string
+          checking_date?: string
+          completion_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          isometric_id?: string
+          item_number?: string
+          project_id?: string
+          punch_code_id?: string
+          spool_id?: string | null
+          test_pack_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "punch_items_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punch_items_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "punch_items_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "punch_items_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "isometric_readiness"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "punch_items_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "isometrics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punch_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punch_items_punch_code_id_fkey"
+            columns: ["punch_code_id"]
+            isOneToOne: false
+            referencedRelation: "project_punch_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punch_items_spool_id_fkey"
+            columns: ["spool_id"]
+            isOneToOne: false
+            referencedRelation: "spools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punch_items_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punch_items_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_readiness"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "punch_items_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_release_backlog"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "punch_items_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punch_items_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "testing_precomm_worklist"
+            referencedColumns: ["test_pack_id"]
+          },
+        ]
+      }
       pwht_requirements: {
         Row: {
           created_at: string
@@ -3679,6 +4967,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "spool_revisions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pwht_requirements_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_spool_status"
+            referencedColumns: ["spool_revision_id"]
           },
           {
             foreignKeyName: "pwht_requirements_weld_joint_revision_id_fkey"
@@ -3839,6 +5134,13 @@ export type Database = {
             referencedRelation: "spool_revisions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "qc13_progress_forms_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_spool_status"
+            referencedColumns: ["spool_revision_id"]
+          },
         ]
       }
       quality_release_records: {
@@ -3958,6 +5260,146 @@ export type Database = {
             referencedRelation: "spool_revisions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "quality_release_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "test_pack_spool_status"
+            referencedColumns: ["spool_revision_id"]
+          },
+        ]
+      }
+      reinstatement_request_items: {
+        Row: {
+          category_snapshot: string
+          flange_joint_revision_id: string
+          project_id: string
+          request_id: string
+          test_pack_id: string
+          timing_snapshot: string
+        }
+        Insert: {
+          category_snapshot: string
+          flange_joint_revision_id: string
+          project_id: string
+          request_id: string
+          test_pack_id: string
+          timing_snapshot: string
+        }
+        Update: {
+          category_snapshot?: string
+          flange_joint_revision_id?: string
+          project_id?: string
+          request_id?: string
+          test_pack_id?: string
+          timing_snapshot?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reinstatement_request_items_flange_joint_revision_id_fkey"
+            columns: ["flange_joint_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["flange_joint_revision_id"]
+          },
+          {
+            foreignKeyName: "reinstatement_request_items_flange_joint_revision_id_fkey"
+            columns: ["flange_joint_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reinstatement_request_items_flange_joint_revision_id_fkey"
+            columns: ["flange_joint_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["flange_joint_revision_id"]
+          },
+          {
+            foreignKeyName: "reinstatement_request_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reinstatement_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "blinding_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "reinstatement_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "item_clearance_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "reinstatement_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "line_check_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "reinstatement_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "pressure_test_request_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reinstatement_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "pressure_test_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reinstatement_request_items_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "reinstatement_worklist"
+            referencedColumns: ["request_id"]
+          },
+          {
+            foreignKeyName: "reinstatement_request_items_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reinstatement_request_items_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_readiness"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "reinstatement_request_items_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_release_backlog"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "reinstatement_request_items_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reinstatement_request_items_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "testing_precomm_worklist"
+            referencedColumns: ["test_pack_id"]
+          },
         ]
       }
       revision_change_items: {
@@ -4025,6 +5467,13 @@ export type Database = {
             foreignKeyName: "revision_change_items_isometric_id_fkey"
             columns: ["isometric_id"]
             isOneToOne: false
+            referencedRelation: "isometric_readiness"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "revision_change_items_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
             referencedRelation: "isometrics"
             referencedColumns: ["id"]
           },
@@ -4032,8 +5481,22 @@ export type Database = {
             foreignKeyName: "revision_change_items_isometric_revision_id_fkey"
             columns: ["isometric_revision_id"]
             isOneToOne: false
+            referencedRelation: "isometric_readiness"
+            referencedColumns: ["isometric_revision_id"]
+          },
+          {
+            foreignKeyName: "revision_change_items_isometric_revision_id_fkey"
+            columns: ["isometric_revision_id"]
+            isOneToOne: false
             referencedRelation: "isometric_revisions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revision_change_items_previous_isometric_revision_id_fkey"
+            columns: ["previous_isometric_revision_id"]
+            isOneToOne: false
+            referencedRelation: "isometric_readiness"
+            referencedColumns: ["isometric_revision_id"]
           },
           {
             foreignKeyName: "revision_change_items_previous_isometric_revision_id_fkey"
@@ -4189,6 +5652,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "revision_progress_copies_source_spool_revision_id_fkey"
+            columns: ["source_spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_spool_status"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
             foreignKeyName: "revision_progress_copies_target_spool_revision_id_fkey"
             columns: ["target_spool_revision_id"]
             isOneToOne: false
@@ -4229,6 +5699,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "spool_revisions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revision_progress_copies_target_spool_revision_id_fkey"
+            columns: ["target_spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_spool_status"
+            referencedColumns: ["spool_revision_id"]
           },
         ]
       }
@@ -4363,6 +5840,13 @@ export type Database = {
             referencedRelation: "spool_revisions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "spool_revision_materials_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_spool_status"
+            referencedColumns: ["spool_revision_id"]
+          },
         ]
       }
       spool_revisions: {
@@ -4397,6 +5881,13 @@ export type Database = {
           weight_kg?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "spool_revisions_isometric_revision_id_fkey"
+            columns: ["isometric_revision_id"]
+            isOneToOne: false
+            referencedRelation: "isometric_readiness"
+            referencedColumns: ["isometric_revision_id"]
+          },
           {
             foreignKeyName: "spool_revisions_isometric_revision_id_fkey"
             columns: ["isometric_revision_id"]
@@ -4541,6 +6032,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "support_progress_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_spool_status"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
             foreignKeyName: "support_progress_records_support_revision_id_fkey"
             columns: ["support_revision_id"]
             isOneToOne: true
@@ -4619,6 +6117,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "spool_revisions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_revisions_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_spool_status"
+            referencedColumns: ["spool_revision_id"]
           },
           {
             foreignKeyName: "support_revisions_support_id_fkey"
@@ -4757,6 +6262,279 @@ export type Database = {
         }
         Relationships: []
       }
+      test_pack_isometrics: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          assigned_isometric_revision_id: string
+          created_at: string
+          id: string
+          isometric_id: string
+          project_id: string
+          removed_at: string | null
+          removed_by: string | null
+          source_import_job_id: string | null
+          source_kind: string
+          test_pack_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          assigned_isometric_revision_id: string
+          created_at?: string
+          id?: string
+          isometric_id: string
+          project_id: string
+          removed_at?: string | null
+          removed_by?: string | null
+          source_import_job_id?: string | null
+          source_kind?: string
+          test_pack_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          assigned_isometric_revision_id?: string
+          created_at?: string
+          id?: string
+          isometric_id?: string
+          project_id?: string
+          removed_at?: string | null
+          removed_by?: string | null
+          source_import_job_id?: string | null
+          source_kind?: string
+          test_pack_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_pack_isometrics_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_assigned_isometric_revision_id_fkey"
+            columns: ["assigned_isometric_revision_id"]
+            isOneToOne: false
+            referencedRelation: "isometric_readiness"
+            referencedColumns: ["isometric_revision_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_assigned_isometric_revision_id_fkey"
+            columns: ["assigned_isometric_revision_id"]
+            isOneToOne: false
+            referencedRelation: "isometric_revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "isometric_readiness"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "isometrics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_removed_by_fkey"
+            columns: ["removed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_source_import_job_id_fkey"
+            columns: ["source_import_job_id"]
+            isOneToOne: false
+            referencedRelation: "import_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_readiness"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_release_backlog"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "testing_precomm_worklist"
+            referencedColumns: ["test_pack_id"]
+          },
+        ]
+      }
+      test_packs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          lifecycle: string
+          line_service_id: string
+          location: string
+          planned_end_on: string
+          planned_start_on: string
+          pressure_unit: Database["public"]["Enums"]["pressure_unit"]
+          priority: string
+          project_id: string
+          revision_no: number
+          service_class_id: string
+          subsystem_id: string
+          system_id: string
+          test_medium: Database["public"]["Enums"]["test_pack_medium"]
+          test_pack_number: string
+          test_pressure: number
+          updated_at: string
+          updated_by: string | null
+          volume_m3: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lifecycle?: string
+          line_service_id: string
+          location: string
+          planned_end_on: string
+          planned_start_on: string
+          pressure_unit: Database["public"]["Enums"]["pressure_unit"]
+          priority: string
+          project_id: string
+          revision_no?: number
+          service_class_id: string
+          subsystem_id: string
+          system_id: string
+          test_medium: Database["public"]["Enums"]["test_pack_medium"]
+          test_pack_number: string
+          test_pressure: number
+          updated_at?: string
+          updated_by?: string | null
+          volume_m3?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lifecycle?: string
+          line_service_id?: string
+          location?: string
+          planned_end_on?: string
+          planned_start_on?: string
+          pressure_unit?: Database["public"]["Enums"]["pressure_unit"]
+          priority?: string
+          project_id?: string
+          revision_no?: number
+          service_class_id?: string
+          subsystem_id?: string
+          system_id?: string
+          test_medium?: Database["public"]["Enums"]["test_pack_medium"]
+          test_pack_number?: string
+          test_pressure?: number
+          updated_at?: string
+          updated_by?: string | null
+          volume_m3?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_packs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_packs_line_service_id_fkey"
+            columns: ["line_service_id"]
+            isOneToOne: false
+            referencedRelation: "project_line_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_packs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_packs_service_class_id_fkey"
+            columns: ["service_class_id"]
+            isOneToOne: false
+            referencedRelation: "project_service_classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_packs_subsystem_id_fkey"
+            columns: ["subsystem_id"]
+            isOneToOne: false
+            referencedRelation: "project_subsystems"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_packs_system_id_fkey"
+            columns: ["system_id"]
+            isOneToOne: false
+            referencedRelation: "project_systems"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_packs_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       weld_joint_revisions: {
         Row: {
           created_at: string
@@ -4833,6 +6611,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "spool_revisions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weld_joint_revisions_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_spool_status"
+            referencedColumns: ["spool_revision_id"]
           },
           {
             foreignKeyName: "weld_joint_revisions_weld_joint_id_fkey"
@@ -5128,6 +6913,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "weld_progress_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_spool_status"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
             foreignKeyName: "weld_progress_records_subcontractor_id_fkey"
             columns: ["subcontractor_id"]
             isOneToOne: false
@@ -5243,6 +7035,62 @@ export type Database = {
       }
     }
     Views: {
+      blinding_worklist: {
+        Row: {
+          assigned_on: string | null
+          cancelled_at: string | null
+          completed_on: string | null
+          project_id: string | null
+          record_id: string | null
+          request_id: string | null
+          request_number: string | null
+          test_pack_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pressure_test_requests_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_readiness"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_release_backlog"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "testing_precomm_worklist"
+            referencedColumns: ["test_pack_id"]
+          },
+        ]
+      }
       flange_joint_readiness: {
         Row: {
           bolt_quantity: number | null
@@ -5493,6 +7341,376 @@ export type Database = {
           },
         ]
       }
+      isometric_readiness: {
+        Row: {
+          blocker_counts: Json | null
+          flange_complete: number | null
+          flange_total: number | null
+          is_complete: boolean | null
+          is_qc_released: boolean | null
+          is_rft: boolean | null
+          isometric_id: string | null
+          isometric_revision_id: string | null
+          line_check_assigned: number | null
+          line_check_completed: number | null
+          nde_pending: number | null
+          open_x_count: number | null
+          pds_area_id: string | null
+          project_id: string | null
+          pwht_pending: number | null
+          rft_on: string | null
+          spool_complete: number | null
+          spool_total: number | null
+          support_complete: number | null
+          support_total: number | null
+          unit_time: number | null
+          weld_complete: number | null
+          weld_total: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "isometric_revisions_pds_area_id_fkey"
+            columns: ["pds_area_id"]
+            isOneToOne: false
+            referencedRelation: "project_pds_areas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "isometrics_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      item_clearance_worklist: {
+        Row: {
+          assigned_on: string | null
+          cancelled_at: string | null
+          clearance_id: string | null
+          project_id: string | null
+          punch_item_id: string | null
+          request_id: string | null
+          request_number: string | null
+          team_id: string | null
+          test_pack_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "item_clearance_request_items_punch_item_id_fkey"
+            columns: ["punch_item_id"]
+            isOneToOne: false
+            referencedRelation: "punch_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "project_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_readiness"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_release_backlog"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "testing_precomm_worklist"
+            referencedColumns: ["test_pack_id"]
+          },
+        ]
+      }
+      line_check_worklist: {
+        Row: {
+          assigned_on: string | null
+          cancelled_at: string | null
+          isometric_id: string | null
+          project_id: string | null
+          request_id: string | null
+          request_number: string | null
+          result_id: string | null
+          team_id: string | null
+          test_pack_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "line_check_request_items_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "line_check_request_items_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "line_check_request_items_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "isometric_readiness"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "line_check_request_items_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "isometrics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "project_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_readiness"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_release_backlog"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "testing_precomm_worklist"
+            referencedColumns: ["test_pack_id"]
+          },
+        ]
+      }
+      pressure_test_request_details: {
+        Row: {
+          assigned_on: string | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          clearance_completed_count: number | null
+          clearance_item_count: number | null
+          created_at: string | null
+          created_by: string | null
+          id: string | null
+          line_check_completed_count: number | null
+          line_check_iso_count: number | null
+          project_id: string | null
+          request_number: string | null
+          request_type: string | null
+          team_code: string | null
+          team_description: string | null
+          team_id: string | null
+          test_pack_id: string | null
+          test_pack_revision_no: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pressure_test_requests_cancelled_by_fkey"
+            columns: ["cancelled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "project_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_readiness"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_release_backlog"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "testing_precomm_worklist"
+            referencedColumns: ["test_pack_id"]
+          },
+        ]
+      }
+      reinstatement_worklist: {
+        Row: {
+          category_snapshot: string | null
+          flange_joint_revision_id: string | null
+          project_id: string | null
+          record_id: string | null
+          request_id: string | null
+          request_number: string | null
+          test_pack_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pressure_test_requests_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_readiness"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_release_backlog"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_test_requests_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "testing_precomm_worklist"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "reinstatement_request_items_flange_joint_revision_id_fkey"
+            columns: ["flange_joint_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["flange_joint_revision_id"]
+          },
+          {
+            foreignKeyName: "reinstatement_request_items_flange_joint_revision_id_fkey"
+            columns: ["flange_joint_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reinstatement_request_items_flange_joint_revision_id_fkey"
+            columns: ["flange_joint_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["flange_joint_revision_id"]
+          },
+        ]
+      }
       spool_construction_status: {
         Row: {
           current_stage:
@@ -5661,6 +7879,13 @@ export type Database = {
             referencedRelation: "spool_revisions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "construction_progress_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_spool_status"
+            referencedColumns: ["spool_revision_id"]
+          },
         ]
       }
       spool_stage_events: {
@@ -5774,6 +7999,412 @@ export type Database = {
             referencedRelation: "spool_revisions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "construction_progress_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_spool_status"
+            referencedColumns: ["spool_revision_id"]
+          },
+        ]
+      }
+      test_pack_catalog: {
+        Row: {
+          active_iso_count: number | null
+          created_at: string | null
+          created_by: string | null
+          id: string | null
+          lifecycle: string | null
+          line_service_id: string | null
+          location: string | null
+          planned_end_on: string | null
+          planned_start_on: string | null
+          pressure_unit: Database["public"]["Enums"]["pressure_unit"] | null
+          priority: string | null
+          project_id: string | null
+          revision_no: number | null
+          service_class_id: string | null
+          subsystem_id: string | null
+          system_id: string | null
+          test_medium: Database["public"]["Enums"]["test_pack_medium"] | null
+          test_pack_number: string | null
+          test_pressure: number | null
+          updated_at: string | null
+          updated_by: string | null
+          volume_m3: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_packs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_packs_line_service_id_fkey"
+            columns: ["line_service_id"]
+            isOneToOne: false
+            referencedRelation: "project_line_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_packs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_packs_service_class_id_fkey"
+            columns: ["service_class_id"]
+            isOneToOne: false
+            referencedRelation: "project_service_classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_packs_subsystem_id_fkey"
+            columns: ["subsystem_id"]
+            isOneToOne: false
+            referencedRelation: "project_subsystems"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_packs_system_id_fkey"
+            columns: ["system_id"]
+            isOneToOne: false
+            referencedRelation: "project_systems"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_packs_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_pack_iso_status: {
+        Row: {
+          blocker_counts: Json | null
+          is_complete: boolean | null
+          is_rft: boolean | null
+          isometric_id: string | null
+          project_id: string | null
+          status_code: number | null
+          test_pack_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_pack_isometrics_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "isometric_readiness"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "isometrics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_readiness"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_release_backlog"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "testing_precomm_worklist"
+            referencedColumns: ["test_pack_id"]
+          },
+        ]
+      }
+      test_pack_member_worklist: {
+        Row: {
+          assigned_at: string | null
+          assigned_isometric_revision_id: string | null
+          id: string | null
+          iso_number: string | null
+          isometric_id: string | null
+          project_id: string | null
+          removed_at: string | null
+          source_kind: string | null
+          test_pack_id: string | null
+          test_pack_number: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_pack_isometrics_assigned_isometric_revision_id_fkey"
+            columns: ["assigned_isometric_revision_id"]
+            isOneToOne: false
+            referencedRelation: "isometric_readiness"
+            referencedColumns: ["isometric_revision_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_assigned_isometric_revision_id_fkey"
+            columns: ["assigned_isometric_revision_id"]
+            isOneToOne: false
+            referencedRelation: "isometric_revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "isometric_readiness"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "isometrics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_readiness"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_release_backlog"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "testing_precomm_worklist"
+            referencedColumns: ["test_pack_id"]
+          },
+        ]
+      }
+      test_pack_readiness: {
+        Row: {
+          current_member_count: number | null
+          flange_pending_count: number | null
+          flange_total: number | null
+          is_rft: boolean | null
+          lifecycle: string | null
+          line_check_pending_count: number | null
+          member_count: number | null
+          nde_pending_count: number | null
+          no_spools_count: number | null
+          project_id: string | null
+          pwht_pending_count: number | null
+          revision_no: number | null
+          rft_on: string | null
+          spool_total: number | null
+          test_pack_id: string | null
+          test_pack_number: string | null
+          unit_time: number | null
+          weld_or_support_pending_count: number | null
+          weld_total: number | null
+          x_open_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_packs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_pack_release_backlog: {
+        Row: {
+          current_member_count: number | null
+          flange_pending_count: number | null
+          flange_total: number | null
+          is_rft: boolean | null
+          lifecycle: string | null
+          line_check_pending_count: number | null
+          member_count: number | null
+          nde_pending_count: number | null
+          no_spools_count: number | null
+          project_id: string | null
+          pwht_pending_count: number | null
+          revision_no: number | null
+          rft_on: string | null
+          spool_total: number | null
+          test_pack_id: string | null
+          test_pack_number: string | null
+          unit_time: number | null
+          weld_or_support_pending_count: number | null
+          weld_total: number | null
+          x_open_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_packs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_pack_spool_status: {
+        Row: {
+          is_rft: boolean | null
+          nde_pending: number | null
+          project_id: string | null
+          pwht_pending: number | null
+          spool_number: string | null
+          spool_revision_id: string | null
+          test_pack_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_pack_isometrics_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_readiness"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_release_backlog"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "testing_precomm_worklist"
+            referencedColumns: ["test_pack_id"]
+          },
+        ]
+      }
+      testing_precomm_worklist: {
+        Row: {
+          precommissioning_completed_on: string | null
+          project_id: string | null
+          test_pack_id: string | null
+          testing_completed_on: string | null
+          testing_started_on: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_packs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
         ]
       }
       weld_progress_summary: {
@@ -5845,6 +8476,13 @@ export type Database = {
             referencedRelation: "spool_revisions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "weld_joint_revisions_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_spool_status"
+            referencedColumns: ["spool_revision_id"]
+          },
         ]
       }
     }
@@ -5882,6 +8520,38 @@ export type Database = {
           target_percentage?: number
         }
         Returns: number
+      }
+      apply_flange_progress_import_job: {
+        Args: { confirm_conflicts?: boolean; target_job_id: string }
+        Returns: {
+          affected_entity_ids: string[]
+          applied_at: string | null
+          applied_row_count: number
+          canceled_at: string | null
+          completed_at: string | null
+          conflicts_confirmed: boolean
+          created_at: string
+          failure_reason: string | null
+          id: string
+          import_type: string
+          kind: string | null
+          project_id: string
+          requested_by: string
+          source_checksum: string | null
+          source_file_name: string | null
+          source_media_type: string | null
+          source_size_bytes: number | null
+          status: string
+          storage_path: string | null
+          summary: Json
+          validated_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "import_jobs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       apply_import_job: {
         Args: { confirm_conflicts?: boolean; target_job_id: string }
@@ -5947,6 +8617,70 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      apply_test_pack_import_job: {
+        Args: { confirm_conflicts?: boolean; target_job_id: string }
+        Returns: {
+          affected_entity_ids: string[]
+          applied_at: string | null
+          applied_row_count: number
+          canceled_at: string | null
+          completed_at: string | null
+          conflicts_confirmed: boolean
+          created_at: string
+          failure_reason: string | null
+          id: string
+          import_type: string
+          kind: string | null
+          project_id: string
+          requested_by: string
+          source_checksum: string | null
+          source_file_name: string | null
+          source_media_type: string | null
+          source_size_bytes: number | null
+          status: string
+          storage_path: string | null
+          summary: Json
+          validated_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "import_jobs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      archive_test_pack: {
+        Args: { target_idempotency_key?: string; target_test_pack_id: string }
+        Returns: {
+          created_at: string
+          created_by: string | null
+          id: string
+          lifecycle: string
+          line_service_id: string
+          location: string
+          planned_end_on: string
+          planned_start_on: string
+          pressure_unit: Database["public"]["Enums"]["pressure_unit"]
+          priority: string
+          project_id: string
+          revision_no: number
+          service_class_id: string
+          subsystem_id: string
+          system_id: string
+          test_medium: Database["public"]["Enums"]["test_pack_medium"]
+          test_pack_number: string
+          test_pressure: number
+          updated_at: string
+          updated_by: string | null
+          volume_m3: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "test_packs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       assert_access_request_is_valid: {
         Args: {
           requested_access_role: string
@@ -5963,6 +8697,125 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "spool_context"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      assign_blinding: {
+        Args: {
+          target_assigned_on: string
+          target_idempotency_key?: string
+          target_team_id: string
+          target_test_pack_id: string
+        }
+        Returns: {
+          assigned_on: string
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          project_id: string
+          request_number: string
+          request_type: string
+          team_id: string
+          test_pack_id: string
+          test_pack_revision_no: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pressure_test_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      assign_item_clearance: {
+        Args: {
+          target_assigned_on: string
+          target_idempotency_key?: string
+          target_punch_item_ids: string[]
+          target_team_id: string
+          target_test_pack_id: string
+        }
+        Returns: {
+          assigned_on: string
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          project_id: string
+          request_number: string
+          request_type: string
+          team_id: string
+          test_pack_id: string
+          test_pack_revision_no: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pressure_test_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      assign_line_check: {
+        Args: {
+          target_assigned_on: string
+          target_idempotency_key?: string
+          target_isometric_ids: string[]
+          target_team_id: string
+          target_test_pack_id: string
+        }
+        Returns: {
+          assigned_on: string
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          project_id: string
+          request_number: string
+          request_type: string
+          team_id: string
+          test_pack_id: string
+          test_pack_revision_no: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pressure_test_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      assign_reinstatement: {
+        Args: {
+          target_assigned_on: string
+          target_flange_joint_revision_ids: string[]
+          target_idempotency_key?: string
+          target_team_id: string
+          target_test_pack_id: string
+        }
+        Returns: {
+          assigned_on: string
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          project_id: string
+          request_number: string
+          request_type: string
+          team_id: string
+          test_pack_id: string
+          test_pack_revision_no: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pressure_test_requests"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -6035,6 +8888,34 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      cancel_pressure_test_request: {
+        Args: {
+          target_idempotency_key?: string
+          target_reason?: string
+          target_request_id: string
+        }
+        Returns: {
+          assigned_on: string
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          project_id: string
+          request_number: string
+          request_type: string
+          team_id: string
+          test_pack_id: string
+          test_pack_revision_no: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pressure_test_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       claim_command_receipt: {
         Args: {
           target_command_name: string
@@ -6091,6 +8972,35 @@ export type Database = {
           target_project_id: string
         }
         Returns: Json
+      }
+      compose_test_pack: {
+        Args: {
+          target_idempotency_key?: string
+          target_isometric_id: string
+          target_source_import_job_id?: string
+          target_source_kind?: string
+          target_test_pack_id: string
+        }
+        Returns: {
+          assigned_at: string
+          assigned_by: string | null
+          assigned_isometric_revision_id: string
+          created_at: string
+          id: string
+          isometric_id: string
+          project_id: string
+          removed_at: string | null
+          removed_by: string | null
+          source_import_job_id: string | null
+          source_kind: string
+          test_pack_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "test_pack_isometrics"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       construction_stage_ordinal: {
         Args: {
@@ -6272,6 +9182,53 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "import_jobs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_test_pack: {
+        Args: {
+          target_idempotency_key?: string
+          target_line_service_id: string
+          target_location: string
+          target_planned_end_on: string
+          target_planned_start_on: string
+          target_priority: string
+          target_project_id: string
+          target_service_class_id: string
+          target_subsystem_id: string
+          target_system_id: string
+          target_test_medium: Database["public"]["Enums"]["test_pack_medium"]
+          target_test_pack_number: string
+          target_test_pressure: number
+          target_volume_m3?: number
+        }
+        Returns: {
+          created_at: string
+          created_by: string | null
+          id: string
+          lifecycle: string
+          line_service_id: string
+          location: string
+          planned_end_on: string
+          planned_start_on: string
+          pressure_unit: Database["public"]["Enums"]["pressure_unit"]
+          priority: string
+          project_id: string
+          revision_no: number
+          service_class_id: string
+          subsystem_id: string
+          system_id: string
+          test_medium: Database["public"]["Enums"]["test_pack_medium"]
+          test_pack_number: string
+          test_pressure: number
+          updated_at: string
+          updated_by: string | null
+          volume_m3: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "test_packs"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -6480,6 +9437,33 @@ export type Database = {
         Args: { target_membership_id: string }
         Returns: Json
       }
+      move_test_pack_isometric: {
+        Args: {
+          target_idempotency_key?: string
+          target_isometric_id: string
+          target_target_test_pack_id: string
+        }
+        Returns: {
+          assigned_at: string
+          assigned_by: string | null
+          assigned_isometric_revision_id: string
+          created_at: string
+          id: string
+          isometric_id: string
+          project_id: string
+          removed_at: string | null
+          removed_by: string | null
+          source_import_job_id: string | null
+          source_kind: string
+          test_pack_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "test_pack_isometrics"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       nde_batch_candidates: {
         Args: { target_batch_id: string }
         Returns: {
@@ -6497,6 +9481,38 @@ export type Database = {
         }
         Returns: string
       }
+      pressure_test_assert_pack: {
+        Args: { target_test_pack_id: string }
+        Returns: {
+          created_at: string
+          created_by: string | null
+          id: string
+          lifecycle: string
+          line_service_id: string
+          location: string
+          planned_end_on: string
+          planned_start_on: string
+          pressure_unit: Database["public"]["Enums"]["pressure_unit"]
+          priority: string
+          project_id: string
+          revision_no: number
+          service_class_id: string
+          subsystem_id: string
+          system_id: string
+          test_medium: Database["public"]["Enums"]["test_pack_medium"]
+          test_pack_number: string
+          test_pressure: number
+          updated_at: string
+          updated_by: string | null
+          volume_m3: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "test_packs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       preview_spooling_import: {
         Args: { target_job_id: string }
         Returns: {
@@ -6509,6 +9525,28 @@ export type Database = {
           previous_payload: Json
           requires_decision: boolean
         }[]
+      }
+      record_blinding: {
+        Args: {
+          target_completed_on: string
+          target_idempotency_key?: string
+          target_request_id: string
+        }
+        Returns: {
+          completed_on: string
+          created_at: string
+          id: string
+          project_id: string
+          recorded_by: string | null
+          request_id: string
+          test_pack_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "blinding_records"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       record_construction_progress: {
         Args: {
@@ -6738,6 +9776,31 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      record_line_check_result: {
+        Args: {
+          target_completed_on: string
+          target_idempotency_key?: string
+          target_isometric_id: string
+          target_punches?: Json
+          target_request_id: string
+        }
+        Returns: {
+          completed_on: string
+          created_at: string
+          id: string
+          isometric_id: string
+          project_id: string
+          recorded_by: string | null
+          request_id: string
+          test_pack_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "line_check_results"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       record_material_check: {
         Args: {
           target_checked_on: string
@@ -6833,6 +9896,52 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      record_pressure_test_stage: {
+        Args: {
+          target_idempotency_key?: string
+          target_occurred_on: string
+          target_stage: string
+          target_test_pack_id: string
+        }
+        Returns: {
+          created_at: string
+          id: string
+          occurred_on: string
+          project_id: string
+          recorded_by: string | null
+          stage: string
+          test_pack_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pressure_test_stage_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      record_punch_clearance: {
+        Args: {
+          target_cleared_on: string
+          target_idempotency_key?: string
+          target_punch_item_id: string
+          target_request_id: string
+        }
+        Returns: {
+          cleared_by: string | null
+          cleared_on: string
+          created_at: string
+          id: string
+          project_id: string
+          punch_item_id: string
+          request_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "punch_item_clearances"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       record_pwht_result: {
         Args: {
           chart_number: string
@@ -6855,6 +9964,39 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "pwht_results"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      record_reinstatement: {
+        Args: {
+          target_flange_joint_revision_id: string
+          target_idempotency_key?: string
+          target_joint_date: string
+          target_jointer_team_id: string
+          target_report_number: string
+          target_request_id: string
+          target_tag_number: string
+        }
+        Returns: {
+          category_snapshot: string
+          created_at: string
+          flange_joint_revision_id: string
+          id: string
+          joint_date: string
+          jointer_team_id: string
+          project_id: string
+          recorded_by: string | null
+          report_number: string
+          request_id: string
+          superseded_at: string | null
+          supersedes_record_id: string | null
+          tag_number: string
+          timing_snapshot: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "flange_reinstatement_records"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -7084,6 +10226,33 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      remove_test_pack_isometric: {
+        Args: {
+          target_idempotency_key?: string
+          target_isometric_id: string
+          target_test_pack_id: string
+        }
+        Returns: {
+          assigned_at: string
+          assigned_by: string | null
+          assigned_isometric_revision_id: string
+          created_at: string
+          id: string
+          isometric_id: string
+          project_id: string
+          removed_at: string | null
+          removed_by: string | null
+          source_import_job_id: string | null
+          source_kind: string
+          test_pack_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "test_pack_isometrics"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       request_qc13_form: {
         Args: {
           requested_date?: string
@@ -7127,6 +10296,13 @@ export type Database = {
           blocker_count: number
           unresolved_count: number
           warning_count: number
+        }[]
+      }
+      revalidate_test_pack_import_job: {
+        Args: { target_job_id: string }
+        Returns: {
+          blocker_count: number
+          conflict_count: number
         }[]
       }
       save_welder_qualification: {
@@ -7217,6 +10393,41 @@ export type Database = {
         Args: { satisfied_obligation_id: string }
         Returns: number
       }
+      test_pack_assert_iso: {
+        Args: { target_isometric_id: string; target_project_id: string }
+        Returns: {
+          isometric_id: string
+          pds_area_id: string
+          project_id: string
+          revision_id: string
+        }[]
+      }
+      test_pack_assert_references: {
+        Args: {
+          target_line_service_id: string
+          target_pds_area_id?: string
+          target_project_id: string
+          target_service_class_id: string
+          target_subsystem_id: string
+          target_system_id: string
+        }
+        Returns: Database["public"]["Enums"]["pressure_unit"]
+      }
+      test_pack_audit: {
+        Args: {
+          target_action: string
+          target_after?: Json
+          target_before?: Json
+          target_entity_id: string
+          target_entity_type: string
+          target_project_id: string
+        }
+        Returns: undefined
+      }
+      test_pack_composition_is_locked: {
+        Args: { target_isometric_id: string; target_test_pack_id: string }
+        Returns: boolean
+      }
       update_project_member_access: {
         Args: {
           requested_access_role: string
@@ -7240,6 +10451,52 @@ export type Database = {
           to: "project_memberships"
           isOneToOne: false
           isSetofReturn: true
+        }
+      }
+      update_test_pack: {
+        Args: {
+          target_idempotency_key?: string
+          target_line_service_id: string
+          target_location: string
+          target_planned_end_on: string
+          target_planned_start_on: string
+          target_priority: string
+          target_service_class_id: string
+          target_subsystem_id: string
+          target_system_id: string
+          target_test_medium: Database["public"]["Enums"]["test_pack_medium"]
+          target_test_pack_id: string
+          target_test_pressure: number
+          target_volume_m3?: number
+        }
+        Returns: {
+          created_at: string
+          created_by: string | null
+          id: string
+          lifecycle: string
+          line_service_id: string
+          location: string
+          planned_end_on: string
+          planned_start_on: string
+          pressure_unit: Database["public"]["Enums"]["pressure_unit"]
+          priority: string
+          project_id: string
+          revision_no: number
+          service_class_id: string
+          subsystem_id: string
+          system_id: string
+          test_medium: Database["public"]["Enums"]["test_pack_medium"]
+          test_pack_number: string
+          test_pressure: number
+          updated_at: string
+          updated_by: string | null
+          volume_m3: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "test_packs"
+          isOneToOne: true
+          isSetofReturn: false
         }
       }
       weld_joint_context: {
@@ -7307,6 +10564,7 @@ export type Database = {
         | "finishing"
         | "reinstatement"
         | "jointer"
+      test_pack_medium: "H" | "P" | "V"
     }
     CompositeTypes: {
       spool_context: {
@@ -7518,6 +10776,7 @@ export const Constants = {
         "reinstatement",
         "jointer",
       ],
+      test_pack_medium: ["H", "P", "V"],
     },
   },
 } as const

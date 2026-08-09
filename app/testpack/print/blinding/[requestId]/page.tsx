@@ -1,11 +1,5 @@
-import { NotOnSupabaseYet } from "@/components/pipeqc/not-on-supabase-yet"
+import { RequestPrintView } from "@/modules/pressure-test/ui/request-print-view"
 
-export default function BlindingPrintPage() {
-  return (
-    <NotOnSupabaseYet
-      title="Blinding Form"
-      track="Track 10"
-      summary="The printable blind list, generated from the durable request and its results."
-    />
-  )
+export default function BlindingPrintPage({ params }: { params: { requestId: string } }) {
+  return <RequestPrintView title="Blinding Form" requestId={params.requestId} expectedType="blinding" />
 }

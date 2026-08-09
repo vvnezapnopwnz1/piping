@@ -114,6 +114,19 @@ export interface UnitTimeReference {
   status: ReferenceStatus
 }
 
+export interface PunchCodeInput {
+  code: string
+  description: string
+}
+
+export interface PunchCode {
+  id: string
+  projectId: string
+  code: string
+  description: string
+  status: ReferenceStatus
+}
+
 export const FLANGE_JOINTING_ACTIVITY = "FLANGE_JOINTING"
 
 export function validateProjectTeamInput(input: ProjectTeamInput): ReferenceValidation<ProjectTeamInput> {
@@ -169,4 +182,10 @@ export function validateUnitTimeReferenceInput(input: UnitTimeReferenceInput): R
     return { ok: false, errors: { standardReference: "Standard reference is required" } }
   }
   return { ok: true, value: { activity: code, projectUt: input.projectUt, standardReference }, errors: {} }
+}
+
+export function validatePunchCodeInput(input: PunchCodeInput): ReferenceValidation<PunchCodeInput> {
+  const base = validateReferenceIdentity(input)
+  if (!base.ok) return base
+  return { ok: true, value: base.value, errors: {} }
 }

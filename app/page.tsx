@@ -72,8 +72,7 @@ const MODULES: readonly ModuleLink[] = [
     href: "/testpack",
     title: "Test Packs",
     description: "Test pack assembly, readiness and the pressure-test workflow.",
-    live: false,
-    note: "Track 10",
+    live: true,
   },
   {
     href: "/reports",

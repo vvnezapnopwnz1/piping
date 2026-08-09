@@ -1,11 +1,5 @@
-import { NotOnSupabaseYet } from "@/components/pipeqc/not-on-supabase-yet"
+import { RequestPreparationScreen } from "@/modules/pressure-test/ui/request-preparation-screen"
 
 export default function BlindingPreparationPage() {
-  return (
-    <NotOnSupabaseYet
-      title="Blinding · Preparation"
-      track="Track 10"
-      summary="Raise a blinding request and define the boundary to be blinded."
-    />
-  )
+  return <RequestPreparationScreen requestType="blinding" progressHref="/testpack/pressure-test/blinding/progress" />
 }

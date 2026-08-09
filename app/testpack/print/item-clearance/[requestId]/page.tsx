@@ -1,11 +1,5 @@
-import { NotOnSupabaseYet } from "@/components/pipeqc/not-on-supabase-yet"
+import { RequestPrintView } from "@/modules/pressure-test/ui/request-print-view"
 
-export default function ItemClearancePrintPage() {
-  return (
-    <NotOnSupabaseYet
-      title="Item Clearance Form"
-      track="Track 10"
-      summary="The printable item clearance form, generated from the durable request and its results."
-    />
-  )
+export default function ItemClearancePrintPage({ params }: { params: { requestId: string } }) {
+  return <RequestPrintView title="Item Clearance Form" requestId={params.requestId} expectedType="item_clearance" />
 }

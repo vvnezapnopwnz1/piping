@@ -1,11 +1,5 @@
-import { NotOnSupabaseYet } from "@/components/pipeqc/not-on-supabase-yet"
+import { RequestPreparationScreen } from "@/modules/pressure-test/ui/request-preparation-screen"
 
 export default function LineCheckPage() {
-  return (
-    <NotOnSupabaseYet
-      title="Line Check"
-      track="Track 10"
-      summary="Line check requests and their walkdown results before a pressure test."
-    />
-  )
+  return <RequestPreparationScreen requestType="line_check" progressHref="/testpack/pressure-test/line-check/progress" />
 }

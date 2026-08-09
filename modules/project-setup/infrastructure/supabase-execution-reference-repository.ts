@@ -13,10 +13,12 @@ import type {
   PressureUnit,
   UnitTimeReference,
   UnitTimeReferenceInput,
+  PunchCode,
+  PunchCodeInput,
 } from "../domain/execution-reference"
-import { validateUnitTimeReferenceInput } from "../domain/execution-reference"
+import { validatePunchCodeInput, validateUnitTimeReferenceInput } from "../domain/execution-reference"
 import { mapSupabaseReferenceError } from "./supabase-reference-errors"
-import { normalizeReferenceCode } from "../domain/reference"
+import { normalizeReferenceCode, type ReferenceStatus } from "../domain/reference"
 
 export interface LoadedExecutionReferences {
   teams: ProjectTeam[]
@@ -27,13 +29,14 @@ export interface LoadedExecutionReferences {
   locations: Location[]
   pressureUnit: PressureUnit | null
   unitTimeReferences: UnitTimeReference[]
+  punchCodes: PunchCode[]
 }
 
 export async function loadExecutionReferences(
   client: SupabaseClient<Database>,
   projectId: string
 ): Promise<LoadedExecutionReferences> {
-  const [teamsRes, sysRes, subRes, lineRes, catRes, locRes, pressRes, utRes] = await Promise.all([
+  const [teamsRes, sysRes, subRes, lineRes, catRes, locRes, pressRes, utRes, punchRes] = await Promise.all([
     client
       .from("project_teams")
       .select("id, project_id, code, description, team_type, status")
@@ -74,6 +77,11 @@ export async function loadExecutionReferences(
       .select("id, project_id, activity, project_ut, standard_reference, status")
       .eq("project_id", projectId)
       .order("activity", { ascending: true }),
+    client
+      .from("project_punch_codes")
+      .select("id, project_id, code, description, status")
+      .eq("project_id", projectId)
+      .order("code", { ascending: true }),
   ])
 
   if (teamsRes.error) throw new Error(mapSupabaseReferenceError(teamsRes.error))
@@ -84,13 +92,14 @@ export async function loadExecutionReferences(
   if (locRes.error) throw new Error(mapSupabaseReferenceError(locRes.error))
   if (pressRes.error) throw new Error(mapSupabaseReferenceError(pressRes.error))
   if (utRes.error) throw new Error(mapSupabaseReferenceError(utRes.error))
+  if (punchRes.error) throw new Error(mapSupabaseReferenceError(punchRes.error))
 
   const teams: ProjectTeam[] = (teamsRes.data ?? []).map((row) => ({
     id: row.id,
     projectId: row.project_id,
     code: row.code,
     description: row.description,
-    teamType: row.team_type as any,
+    teamType: row.team_type as ProjectTeam["teamType"],
     status: row.status,
   }))
 
@@ -102,7 +111,7 @@ export async function loadExecutionReferences(
     status: row.status,
   }))
 
-  const subsystems: ProjectSubsystem[] = (subRes.data ?? []).map((row: any) => ({
+  const subsystems: ProjectSubsystem[] = (subRes.data ?? []).map((row) => ({
     id: row.id,
     projectId: row.project_id,
     systemId: row.system_id,
@@ -128,21 +137,23 @@ export async function loadExecutionReferences(
     status: row.status,
   }))
 
-  const locations: Location[] = (locRes.data ?? []).map((row: any) => ({
+  const locations: Location[] = (locRes.data ?? []).map((row) => ({
     id: row.id,
     projectId: row.project_id,
     categoryId: row.category_id,
     categoryCode: row.project_location_categories?.code,
     code: row.code,
     description: row.description,
-    mappedProgressColumns: row.mapped_progress_columns || [],
+    mappedProgressColumns: Array.isArray(row.mapped_progress_columns)
+      ? row.mapped_progress_columns.filter((value): value is string => typeof value === "string")
+      : [],
     status: row.status,
   }))
 
   const pressureUnit: PressureUnit | null = pressRes.data
     ? {
         projectId: pressRes.data.project_id,
-        unit: pressRes.data.unit as any,
+        unit: pressRes.data.unit as PressureUnit["unit"],
       }
     : null
 
@@ -155,6 +166,14 @@ export async function loadExecutionReferences(
     status: row.status,
   }))
 
+  const punchCodes: PunchCode[] = (punchRes.data ?? []).map((row) => ({
+    id: row.id,
+    projectId: row.project_id,
+    code: row.code,
+    description: row.description,
+    status: row.status,
+  }))
+
   return {
     teams,
     systems,
@@ -164,7 +183,53 @@ export async function loadExecutionReferences(
     locations,
     pressureUnit,
     unitTimeReferences,
+    punchCodes,
   }
+}
+
+export async function createPunchCode(
+  client: SupabaseClient<Database>,
+  projectId: string,
+  input: PunchCodeInput,
+): Promise<PunchCode> {
+  const validation = validatePunchCodeInput(input)
+  if (!validation.ok) {
+    throw new Error(Object.values(validation.errors)[0] ?? "Invalid punch code")
+  }
+
+  const { data, error } = await client
+    .from("project_punch_codes")
+    .insert({
+      project_id: projectId,
+      code: validation.value.code,
+      description: validation.value.description,
+    })
+    .select("id, project_id, code, description, status")
+    .single()
+
+  if (error) throw new Error(mapSupabaseReferenceError(error))
+
+  return {
+    id: data.id,
+    projectId: data.project_id,
+    code: data.code,
+    description: data.description,
+    status: data.status,
+  }
+}
+
+export async function setPunchCodeStatus(
+  client: SupabaseClient<Database>,
+  projectId: string,
+  punchCodeId: string,
+  status: ReferenceStatus,
+): Promise<void> {
+  const { error } = await client
+    .from("project_punch_codes")
+    .update({ status })
+    .eq("id", punchCodeId)
+    .eq("project_id", projectId)
+  if (error) throw new Error(mapSupabaseReferenceError(error))
 }
 
 export async function createProjectTeam(
@@ -190,7 +255,7 @@ export async function createProjectTeam(
     projectId: data.project_id,
     code: data.code,
     description: data.description,
-    teamType: data.team_type as any,
+    teamType: data.team_type as ProjectTeam["teamType"],
     status: data.status,
   }
 }

@@ -63,6 +63,15 @@ function run() {
   ])
   assert.equal(blankLine.rows.length, 1)
   assert.equal(blankLine.rows[0].normalizedValues.ident_code, "ID-2")
+
+  const testPack = parseSheet("test_pack_composition", [
+    ["System", "Subsystem", "Test Pack", "Test Pack Rev", "Test Medium", "Test Pressure", "Planned Start", "Planned End", "Priority", "Service Class", "Line Service", "Volume m3", "Test Pack Location", "ISO Number", "ISO Revision", "Spool Number", "Spool Revision"],
+    ["sys-1", "sub-1", "tp-1", "0", "p", "12.5", "10-08-2026", "12-08-2026", "high", "sc-1", "ls-1", "10", "unit 1", "iso-1", "r0", "sp-1", "r0"],
+  ])
+  assert.equal(testPack.issues.length, 0)
+  assert.equal(testPack.rows[0].normalizedValues.test_medium, "P")
+  assert.equal(testPack.rows[0].normalizedValues.planned_start_on, "2026-08-10")
+  assert.equal(testPack.rows[0].normalizedValues.iso_number, "ISO-1")
   assert.equal(blankLine.issues.length, 0)
 
   // An empty sheet is a sheet-level blocker.

@@ -1,11 +1,5 @@
-import { NotOnSupabaseYet } from "@/components/pipeqc/not-on-supabase-yet"
+import { RequestPreparationScreen } from "@/modules/pressure-test/ui/request-preparation-screen"
 
 export default function ReinstatementPage() {
-  return (
-    <NotOnSupabaseYet
-      title="Reinstatement"
-      track="Track 10"
-      summary="Reinstatement requests returning a tested boundary to its design condition."
-    />
-  )
+  return <RequestPreparationScreen requestType="reinstatement" progressHref="/testpack/pressure-test/reinstatement/progress" />
 }

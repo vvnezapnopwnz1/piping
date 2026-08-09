@@ -1,11 +1,5 @@
-import { NotOnSupabaseYet } from "@/components/pipeqc/not-on-supabase-yet"
+import { RequestPrintView } from "@/modules/pressure-test/ui/request-print-view"
 
-export default function LineCheckPrintPage() {
-  return (
-    <NotOnSupabaseYet
-      title="Line Check Form"
-      track="Track 10"
-      summary="The printable line check form, generated from the durable request and its results."
-    />
-  )
+export default function LineCheckPrintPage({ params }: { params: { requestId: string } }) {
+  return <RequestPrintView title="Line Check Form" requestId={params.requestId} expectedType="line_check" />
 }

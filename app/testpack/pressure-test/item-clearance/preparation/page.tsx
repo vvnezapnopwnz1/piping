@@ -1,11 +1,5 @@
-import { NotOnSupabaseYet } from "@/components/pipeqc/not-on-supabase-yet"
+import { RequestPreparationScreen } from "@/modules/pressure-test/ui/request-preparation-screen"
 
 export default function ItemClearancePreparationPage() {
-  return (
-    <NotOnSupabaseYet
-      title="Item Clearance · Preparation"
-      track="Track 10"
-      summary="Raise an item clearance request and list the items to clear."
-    />
-  )
+  return <RequestPreparationScreen requestType="item_clearance" progressHref="/testpack/pressure-test/item-clearance/progress" />
 }

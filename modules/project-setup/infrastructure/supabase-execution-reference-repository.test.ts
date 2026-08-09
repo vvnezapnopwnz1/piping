@@ -47,7 +47,6 @@ function createFakeExecutionClient(_projectId = "proj-1") {
                       activity: payload.activity,
                       project_ut: payload.project_ut,
                       standard_reference: payload.standard_reference,
-                      team_type: payload.team_type,
                       status: "active",
                     },
                     error: null,
