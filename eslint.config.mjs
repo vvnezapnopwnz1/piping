@@ -30,6 +30,8 @@ export default [
       "supabase/.temp/**",
       // Playwright MCP writes acceptance-run screenshots and traces here.
       ".playwright-mcp/**",
+      // Claude tooling may keep nested Git worktrees here; they are not this checkout's source.
+      ".claude/**",
       "public/**",
       "__pycache__/**",
       ".venv-marker/**",
