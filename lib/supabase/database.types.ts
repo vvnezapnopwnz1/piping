@@ -7,31 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       audit_events: {
@@ -515,6 +490,20 @@ export type Database = {
             foreignKeyName: "construction_progress_events_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
             isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "construction_progress_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "construction_progress_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
             referencedRelation: "test_pack_spool_status"
             referencedColumns: ["spool_revision_id"]
           },
@@ -620,6 +609,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "spool_revisions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "flange_joint_revisions_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "flange_joint_revisions_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_revision_id"]
           },
           {
             foreignKeyName: "flange_joint_revisions_spool_revision_id_fkey"
@@ -1395,6 +1398,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "isometric_revisions_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "isometric_revisions_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["isometric_id"]
+          },
+          {
             foreignKeyName: "isometric_revisions_pds_area_id_fkey"
             columns: ["pds_area_id"]
             isOneToOne: false
@@ -1602,6 +1619,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "laydown_records_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "tracking_location_occupancy"
+            referencedColumns: ["location_id"]
+          },
+          {
             foreignKeyName: "laydown_records_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
@@ -1668,6 +1692,20 @@ export type Database = {
             foreignKeyName: "laydown_records_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
             isOneToOne: true
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "laydown_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "laydown_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
             referencedRelation: "test_pack_spool_status"
             referencedColumns: ["spool_revision_id"]
           },
@@ -1720,6 +1758,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "isometrics"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "line_check_request_items_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "line_check_request_items_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["isometric_id"]
           },
           {
             foreignKeyName: "line_check_request_items_project_id_fkey"
@@ -1866,6 +1918,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "isometrics"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "line_check_results_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "line_check_results_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["isometric_id"]
           },
           {
             foreignKeyName: "line_check_results_project_id_fkey"
@@ -2113,6 +2179,20 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "spool_revisions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_check_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "material_check_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_revision_id"]
           },
           {
             foreignKeyName: "material_check_records_spool_revision_id_fkey"
@@ -2537,6 +2617,20 @@ export type Database = {
             foreignKeyName: "nde_obligations_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
             isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "nde_obligations_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "nde_obligations_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
             referencedRelation: "test_pack_spool_status"
             referencedColumns: ["spool_revision_id"]
           },
@@ -2907,6 +3001,20 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "spool_revisions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paint_progress_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "paint_progress_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_revision_id"]
           },
           {
             foreignKeyName: "paint_progress_records_spool_revision_id_fkey"
@@ -3345,6 +3453,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "project_device_users_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "tracking_device_management"
+            referencedColumns: ["device_id"]
+          },
+          {
             foreignKeyName: "project_device_users_membership_id_fkey"
             columns: ["membership_id"]
             isOneToOne: false
@@ -3523,6 +3638,7 @@ export type Database = {
       }
       project_locations: {
         Row: {
+          capacity: number | null
           category_id: string
           code: string
           created_at: string
@@ -3534,6 +3650,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          capacity?: number | null
           category_id: string
           code: string
           created_at?: string
@@ -3545,6 +3662,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          capacity?: number | null
           category_id?: string
           code?: string
           created_at?: string
@@ -4826,6 +4944,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "punch_items_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "punch_items_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["isometric_id"]
+          },
+          {
             foreignKeyName: "punch_items_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
@@ -4838,6 +4970,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "project_punch_codes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "punch_items_spool_id_fkey"
+            columns: ["spool_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_id"]
+          },
+          {
+            foreignKeyName: "punch_items_spool_id_fkey"
+            columns: ["spool_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_id"]
           },
           {
             foreignKeyName: "punch_items_spool_id_fkey"
@@ -4967,6 +5113,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "spool_revisions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pwht_requirements_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "pwht_requirements_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_revision_id"]
           },
           {
             foreignKeyName: "pwht_requirements_spool_revision_id_fkey"
@@ -5138,6 +5298,20 @@ export type Database = {
             foreignKeyName: "qc13_progress_forms_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
             isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "qc13_progress_forms_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "qc13_progress_forms_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
             referencedRelation: "test_pack_spool_status"
             referencedColumns: ["spool_revision_id"]
           },
@@ -5259,6 +5433,20 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "spool_revisions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_release_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "quality_release_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_revision_id"]
           },
           {
             foreignKeyName: "quality_release_records_spool_revision_id_fkey"
@@ -5478,6 +5666,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "revision_change_items_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "revision_change_items_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["isometric_id"]
+          },
+          {
             foreignKeyName: "revision_change_items_isometric_revision_id_fkey"
             columns: ["isometric_revision_id"]
             isOneToOne: false
@@ -5655,6 +5857,20 @@ export type Database = {
             foreignKeyName: "revision_progress_copies_source_spool_revision_id_fkey"
             columns: ["source_spool_revision_id"]
             isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "revision_progress_copies_source_spool_revision_id_fkey"
+            columns: ["source_spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "revision_progress_copies_source_spool_revision_id_fkey"
+            columns: ["source_spool_revision_id"]
+            isOneToOne: false
             referencedRelation: "test_pack_spool_status"
             referencedColumns: ["spool_revision_id"]
           },
@@ -5699,6 +5915,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "spool_revisions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revision_progress_copies_target_spool_revision_id_fkey"
+            columns: ["target_spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "revision_progress_copies_target_spool_revision_id_fkey"
+            columns: ["target_spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_revision_id"]
           },
           {
             foreignKeyName: "revision_progress_copies_target_spool_revision_id_fkey"
@@ -5765,6 +5995,239 @@ export type Database = {
           label?: string
         }
         Relationships: []
+      }
+      spool_location_events: {
+        Row: {
+          compensates_event_id: string | null
+          device_id: string | null
+          direction: Database["public"]["Enums"]["tracking_direction"]
+          id: string
+          location_id: string
+          occurred_at: string
+          operator_membership_id: string
+          project_id: string
+          reason: string | null
+          recorded_at: string
+          recorded_by: string
+          source: Database["public"]["Enums"]["tracking_event_source"]
+          source_event_key: string | null
+          source_import_job_id: string | null
+          spool_id: string
+          spool_revision_id: string
+        }
+        Insert: {
+          compensates_event_id?: string | null
+          device_id?: string | null
+          direction: Database["public"]["Enums"]["tracking_direction"]
+          id?: string
+          location_id: string
+          occurred_at: string
+          operator_membership_id: string
+          project_id: string
+          reason?: string | null
+          recorded_at?: string
+          recorded_by: string
+          source: Database["public"]["Enums"]["tracking_event_source"]
+          source_event_key?: string | null
+          source_import_job_id?: string | null
+          spool_id: string
+          spool_revision_id: string
+        }
+        Update: {
+          compensates_event_id?: string | null
+          device_id?: string | null
+          direction?: Database["public"]["Enums"]["tracking_direction"]
+          id?: string
+          location_id?: string
+          occurred_at?: string
+          operator_membership_id?: string
+          project_id?: string
+          reason?: string | null
+          recorded_at?: string
+          recorded_by?: string
+          source?: Database["public"]["Enums"]["tracking_event_source"]
+          source_event_key?: string | null
+          source_import_job_id?: string | null
+          spool_id?: string
+          spool_revision_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spool_location_events_compensates_event_id_fkey"
+            columns: ["compensates_event_id"]
+            isOneToOne: false
+            referencedRelation: "spool_current_location"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_compensates_event_id_fkey"
+            columns: ["compensates_event_id"]
+            isOneToOne: false
+            referencedRelation: "spool_effective_location_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_compensates_event_id_fkey"
+            columns: ["compensates_event_id"]
+            isOneToOne: false
+            referencedRelation: "spool_location_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_compensates_event_id_fkey"
+            columns: ["compensates_event_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_inconsistencies"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_compensates_event_id_fkey"
+            columns: ["compensates_event_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["current_event_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "project_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "tracking_device_management"
+            referencedColumns: ["device_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "project_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "tracking_location_occupancy"
+            referencedColumns: ["location_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_operator_membership_id_fkey"
+            columns: ["operator_membership_id"]
+            isOneToOne: false
+            referencedRelation: "project_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_source_import_job_id_fkey"
+            columns: ["source_import_job_id"]
+            isOneToOne: false
+            referencedRelation: "import_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_id_fkey"
+            columns: ["spool_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_id_fkey"
+            columns: ["spool_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_id_fkey"
+            columns: ["spool_id"]
+            isOneToOne: false
+            referencedRelation: "spools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_construction_status"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_erection_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_fabrication_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_spool_status"
+            referencedColumns: ["spool_revision_id"]
+          },
+        ]
       }
       spool_revision_materials: {
         Row: {
@@ -5844,6 +6307,20 @@ export type Database = {
             foreignKeyName: "spool_revision_materials_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
             isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_revision_materials_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_revision_materials_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
             referencedRelation: "test_pack_spool_status"
             referencedColumns: ["spool_revision_id"]
           },
@@ -5894,6 +6371,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "isometric_revisions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_revisions_spool_id_fkey"
+            columns: ["spool_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_id"]
+          },
+          {
+            foreignKeyName: "spool_revisions_spool_id_fkey"
+            columns: ["spool_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_id"]
           },
           {
             foreignKeyName: "spool_revisions_spool_id_fkey"
@@ -6035,6 +6526,20 @@ export type Database = {
             foreignKeyName: "support_progress_records_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
             isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "support_progress_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "support_progress_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
             referencedRelation: "test_pack_spool_status"
             referencedColumns: ["spool_revision_id"]
           },
@@ -6117,6 +6622,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "spool_revisions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_revisions_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "support_revisions_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_revision_id"]
           },
           {
             foreignKeyName: "support_revisions_spool_revision_id_fkey"
@@ -6354,6 +6873,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "isometrics"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["isometric_id"]
           },
           {
             foreignKeyName: "test_pack_isometrics_project_id_fkey"
@@ -6611,6 +7144,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "spool_revisions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weld_joint_revisions_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "weld_joint_revisions_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_revision_id"]
           },
           {
             foreignKeyName: "weld_joint_revisions_spool_revision_id_fkey"
@@ -6911,6 +7458,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "spool_revisions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weld_progress_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "weld_progress_records_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_revision_id"]
           },
           {
             foreignKeyName: "weld_progress_records_spool_revision_id_fkey"
@@ -7497,6 +8058,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "line_check_request_items_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "line_check_request_items_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["isometric_id"]
+          },
+          {
             foreignKeyName: "pressure_test_requests_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
@@ -7758,6 +8333,387 @@ export type Database = {
           },
         ]
       }
+      spool_current_location: {
+        Row: {
+          current_location_code: string | null
+          current_location_description: string | null
+          current_location_id: string | null
+          direction: Database["public"]["Enums"]["tracking_direction"] | null
+          event_id: string | null
+          event_location_id: string | null
+          is_in_transit: boolean | null
+          last_device_id: string | null
+          last_event_at: string | null
+          last_event_source:
+            | Database["public"]["Enums"]["tracking_event_source"]
+            | null
+          last_operator_membership_id: string | null
+          project_id: string | null
+          spool_id: string | null
+          spool_revision_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spool_location_events_device_id_fkey"
+            columns: ["last_device_id"]
+            isOneToOne: false
+            referencedRelation: "project_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_device_id_fkey"
+            columns: ["last_device_id"]
+            isOneToOne: false
+            referencedRelation: "tracking_device_management"
+            referencedColumns: ["device_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_location_id_fkey"
+            columns: ["event_location_id"]
+            isOneToOne: false
+            referencedRelation: "project_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_location_id_fkey"
+            columns: ["event_location_id"]
+            isOneToOne: false
+            referencedRelation: "tracking_location_occupancy"
+            referencedColumns: ["location_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_operator_membership_id_fkey"
+            columns: ["last_operator_membership_id"]
+            isOneToOne: false
+            referencedRelation: "project_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_id_fkey"
+            columns: ["spool_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_id_fkey"
+            columns: ["spool_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_id_fkey"
+            columns: ["spool_id"]
+            isOneToOne: false
+            referencedRelation: "spools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_construction_status"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_erection_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_fabrication_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_spool_status"
+            referencedColumns: ["spool_revision_id"]
+          },
+        ]
+      }
+      spool_effective_location_events: {
+        Row: {
+          compensates_event_id: string | null
+          device_id: string | null
+          direction: Database["public"]["Enums"]["tracking_direction"] | null
+          id: string | null
+          location_id: string | null
+          occurred_at: string | null
+          operator_membership_id: string | null
+          project_id: string | null
+          reason: string | null
+          recorded_at: string | null
+          recorded_by: string | null
+          source: Database["public"]["Enums"]["tracking_event_source"] | null
+          source_event_key: string | null
+          source_import_job_id: string | null
+          spool_id: string | null
+          spool_revision_id: string | null
+        }
+        Insert: {
+          compensates_event_id?: string | null
+          device_id?: string | null
+          direction?: Database["public"]["Enums"]["tracking_direction"] | null
+          id?: string | null
+          location_id?: string | null
+          occurred_at?: string | null
+          operator_membership_id?: string | null
+          project_id?: string | null
+          reason?: string | null
+          recorded_at?: string | null
+          recorded_by?: string | null
+          source?: Database["public"]["Enums"]["tracking_event_source"] | null
+          source_event_key?: string | null
+          source_import_job_id?: string | null
+          spool_id?: string | null
+          spool_revision_id?: string | null
+        }
+        Update: {
+          compensates_event_id?: string | null
+          device_id?: string | null
+          direction?: Database["public"]["Enums"]["tracking_direction"] | null
+          id?: string | null
+          location_id?: string | null
+          occurred_at?: string | null
+          operator_membership_id?: string | null
+          project_id?: string | null
+          reason?: string | null
+          recorded_at?: string | null
+          recorded_by?: string | null
+          source?: Database["public"]["Enums"]["tracking_event_source"] | null
+          source_event_key?: string | null
+          source_import_job_id?: string | null
+          spool_id?: string | null
+          spool_revision_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spool_location_events_compensates_event_id_fkey"
+            columns: ["compensates_event_id"]
+            isOneToOne: false
+            referencedRelation: "spool_current_location"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_compensates_event_id_fkey"
+            columns: ["compensates_event_id"]
+            isOneToOne: false
+            referencedRelation: "spool_effective_location_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_compensates_event_id_fkey"
+            columns: ["compensates_event_id"]
+            isOneToOne: false
+            referencedRelation: "spool_location_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_compensates_event_id_fkey"
+            columns: ["compensates_event_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_inconsistencies"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_compensates_event_id_fkey"
+            columns: ["compensates_event_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["current_event_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "project_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "tracking_device_management"
+            referencedColumns: ["device_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "project_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "tracking_location_occupancy"
+            referencedColumns: ["location_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_operator_membership_id_fkey"
+            columns: ["operator_membership_id"]
+            isOneToOne: false
+            referencedRelation: "project_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_source_import_job_id_fkey"
+            columns: ["source_import_job_id"]
+            isOneToOne: false
+            referencedRelation: "import_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_id_fkey"
+            columns: ["spool_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_id_fkey"
+            columns: ["spool_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_id_fkey"
+            columns: ["spool_id"]
+            isOneToOne: false
+            referencedRelation: "spools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_construction_status"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_erection_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_fabrication_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_spool_status"
+            referencedColumns: ["spool_revision_id"]
+          },
+        ]
+      }
       spool_erection_readiness: {
         Row: {
           erected_on: string | null
@@ -7883,6 +8839,20 @@ export type Database = {
             foreignKeyName: "construction_progress_events_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
             isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "construction_progress_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "construction_progress_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
             referencedRelation: "test_pack_spool_status"
             referencedColumns: ["spool_revision_id"]
           },
@@ -8003,8 +8973,203 @@ export type Database = {
             foreignKeyName: "construction_progress_events_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
             isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "construction_progress_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "construction_progress_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
             referencedRelation: "test_pack_spool_status"
             referencedColumns: ["spool_revision_id"]
+          },
+        ]
+      }
+      spool_tracking_inconsistencies: {
+        Row: {
+          event_id: string | null
+          issue_code: string | null
+          occurred_at: string | null
+          project_id: string | null
+          spool_id: string | null
+          spool_revision_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spool_location_events_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_id_fkey"
+            columns: ["spool_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_id_fkey"
+            columns: ["spool_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_id_fkey"
+            columns: ["spool_id"]
+            isOneToOne: false
+            referencedRelation: "spools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_construction_status"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_erection_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_fabrication_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_spool_status"
+            referencedColumns: ["spool_revision_id"]
+          },
+        ]
+      }
+      spool_tracking_worklist: {
+        Row: {
+          construction_status: string | null
+          current_event_id: string | null
+          current_location_code: string | null
+          current_location_description: string | null
+          current_location_id: string | null
+          has_ever_scanned: boolean | null
+          is_active: boolean | null
+          is_in_transit: boolean | null
+          iso_number: string | null
+          isometric_id: string | null
+          last_event_at: string | null
+          pds_area_code: string | null
+          pds_area_description: string | null
+          pds_area_id: string | null
+          project_id: string | null
+          revision_number: string | null
+          spool_id: string | null
+          spool_number: string | null
+          spool_revision_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "isometric_revisions_pds_area_id_fkey"
+            columns: ["pds_area_id"]
+            isOneToOne: false
+            referencedRelation: "project_pds_areas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spools_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spool_transit_alerts: {
+        Row: {
+          departure_location_code: string | null
+          departure_location_id: string | null
+          is_overdue: boolean | null
+          iso_number: string | null
+          isometric_id: string | null
+          maximum_transit_time_days: number | null
+          project_id: string | null
+          spool_id: string | null
+          spool_number: string | null
+          spool_revision_id: string | null
+          transit_days: number | null
+          transit_started_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spool_location_events_location_id_fkey"
+            columns: ["departure_location_id"]
+            isOneToOne: false
+            referencedRelation: "project_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_location_id_fkey"
+            columns: ["departure_location_id"]
+            isOneToOne: false
+            referencedRelation: "tracking_location_occupancy"
+            referencedColumns: ["location_id"]
+          },
+          {
+            foreignKeyName: "spools_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -8125,6 +9290,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "test_pack_isometrics_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["isometric_id"]
+          },
+          {
             foreignKeyName: "test_pack_isometrics_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
@@ -8223,6 +9402,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "isometrics"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["isometric_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_isometric_id_fkey"
+            columns: ["isometric_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["isometric_id"]
           },
           {
             foreignKeyName: "test_pack_isometrics_project_id_fkey"
@@ -8407,6 +9600,127 @@ export type Database = {
           },
         ]
       }
+      tracking_device_management: {
+        Row: {
+          assigned_membership_id: string | null
+          assignment_status:
+            | Database["public"]["Enums"]["project_reference_status"]
+            | null
+          device_code: string | null
+          device_description: string | null
+          device_id: string | null
+          device_status:
+            | Database["public"]["Enums"]["project_reference_status"]
+            | null
+          last_used_at: string | null
+          most_frequent_location_code: string | null
+          most_frequent_operator_membership_id: string | null
+          project_id: string | null
+          scan_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_device_users_membership_id_fkey"
+            columns: ["assigned_membership_id"]
+            isOneToOne: false
+            referencedRelation: "project_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_devices_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tracking_device_usage: {
+        Row: {
+          device_code: string | null
+          device_description: string | null
+          device_id: string | null
+          last_used_at: string | null
+          location_code: string | null
+          location_id: string | null
+          operator_membership_id: string | null
+          project_id: string | null
+          scan_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spool_location_events_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "project_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_device_id_fkey"
+            columns: ["device_id"]
+            isOneToOne: false
+            referencedRelation: "tracking_device_management"
+            referencedColumns: ["device_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "project_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "tracking_location_occupancy"
+            referencedColumns: ["location_id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_operator_membership_id_fkey"
+            columns: ["operator_membership_id"]
+            isOneToOne: false
+            referencedRelation: "project_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spool_location_events_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tracking_location_occupancy: {
+        Row: {
+          capacity: number | null
+          category_code: string | null
+          category_id: string | null
+          current_count: number | null
+          location_code: string | null
+          location_description: string | null
+          location_id: string | null
+          project_id: string | null
+          remaining_capacity: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_locations_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "project_location_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_locations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       weld_progress_summary: {
         Row: {
           diameter_inch: number | null
@@ -8475,6 +9789,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "spool_revisions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weld_joint_revisions_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "weld_joint_revisions_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: false
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_revision_id"]
           },
           {
             foreignKeyName: "weld_joint_revisions_spool_revision_id_fkey"
@@ -8618,6 +9946,38 @@ export type Database = {
         }
       }
       apply_test_pack_import_job: {
+        Args: { confirm_conflicts?: boolean; target_job_id: string }
+        Returns: {
+          affected_entity_ids: string[]
+          applied_at: string | null
+          applied_row_count: number
+          canceled_at: string | null
+          completed_at: string | null
+          conflicts_confirmed: boolean
+          created_at: string
+          failure_reason: string | null
+          id: string
+          import_type: string
+          kind: string | null
+          project_id: string
+          requested_by: string
+          source_checksum: string | null
+          source_file_name: string | null
+          source_media_type: string | null
+          source_size_bytes: number | null
+          status: string
+          storage_path: string | null
+          summary: Json
+          validated_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "import_jobs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      apply_tracking_scan_import_job: {
         Args: { confirm_conflicts?: boolean; target_job_id: string }
         Returns: {
           affected_entity_ids: string[]
@@ -9322,6 +10682,7 @@ export type Database = {
           ready_for_import: boolean
         }[]
       }
+      get_tracking_data_dump: { Args: { p_project_id: string }; Returns: Json }
       has_project_access: {
         Args: { target_project_id: string }
         Returns: boolean
@@ -9388,6 +10749,18 @@ export type Database = {
           project_status: Database["public"]["Enums"]["project_reference_status"]
           subcontractor_ids: string[]
           title: string
+        }[]
+      }
+      list_tracking_device_user_candidates: {
+        Args: { p_project_id: string }
+        Returns: {
+          device_code: string
+          device_id: string
+          device_user_id: string
+          email: string
+          full_name: string
+          is_assigned: boolean
+          membership_id: string
         }[]
       }
       mark_import_job_uploaded: {
@@ -9797,6 +11170,84 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "line_check_results"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      record_location_event: {
+        Args: {
+          p_compensates_event_id: string
+          p_device_id: string
+          p_direction: Database["public"]["Enums"]["tracking_direction"]
+          p_idempotency_key: string
+          p_location_id: string
+          p_occurred_at: string
+          p_project_id: string
+          p_reason: string
+          p_spool_id: string
+        }
+        Returns: {
+          compensates_event_id: string | null
+          device_id: string | null
+          direction: Database["public"]["Enums"]["tracking_direction"]
+          id: string
+          location_id: string
+          occurred_at: string
+          operator_membership_id: string
+          project_id: string
+          reason: string | null
+          recorded_at: string
+          recorded_by: string
+          source: Database["public"]["Enums"]["tracking_event_source"]
+          source_event_key: string | null
+          source_import_job_id: string | null
+          spool_id: string
+          spool_revision_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "spool_location_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      record_location_event_invariant: {
+        Args: {
+          p_compensates_event_id: string
+          p_device_id: string
+          p_direction: Database["public"]["Enums"]["tracking_direction"]
+          p_location_id: string
+          p_occurred_at: string
+          p_operator_membership_id: string
+          p_project_id: string
+          p_reason: string
+          p_recorded_by: string
+          p_source: Database["public"]["Enums"]["tracking_event_source"]
+          p_source_event_key: string
+          p_source_import_job_id: string
+          p_spool_id: string
+        }
+        Returns: {
+          compensates_event_id: string | null
+          device_id: string | null
+          direction: Database["public"]["Enums"]["tracking_direction"]
+          id: string
+          location_id: string
+          occurred_at: string
+          operator_membership_id: string
+          project_id: string
+          reason: string | null
+          recorded_at: string
+          recorded_by: string
+          source: Database["public"]["Enums"]["tracking_event_source"]
+          source_event_key: string | null
+          source_import_job_id: string | null
+          spool_id: string
+          spool_revision_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "spool_location_events"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -10565,6 +12016,8 @@ export type Database = {
         | "reinstatement"
         | "jointer"
       test_pack_medium: "H" | "P" | "V"
+      tracking_direction: "in" | "out" | "manual"
+      tracking_event_source: "manual" | "scan_import" | "compensation"
     }
     CompositeTypes: {
       spool_context: {
@@ -10712,9 +12165,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       app_role: [
@@ -10777,6 +12227,8 @@ export const Constants = {
         "jointer",
       ],
       test_pack_medium: ["H", "P", "V"],
+      tracking_direction: ["in", "out", "manual"],
+      tracking_event_source: ["manual", "scan_import", "compensation"],
     },
   },
 } as const
