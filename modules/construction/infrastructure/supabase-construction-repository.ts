@@ -429,6 +429,19 @@ export async function loadPwhtRequirements(
   }))
 }
 
+export function toSupportRow(row: Row): SupportRow {
+  return {
+    supportRevisionId: row.id,
+    supportNumber: row.supports?.support_number ?? "",
+    supportType: row.support_type ?? null,
+    quantity: row.quantity ?? 1,
+    // support_progress_records.support_revision_id is unique, so PostgREST embeds it as a to-one
+    // object (or null) — not an array. Indexing [0] here always yielded undefined.
+    installedOn: row.support_progress_records?.installed_on ?? null,
+    installedPhase: row.support_progress_records?.phase ?? null,
+  }
+}
+
 export async function loadSupports(
   client: SupabaseClient<Database>,
   spoolRevisionId: string,
@@ -441,14 +454,7 @@ export async function loadSupports(
     .eq("spool_revision_id", spoolRevisionId)
     .eq("is_removed", false)
   fail(error)
-  return (data ?? []).map((row: Row) => ({
-    supportRevisionId: row.id,
-    supportNumber: row.supports?.support_number ?? "",
-    supportType: row.support_type ?? null,
-    quantity: row.quantity ?? 1,
-    installedOn: row.support_progress_records?.[0]?.installed_on ?? null,
-    installedPhase: row.support_progress_records?.[0]?.phase ?? null,
-  }))
+  return (data ?? []).map(toSupportRow)
 }
 
 export async function loadPaintOptions(

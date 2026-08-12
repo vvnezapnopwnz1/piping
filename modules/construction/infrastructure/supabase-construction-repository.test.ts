@@ -4,6 +4,7 @@ import {
   toBillLine,
   toReadiness,
   toSpoolStatus,
+  toSupportRow,
   toWeldSummary,
   toWelderQualification,
   toWeldingProcedure,
@@ -138,3 +139,31 @@ const readiness = toReadiness({
 })
 assert.equal(readiness.ndePending, 1)
 assert.equal(readiness.revisionStatus, "accepted")
+
+// PostgREST embeds support_progress_records as a to-one object (or null), not an array, because
+// support_progress_records.support_revision_id carries a unique constraint
+// (supabase/migrations/20260804093000_fabrication_release.sql:15). Indexing [0] on that object is
+// always undefined, which is why the Installed column read back empty for supports that had
+// durably been marked installed.
+const installedSupport = toSupportRow({
+  id: "support-rev-1",
+  support_type: "GUIDE",
+  quantity: 2,
+  supports: { support_number: "SUP-DEMO-1001-01" },
+  support_progress_records: { installed_on: "2026-08-11", phase: "fabrication" },
+})
+assert.equal(installedSupport.installedOn, "2026-08-11")
+assert.equal(installedSupport.installedPhase, "fabrication")
+assert.equal(installedSupport.supportNumber, "SUP-DEMO-1001-01")
+assert.equal(installedSupport.quantity, 2)
+
+// A support with no progress record yet embeds as null, not [], and must read back not-installed.
+const pendingSupport = toSupportRow({
+  id: "support-rev-2",
+  support_type: "GUIDE",
+  quantity: 1,
+  supports: { support_number: "SUP-DEMO-2001-01" },
+  support_progress_records: null,
+})
+assert.equal(pendingSupport.installedOn, null)
+assert.equal(pendingSupport.installedPhase, null)
