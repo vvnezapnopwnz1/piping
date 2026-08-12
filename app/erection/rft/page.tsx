@@ -1,20 +1,12 @@
-"use client";
+"use client"
 
-import { Suspense } from "react";
-import { RFTView } from "@/components/erection/rft-view";
+import { ErectionReadinessScreen } from "@/modules/construction/ui/erection/erection-readiness-screen"
 
-export default function RFTPage() {
+export default function RftPage() {
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Ready For Test</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Auto-derived RFT status — fires when all four predecessor steps are confirmed.
-        </p>
-      </div>
-      <Suspense>
-        <RFTView />
-      </Suspense>
-    </div>
-  );
+    <ErectionReadinessScreen
+      title="Ready For Test"
+      description="Auto-derived from field weld, support, NDE and PWHT evidence."
+    />
+  )
 }

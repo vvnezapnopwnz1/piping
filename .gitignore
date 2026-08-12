@@ -7,7 +7,12 @@ __v0_jsx-dev-runtime.ts
 .vercel/
 
 # Environment variables
+.env
 .env*.local
+scripts/bootstrap-track04-local-fixtures.sh
+
+# Local Supabase Studio query history; never version project-specific bootstrap values.
+supabase/snippets/
 
 # Common ignores
 node_modules
@@ -17,6 +22,7 @@ node_modules
 .playwright-mcp
 docs/full_response.md
 .claude
+.skills
 
 docs/.obisidian
 docs/marker-output/Easy Piping User Manual.md
@@ -810,3 +816,4 @@ docs/.obsidian/appearance.json
 docs/.obsidian/workspace.json
 package-lock.json
 __pycache__/mapping.cpython-314.pyc
+runbook.md

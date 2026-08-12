@@ -1,12 +1,13 @@
-"use client";
+"use client"
 
-import { Suspense } from "react";
-import { SupportedView } from "@/components/erection/supported-view";
+import { FieldSupportProgressScreen } from "@/modules/construction/ui/erection/field-support-progress-screen"
 
 export default function SupportedPage() {
   return (
-    <Suspense fallback={<div className="p-6 text-sm text-slate-500">Loading…</div>}>
-      <SupportedView />
-    </Suspense>
-  );
+    <FieldSupportProgressScreen
+      title="Supported"
+      description="Record each support as installed, then the Supported milestone that Ready For Test depends on."
+      stage="supported"
+    />
+  )
 }

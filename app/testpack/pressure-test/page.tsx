@@ -1,10 +1,5 @@
-import { PressureTestHomepage } from "@/components/testpack/pressure-test-homepage";
-
-export const metadata = {
-  title: "Pressure Test Management | PipeQC",
-  description: "Track readiness across all testing activities",
-};
+import { PressureTestHomeScreen } from "@/modules/pressure-test/ui/pressure-test-home-screen"
 
 export default function PressureTestPage() {
-  return <PressureTestHomepage />;
+  return <PressureTestHomeScreen />
 }

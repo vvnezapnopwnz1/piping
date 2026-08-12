@@ -5,37 +5,62 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Search,
-  Bell,
   HelpCircle,
   Settings,
   ChevronRight,
   ChevronDown,
-  RefreshCw,
+  LogOut,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { useRole, ROLES } from "@/contexts/role-context";
-import { useDemoStore } from "@/store";
-import { useNotificationsCount } from "@/store/notifications-store";
-import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
+import { useSupabaseAuth } from "@/contexts/supabase-auth-context";
 
-// Demo projects
-const projects = [
-  { id: "proj-1", code: "PROJ-LNG-2025", name: "Qatar LNG Train 7" },
-  { id: "proj-2", code: "PROJ-REF-2024", name: "Kuwait Refinery Upgrade" },
-  { id: "proj-3", code: "PROJ-PET-2025", name: "Saudi Petrochemical Plant" },
-];
+import { getTopNavDisplay } from "./top-nav-state";
+
+const ACCESS_ROLE_LABELS: Record<string, string> = {
+  project_admin: "Project Admin",
+  site_admin: "Site Admin",
+  project_editor: "Project Editor",
+  subcontractor: "Subcontractor",
+  project_reader: "Project Reader",
+};
+
+const FUNCTIONAL_ROLE_LABELS: Record<string, string> = {
+  project_manager: "Project Manager",
+  qc_engineer: "QC Engineer",
+  nde_inspector: "NDE Inspector",
+  spooling_team: "Spooling Team",
+  fabrication_contributor: "Fabrication Contributor",
+  erection_contributor: "Erection Contributor",
+  tracking_operator: "Tracking Operator",
+};
+
+function accessLabels(access: {
+  isPlatformAdmin: boolean;
+  accessRole: string | null;
+  functionalRoles: readonly string[];
+}): string[] {
+  if (access.isPlatformAdmin) return ["System Admin"];
+
+  return [
+    ...(access.accessRole ? [ACCESS_ROLE_LABELS[access.accessRole] ?? access.accessRole] : []),
+    ...access.functionalRoles.map(
+      (role) => FUNCTIONAL_ROLE_LABELS[role] ?? role,
+    ),
+  ];
+}
 
 // Route labels for breadcrumb
 const routeLabels: Record<string, string> = {
@@ -66,18 +91,33 @@ const routeLabels: Record<string, string> = {
 
 export function TopNav() {
   const pathname = usePathname();
-  const { roleInfo, currentRole, setCurrentRole } = useRole();
-  const [selectedProject, setSelectedProject] = React.useState(projects[0]);
-  const resetAll = useDemoStore((s) => s.resetAll);
-  const demoMode = useDemoStore((s) => s.demoMode);
-  const unreadCount = useNotificationsCount();
+  const { access, projectAccesses, selectProject, signOut, user } = useSupabaseAuth();
 
-  const handleReset = () => {
-    resetAll();
-    toast.success("Demo data reset", {
-      description: "All stores hydrated to initial state",
-    });
-  };
+  const supabaseProjects = React.useMemo(
+    () =>
+      projectAccesses.map((m) => {
+        return {
+          projectId: m.projectId,
+          activityCode: m.activityCode,
+          title: m.title,
+          accessLabels: accessLabels(m),
+        };
+      }),
+    [projectAccesses]
+  );
+
+  const topNavDisplay = getTopNavDisplay({
+    access: access
+      ? {
+          projectId: access.projectId,
+          activityCode: access.activityCode,
+          title: access.title,
+          accessLabels: accessLabels(access),
+        }
+      : null,
+    projectAccesses: supabaseProjects,
+    email: user?.email,
+  });
 
   // Generate breadcrumb from pathname
   const breadcrumbs = React.useMemo(() => {
@@ -107,42 +147,58 @@ export function TopNav() {
 
         <Separator orientation="vertical" className="mx-2 h-5" />
 
-        {/* Project Selector */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 gap-1 px-2 text-xs"
-            >
-              <span className="font-medium text-foreground">
-                {selectedProject.code}
-              </span>
-              <span className="text-muted-foreground">·</span>
-              <span className="max-w-[140px] truncate text-muted-foreground">
-                {selectedProject.name}
-              </span>
-              <ChevronDown className="ml-1 size-3 text-muted-foreground" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-[280px]">
-            {projects.map((project) => (
-              <DropdownMenuItem
-                key={project.id}
-                onClick={() => setSelectedProject(project)}
-                className={cn(
-                  "flex flex-col items-start gap-0.5",
-                  selectedProject.id === project.id && "bg-accent",
-                )}
+        {topNavDisplay.canSwitchProject ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1 px-2 text-xs"
               >
-                <span className="text-sm font-medium">{project.code}</span>
-                <span className="text-xs text-muted-foreground">
-                  {project.name}
+                <span className="font-medium text-foreground">
+                  {topNavDisplay.project.activityCode}
                 </span>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+                <span className="text-muted-foreground">·</span>
+                <span className="max-w-[140px] truncate text-muted-foreground">
+                  {topNavDisplay.project.title}
+                </span>
+                <ChevronDown className="ml-1 size-3 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-[280px]">
+              {topNavDisplay.projects.map((proj) => (
+                <DropdownMenuItem
+                  key={proj.projectId}
+                  onClick={() => selectProject(proj.projectId)}
+                  className={cn(
+                    "flex flex-col items-start gap-0.5",
+                    topNavDisplay.project.projectId === proj.projectId && "bg-accent",
+                  )}
+                >
+                  <div className="flex w-full items-center justify-between">
+                    <span className="text-sm font-medium">{proj.activityCode}</span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {proj.accessLabels.join(" · ")}
+                    </span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {proj.title}
+                  </span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <div className="flex h-7 items-center gap-1 px-2 text-xs">
+            <span className="font-medium text-foreground">
+              {topNavDisplay.project.activityCode}
+            </span>
+            <span className="text-muted-foreground">·</span>
+            <span className="max-w-[140px] truncate text-muted-foreground">
+              {topNavDisplay.project.title}
+            </span>
+          </div>
+        )}
 
         {/* Breadcrumb */}
         {breadcrumbs.length > 0 && (
@@ -183,17 +239,9 @@ export function TopNav() {
           <span className="sr-only">Search</span>
         </Button>
 
-        <Button variant="ghost" size="icon" className="relative size-8" asChild>
-          <Link href="/">
-            <Bell className="size-4 text-muted-foreground" />
-            {unreadCount > 0 ? (
-              <span className="absolute right-1.5 top-1.5 flex size-4 min-w-4 items-center justify-center rounded-full bg-destructive px-0.5 text-[10px] font-medium text-destructive-foreground">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            ) : null}
-            <span className="sr-only">Notifications</span>
-          </Link>
-        </Button>
+        {/* The notification bell counted unread items in the demo notifications store. A
+            notification feed over durable records is Track 11; an always-empty bell would only
+            claim there is nothing to see. */}
 
         <Button variant="ghost" size="icon" className="size-8">
           <HelpCircle className="size-4 text-muted-foreground" />
@@ -205,61 +253,40 @@ export function TopNav() {
           <span className="sr-only">Settings</span>
         </Button>
 
-        {demoMode && (
-          <Badge
-            variant="outline"
-            className="ml-2 border-amber-300 bg-amber-50 text-amber-800"
-          >
-            DEMO MODE
-          </Badge>
-        )}
-
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleReset}
-          title="Reset demo data"
-        >
-          <RefreshCw className="size-4" />
-        </Button>
-
         <Separator orientation="vertical" className="mx-2 h-5" />
 
-        {/* User Block with Role Switcher */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 gap-2 px-2">
               <Avatar className="size-6">
-                <AvatarImage src="/avatars/user.jpg" alt="A. Rahman" />
-                <AvatarFallback className="text-[10px]">AR</AvatarFallback>
+                <AvatarFallback className="text-[10px]">
+                  {topNavDisplay.email.slice(0, 2).toUpperCase()}
+                </AvatarFallback>
               </Avatar>
-              <div className="flex flex-col items-start">
-                <span className="text-xs font-medium leading-none">
-                  A. Rahman
+              <div className="flex min-w-0 flex-col items-start">
+                <span className="max-w-[180px] truncate text-xs font-medium leading-none">
+                  {topNavDisplay.email}
                 </span>
                 <span className="text-[10px] leading-none text-muted-foreground">
-                  {roleInfo.label}
+                  {topNavDisplay.accessLabels[0] ?? "Project access"}
                 </span>
               </div>
               <ChevronDown className="size-3 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[200px]">
-            {ROLES.map((role) => (
-              <DropdownMenuItem
-                key={role.id}
-                onClick={() => setCurrentRole(role.id)}
-                className={cn(
-                  "flex flex-col items-start gap-0.5",
-                  currentRole === role.id && "bg-accent",
-                )}
-              >
-                <span className="text-sm font-medium">{role.label}</span>
-                <span className="text-xs text-muted-foreground">
-                  {role.description}
-                </span>
-              </DropdownMenuItem>
-            ))}
+          <DropdownMenuContent align="end">
+            {topNavDisplay.accessLabels.slice(1).length > 0 ? (
+              <>
+                <DropdownMenuLabel className="max-w-[240px] text-xs font-normal text-muted-foreground">
+                  {topNavDisplay.accessLabels.slice(1).join(" · ")}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+              </>
+            ) : null}
+            <DropdownMenuItem onClick={() => void signOut()}>
+              <LogOut className="mr-2 size-4" />
+              Sign out
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

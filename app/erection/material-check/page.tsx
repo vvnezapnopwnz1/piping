@@ -1,14 +1,12 @@
-"use client";
+"use client"
 
-import { Suspense } from "react";
-import { FieldMaterialCheckView } from "@/components/erection/field-material-check-view";
+import { FieldMaterialCheckScreen } from "@/modules/construction/ui/erection/field-material-check-screen"
 
-export default function Page() {
+export default function FieldMaterialCheckPage() {
   return (
-    <Suspense
-      fallback={<div className="p-6 text-sm text-slate-500">Loading…</div>}
-    >
-      <FieldMaterialCheckView />
-    </Suspense>
-  );
+    <FieldMaterialCheckScreen
+      title="Field Material Check"
+      description="Confirm field material traces against the accepted spool bill of materials."
+    />
+  )
 }

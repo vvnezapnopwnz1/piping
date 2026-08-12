@@ -1,10 +1,12 @@
-import { ErectionDashboard } from "@/components/erection-dashboard";
+"use client"
 
-export const metadata = {
-  title: "Erection Dashboard | PipeQC",
-  description: "Track site installation and field activities",
-};
+import { ErectionReadinessScreen } from "@/modules/construction/ui/erection/erection-readiness-screen"
 
-export default function DashboardPage() {
-  return <ErectionDashboard />;
+export default function ErectionDashboardPage() {
+  return (
+    <ErectionReadinessScreen
+      title="Erection Dashboard"
+      description="Live field-spool progress from the Supabase construction ledger."
+    />
+  )
 }

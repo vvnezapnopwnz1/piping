@@ -1,21 +1,11 @@
-import { Suspense } from "react";
-import { FlangeBrowse } from "@/components/flange/flange-browse";
+"use client"
+
+import { useSupabaseAuth } from "@/contexts/supabase-auth-context"
+import { FlangeManagementScreen } from "@/modules/flange/ui/flange-management-screen"
 
 export default function FlangePage() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          Flange Management
-        </h1>
-        <p className="text-muted-foreground">
-          Browse bolted flange joints, track torquing progress, and record jointing
-          execution per Easy Piping §19.2.1.
-        </p>
-      </div>
-      <Suspense fallback={<div className="text-sm text-muted-foreground">Loading flange browser…</div>}>
-        <FlangeBrowse />
-      </Suspense>
-    </div>
-  );
+  const auth = useSupabaseAuth()
+  const projectId = auth?.access?.projectId
+  if (!projectId) return <p className="text-sm text-muted-foreground">Select a project to manage flange progress.</p>
+  return <FlangeManagementScreen projectId={projectId} canManage={false} mode="browse" />
 }

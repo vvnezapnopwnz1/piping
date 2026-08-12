@@ -3,19 +3,13 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import {
-  Geist_Mono,
   Inter as V0_Font_Inter,
   Geist_Mono as V0_Font_Geist_Mono,
   Source_Serif_4 as V0_Font_Source_Serif_4,
 } from "next/font/google";
 
-import { RoleProvider } from "@/contexts/role-context";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { SidebarNav } from "@/components/pipeqc/sidebar-nav";
-import { TopNav } from "@/components/pipeqc/top-nav";
-import { Toaster } from "@/components/ui/sonner";
-import { IsoWatcherMount } from "@/components/iso-watcher-mount";
-import { SpoolRFTWatcherMount } from "@/components/spool-rft-watcher-mount";
+import { AppShell } from "@/components/pipeqc/app-shell";
+import { SupabaseAuthProvider } from "@/contexts/supabase-auth-context";
 
 // Initialize fonts
 const _inter = V0_Font_Inter({
@@ -63,18 +57,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="bg-background">
       <body className="font-sans antialiased">
-        <RoleProvider>
-          <SidebarProvider>
-            <SidebarNav />
-            <SidebarInset>
-              <TopNav />
-              <main className="flex-1 overflow-auto p-2">{children}</main>
-            </SidebarInset>
-          </SidebarProvider>
-        </RoleProvider>
-        <Toaster richColors position="top-right" />
-        <IsoWatcherMount />
-        <SpoolRFTWatcherMount />
+        <SupabaseAuthProvider>
+          <AppShell>{children}</AppShell>
+        </SupabaseAuthProvider>
         {process.env.NODE_ENV === "production" && <Analytics />}
       </body>
     </html>

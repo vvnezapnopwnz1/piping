@@ -1,5 +1,7 @@
 ## Роль: Project Manager (PM)
 
+> Authorization note: PM is a functional persona; Project Reader is the safe default access role, not an immutable tier.
+
 **One-line:** Owner of P&L, schedule, and client relationship на piping-пакете
 EPC-проекта. В приложении — **watcher, не editor**: смотрит на дашборды,
 drill'ится в блокеры, генерирует отчёты для клиента и руководства.

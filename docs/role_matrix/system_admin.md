@@ -10,6 +10,8 @@
 
 ## Роль: System Admin
 
+> Authorization note: the merged System/Project/Site Admin model below is legacy demo behavior. Supabase separates global System Admin from project access roles.
+
 **One-line:** В PipeQC merged Project Admin + Site Admin + System Admin
 (per CC-3 role hierarchy). Owner всей setup-фазы проекта: Project
 Definition → System Referential → Project Referential → Access Rights →

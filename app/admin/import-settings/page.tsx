@@ -1,14 +1,7 @@
-import { AdminPageHeader } from "@/components/admin/admin-module-ui";
-import { ImportSettingsView } from "@/components/admin/import-settings-view";
+import { redirect } from "next/navigation"
 
+// The demo import dry-run screen is superseded by the Track 03 import platform, which validates
+// and applies PML, WPS and welder files against durable records.
 export default function ImportSettingsPage() {
-  return (
-    <div className="space-y-4">
-      <AdminPageHeader
-        title="Admin · Import Settings"
-        description="Excel template dry-run imports for project referential data."
-      />
-      <ImportSettingsView />
-    </div>
-  );
+  redirect("/admin/imports")
 }

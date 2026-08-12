@@ -3,6 +3,7 @@ node_modules
 .next
 .venv-marker
 .claude
+.skills
 .playwright-mcp
 *.log
 .DS_Store

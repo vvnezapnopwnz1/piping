@@ -1,3 +1,9 @@
+> **Authorization update:** the strategy below remains valid as a functional
+> domain map. Supabase authorization is now deliberately separate: one access
+> role sets the project ceiling, functional roles grant workflow commands, and
+> subcontractor/PDS scope narrows records. Capability and RLS behavior—not a
+> role-matrix label or browser localStorage—are authoritative.
+
 Согласен с направлением Claude, но я бы уточнил стратегию: матрицу надо вести как target-state + status + priority, иначе она превратится в огромный wish list. Я быстро сверю текущую роль-матрицу/доки и дам практичный процесс: что делать с missing интерфейсами, как не строить лишнее, и как отделить parity от PipeQC-договорённостей.
 
 Коротко

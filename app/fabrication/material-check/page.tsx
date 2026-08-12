@@ -1,12 +1,17 @@
 "use client"
 
-import { Suspense } from "react"
-import { MaterialCheckView } from "@/components/fabrication/material-check-view"
+import { useOptionalAccess } from "@/modules/access/ui/access-context"
+import { MaterialCheckScreen } from "@/modules/construction/ui/fabrication/material-check-screen"
 
 export default function MaterialCheckPage() {
-  return (
-    <Suspense fallback={<div className="p-6 text-sm text-slate-500">Loading…</div>}>
-      <MaterialCheckView />
-    </Suspense>
-  )
+  const access = useOptionalAccess()
+  const projectId = access?.access.projectId ?? null
+
+  if (!projectId) {
+    return (
+      <p className="text-muted-foreground text-sm">Select a project to record material traces.</p>
+    )
+  }
+
+  return <MaterialCheckScreen projectId={projectId} />
 }

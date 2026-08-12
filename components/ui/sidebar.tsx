@@ -606,10 +606,10 @@ function SidebarMenuSkeleton({
 }: React.ComponentProps<'div'> & {
   showIcon?: boolean
 }) {
-  // Random width between 50 to 90%.
-  const width = React.useMemo(() => {
-    return `${Math.floor(Math.random() * 40) + 50}%`
-  }, [])
+  // shadcn ships this with `Math.random()` inside the useMemo to vary the placeholder width.
+  // That runs during render, so the server and the client pick different widths and React
+  // reports a hydration mismatch. A fixed width costs only the decorative variation.
+  const width = '70%'
 
   return (
     <div

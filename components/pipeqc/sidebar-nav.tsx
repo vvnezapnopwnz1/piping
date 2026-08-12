@@ -25,8 +25,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useRole } from "@/contexts/role-context";
 import { getVisibleNavigation, type NavItem } from "@/config/navigation";
+import type { Capability } from "@/modules/access/domain/capability";
+import { useAccess } from "@/modules/access/ui/access-context";
 
 // Helper: check if pathname matches this item or any descendant
 function isPathUnderItem(pathname: string, item: NavItem): boolean {
@@ -206,27 +207,16 @@ function NavTreeSubItem({
   );
 }
 
-// NavItemLink is now replaced by NavTreeItem — keeping for backward compatibility if needed
-function NavItemLink({ item, isActive }: { item: NavItem; isActive: boolean }) {
-  return (
-    <SidebarMenuItem>
-      <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
-        <Link href={item.href}>
-          <item.icon className="size-4" />
-          <span>{item.title}</span>
-        </Link>
-      </SidebarMenuButton>
-    </SidebarMenuItem>
-  );
-}
-
-export function SidebarNav() {
+function NavigationSidebar({
+  can,
+}: {
+  can: (capability: Capability) => boolean
+}) {
   const pathname = usePathname();
-  const { currentRole } = useRole();
 
   const visibleNavigation = React.useMemo(
-    () => getVisibleNavigation(currentRole),
-    [currentRole],
+    () => getVisibleNavigation(can),
+    [can],
   );
 
   return (
@@ -266,4 +256,9 @@ export function SidebarNav() {
       </SidebarContent>
     </Sidebar>
   );
+}
+
+export function SidebarNav() {
+  const { can } = useAccess()
+  return <NavigationSidebar can={can} />
 }

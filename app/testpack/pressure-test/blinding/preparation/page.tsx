@@ -1,18 +1,5 @@
-import { Suspense } from "react";
-import { PreparationView } from "@/components/testpack/blinding/preparation-view";
+import { RequestPreparationScreen } from "@/modules/pressure-test/ui/request-preparation-screen"
 
 export default function BlindingPreparationPage() {
-  return (
-    <div className="h-full p-6">
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-center h-full text-sm text-slate-500">
-            Loading…
-          </div>
-        }
-      >
-        <PreparationView />
-      </Suspense>
-    </div>
-  );
+  return <RequestPreparationScreen requestType="blinding" progressHref="/testpack/pressure-test/blinding/progress" />
 }

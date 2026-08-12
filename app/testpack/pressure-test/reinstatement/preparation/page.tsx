@@ -1,18 +1,5 @@
-import { Suspense } from "react";
-import { PreparationView } from "@/components/testpack/reinstatement/preparation-view";
+import { RequestPreparationScreen } from "@/modules/pressure-test/ui/request-preparation-screen"
 
-export default function Page() {
-  return (
-    <div className="h-[calc(100vh-64px)] p-4">
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-center h-full text-sm text-slate-500">
-            Loading…
-          </div>
-        }
-      >
-        <PreparationView />
-      </Suspense>
-    </div>
-  );
+export default function ReinstatementPreparationPage() {
+  return <RequestPreparationScreen requestType="reinstatement" progressHref="/testpack/pressure-test/reinstatement/progress" />
 }

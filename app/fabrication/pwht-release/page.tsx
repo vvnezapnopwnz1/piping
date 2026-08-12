@@ -1,5 +1,15 @@
-import { PwhtReleaseView } from "@/components/fabrication/pwht-release-view"
+"use client"
 
-export default function PwhtReleasePage() {
-  return <PwhtReleaseView />
+import { useOptionalAccess } from "@/modules/access/ui/access-context"
+import { QcReleaseScreen } from "@/modules/construction/ui/fabrication/qc-release-screen"
+
+export default function PWHTReleasePage() {
+  const access = useOptionalAccess()
+  const projectId = access?.access.projectId ?? null
+
+  if (!projectId) {
+    return <p className="text-muted-foreground text-sm">Select a project to review PWHT.</p>
+  }
+
+  return <QcReleaseScreen projectId={projectId} />
 }

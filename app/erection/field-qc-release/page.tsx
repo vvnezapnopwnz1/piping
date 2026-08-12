@@ -1,12 +1,12 @@
 "use client"
 
-import { Suspense } from "react"
-import { FieldQCReleaseView } from "@/components/erection/field-qc-release-view"
+import { ErectionReadinessScreen } from "@/modules/construction/ui/erection/erection-readiness-screen"
 
 export default function FieldQCReleasePage() {
   return (
-    <Suspense fallback={<div className="p-6 text-sm text-slate-500">Loading…</div>}>
-      <FieldQCReleaseView />
-    </Suspense>
+    <ErectionReadinessScreen
+      title="Field QC Release"
+      description="Read-only RFT gate; no manual release flag is stored."
+    />
   )
 }

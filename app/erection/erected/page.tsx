@@ -1,14 +1,13 @@
-"use client";
+"use client"
 
-import { Suspense } from "react";
-import { ErectedView } from "@/components/erection/erected-view";
+import { ErectionStageScreen } from "@/modules/construction/ui/erection/erection-stage-screen"
 
-export default function Page() {
+export default function ErectedPage() {
   return (
-    <Suspense
-      fallback={<div className="p-6 text-sm text-slate-500">Loading…</div>}
-    >
-      <ErectedView />
-    </Suspense>
-  );
+    <ErectionStageScreen
+      stage="erected"
+      title="Erected"
+      description="Record the erection milestone for a spool that has reached site."
+    />
+  )
 }

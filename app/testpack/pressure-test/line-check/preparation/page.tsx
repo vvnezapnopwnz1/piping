@@ -1,18 +1,5 @@
-import { Suspense } from "react";
-import { PreparationView } from "@/components/testpack/line-check/preparation-view";
+import { RequestPreparationScreen } from "@/modules/pressure-test/ui/request-preparation-screen"
 
 export default function LineCheckPreparationPage() {
-  return (
-    <div className="h-full p-6">
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-center h-full text-sm text-slate-500">
-            Loading…
-          </div>
-        }
-      >
-        <PreparationView />
-      </Suspense>
-    </div>
-  );
+  return <RequestPreparationScreen requestType="line_check" progressHref="/testpack/pressure-test/line-check/progress" />
 }

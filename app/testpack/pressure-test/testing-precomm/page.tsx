@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { PressureTestProgressScreen } from "@/modules/pressure-test/ui/pressure-test-progress-screen"
 
-export default function Page() {
-  redirect("/testpack/pressure-test");
+export default function TestingPrecommPage() {
+  return <PressureTestProgressScreen requestType="testing_precomm" />
 }

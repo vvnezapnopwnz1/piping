@@ -34,25 +34,31 @@ import {
   Send,
   ListPlus,
 } from 'lucide-react'
-import type { Role } from '@/contexts/role-context'
+import type { Capability } from '@/modules/access/domain/capability'
+
+import { requiredCapabilityForPath } from './route-capabilities'
 
 export interface NavItem {
   title: string
   href: string
   icon: LucideIcon
   children?: NavItem[]
+  /**
+   * The track that will build this module. Set means the route renders `NotOnSupabaseYet`, so
+   * the sidebar leaves it out: an entry that leads only to "not built" is a dead end. The route
+   * itself stays reachable by URL, and `app/page.tsx` lists what is planned.
+   */
+  planned?: string
 }
 
 export interface NavSection {
   title: string
   items: NavItem[]
-  roles: Role[]
 }
 
 export const navigationConfig: NavSection[] = [
   {
     title: 'SETUP',
-    roles: ['system_admin', 'project_manager'],
     items: [
       {
         title: 'Admin Module',
@@ -85,8 +91,8 @@ export const navigationConfig: NavSection[] = [
             icon: KeyRound,
           },
           {
-            title: 'Import Settings',
-            href: '/admin/import-settings',
+            title: 'Imports',
+            href: '/admin/imports',
             icon: Inbox,
           },
         ],
@@ -95,7 +101,6 @@ export const navigationConfig: NavSection[] = [
   },
   {
     title: 'PREPARATION',
-    roles: ['spooling_team', 'project_manager'],
     items: [
       {
         title: 'Spooling',
@@ -107,19 +112,25 @@ export const navigationConfig: NavSection[] = [
             href: '/spooling',
             icon: LayoutDashboard,
           },
+          { title: 'SpoolGen Import', href: '/spooling/import', icon: Inbox },
+          { title: 'Browse', href: '/spooling/browse', icon: GitBranch },
+          { title: 'Revision History', href: '/spooling/revisions', icon: GitBranch },
           {
             title: 'Engineering Transmittals',
             href: '/spooling/engineering-transmittals',
+            planned: 'Track 04',
             icon: Inbox,
           },
           {
             title: 'ISO Workflow',
             href: '/spooling/iso-workflow',
+            planned: 'Track 04',
             icon: GitBranch,
           },
           {
             title: 'Spooling Transmittal',
             href: '/spooling/spooling-transmittal',
+            planned: 'Track 04',
             icon: Send,
           },
         ],
@@ -128,7 +139,6 @@ export const navigationConfig: NavSection[] = [
   },
   {
     title: 'CONSTRUCTION',
-    roles: ['qc_engineer', 'nde_inspector', 'subcontractor', 'project_manager'],
     items: [
       {
         title: 'Fabrication',
@@ -258,9 +268,14 @@ export const navigationConfig: NavSection[] = [
             icon: Activity,
           },
           {
-            title: 'Print Barcodes',
+            title: 'Barcode Printing',
             href: '/tracking/print-barcodes',
             icon: Scan,
+          },
+          {
+            title: 'Mobile Device Management',
+            href: '/tracking/devices',
+            icon: Gauge,
           },
         ],
       },
@@ -285,7 +300,6 @@ export const navigationConfig: NavSection[] = [
   },
   {
     title: 'REPORTS',
-    roles: ['project_manager', 'qc_engineer'],
     items: [
       {
         title: 'Reports',
@@ -295,13 +309,17 @@ export const navigationConfig: NavSection[] = [
     ],
   }, {
     title: 'TESTING',
-    roles: ['qc_engineer', 'project_manager', 'nde_inspector'],
     items: [
       {
         title: 'Testpack',
         href: '/testpack',
         icon: FlaskConical, // или TestTube2
         children: [
+          {
+            title: 'Overview',
+            href: '/testpack',
+            icon: FlaskConical,
+          },
           {
             title: 'Builder',
             href: '/testpack/builder',
@@ -328,7 +346,6 @@ export const navigationConfig: NavSection[] = [
   },
   {
     title: 'CONFIGURATION',
-    roles: ['qc_engineer', 'nde_inspector', 'project_manager', 'spooling_team', 'subcontractor', 'system_admin'],
     items: [
       {
         title: 'Settings',
@@ -344,11 +361,37 @@ export const navigationConfig: NavSection[] = [
   },
 ]
 
-export function getVisibleNavigation(role: Role): NavSection[] {
+function getVisibleItem(
+  item: NavItem,
+  can: (capability: Capability) => boolean,
+): NavItem | null {
+  // A route whose module is not built has nothing to navigate to.
+  if (item.planned) return null
+
+  const children = item.children
+    ?.map((child) => getVisibleItem(child, can))
+    .filter((child): child is NavItem => child !== null)
+  const capability = requiredCapabilityForPath(item.href)
+
+  if (!capability || can(capability) || children?.length) {
+    return {
+      ...item,
+      ...(children ? { children } : {}),
+    }
+  }
+
+  return null
+}
+
+export function getVisibleNavigation(
+  can: (capability: Capability) => boolean,
+): NavSection[] {
   return navigationConfig
-    .filter((section) => section.roles.includes(role))
     .map((section) => ({
       ...section,
-      items: section.items,
+      items: section.items
+        .map((item) => getVisibleItem(item, can))
+        .filter((item): item is NavItem => item !== null),
     }))
+    .filter((section) => section.items.length > 0)
 }
