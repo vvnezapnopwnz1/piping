@@ -63,6 +63,27 @@ test("available ISOs are listed by their business ISO number with the id kept as
   )
 })
 
+// `disabled` was tied only to `canManage`, and `submit` is async with no reentrancy guard, so
+// clicks landing before the first request settles re-enter it. Because `selected` is set as soon
+// as the create resolves, clicks 2+ take the `update` branch instead, bumping `rev N` and writing
+// no-op audit rows. The server's unique constraint stops real duplication; the UI noise is real.
+test("the submit button carries an in-flight guard, not just the capability check", () => {
+  assert.ok(source.includes("submitting"), "the Builder must track a submitting/in-flight state")
+  assert.ok(
+    /disabled=\{!canManage \|\| submitting\}/.test(source) ||
+      /disabled=\{submitting \|\| !canManage\}/.test(source),
+    "the submit button must disable while a submit is in flight, not only when the user lacks capability",
+  )
+  assert.ok(
+    /if \(!canManage \|\| submitting\) return/.test(source),
+    "submit must refuse re-entry while a previous submit is still in flight",
+  )
+  assert.ok(
+    /finally \{ setSubmitting\(false\) \}/.test(source),
+    "the in-flight flag must clear even when the mutation throws",
+  )
+})
+
 test("server-side validation, idempotency, and the existing composition RPCs are untouched", () => {
   for (const call of [
     "createManagedTestPack",
