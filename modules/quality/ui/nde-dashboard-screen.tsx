@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { loadNdeKpis, type NdeKpis } from "../infrastructure/supabase-quality-repository"
 
@@ -27,9 +28,7 @@ export function NdeDashboardScreen({ projectId }: { projectId: string }) {
     void reload()
   }, [reload])
 
-  if (loading) {
-    return <div className="p-6 text-sm text-slate-500">Loading NDE Dashboard...</div>
-  }
+  if (loading) return <Skeleton className="h-64 w-full" />
 
   return (
     <div className="space-y-6 p-6">

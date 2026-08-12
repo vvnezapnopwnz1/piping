@@ -5,6 +5,7 @@ import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { Skeleton } from "@/components/ui/skeleton"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import {
   loadSpoolStatuses,
@@ -21,13 +22,22 @@ interface SpoolPickerProps {
 export function SpoolPicker({ projectId, value, onChange, refreshToken = 0 }: SpoolPickerProps) {
   const [statuses, setStatuses] = useState<SpoolStatus[]>([])
   const [filter, setFilter] = useState("")
+  // Derived rather than a setLoading(true) in the effect body, which would be a synchronous
+  // setState inside an effect: the key changes the moment projectId or refreshToken does, so the
+  // list reads as loading again immediately without an extra render pass.
+  const requestKey = `${projectId}:${refreshToken}`
+  const [settledKey, setSettledKey] = useState<string | null>(null)
+  const loading = settledKey !== requestKey
 
   useEffect(() => {
+    const key = `${projectId}:${refreshToken}`
     void loadSpoolStatuses(getSupabaseBrowserClient(), projectId)
       .then(setStatuses)
       .catch((error: unknown) =>
         toast.error(error instanceof Error ? error.message : "Spools could not be loaded."),
       )
+      // Settled, not succeeded: a failed load must stop showing a skeleton it will never replace.
+      .finally(() => setSettledKey(key))
   }, [projectId, refreshToken])
 
   const needle = filter.trim().toUpperCase()
@@ -46,6 +56,13 @@ export function SpoolPicker({ projectId, value, onChange, refreshToken = 0 }: Sp
         onChange={(event) => setFilter(event.target.value)}
         placeholder="Filter by ISO or spool number"
       />
+      {loading ? (
+        <div className="space-y-1">
+          <Skeleton className="h-7 w-full" />
+          <Skeleton className="h-7 w-full" />
+          <Skeleton className="h-7 w-full" />
+        </div>
+      ) : (
       <ul className="max-h-96 space-y-1 overflow-y-auto">
         {visible.map((status) => (
           <li key={status.spoolRevisionId}>
@@ -72,6 +89,7 @@ export function SpoolPicker({ projectId, value, onChange, refreshToken = 0 }: Sp
           </li>
         ) : null}
       </ul>
+      )}
     </div>
   )
 }

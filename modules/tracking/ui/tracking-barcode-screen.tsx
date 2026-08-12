@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Skeleton } from "@/components/ui/skeleton";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { buildBarcodeWorkbook } from "../application/export-barcode-workbook"
 import { createLatestProjectLoader } from "../application/manage-tracking"
@@ -28,7 +29,7 @@ export function TrackingBarcodeScreen({ projectId, projectCode }: { projectId: s
     return () => requestLoader.invalidate()
   }, [projectId, refreshToken])
   if (errorProjectId === projectId) return <Alert variant="destructive"><AlertTitle>Unable to load spool barcodes</AlertTitle><AlertDescription>Check project access and retry.</AlertDescription></Alert>
-  if (!result || result.projectId !== projectId) return <p className="p-6 text-sm text-muted-foreground">Loading barcode worklist…</p>
+  if (!result || result.projectId !== projectId) return <Skeleton className="h-64 w-full" />
   const rows = result.rows
   const filtered = filterTrackingWorklist(rows, query)
   const exportWorkbook = () => {

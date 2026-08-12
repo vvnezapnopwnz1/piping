@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Table,
   TableBody,
@@ -259,9 +260,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
     }
   }
 
-  if (loading) {
-    return <div className="p-6 text-sm text-slate-500">Loading NDE Batches...</div>
-  }
+  if (loading) return <Skeleton className="h-64 w-full" />
 
   return (
     <div className="space-y-6 p-6">

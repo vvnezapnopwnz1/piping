@@ -6,6 +6,7 @@ import { toast } from "sonner"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { createRequestVersion } from "@/lib/request-version"
 import { useSupabaseAuth } from "@/contexts/supabase-auth-context"
@@ -50,7 +51,7 @@ export function AccessRightsScreen({ projectId, isPlatformAdmin }: { projectId: 
     }
   }
   const setActive = async (row: AccessMemberRow, active: boolean) => { setSaving(true); try { await setProjectMemberActive(getSupabaseBrowserClient(), row.membershipId, active); await load(); reloadAccess(); toast.success(active ? "Member activated" : "Member deactivated") } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to update access") } finally { setSaving(false) } }
-  if (status === "loading") return <p className="text-sm text-muted-foreground">Loading access matrix…</p>
+  if (status === "loading") return <Skeleton className="h-64 w-full" />
   if (status === "load_error") return <Alert variant="destructive"><AlertTitle>Unable to load access matrix</AlertTitle><AlertDescription>Check your access or retry the page.</AlertDescription></Alert>
   return <div className="space-y-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm text-muted-foreground">Manage existing PipeQC users, their access roles, functional roles and explicit scope.</p><Button size="sm" onClick={() => { setEditing(null); setDialogOpen(true) }} disabled={saving}><Plus className="mr-1 size-4" />Add member</Button></div><AccessMembersTable rows={rows} currentUserId={user?.id} isPlatformAdmin={isPlatformAdmin} saving={saving} onEdit={(row) => { setEditing(row); setDialogOpen(true) }} onSetActive={setActive} /><AccessMemberDialog open={dialogOpen} member={editing} subcontractors={subcontractors} pdsAreas={pdsAreas} saving={saving} onOpenChange={setDialogOpen} onSave={save} /></div>
 }

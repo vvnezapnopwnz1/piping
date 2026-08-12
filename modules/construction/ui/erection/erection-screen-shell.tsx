@@ -3,6 +3,7 @@
 import type { ReactNode } from "react"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { FieldSpoolPicker } from "./field-spool-picker"
 import type { ErectionReadinessState } from "./use-erection-readiness"
 
@@ -56,7 +57,11 @@ export function ErectionScreenShell({
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <p className="text-muted-foreground text-sm">Loading field spools…</p>
+              <div className="space-y-1">
+                <Skeleton className="h-7 w-full" />
+                <Skeleton className="h-7 w-full" />
+                <Skeleton className="h-7 w-full" />
+              </div>
             ) : loadFailed ? (
               <p className="text-destructive text-sm">
                 Field spools could not be loaded, so none are listed and nothing has been
@@ -74,11 +79,11 @@ export function ErectionScreenShell({
 
         {selected ? (
           <div className="space-y-4">{children(selected)}</div>
+        ) : isLoading ? (
+          <Skeleton className="h-64 w-full" />
         ) : (
           <p className="text-muted-foreground text-sm">
-            {isLoading || loadFailed
-              ? ""
-              : "Select a field spool to record erection progress against it."}
+            {loadFailed ? "" : "Select a field spool to record erection progress against it."}
           </p>
         )}
       </div>

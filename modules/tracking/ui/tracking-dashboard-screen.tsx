@@ -7,6 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Skeleton } from "@/components/ui/skeleton";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { buildTrackingDashboard, createLatestProjectLoader } from "../application/manage-tracking"
 import { trackingCapacityLabel, type TrackingDashboard, type TrackingOccupancyRow } from "../domain/tracking"
@@ -34,7 +35,7 @@ export function TrackingDashboardScreen({ projectId }: { projectId: string }) {
   }, [projectId, refreshToken])
 
   if (errorProjectId === projectId) return <Alert variant="destructive"><AlertTitle>Unable to load tracking dashboard</AlertTitle><AlertDescription>Check project access and use Refresh to try again.</AlertDescription></Alert>
-  if (!state || state.projectId !== projectId) return <p className="p-6 text-sm text-muted-foreground">Loading tracking dashboard…</p>
+  if (!state || state.projectId !== projectId) return <Skeleton className="h-64 w-full" />
   const metrics = [
     ["Distinct spools scanned", state.dashboard.distinctSpoolsScanned], ["Active spools", state.dashboard.activeSpools],
     ["Scans this month", state.dashboard.scansThisMonth], ["Currently in transit", state.dashboard.inTransit], ["Overdue transit", state.dashboard.overdue],

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { recordFlangeProgress } from "../application/record-flange-progress"
@@ -76,7 +77,7 @@ export function FlangeManagementScreen({ projectId, canManage, mode = "operate" 
     } finally { setSaving(false) }
   }
 
-  if (loading) return <p className="text-sm text-muted-foreground">Loading flange worklist…</p>
+  if (loading) return <Skeleton className="h-64 w-full" />
 
   return (
     <div className="space-y-4">

@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
+import { Skeleton } from "@/components/ui/skeleton";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { buildTrackingDataDumpFiles } from "../application/export-tracking-data"
 import { createLatestProjectLoader, createTrackingIdempotencyKey } from "../application/manage-tracking"
@@ -80,7 +81,7 @@ export function TrackingDataAnalysisScreen({ projectId, projectCode, canRecord, 
   }
 
   if (errorProjectId === projectId) return <Alert variant="destructive"><AlertTitle>Unable to load Tracking Data Analysis</AlertTitle><AlertDescription>Check access and retry.</AlertDescription></Alert>
-  if (!state || state.projectId !== projectId) return <p className="p-6 text-sm text-muted-foreground">Loading Tracking Data Analysis…</p>
+  if (!state || state.projectId !== projectId) return <Skeleton className="h-64 w-full" />
   const filtered = filterTrackingWorklist(state.worklist, query)
   const selected = state.worklist.find((row) => row.spoolId === selectedSpoolId) ?? null
   const history = state.events.filter((event) => event.spoolId === selectedSpoolId)
