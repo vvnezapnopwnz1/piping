@@ -239,3 +239,149 @@ Before an external link or production update:
 For detailed account names, presenter sequence and recovery commands, use
 [Track 14 hosted demo runbook](./track-14-hosted-demo.md) together with
 [Track 12 demo walkthrough](./track-12-demo.md).
+
+## 8. Подключение оператора или другого AI-агента
+
+Этот раздел нужен, когда работу продолжает новый человек, Claude Code, Gemini
+CLI или другой агент. Он должен получить отдельные авторизации владельца; не
+копируйте личные токены, `.env.local` или каталог настроек Codex на другую
+машину. Агент может выполнить технические действия, но владелец подтверждает
+деструктивные операции: reset demo-стенда, изменение Auth и production deploy.
+
+### Минимальная карта подключений
+
+```text
+AI agent / operator terminal
+        |
+        +-- git + GitHub credentials --> vvnezapnopwnz1/piping (source, branches, main)
+        |
+        +-- Vercel CLI ---------- OAuth/device login --> pipe-qc-shell-layout
+        |                                             (builds, deploys, logs, env metadata)
+        |
+        +-- Supabase CLI -------- Personal Access Token --> lmjkqcdmxehknipeoeye
+        |                                              (migrations, link, reset)
+        |
+        +-- Vercel MCP ---------- OAuth --> Vercel management/read diagnostics
+        |
+        +-- Supabase MCP -------- optional --> local development stack by default;
+                                                   use a separately configured,
+                                                   project-scoped remote connection
+                                                   only for approved diagnostics
+```
+
+The source repository is `https://github.com/vvnezapnopwnz1/piping.git`.
+The target Vercel project is `pipe-qc-shell-layout` in the
+`vvnezapnopwnzs-projects` team. The only permitted hosted Supabase project ref
+for demo operations is `lmjkqcdmxehknipeoeye` (`pipeqc-hosted-demo`). Verify
+these names before every state-changing command.
+
+### First-time setup on a new machine
+
+Install the repository dependencies, Vercel CLI and Supabase CLI according to
+the platform's official instructions. Then clone and establish only explicit
+links:
+
+```zsh
+git clone https://github.com/vvnezapnopwnz1/piping.git pipe-qc-shell-layout
+cd pipe-qc-shell-layout
+npm install
+
+# Vercel: complete the browser/device authentication as the owning account.
+vercel login
+vercel whoami
+vercel link --yes --team vvnezapnopwnzs-projects --project pipe-qc-shell-layout
+vercel project inspect pipe-qc-shell-layout --scope vvnezapnopwnzs-projects
+
+# Supabase: create a Personal Access Token in the owner's Supabase account,
+# then enter it interactively. Never add this token to a shell history or file.
+/opt/homebrew/bin/supabase login
+/opt/homebrew/bin/supabase projects list
+/opt/homebrew/bin/supabase link --project-ref lmjkqcdmxehknipeoeye
+/opt/homebrew/bin/supabase migration list --linked
+```
+
+`supabase login` opens a browser by default. When the CLI explicitly requests a
+token, paste the PAT into its prompt; for non-browser flows use the CLI's
+`--token` input only in an interactive/secret-aware environment. A successful
+login must be verified by listing project metadata, not by echoing the token.
+
+For a local app session, use a locally supplied `.env.local` containing only
+the public project URL/publishable key plus local fixture values. Do not run
+`vercel env pull` casually: it replaces `.env.local`, and the hosted stand
+intentionally has only public Supabase variables in Vercel.
+
+### Vercel MCP setup for Codex
+
+On the present Codex installation, Vercel MCP is the remote endpoint
+`https://mcp.vercel.com` and uses OAuth. A fresh Codex operator checks and
+authenticates it as follows:
+
+```zsh
+codex mcp list
+codex mcp login vercel
+codex mcp get vercel
+```
+
+After the browser OAuth consent completes, the agent can use Vercel MCP for
+project/deployment inspection, logs and environment metadata where its enabled
+tools permit it. The command-line Vercel login remains the portable and
+authoritative route for the deployment itself:
+
+```zsh
+vercel --prod --yes
+vercel inspect https://pipe-qc-shell-layout.vercel.app/
+vercel logs https://pipe-qc-shell-layout.vercel.app/
+```
+
+For Claude Code or Gemini, configure an MCP client entry pointing to the same
+streamable HTTP endpoint and complete that client's OAuth browser flow. Exact
+configuration syntax is client-specific; the invariant is the endpoint,
+OAuth-based authorization and verification against the project name above.
+Do not turn an OAuth session/token into a committed MCP configuration file.
+
+### Supabase MCP: scope and safe configuration
+
+The current local Codex configuration points Supabase MCP at
+`http://127.0.0.1:54321/mcp`, which is the **local** Supabase development
+stack. It is useful for local schema/query/log diagnostics but it is not the
+hosted demo project and must not be mistaken for it.
+
+For a remote Supabase MCP connection, a new agent must use its Supabase MCP
+provider's supported project-scoping mechanism and explicitly select project
+ref `lmjkqcdmxehknipeoeye`. First use only read-only capabilities (schema,
+migration state, logs, advisors). Confirm the selected ref in every response.
+Do not build deploy, migration or Auth-user creation workflows on MCP: the
+repository's guarded scripts and Supabase CLI own those state changes.
+
+Examples of safe local checks:
+
+```zsh
+codex mcp list
+codex mcp get supabase
+/opt/homebrew/bin/supabase migration list --linked
+npm run demo:check:hosted
+```
+
+The final command needs `SUPABASE_URL` and an interactively entered
+`SUPABASE_SECRET_KEY`, as shown in section 5. It is read-only; do not place
+that secret in MCP arguments or agent prompts.
+
+### Agent handoff protocol
+
+Before allowing an agent to mutate production, give it this compact brief:
+
+```text
+Repository: vvnezapnopwnz1/piping; production branch: main.
+Public URL: https://pipe-qc-shell-layout.vercel.app/.
+Vercel project/team: pipe-qc-shell-layout / vvnezapnopwnzs-projects.
+Hosted Supabase ref: lmjkqcdmxehknipeoeye only.
+Normal schema update: add migration, test locally, then supabase db push.
+Never use db reset unless the owner explicitly requests a fresh demo baseline.
+Never put service/admin secrets in Git, Vercel NEXT_PUBLIC variables, MCP
+arguments, screenshots or chat. Verify project/ref before every mutation.
+```
+
+Require the agent to report: branch and commit, migration list before/after
+when applicable, Vercel deployment URL/status, the stable URL result, and the
+separate browser acceptance result. This prevents a generic “deployed” claim
+from hiding an update to the wrong service or project.
