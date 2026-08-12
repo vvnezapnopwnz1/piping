@@ -69,7 +69,8 @@ export function SpoolPicker({ projectId, value, onChange, refreshToken = 0 }: Sp
             <button
               type="button"
               onClick={() => onChange(status)}
-              className={`flex w-full items-center justify-between rounded px-2 py-1 text-left ${
+              aria-current={value === status.spoolRevisionId ? "true" : undefined}
+              className={`focus-visible:ring-ring flex w-full items-center justify-between rounded px-2 py-1 text-left transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:outline-none ${
                 value === status.spoolRevisionId ? "bg-muted" : ""
               }`}
             >

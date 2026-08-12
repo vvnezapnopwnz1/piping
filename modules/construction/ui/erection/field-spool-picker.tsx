@@ -43,7 +43,8 @@ export function FieldSpoolPicker({ rows, value, onChange }: FieldSpoolPickerProp
             <button
               type="button"
               onClick={() => onChange(row)}
-              className={`flex w-full items-center justify-between gap-2 rounded px-2 py-1 text-left ${
+              aria-current={value === row.spoolRevisionId ? "true" : undefined}
+              className={`focus-visible:ring-ring flex w-full items-center justify-between gap-2 rounded px-2 py-1 text-left transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:outline-none ${
                 value === row.spoolRevisionId ? "bg-muted" : ""
               }`}
             >

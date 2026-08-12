@@ -150,4 +150,11 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* Tailwind v4's preflight no longer gives buttons a pointer cursor and the browser default is
+     an arrow, so without this every control in the app reads as static text. Disabled controls
+     keep the arrow, because the cursor should not promise an action that will not happen. */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']) {
+    @apply cursor-pointer;
+  }
 }
