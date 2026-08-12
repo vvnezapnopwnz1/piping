@@ -47,3 +47,46 @@ test("the reinstatement report number stays a free-text field", () => {
     "reinstatement reuses the draft shape but its report number is not a referential id",
   )
 })
+
+// The screen's own "notice" was a useState rendered as a static paragraph at the very top. On a
+// scrolled worklist that message lands off-screen from the row just acted on, so a durably-correct
+// write produces feedback the operator never sees. Every other mutating screen uses the shared
+// toaster mounted in components/pipeqc/app-shell.tsx.
+test("the screen uses the real toast system for its success notices, not a static paragraph", () => {
+  assert.ok(source.includes('from "sonner"'), "the screen must import the shared toast system")
+  assert.ok(source.includes("toast.success("), "a successful record must raise a real toast")
+  assert.equal(
+    /text-emerald-700/.test(source),
+    false,
+    "the static emerald notice paragraph must be removed once toast() replaces it",
+  )
+  assert.equal(
+    /setNotice\(/.test(source),
+    false,
+    "no setNotice call site may survive the swap",
+  )
+})
+
+test("every durable action on this screen reports through a toast", () => {
+  assert.equal(
+    (source.match(/toast\.success\(/g) ?? []).length,
+    5,
+    "line check, punch clearance, blinding, stage and reinstatement each report their outcome",
+  )
+})
+
+// One page-wide Event date is applied to whichever row action runs next, which is not discoverable
+// from a bare "Event date" label sitting above a list of rows.
+test("the Event date field explains it is shared across every row action", () => {
+  assert.ok(
+    /Event date[\s\S]{0,400}applies to whichever row/i.test(source),
+    "a caption must tell the user the date field is not per-row",
+  )
+})
+
+test("the error paragraph is left alone", () => {
+  assert.ok(
+    source.includes('className="text-sm text-destructive"'),
+    "errors keep their inline paragraph; only the success notice moves to a toast",
+  )
+})
