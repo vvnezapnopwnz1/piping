@@ -316,6 +316,11 @@ export const navigationConfig: NavSection[] = [
         icon: FlaskConical, // или TestTube2
         children: [
           {
+            title: 'Overview',
+            href: '/testpack',
+            icon: FlaskConical,
+          },
+          {
             title: 'Builder',
             href: '/testpack/builder',
             icon: ListPlus,
