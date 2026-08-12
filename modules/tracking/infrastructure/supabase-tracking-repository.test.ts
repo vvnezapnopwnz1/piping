@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { getTrackingDataDump, loadTrackingDeviceManagement, loadTrackingOccupancy, loadTrackingWorklist, recordTrackingEvent } from "./supabase-tracking-repository"
+import { getTrackingDataDump, loadTrackingDeviceManagement, loadTrackingEvents, loadTrackingOccupancy, loadTrackingWorklist, recordTrackingEvent } from "./supabase-tracking-repository"
 
 function queryClient(data: Record<string, unknown>[], calls: unknown[]) {
   return {
@@ -58,4 +58,39 @@ test("device management includes unassigned devices through its project view", a
   const rows = await loadTrackingDeviceManagement(queryClient([{ project_id: "p", device_id: "d", device_code: "PDA", device_description: "Spare", device_status: "active", assigned_membership_id: null, assignment_status: null, scan_count: 0, most_frequent_operator_membership_id: null, most_frequent_location_code: null, last_used_at: null }], []), "p")
   assert.equal(rows[0]?.assignedMembershipId, null)
   assert.equal(rows[0]?.scanCount, 0)
+})
+
+// The spool history table printed `event.locationId` — a raw UUID — under its Location column.
+// loadTrackingWorklist two functions above already solves this by carrying both the id and the
+// code; the event read follows the same shape, via a PostgREST embed since spool_location_events
+// is a base table rather than a view.
+test("loadTrackingEvents exposes a location code alongside the location id", async () => {
+  const calls: unknown[] = []
+  const rows = await loadTrackingEvents(queryClient([{
+    id: "event-1", project_id: "p", spool_id: "s", spool_revision_id: "r",
+    location_id: "11111111-1111-1111-1111-111111111111",
+    project_locations: { code: "LAYDOWN-A" },
+    device_id: null, operator_membership_id: "m", direction: "in",
+    occurred_at: "2026-08-11T00:00:00Z", source: "manual",
+    compensates_event_id: null, reason: null, recorded_at: "2026-08-11T00:00:00Z",
+  }], calls), "p")
+  assert.equal(rows[0]?.locationCode, "LAYDOWN-A")
+  assert.equal(rows[0]?.locationId, "11111111-1111-1111-1111-111111111111")
+  assert.ok(
+    calls.some((call) => Array.isArray(call) && call[0] === "select" && String(call[1]).includes("project_locations(code)")),
+    "the read must ask PostgREST for the location code",
+  )
+})
+
+// A location row that has since been removed must degrade to the id, never render "undefined".
+test("loadTrackingEvents falls back to the id when no location row is embedded", async () => {
+  const rows = await loadTrackingEvents(queryClient([{
+    id: "event-2", project_id: "p", spool_id: "s", spool_revision_id: "r",
+    location_id: "22222222-2222-2222-2222-222222222222",
+    project_locations: null,
+    device_id: null, operator_membership_id: "m", direction: "out",
+    occurred_at: "2026-08-11T00:00:00Z", source: "manual",
+    compensates_event_id: null, reason: null, recorded_at: "2026-08-11T00:00:00Z",
+  }], []), "p")
+  assert.equal(rows[0]?.locationCode, "22222222-2222-2222-2222-222222222222")
 })

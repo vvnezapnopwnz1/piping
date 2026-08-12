@@ -7950,6 +7950,7 @@ export type Database = {
           assigned_on: string | null
           cancelled_at: string | null
           clearance_id: string | null
+          item_number: string | null
           project_id: string | null
           punch_item_id: string | null
           request_id: string | null
@@ -8020,6 +8021,7 @@ export type Database = {
         Row: {
           assigned_on: string | null
           cancelled_at: string | null
+          iso_number: string | null
           isometric_id: string | null
           project_id: string | null
           request_id: string | null
@@ -8214,6 +8216,7 @@ export type Database = {
         Row: {
           category_snapshot: string | null
           flange_joint_revision_id: string | null
+          flange_number: string | null
           project_id: string | null
           record_id: string | null
           request_id: string | null
@@ -9587,6 +9590,7 @@ export type Database = {
           precommissioning_completed_on: string | null
           project_id: string | null
           test_pack_id: string | null
+          test_pack_number: string | null
           testing_completed_on: string | null
           testing_started_on: string | null
         }

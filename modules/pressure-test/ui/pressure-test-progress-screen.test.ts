@@ -90,3 +90,31 @@ test("the error paragraph is left alone", () => {
     "errors keep their inline paragraph; only the success notice moves to a toast",
   )
 })
+
+// Item 7's cross-screen pattern: the worklist views now carry the business code beside the id, so
+// a row must read "ISO ISO-DEMO-2001", not "ISO 6f3c…". The id stays as the fallback in case a
+// referenced row is gone, and stays as the React key either way.
+test("worklist rows render business codes rather than raw UUIDs", () => {
+  for (const [code, id] of [
+    ["iso_number", "isometric_id"],
+    ["item_number", "punch_item_id"],
+    ["test_pack_number", "test_pack_id"],
+    ["flange_number", "flange_joint_revision_id"],
+  ]) {
+    assert.ok(
+      source.includes(`row.${code} ?? row.${id}`),
+      `${code} must be rendered in place of ${id}, falling back to the id`,
+    )
+  }
+})
+
+test("no worklist row prints a bare id in its visible label", () => {
+  for (const bare of [
+    "ISO {row.isometric_id}",
+    "punch {row.punch_item_id}",
+    "Test Pack {row.test_pack_id}",
+    "· {row.flange_joint_revision_id}",
+  ]) {
+    assert.equal(source.includes(bare), false, `"${bare}" must no longer be rendered`)
+  }
+})

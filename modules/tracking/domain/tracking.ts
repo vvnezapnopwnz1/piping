@@ -53,6 +53,8 @@ export interface TrackingEventRow {
   spoolId: string
   spoolRevisionId: string
   locationId: string
+  /** The business code an operator reads off a location sign; falls back to the id if unresolved. */
+  locationCode: string
   deviceId: string | null
   operatorMembershipId: string
   direction: TrackingDirection

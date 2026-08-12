@@ -70,10 +70,12 @@ export async function loadTrackingWorklist(client: SupabaseClient<Database>, pro
 }
 
 export async function loadTrackingEvents(client: SupabaseClient<Database>, projectId: string): Promise<TrackingEventRow[]> {
-  const rows = await loadRows(client, "spool_location_events", "id, project_id, spool_id, spool_revision_id, location_id, device_id, operator_membership_id, direction, occurred_at, source, compensates_event_id, reason, recorded_at", projectId, "occurred_at")
+  const rows = await loadRows(client, "spool_location_events", "id, project_id, spool_id, spool_revision_id, location_id, project_locations(code), device_id, operator_membership_id, direction, occurred_at, source, compensates_event_id, reason, recorded_at", projectId, "occurred_at")
   return rows.map((row) => ({
     id: text(row, "id"), projectId: text(row, "project_id"), spoolId: text(row, "spool_id"), spoolRevisionId: text(row, "spool_revision_id"),
-    locationId: text(row, "location_id"), deviceId: nullableText(row, "device_id"), operatorMembershipId: text(row, "operator_membership_id"),
+    locationId: text(row, "location_id"),
+    locationCode: (row.project_locations as { code?: string } | null)?.code ?? text(row, "location_id"),
+    deviceId: nullableText(row, "device_id"), operatorMembershipId: text(row, "operator_membership_id"),
     direction: normalizeTrackingDirection(row.direction) ?? "manual", occurredAt: text(row, "occurred_at"), source: text(row, "source"),
     compensatesEventId: nullableText(row, "compensates_event_id"), reason: nullableText(row, "reason"), recordedAt: text(row, "recorded_at"),
   }))
@@ -113,6 +115,9 @@ function eventFromRpc(value: unknown): TrackingEventRow {
   if (!row) throw new Error("Tracking command returned no event.")
   return {
     id: text(row, "id"), projectId: text(row, "project_id"), spoolId: text(row, "spool_id"), spoolRevisionId: text(row, "spool_revision_id"), locationId: text(row, "location_id"),
+    // The command RPCs return the bare event row, with no location embed to resolve a code from;
+    // the screen reloads the worklist after a successful command anyway.
+    locationCode: text(row, "location_id"),
     deviceId: nullableText(row, "device_id"), operatorMembershipId: text(row, "operator_membership_id"), direction: normalizeTrackingDirection(row.direction) ?? "manual",
     occurredAt: text(row, "occurred_at"), source: text(row, "source"), compensatesEventId: nullableText(row, "compensates_event_id"), reason: nullableText(row, "reason"), recordedAt: text(row, "recorded_at"),
   }

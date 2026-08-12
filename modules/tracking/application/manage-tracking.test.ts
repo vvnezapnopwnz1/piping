@@ -7,7 +7,7 @@ test("dashboard accepts open shared values and computes real metrics", () => {
     { projectId: "p", spoolId: "s1", spoolRevisionId: "r1", isoNumber: "ISO", spoolNumber: "S1", pdsAreaCode: null, constructionStatus: "future_status", currentLocationId: null, currentLocationCode: null, isInTransit: true, hasEverScanned: true, isActive: true, lastEventAt: "2026-08-01T00:00:00Z" },
     { projectId: "p", spoolId: "s2", spoolRevisionId: "r2", isoNumber: "ISO", spoolNumber: "S2", pdsAreaCode: null, constructionStatus: "active", currentLocationId: "l", currentLocationCode: "YARD", isInTransit: false, hasEverScanned: false, isActive: true, lastEventAt: null },
   ]
-  const events = [{ id: "e", projectId: "p", spoolId: "s1", spoolRevisionId: "r1", locationId: "l", deviceId: "d", operatorMembershipId: "m", direction: "out" as const, occurredAt: "2026-08-05T00:00:00Z", source: "manual", compensatesEventId: null, reason: null, recordedAt: "2026-08-05T00:00:00Z" }]
+  const events = [{ id: "e", projectId: "p", spoolId: "s1", spoolRevisionId: "r1", locationId: "l", locationCode: "YARD", deviceId: "d", operatorMembershipId: "m", direction: "out" as const, occurredAt: "2026-08-05T00:00:00Z", source: "manual", compensatesEventId: null, reason: null, recordedAt: "2026-08-05T00:00:00Z" }]
   const usage = [{ projectId: "p", deviceId: "d", deviceCode: "PDA-1", operatorMembershipId: "m", locationId: "l", locationCode: "YARD", scanCount: 4, lastUsedAt: "2026-08-05T00:00:00Z" }]
   const dashboard = buildTrackingDashboard(worklist, events, usage, 1, new Date("2026-08-09T00:00:00Z"))
   assert.equal(dashboard.activeSpools, 2)
