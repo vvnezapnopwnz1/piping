@@ -8,7 +8,15 @@ import {
   runLocalReset,
   runPrepareDemo,
 } from "../prepare-track12-demo"
+import {
+  hostedAdminKeyFromEnvironment,
+  parseHostedPrepareArguments,
+  runHostedReset,
+  runPrepareHostedDemo,
+} from "../prepare-hosted-demo"
+import { PIPEQC_HOSTED_DEMO_PROJECT_REF } from "./hosted-target"
 import { runCheckDemo } from "../check-track12-demo"
+import { runHostedCheckDemo } from "../check-hosted-demo"
 import {
   DEMO_MANIFEST,
   EMPTY_AT_DEMO_START,
@@ -3179,6 +3187,118 @@ test("prepare argument parser requires exactly one explicit local reset confirma
   }
 })
 
+test("hosted prepare parser requires exactly one hosted reset confirmation", () => {
+  assert.deepEqual(parseHostedPrepareArguments(["--confirm-hosted-reset"]), {
+    confirmed: true,
+  })
+
+  for (const argv of [
+    [],
+    ["--confirm-local-reset"],
+    ["--confirm-hosted-reset", "--extra"],
+  ]) {
+    assert.throws(
+      () => parseHostedPrepareArguments(argv),
+      /Pass --confirm-hosted-reset to replace the hosted demo database\./,
+    )
+  }
+})
+
+test("hosted scripts prefer the Marketplace secret key over the legacy service-role JWT", () => {
+  assert.equal(
+    hostedAdminKeyFromEnvironment({
+      SUPABASE_SECRET_KEY: "current-secret-key",
+      SUPABASE_SERVICE_ROLE_KEY: "legacy-service-role-jwt",
+    }),
+    "current-secret-key",
+  )
+  assert.equal(
+    hostedAdminKeyFromEnvironment({
+      SUPABASE_SERVICE_ROLE_KEY: "legacy-service-role-jwt",
+    }),
+    "legacy-service-role-jwt",
+  )
+  assert.equal(
+    hostedAdminKeyFromEnvironment({
+      SUPABASE_SECRET_KEY: "   ",
+      SUPABASE_SERVICE_ROLE_KEY: "legacy-service-role-jwt",
+    }),
+    "legacy-service-role-jwt",
+  )
+})
+
+test("hosted reset links the fixed project before resetting its remote database", () => {
+  const calls: unknown[][] = []
+
+  runHostedReset((command, args, options) => {
+    calls.push([command, args, options])
+    return { status: 0 }
+  })
+
+  assert.deepEqual(calls, [
+    [
+      "supabase",
+      ["link", "--project-ref", PIPEQC_HOSTED_DEMO_PROJECT_REF],
+      { stdio: "inherit" },
+    ],
+    ["supabase", ["db", "reset", "--linked", "--yes"], { stdio: "inherit" }],
+  ])
+})
+
+test("hosted preparation rejects a foreign project before any CLI or gateway call", async () => {
+  const events: string[] = []
+  const lines: string[] = []
+
+  const status = await runPrepareHostedDemo(
+    {
+      argv: ["--confirm-hosted-reset"],
+      supabaseUrl: "https://foreign-project.supabase.co",
+      serviceRoleKey: "fake-service-role-key",
+      password: "demo-password",
+      now: VALID_PREPARE_INPUT.now,
+    },
+    {
+      spawn: () => {
+        events.push("cli")
+        return { status: 0 }
+      },
+      createPort: () => {
+        events.push("gateway")
+        return fakePort(events)
+      },
+      writeLine: (line) => lines.push(line),
+    },
+  )
+
+  assert.equal(status, 1)
+  assert.deepEqual(events, [])
+  assert.match(lines.join("\n"), /configured PipeQC hosted demo/i)
+})
+
+test("hosted read-only check rejects a foreign project before gateway creation", async () => {
+  const events: string[] = []
+  const lines: string[] = []
+
+  const status = await runHostedCheckDemo(
+    {
+      supabaseUrl: "https://foreign-project.supabase.co",
+      serviceRoleKey: "fake-service-role-key",
+    },
+    {
+      createPort: () => {
+        events.push("gateway")
+        return fakePort(events)
+      },
+      evaluate: () => ({ ok: true, checks: [] }),
+      writeLine: (line) => lines.push(line),
+    },
+  )
+
+  assert.equal(status, 1)
+  assert.deepEqual(events, [])
+  assert.match(lines.join("\n"), /configured PipeQC hosted demo/i)
+})
+
 test("local reset uses the fixed Supabase command without a shell or environment arguments", () => {
   const calls: unknown[][] = []
 
@@ -3587,6 +3707,31 @@ test("check CLI source is import-safe and contains no mutating or reset calls", 
     "auth.admin",
     "db reset",
     "runLocalReset",
+  ]) {
+    assert.equal(source.includes(forbidden), false, forbidden)
+  }
+})
+
+test("hosted check CLI source is import-safe and contains no mutating or reset calls", () => {
+  const source = readFileSync(
+    new URL("../check-hosted-demo.ts", import.meta.url),
+    "utf8",
+  )
+
+  assert.match(source, /import\.meta\.url/)
+  for (const forbidden of [
+    ".prepareUsers(",
+    ".prepareProjects(",
+    ".prepareAccess(",
+    ".prepareSystemReferences(",
+    ".prepareProjectReferences(",
+    ".insert(",
+    ".update(",
+    ".delete(",
+    ".rpc(",
+    "auth.admin",
+    "db reset",
+    "runHostedReset",
   ]) {
     assert.equal(source.includes(forbidden), false, forbidden)
   }

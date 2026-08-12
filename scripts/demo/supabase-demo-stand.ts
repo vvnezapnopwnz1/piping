@@ -24,6 +24,7 @@ import {
   resolveDemoDates,
 } from "./manifest"
 import { assertLocalSupabaseTarget } from "./local-target"
+import { assertHostedSupabaseTarget } from "./hosted-target"
 import type {
   DemoSpoolgenSnapshot,
   DemoStandSnapshot,
@@ -5230,8 +5231,9 @@ export function createSupabaseDemoStandCore(
   url: string,
   serviceRoleKey: string,
   gatewayFactory: DemoAdminGatewayFactory = createGateway,
+  assertTarget: (value: string) => URL = assertLocalSupabaseTarget,
 ): SupabaseDemoStandCore {
-  assertLocalSupabaseTarget(url)
+  assertTarget(url)
   if (serviceRoleKey.trim() === "") {
     throw new Error("A nonblank Supabase service role key is required.")
   }
@@ -5242,4 +5244,16 @@ export function createSupabaseDemoStandCore(
   } catch {
     throw new Error("Creating the Supabase demo gateway failed.")
   }
+}
+
+export function createHostedSupabaseDemoStandCore(
+  url: string,
+  serviceRoleKey: string,
+): SupabaseDemoStandCore {
+  return createSupabaseDemoStandCore(
+    url,
+    serviceRoleKey,
+    createGateway,
+    assertHostedSupabaseTarget,
+  )
 }
