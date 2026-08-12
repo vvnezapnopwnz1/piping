@@ -184,7 +184,7 @@ export function SupabaseWpsTab() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-medium">Welding Procedures (Supabase)</h3>
+          <h3 className="text-lg font-medium">Welding Procedures</h3>
           <p className="text-sm text-slate-500">Manage project-specific welding procedures.</p>
         </div>
         <Button

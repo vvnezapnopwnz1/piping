@@ -19,6 +19,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
@@ -266,13 +268,21 @@ export function TopNav() {
                   {topNavDisplay.email}
                 </span>
                 <span className="text-[10px] leading-none text-muted-foreground">
-                  {topNavDisplay.accessLabels.join(" · ") || "Project access"}
+                  {topNavDisplay.accessLabels[0] ?? "Project access"}
                 </span>
               </div>
               <ChevronDown className="size-3 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            {topNavDisplay.accessLabels.slice(1).length > 0 ? (
+              <>
+                <DropdownMenuLabel className="max-w-[240px] text-xs font-normal text-muted-foreground">
+                  {topNavDisplay.accessLabels.slice(1).join(" · ")}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+              </>
+            ) : null}
             <DropdownMenuItem onClick={() => void signOut()}>
               <LogOut className="mr-2 size-4" />
               Sign out

@@ -59,8 +59,7 @@ const MODULES: readonly ModuleLink[] = [
     href: "/tracking",
     title: "Spool Tracking",
     description: "Movement history, current location and transit alerts.",
-    live: false,
-    note: "Track 08",
+    live: true,
   },
   {
     href: "/flange",
@@ -78,8 +77,7 @@ const MODULES: readonly ModuleLink[] = [
     href: "/reports",
     title: "Reports & Forms",
     description: "Generated reports and forms from durable records.",
-    live: false,
-    note: "Track 11",
+    live: true,
   },
 ]
 
