@@ -74,6 +74,12 @@ export interface NdeObligation {
    */
   weldNumber: string
   spoolNumber: string
+  /**
+   * The batch that allocated this obligation, or null while it is still unallocated. Without it
+   * the Batches and Obligations tables sit side by side with nothing tying a row in one to a row
+   * in the other.
+   */
+  batchNumber: string | null
 }
 
 export interface NdeBatch {

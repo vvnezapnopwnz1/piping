@@ -50,7 +50,7 @@ function toBatch(row: Row): NdeBatch {
   }
 }
 
-function toObligation(row: Row): NdeObligation {
+export function toObligation(row: Row): NdeObligation {
   return {
     id: row.id as string,
     projectId: row.project_id as string,
@@ -71,6 +71,11 @@ function toObligation(row: Row): NdeObligation {
       "",
     spoolNumber:
       ((row.spool_revisions as Row | null)?.spools as Row | null)?.spool_number as string ?? "",
+    // nde_batch_items carries `unique (obligation_id)`, so an obligation belongs to at most one
+    // batch and PostgREST embeds the join row as a to-one object.
+    batchNumber:
+      ((row.nde_batch_items as Row | null)?.nde_batches as Row | null)?.batch_number as string ??
+      null,
   }
 }
 
@@ -96,7 +101,7 @@ export async function loadNdeObligations(
   const { data, error } = await client
     .from("nde_obligations")
     .select(
-      "id, project_id, weld_joint_revision_id, spool_revision_id, method, required_coverage, selection_mode, coverage_regime, disposition, cycle_kind, cycle_ordinal, parent_obligation_id, responsible_welder_qualification_id, weld_joint_revisions(weld_joints(weld_number)), spool_revisions(spools(spool_number))"
+      "id, project_id, weld_joint_revision_id, spool_revision_id, method, required_coverage, selection_mode, coverage_regime, disposition, cycle_kind, cycle_ordinal, parent_obligation_id, responsible_welder_qualification_id, weld_joint_revisions(weld_joints(weld_number)), spool_revisions(spools(spool_number)), nde_batch_items(nde_batches(batch_number))"
     )
     .eq("project_id", projectId)
   fail(error)
@@ -134,18 +139,58 @@ export async function createNdeBatch(
   return toBatch(required(data) as Row)
 }
 
+/**
+ * The obligation count per batch, keyed by batch id. A second small query rather than widening
+ * `loadNdeBatches`, since `NdeBatch` is read elsewhere without needing the count.
+ */
+export async function loadNdeBatchObligationCounts(
+  client: SupabaseClient<Database>,
+  projectId: string
+): Promise<Record<string, number>> {
+  const { data, error } = await client
+    .from("nde_batch_items")
+    .select("batch_id, nde_batches!inner(project_id)")
+    .eq("nde_batches.project_id", projectId)
+  fail(error)
+  const counts: Record<string, number> = {}
+  for (const row of required(data) as Row[]) {
+    const batchId = row.batch_id as string
+    counts[batchId] = (counts[batchId] ?? 0) + 1
+  }
+  return counts
+}
+
+/**
+ * The candidate set `allocate_nde_batch_candidates` computes internally, read without committing
+ * anything — so the operator can see which joints an allocation would take before taking them.
+ */
+export async function previewNdeBatchCandidates(
+  client: SupabaseClient<Database>,
+  batchId: string
+): Promise<{ obligationId: string; weldNumber: string; weldedOn: string | null }[]> {
+  const { data, error } = await client.rpc("nde_batch_candidates", { target_batch_id: batchId })
+  fail(error)
+  return (required(data) as Row[]).map((row) => ({
+    obligationId: row.candidate_obligation_id as string,
+    weldNumber: row.candidate_weld_number as string,
+    weldedOn: (row.candidate_welded_on as string) ?? null,
+  }))
+}
+
+/** Returns the number of candidates the RPC actually allocated. */
 export async function allocateNdeBatchCandidates(
   client: SupabaseClient<Database>,
   batchId: string,
   targetPercentage: number,
   idempotencyKey: string
-): Promise<void> {
-  const { error } = await client.rpc("allocate_nde_batch_candidates", {
+): Promise<number> {
+  const { data, error } = await client.rpc("allocate_nde_batch_candidates", {
     target_batch_id: batchId,
     target_percentage: targetPercentage,
     idempotency_key: idempotencyKey,
   })
   fail(error)
+  return (data as number) ?? 0
 }
 
 export async function issueNdeBatch(

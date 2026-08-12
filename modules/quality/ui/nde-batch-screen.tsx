@@ -23,9 +23,11 @@ import {
   createNdeBatch,
   issueNdeBatch,
   loadJointWelderIds,
+  loadNdeBatchObligationCounts,
   loadNdeBatches,
   loadNdeObligations,
   loadQualityReferentials,
+  previewNdeBatchCandidates,
   recordNdeResult,
   type NdeBatch,
   type NdeObligation,
@@ -51,6 +53,7 @@ const METHOD_LABELS: Record<NdtMethod, string> = {
 
 export function NdeBatchScreen({ projectId }: { projectId: string }) {
   const [batches, setBatches] = useState<NdeBatch[]>([])
+  const [obligationCounts, setObligationCounts] = useState<Record<string, number>>({})
   const [obligations, setObligations] = useState<NdeObligation[]>([])
   const [referentials, setReferentials] = useState<QualityReferentials>({
     welders: [],
@@ -64,6 +67,14 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
   const [coverageRegime, setCoverageRegime] = useState<CoverageRegime>("mandatory_100")
   const [targetPercentage, setTargetPercentage] = useState("100")
 
+  // Allocation preview
+  const [previewBatchId, setPreviewBatchId] = useState<string | null>(null)
+  const [previewCandidates, setPreviewCandidates] = useState<
+    { obligationId: string; weldNumber: string; weldedOn: string | null }[]
+  >([])
+  const [previewLoading, setPreviewLoading] = useState(false)
+  const [allocating, setAllocating] = useState(false)
+
   // Record Result Form
   const [selectedObligationId, setSelectedObligationId] = useState<string | null>(null)
   const [outcome, setOutcome] = useState<"accepted" | "rejected">("accepted")
@@ -76,14 +87,16 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
   const reload = useCallback(async () => {
     try {
       const client = getSupabaseBrowserClient()
-      const [bData, oData, refs] = await Promise.all([
+      const [bData, oData, refs, counts] = await Promise.all([
         loadNdeBatches(client, projectId),
         loadNdeObligations(client, projectId),
         loadQualityReferentials(client, projectId),
+        loadNdeBatchObligationCounts(client, projectId),
       ])
       setBatches(bData)
       setObligations(oData)
       setReferentials(refs)
+      setObligationCounts(counts)
     } catch (err: any) {
       toast.error(err.message || "Failed to load NDE data")
     } finally {
@@ -148,19 +161,51 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
     }
   }
 
-  const handleAllocateCandidates = async (batchId: string) => {
+  // Allocation is durable and picks the joints itself, so the operator sees the candidate set
+  // first. nde_batch_candidates is the same set allocate_nde_batch_candidates computes internally.
+  const openAllocationPreview = async (batchId: string) => {
     const percentage = Number(targetPercentage)
     if (!Number.isFinite(percentage) || percentage <= 0 || percentage > 100) {
       toast.error("The coverage percentage must be between 1 and 100.")
       return
     }
+    setPreviewBatchId(batchId)
+    setPreviewLoading(true)
+    setPreviewCandidates([])
+    try {
+      const candidates = await previewNdeBatchCandidates(getSupabaseBrowserClient(), batchId)
+      setPreviewCandidates(candidates)
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Could not preview allocation candidates",
+      )
+      setPreviewBatchId(null)
+    } finally {
+      setPreviewLoading(false)
+    }
+  }
+
+  const handleAllocateCandidates = async () => {
+    if (!previewBatchId || allocating) return
+    const percentage = Number(targetPercentage)
+    setAllocating(true)
     try {
       const client = getSupabaseBrowserClient()
-      await allocateNdeBatchCandidates(client, batchId, percentage, crypto.randomUUID())
-      toast.success(`Candidates allocated to batch at ${percentage}% coverage`)
+      const allocated = await allocateNdeBatchCandidates(
+        client,
+        previewBatchId,
+        percentage,
+        crypto.randomUUID(),
+      )
+      toast.success(
+        `${allocated} candidate${allocated === 1 ? "" : "s"} allocated to batch at ${percentage}% coverage`,
+      )
+      setPreviewBatchId(null)
       void reload()
     } catch (err: any) {
       toast.error(err.message || "Candidate allocation failed")
+    } finally {
+      setAllocating(false)
     }
   }
 
@@ -323,6 +368,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
                   <TableHead>Method</TableHead>
                   <TableHead>Regime</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Obligations</TableHead>
                   <TableHead>Issued On</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -330,7 +376,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
               <TableBody>
                 {batches.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center text-muted-foreground">
                       No NDE batches created yet.
                     </TableCell>
                   </TableRow>
@@ -355,6 +401,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
                           {b.status}
                         </Badge>
                       </TableCell>
+                      <TableCell>{obligationCounts[b.id] ?? 0}</TableCell>
                       <TableCell>{b.issuedOn ?? "—"}</TableCell>
                       <TableCell className="text-right space-x-2">
                         {b.status === "draft" && (
@@ -371,7 +418,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => void handleAllocateCandidates(b.id)}
+                              onClick={() => void openAllocationPreview(b.id)}
                             >
                               Allocate Candidates
                             </Button>
@@ -412,6 +459,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
                 <TableRow>
                   <TableHead>Spool</TableHead>
                   <TableHead>Joint</TableHead>
+                  <TableHead>Batch</TableHead>
                   <TableHead>Method</TableHead>
                   <TableHead>Status (manual)</TableHead>
                   <TableHead>Cycle</TableHead>
@@ -423,7 +471,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
               <TableBody>
                 {obligations.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center text-muted-foreground">
                       No NDE obligations found.
                     </TableCell>
                   </TableRow>
@@ -432,6 +480,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
                     <TableRow key={ob.id}>
                       <TableCell className="font-mono">{ob.spoolNumber}</TableCell>
                       <TableCell className="font-mono font-medium">{ob.weldNumber}</TableCell>
+                      <TableCell className="font-mono">{ob.batchNumber ?? "—"}</TableCell>
                       <TableCell className="uppercase font-mono">{ob.method}</TableCell>
                       <TableCell className="font-mono">{jointStatusLabel(ob)}</TableCell>
                       <TableCell>
@@ -474,6 +523,63 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Allocation Preview Dialog — shows the candidate set before the durable allocation */}
+      <Dialog
+        open={Boolean(previewBatchId)}
+        onOpenChange={(open) => !open && !allocating && setPreviewBatchId(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Allocate candidates —{" "}
+              {batches.find((b) => b.id === previewBatchId)?.batchNumber ?? "batch"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {previewLoading ? (
+              <p className="text-sm text-muted-foreground">Loading candidate joints…</p>
+            ) : previewCandidates.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No candidate joints are available for this batch. Allocating would take nothing.
+              </p>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  {previewCandidates.length} candidate joint
+                  {previewCandidates.length === 1 ? "" : "s"} at {targetPercentage}% coverage. The
+                  server picks the final set; a spot regime takes a subset of these.
+                </p>
+                <div className="max-h-64 overflow-y-auto rounded border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Joint</TableHead>
+                        <TableHead>Welded On</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {previewCandidates.map((candidate) => (
+                        <TableRow key={candidate.obligationId}>
+                          <TableCell className="font-mono">{candidate.weldNumber}</TableCell>
+                          <TableCell>{candidate.weldedOn ?? "—"}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
+            )}
+            <Button
+              onClick={() => void handleAllocateCandidates()}
+              className="w-full"
+              disabled={previewLoading || allocating || previewCandidates.length === 0}
+            >
+              {allocating ? "Allocating…" : `Allocate at ${targetPercentage}% coverage`}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Record Result Dialog */}
       <Dialog
