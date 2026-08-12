@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 
 import {
+  createProjectDefinition,
   loadProjectDefinition,
   saveProjectDefinition,
 } from "./project-definition"
@@ -182,4 +183,129 @@ async function run() {
   )
 }
 
+async function runCreation() {
+  const created = { ...projectRow, activity_code: "TRACK-SETUP-CHECK", id: "c3333333-3333-4333-8333-333333333333" }
+  const insertCalls: Array<unknown> = []
+  const insertClient = {
+    from(table: string) {
+      assert.equal(table, "projects")
+      return {
+        insert(payload: unknown) {
+          insertCalls.push(["insert", payload])
+          return {
+            select(columns: string) {
+              insertCalls.push(["select", columns])
+              return { single: async () => ({ data: created, error: null }) }
+            },
+          }
+        },
+      }
+    },
+  } as never
+
+  const creatorId = "b2222222-2222-4222-8222-222222222222"
+  const project = await createProjectDefinition(insertClient, creatorId, {
+    activityCode: " track-setup-check ",
+    projectTitle: " Setup check ",
+    owner: " Owner Company ",
+    contractor: " EPC Contractor ",
+    contractNumber: "C-1",
+    maxTransitTimeDays: 2,
+  })
+
+  assert.equal(project.id, "c3333333-3333-4333-8333-333333333333")
+  assert.equal(project.activityCode, "TRACK-SETUP-CHECK")
+
+  // The creator comes from the session, never from the form, and no server-owned column is sent.
+  const [, payload] = insertCalls[0] as [string, Record<string, unknown>]
+  assert.equal(payload.created_by, creatorId)
+  assert.deepEqual(Object.keys(payload).sort(), [
+    "activity_code",
+    "contract_number",
+    "contractor_name",
+    "created_by",
+    "maximum_transit_time_days",
+    "owner_name",
+    "title",
+  ])
+
+  // A duplicate activity code must read as a business rule, not as a Postgres constraint name.
+  const duplicateClient = {
+    from: () => ({
+      insert: () => ({
+        select: () => ({
+          single: async () => ({
+            data: null,
+            error: {
+              code: "23505",
+              message: 'duplicate key value violates unique constraint "projects_activity_code_key"',
+            },
+          }),
+        }),
+      }),
+    }),
+  } as never
+  await assert.rejects(
+    () =>
+      createProjectDefinition(duplicateClient, creatorId, {
+        activityCode: "TRACK-SETUP-CHECK",
+        projectTitle: "Setup check",
+        owner: "Owner Company",
+        contractor: "EPC Contractor",
+        contractNumber: "",
+        maxTransitTimeDays: 2,
+      }),
+    /A project with this activity code already exists\./,
+  )
+
+  // RLS refuses a non-platform-admin creator; the operator must not see the raw policy text.
+  const forbiddenClient = {
+    from: () => ({
+      insert: () => ({
+        select: () => ({
+          single: async () => ({
+            data: null,
+            error: {
+              code: "42501",
+              message: 'new row violates row-level security policy for table "projects"',
+            },
+          }),
+        }),
+      }),
+    }),
+  } as never
+  await assert.rejects(
+    () =>
+      createProjectDefinition(forbiddenClient, creatorId, {
+        activityCode: "TRACK-SETUP-OTHER",
+        projectTitle: "Setup check",
+        owner: "Owner Company",
+        contractor: "EPC Contractor",
+        contractNumber: "",
+        maxTransitTimeDays: 2,
+      }),
+    /You do not have permission to create projects\./,
+  )
+
+  // An invalid payload must never reach the database.
+  const unreachableClient = {
+    from: () => {
+      throw new Error("createProjectDefinition must validate before touching the database")
+    },
+  } as never
+  await assert.rejects(
+    () =>
+      createProjectDefinition(unreachableClient, creatorId, {
+        activityCode: "not valid",
+        projectTitle: "Setup check",
+        owner: "Owner Company",
+        contractor: "EPC Contractor",
+        contractNumber: "",
+        maxTransitTimeDays: 2,
+      }),
+    /Use uppercase letters, digits and hyphens only/,
+  )
+}
+
 void run()
+void runCreation()

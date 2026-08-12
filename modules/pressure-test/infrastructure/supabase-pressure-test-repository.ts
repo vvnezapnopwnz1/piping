@@ -58,6 +58,22 @@ export interface ProjectTeamRow {
   status: string
 }
 
+/** A project referential offered to the user by its business code, submitted to the RPC by id. */
+export interface ProjectReferenceOptionRow {
+  id: string
+  code: string
+  description: string | null
+}
+
+export interface ProjectSubsystemOptionRow extends ProjectReferenceOptionRow {
+  systemId: string
+}
+
+export interface IsometricNumberRow {
+  id: string
+  isoNumber: string
+}
+
 const TEST_PACK_SELECT = "*"
 const READINESS_SELECT = "*"
 
@@ -184,6 +200,32 @@ export async function listProjectTeams(client: Client, projectId: string, teamTy
   const { data, error } = await query.order("code")
   fail(error)
   return (data ?? []) as ProjectTeamRow[]
+}
+
+const REFERENCE_OPTION_SELECT = "id, code, description"
+
+async function listReferenceOptions(client: Client, table: "project_systems" | "project_service_classes" | "project_line_services" | "project_punch_codes", projectId: string): Promise<ProjectReferenceOptionRow[]> {
+  const { data, error } = await client.from(table).select(REFERENCE_OPTION_SELECT).eq("project_id", projectId).eq("status", "active").order("code")
+  fail(error)
+  return (data ?? []).map((row) => ({ id: row.id, code: row.code, description: row.description }))
+}
+
+export const listProjectSystems = (client: Client, projectId: string) => listReferenceOptions(client, "project_systems", projectId)
+export const listProjectServiceClasses = (client: Client, projectId: string) => listReferenceOptions(client, "project_service_classes", projectId)
+export const listProjectLineServices = (client: Client, projectId: string) => listReferenceOptions(client, "project_line_services", projectId)
+export const listProjectPunchCodes = (client: Client, projectId: string) => listReferenceOptions(client, "project_punch_codes", projectId)
+
+export async function listProjectSubsystems(client: Client, projectId: string): Promise<ProjectSubsystemOptionRow[]> {
+  const { data, error } = await client.from("project_subsystems").select(`${REFERENCE_OPTION_SELECT}, system_id`).eq("project_id", projectId).eq("status", "active").order("code")
+  fail(error)
+  return (data ?? []).map((row) => ({ id: row.id, code: row.code, description: row.description, systemId: row.system_id }))
+}
+
+/** Readiness carries no business ISO number, so the label is resolved from the owning project. */
+export async function listProjectIsometricNumbers(client: Client, projectId: string): Promise<IsometricNumberRow[]> {
+  const { data, error } = await client.from("isometrics").select("id, iso_number").eq("project_id", projectId).order("iso_number")
+  fail(error)
+  return (data ?? []).map((row) => ({ id: row.id, isoNumber: row.iso_number }))
 }
 
 export async function listAvailableIsometricReadiness(client: Client, projectId: string): Promise<IsometricReadinessRow[]> {

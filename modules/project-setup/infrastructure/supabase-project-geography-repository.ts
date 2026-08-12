@@ -4,7 +4,9 @@ import type {
   Subcontractor,
   SubcontractorInput,
   Unit,
+  UnitInput,
   AreaClassification,
+  AreaClassificationInput,
   PdsArea,
   PdsAreaInput,
 } from "../domain/project-geography"
@@ -85,15 +87,9 @@ export async function loadProjectGeography(
     status: row.status,
   }))
 
-  const areaClassifications: AreaClassification[] = (areaClassRes.data ?? []).map((row: any) => ({
-    id: row.id,
-    projectId: row.project_id,
-    unitId: row.unit_id,
-    unitCode: row.project_units?.code,
-    code: row.code,
-    description: row.description,
-    status: row.status,
-  }))
+  const areaClassifications: AreaClassification[] = (areaClassRes.data ?? []).map(
+    toAreaClassification
+  )
 
   const subcontractors: Subcontractor[] = (subsRes.data ?? []).map((row) => ({
     id: row.id,
@@ -169,6 +165,74 @@ export async function createSubcontractor(
     description: data.description,
     contactDetails: data.contact_details,
     status: data.status,
+  }
+}
+
+export async function createUnit(
+  client: SupabaseClient<Database>,
+  projectId: string,
+  input: UnitInput
+): Promise<Unit> {
+  const { data, error } = await client
+    .from("project_units")
+    .insert({
+      project_id: projectId,
+      code: normalizeReferenceCode(input.code),
+      description: input.description.trim(),
+    })
+    .select("id, project_id, code, description, status")
+    .single()
+
+  if (error) throw new Error(mapSupabaseReferenceError(error))
+
+  return {
+    id: data.id,
+    projectId: data.project_id,
+    code: data.code,
+    description: data.description,
+    status: data.status,
+  }
+}
+
+export async function createAreaClassification(
+  client: SupabaseClient<Database>,
+  projectId: string,
+  input: AreaClassificationInput
+): Promise<AreaClassification> {
+  const { data, error } = await client
+    .from("project_area_classifications")
+    .insert({
+      project_id: projectId,
+      unit_id: input.unitId,
+      code: normalizeReferenceCode(input.code),
+      description: input.description.trim(),
+    })
+    .select("id, project_id, unit_id, code, description, status, project_units(code)")
+    .single()
+
+  if (error) throw new Error(mapSupabaseReferenceError(error))
+
+  return toAreaClassification(data)
+}
+
+/**
+ * PostgREST returns an embedded to-one relation as an object, but the generated types describe
+ * the general case, so the shape is narrowed here rather than erased with `any`.
+ */
+type AreaClassificationRow = Pick<
+  Database["public"]["Tables"]["project_area_classifications"]["Row"],
+  "id" | "project_id" | "unit_id" | "code" | "description" | "status"
+> & { project_units: { code: string } | null }
+
+function toAreaClassification(row: AreaClassificationRow): AreaClassification {
+  return {
+    id: row.id,
+    projectId: row.project_id,
+    unitId: row.unit_id,
+    unitCode: row.project_units?.code,
+    code: row.code,
+    description: row.description,
+    status: row.status,
   }
 }
 

@@ -166,6 +166,30 @@ for (const path of sources) {
       `project-geography-tabs.tsx submits ${state} but binds no control to it — the value would always be its default`,
     )
   }
+
+  // The Units & Area Classifications tab rendered a table and nothing else, so a project
+  // configured through the screens could never populate the Area Classification select in Add
+  // PDS Area — it offered "(None)" and nothing more. Both links of the chain need a writer.
+  for (const [label, handler] of [
+    ["unit", "handleCreateUnit"],
+    ["area classification", "handleCreateAreaClassification"],
+  ] as const) {
+    assert.ok(
+      geography.includes(`onSubmit={${handler}}`),
+      `project-geography-tabs.tsx has no ${label} create form`,
+    )
+  }
+
+  // An area classification with no unit is refused by the domain, so the dialog has to let the
+  // operator pick one from the units of this project.
+  assert.ok(
+    geography.includes("value={acUnitId}"),
+    "the Add Area Classification dialog binds no control to the unit it links to",
+  )
+  assert.ok(
+    geography.includes("activeUnits.map("),
+    "the Add Area Classification dialog offers no project units to choose from",
+  )
 }
 
 console.log("All referential-dialogs.test.ts assertions passed!")

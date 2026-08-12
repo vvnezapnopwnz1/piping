@@ -6,7 +6,7 @@ import { useSupabaseAuth } from "@/contexts/supabase-auth-context"
 
 export default function ProgressWeightsPage() {
   const { access } = useSupabaseAuth()
-  const projectId = access?.projectId || "proj-1"
+  const activeProjectId = access?.projectId
 
   return (
     <div className="space-y-4">
@@ -15,7 +15,16 @@ export default function ProgressWeightsPage() {
         description="Configure progress weight allocations across project phases."
       />
 
-      <ProgressWeightsScreen projectId={projectId} />
+      {activeProjectId ? (
+        <ProgressWeightsScreen
+          projectId={activeProjectId}
+          canManage={access?.capabilities.includes("project_referential.manage") ?? false}
+        />
+      ) : (
+        <p className="text-muted-foreground text-sm">
+          Select a project to manage its progress weights.
+        </p>
+      )}
     </div>
   )
 }

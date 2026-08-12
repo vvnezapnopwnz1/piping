@@ -23,6 +23,11 @@ export interface Unit {
   status: ReferenceStatus
 }
 
+export interface UnitInput {
+  code: string
+  description: string
+}
+
 export interface AreaClassification {
   id: string
   projectId: string
@@ -86,15 +91,35 @@ export function validateSubcontractorInput(input: SubcontractorInput): Reference
   }
 }
 
+export function validateUnitInput(input: UnitInput): ReferenceValidation<UnitInput> {
+  return validateReferenceIdentity(input)
+}
+
+/**
+ * `project_area_classifications.unit_id` is nullable in the schema, but an unlinked area
+ * classification leaves the Unit → Area Classification → PDS Area chain broken, so the create
+ * form insists on a unit. Cross-project units are refused by the
+ * `assert_same_project_reference('unit_id', 'project_units')` trigger.
+ */
 export function validateAreaClassificationInput(input: AreaClassificationInput): ReferenceValidation<AreaClassificationInput> {
   const base = validateReferenceIdentity(input)
-  if (!base.ok) return base
+  const errors: Record<string, string> = base.ok ? {} : { ...base.errors }
+
+  const unitId = input.unitId || null
+  if (!unitId) {
+    errors.unitId = "Unit is required"
+  }
+
+  if (!base.ok || Object.keys(errors).length > 0) {
+    return { ok: false, errors }
+  }
+
   return {
     ok: true,
     value: {
       code: base.value.code,
       description: base.value.description,
-      unitId: input.unitId || null,
+      unitId,
     },
     errors: {},
   }

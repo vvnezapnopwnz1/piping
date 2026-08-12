@@ -2,8 +2,10 @@ import assert from "node:assert/strict"
 
 import type { Database } from "./supabase/database.types"
 import {
+  toProjectCreationInsert,
   toProjectDefinition,
   toProjectDefinitionUpdate,
+  validateProjectCreation,
   validateProjectDefinition,
 } from "./project-definition"
 
@@ -101,4 +103,87 @@ assert.deepEqual(Object.keys(update).sort(), [
 assert.throws(
   () => toProjectDefinitionUpdate({ ...validInput, maxTransitTimeDays: 0 }),
   /Maximum transit time must be at least 1 day/,
+)
+
+// --- Project creation -------------------------------------------------------
+// Creation is deliberately a separate payload from the update path. The update grant covers
+// logo paths because they are written back by the branding upload; a create form that could
+// set them would be writing a storage path no upload ever produced.
+
+const validCreation = {
+  activityCode: " track-setup-check ",
+  projectTitle: " Setup check ",
+  owner: " Owner Company ",
+  contractor: " EPC Contractor ",
+  contractNumber: "  C-1  ",
+  maxTransitTimeDays: 2,
+}
+
+const creation = validateProjectCreation(validCreation)
+assert.equal(creation.isValid, true)
+assert.deepEqual(creation.errors, {})
+assert.equal(creation.value.activityCode, "TRACK-SETUP-CHECK")
+assert.equal(creation.value.projectTitle, "Setup check")
+assert.equal(creation.value.contractNumber, "C-1")
+
+const blankContractNumber = validateProjectCreation({
+  ...validCreation,
+  contractNumber: "   ",
+})
+assert.equal(blankContractNumber.isValid, true)
+assert.equal(blankContractNumber.value.contractNumber, "")
+
+const invalidCreation = validateProjectCreation({
+  ...validCreation,
+  activityCode: "track setup",
+  projectTitle: " ",
+  owner: " ",
+  contractor: " ",
+  maxTransitTimeDays: 0,
+})
+assert.equal(invalidCreation.isValid, false)
+assert.deepEqual(invalidCreation.errors, {
+  activityCode: "Use uppercase letters, digits and hyphens only",
+  projectTitle: "Project title is required",
+  owner: "Owner is required",
+  contractor: "Contractor is required",
+  maxTransitTimeDays: "Maximum transit time must be at least 1 day",
+})
+
+const creatorId = "b2222222-2222-4222-8222-222222222222"
+const insert = toProjectCreationInsert(validCreation, creatorId)
+assert.deepEqual(insert, {
+  activity_code: "TRACK-SETUP-CHECK",
+  title: "Setup check",
+  owner_name: "Owner Company",
+  contractor_name: "EPC Contractor",
+  contract_number: "C-1",
+  maximum_transit_time_days: 2,
+  created_by: creatorId,
+})
+
+// The insert must never carry a column the server owns. `status` in particular would let a
+// creator file a project as archived, and `id` would make the new project's identity guessable.
+assert.deepEqual(Object.keys(insert).sort(), [
+  "activity_code",
+  "contract_number",
+  "contractor_name",
+  "created_by",
+  "maximum_transit_time_days",
+  "owner_name",
+  "title",
+])
+
+assert.equal(
+  toProjectCreationInsert({ ...validCreation, contractNumber: "  " }, creatorId).contract_number,
+  null,
+)
+
+assert.throws(
+  () => toProjectCreationInsert({ ...validCreation, maxTransitTimeDays: 0 }, creatorId),
+  /Maximum transit time must be at least 1 day/,
+)
+assert.throws(
+  () => toProjectCreationInsert(validCreation, " "),
+  /Creator is required/,
 )

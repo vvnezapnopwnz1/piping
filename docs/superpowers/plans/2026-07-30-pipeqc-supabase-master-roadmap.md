@@ -1615,6 +1615,32 @@ browser regression; it is not an open Track 10 condition.
 
 **Отдельный execution plan:** `docs/superpowers/plans/2026-08-11-track-12-prototype-release.md`.
 
+**Статус на 2026-08-12: CLOSED — Demo Lite.** The plan actually executed and closed under this
+track number is `docs/superpowers/plans/2026-08-10-track-12-demo-release.md`, not the file named
+directly above — `2026-08-11-track-12-prototype-release.md` was never written; a smaller,
+evidence-driven Demo Lite scope superseded the full hardening/pilot ambition described below.
+Design: `docs/superpowers/specs/2026-08-10-track-12-demo-release-design.md`. Acceptance evidence
+and the closing decision: `docs/acceptance/track-12-demo-release.md` (§7 *Final decision*,
+`CLOSED — Demo Lite`).
+
+What actually shipped is materially smaller than the **Deliverables** / **Pilot dataset** /
+**Tasks** / **Exit criteria** below, which describe a full hardening/pilot/Playwright release that
+was not built. The delivered release is a **local Supabase-backed Demo Lite**: one guarded
+`npm run demo:prepare -- --confirm-local-reset` command builds a rich `TRACK01-A` starting state
+and a sparse `TRACK01-B` isolation control from a versioned manifest; a real four-file SpoolGen
+import and the full business path through both Reports are demonstrated through the existing UI in
+30–40 minutes with no Playwright runtime dependency (the browser walkthrough in
+`docs/qa/track-12-agent-walkthrough.md` is a release-acceptance aid, not a presentation
+dependency); and a product owner independently re-ran and signed off the presenter runbook live,
+recorded as "Accepted with reservations." It explicitly does **not** deliver: production deployment
+or configuration, offline/PWA behavior, durable generated-document history or Storage-backed report
+artifacts, dossier/handover ZIPs, monitoring, load testing, or a production backup/restore
+rehearsal (design §2.2) — none of that scope was picked up by the Demo Lite release. The
+**Deliverables** / **Pilot dataset** / **Tasks** / **Exit criteria** sections immediately below
+remain an accurate record of this track number's originally scoped hardening/pilot ambition; they
+stay open as unclaimed future work, not part of what Track 12 closed, and every task checkbox below
+is correctly unchecked.
+
 ### Deliverables
 
 - `supabase/seed.sql`;

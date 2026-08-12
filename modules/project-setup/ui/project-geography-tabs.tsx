@@ -29,11 +29,18 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import {
   loadProjectGeography,
   createSubcontractor,
+  createUnit,
+  createAreaClassification,
   createPdsArea,
   type LoadedProjectGeography,
 } from "../infrastructure/supabase-project-geography-repository"
 import { ReferenceStatusBadge } from "./reference-status-badge"
-import { validateSubcontractorInput, validatePdsAreaInput } from "../domain/project-geography"
+import {
+  validateSubcontractorInput,
+  validateUnitInput,
+  validateAreaClassificationInput,
+  validatePdsAreaInput,
+} from "../domain/project-geography"
 
 /**
  * `<SelectItem value="">` makes Radix throw during render — an empty string is reserved for
@@ -67,6 +74,21 @@ export function ProjectGeographyTabs({
   const [subContact, setSubContact] = useState("")
   const [subErrors, setSubErrors] = useState<{ code?: string; description?: string }>({})
   const [isSubmittingSub, setIsSubmittingSub] = useState(false)
+
+  // Add Unit Dialog
+  const [isAddUnitOpen, setIsAddUnitOpen] = useState(false)
+  const [unitCode, setUnitCode] = useState("")
+  const [unitDesc, setUnitDesc] = useState("")
+  const [unitErrors, setUnitErrors] = useState<Record<string, string>>({})
+  const [isSubmittingUnit, setIsSubmittingUnit] = useState(false)
+
+  // Add Area Classification Dialog
+  const [isAddAcOpen, setIsAddAcOpen] = useState(false)
+  const [acCode, setAcCode] = useState("")
+  const [acDesc, setAcDesc] = useState("")
+  const [acUnitId, setAcUnitId] = useState<string>("")
+  const [acErrors, setAcErrors] = useState<Record<string, string>>({})
+  const [isSubmittingAc, setIsSubmittingAc] = useState(false)
 
   // Add PDS Area Dialog
   const [isAddPdsOpen, setIsAddPdsOpen] = useState(false)
@@ -151,6 +173,87 @@ export function ProjectGeographyTabs({
     }
   }
 
+  const handleCreateUnit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const validation = validateUnitInput({ code: unitCode, description: unitDesc })
+
+    if (!validation.ok) {
+      setUnitErrors(validation.errors)
+      return
+    }
+
+    setUnitErrors({})
+    setIsSubmittingUnit(true)
+
+    try {
+      const client = getSupabaseBrowserClient()
+      const newUnit = await createUnit(client, projectId, validation.value)
+      setGeography((prev) =>
+        prev
+          ? {
+              ...prev,
+              units: [...prev.units, newUnit].sort((a, b) => a.code.localeCompare(b.code)),
+            }
+          : null
+      )
+      setIsAddUnitOpen(false)
+      setUnitCode("")
+      setUnitDesc("")
+      toast.success(`Unit "${newUnit.code}" added successfully`)
+    } catch (err: any) {
+      toast.error(err.message || "Failed to add unit")
+    } finally {
+      setIsSubmittingUnit(false)
+    }
+  }
+
+  const handleCreateAreaClassification = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const validation = validateAreaClassificationInput({
+      code: acCode,
+      description: acDesc,
+      unitId: optionalId(acUnitId),
+    })
+
+    if (!validation.ok) {
+      setAcErrors(validation.errors)
+      return
+    }
+
+    setAcErrors({})
+    setIsSubmittingAc(true)
+
+    try {
+      const client = getSupabaseBrowserClient()
+      const newAc = await createAreaClassification(client, projectId, validation.value)
+      setGeography((prev) =>
+        prev
+          ? {
+              ...prev,
+              areaClassifications: [
+                ...prev.areaClassifications,
+                {
+                  ...newAc,
+                  unitCode:
+                    newAc.unitCode ??
+                    prev.units.find((unit) => unit.id === newAc.unitId)?.code,
+                },
+              ].sort((a, b) => a.code.localeCompare(b.code)),
+            }
+          : null
+      )
+      setIsAddAcOpen(false)
+      setAcCode("")
+      setAcDesc("")
+      setAcUnitId("")
+      toast.success(`Area classification "${newAc.code}" added successfully`)
+    } catch (err: any) {
+      toast.error(err.message || "Failed to add area classification")
+    } finally {
+      setIsSubmittingAc(false)
+    }
+  }
+
   const handleCreatePds = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -231,6 +334,7 @@ export function ProjectGeographyTabs({
   }
 
   const activeSubcontractors = (geography?.subcontractors ?? []).filter((s) => s.status === "active")
+  const activeUnits = (geography?.units ?? []).filter((u) => u.status === "active")
   const activePdsCustomFields = (geography?.customFields ?? []).filter(
     (f) => f.scope === "pds_area" && f.status === "active"
   )
@@ -347,10 +451,73 @@ export function ProjectGeographyTabs({
 
       {/* Units & Area Classifications View */}
       {activeTab === "units" && (
+        <div className="space-y-4">
         <Card>
-          <CardHeader>
-            <CardTitle>Units & Area Classifications</CardTitle>
-            <CardDescription>Geographic unit and area breakdown.</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+            <div>
+              <CardTitle>Units</CardTitle>
+              <CardDescription>Process units an area classification can belong to.</CardDescription>
+            </div>
+            {canManage && (
+              <Button size="sm" onClick={() => setIsAddUnitOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Add Unit
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-md border overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/50 border-b text-left">
+                  <tr>
+                    <th className="p-3 font-medium">Unit Code</th>
+                    <th className="p-3 font-medium">Description</th>
+                    <th className="p-3 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {(geography?.units ?? []).length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="p-4 text-center text-muted-foreground">
+                        No units configured.
+                      </td>
+                    </tr>
+                  ) : (
+                    (geography?.units ?? []).map((unit) => (
+                      <tr key={unit.id}>
+                        <td className="p-3 font-mono font-medium">{unit.code}</td>
+                        <td className="p-3">{unit.description}</td>
+                        <td className="p-3">
+                          <ReferenceStatusBadge status={unit.status} />
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+            <div>
+              <CardTitle>Area Classifications</CardTitle>
+              <CardDescription>Geographic area breakdown, each one owned by a unit.</CardDescription>
+            </div>
+            {canManage && (
+              <Button
+                size="sm"
+                onClick={() => setIsAddAcOpen(true)}
+                disabled={activeUnits.length === 0}
+                title={
+                  activeUnits.length === 0
+                    ? "Add an active unit first — an area classification must belong to one"
+                    : undefined
+                }
+              >
+                <Plus className="mr-2 h-4 w-4" /> Add Area Classification
+              </Button>
+            )}
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-md border overflow-x-auto">
@@ -387,6 +554,7 @@ export function ProjectGeographyTabs({
             </div>
           </CardContent>
         </Card>
+        </div>
       )}
 
       {/* PDS Areas View */}
@@ -501,6 +669,126 @@ export function ProjectGeographyTabs({
               </Button>
               <Button type="submit" disabled={isSubmittingSub}>
                 Add Subcontractor
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Unit Dialog */}
+      <Dialog open={isAddUnitOpen} onOpenChange={setIsAddUnitOpen}>
+        <DialogContent>
+          <form onSubmit={handleCreateUnit}>
+            <DialogHeader>
+              <DialogTitle>Add Unit</DialogTitle>
+              <DialogDescription>Register a process unit for this project.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="unit-code">Code</Label>
+                <Input
+                  id="unit-code"
+                  placeholder="e.g. U-100"
+                  value={unitCode}
+                  onChange={(e) => setUnitCode(e.target.value)}
+                  disabled={isSubmittingUnit}
+                />
+                {unitErrors.code && <p className="text-xs text-destructive">{unitErrors.code}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="unit-desc">Description</Label>
+                <Input
+                  id="unit-desc"
+                  placeholder="e.g. Process Unit 100"
+                  value={unitDesc}
+                  onChange={(e) => setUnitDesc(e.target.value)}
+                  disabled={isSubmittingUnit}
+                />
+                {unitErrors.description && (
+                  <p className="text-xs text-destructive">{unitErrors.description}</p>
+                )}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setIsAddUnitOpen(false)}
+                disabled={isSubmittingUnit}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmittingUnit}>
+                Add Unit
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Area Classification Dialog */}
+      <Dialog open={isAddAcOpen} onOpenChange={setIsAddAcOpen}>
+        <DialogContent>
+          <form onSubmit={handleCreateAreaClassification}>
+            <DialogHeader>
+              <DialogTitle>Add Area Classification</DialogTitle>
+              <DialogDescription>
+                Classify an area inside a unit. PDS areas are then filed under this classification.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="ac-code">Code</Label>
+                <Input
+                  id="ac-code"
+                  placeholder="e.g. AC-01"
+                  value={acCode}
+                  onChange={(e) => setAcCode(e.target.value)}
+                  disabled={isSubmittingAc}
+                />
+                {acErrors.code && <p className="text-xs text-destructive">{acErrors.code}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="ac-desc">Description</Label>
+                <Input
+                  id="ac-desc"
+                  placeholder="e.g. Above-ground process area"
+                  value={acDesc}
+                  onChange={(e) => setAcDesc(e.target.value)}
+                  disabled={isSubmittingAc}
+                />
+                {acErrors.description && (
+                  <p className="text-xs text-destructive">{acErrors.description}</p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <Label>Unit</Label>
+                <Select value={acUnitId} onValueChange={setAcUnitId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select unit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeUnits.map((unit) => (
+                      <SelectItem key={unit.id} value={unit.id}>
+                        {unit.code} — {unit.description}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {acErrors.unitId && <p className="text-xs text-destructive">{acErrors.unitId}</p>}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setIsAddAcOpen(false)}
+                disabled={isSubmittingAc}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmittingAc}>
+                Add Area Classification
               </Button>
             </DialogFooter>
           </form>

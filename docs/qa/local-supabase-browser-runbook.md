@@ -1,58 +1,172 @@
 # Local Supabase Browser Acceptance Runbook
 
+**Document status: static source-verified; live Task 12 pending.** The Track 12 entry point below
+was written from the current source tree, migrations and `scripts/demo/manifest.ts` on this branch.
+No step in the Track 12 path has been executed in a browser or against a live database yet.
+
 ## Purpose and scope
 
-This runbook lets a human or a browser agent verify the local Supabase implementation
-of Tracks 01–06. It is an acceptance procedure, not a substitute for `npm run verify`.
-All mutations below are limited to local fixture data at `127.0.0.1` / `localhost`.
+This file is the **entry point** for local browser acceptance. It decides *which* procedure to run,
+who is allowed to do what, and what must never happen. The step-by-step click paths live in the
+documents it points at.
 
-Two execution scripts sit under this policy. Read this file for scope, safety and personas;
-read the script for the exact controls and expected values:
+There is **one recommended integrated path — Track 12** — and a set of **historical, per-track
+regression scripts (Tracks 01–11)** kept for narrow re-verification of a single subsystem.
 
-- `docs/qa/tracks-01-05-agent-walkthrough.md` — access, referentials, imports, revisions and
-  the fabrication golden path.
-- `docs/qa/track-06-agent-walkthrough.md` — NDE batches, repairs, tracers and the escalation.
-- `docs/qa/track-07-agent-walkthrough.md` — the field erection chain and derived Ready For Test.
+### The two supported human modes
 
-The supported durable flow is:
+Both start from the same prepared stand and neither needs Playwright, a per-track fixture
+bootstrap, or any direct database action.
 
-```text
-Access and referentials -> generic imports -> SpoolGen engineering definition
-  -> fabrication -> NDE -> field erection -> Ready For Test
+**Mode A — main demo (default).**
+
+```bash
+npm run demo:prepare -- --confirm-local-reset
+npm run dev
 ```
 
-The Tracking, Test Pack, Flange and Reports routes have no implementation on this branch. They
-render a placeholder naming the track that builds them and are hidden from the sidebar, so there
-is nothing there to smoke-test beyond the placeholder itself. **NDE and Erection are no longer
-smoke checks**: since Track 06 and Track 07 each has its own fixture and its own walkthrough.
+then follow [`docs/runbooks/track-12-demo.md`](../runbooks/track-12-demo.md) — login and readiness,
+rich referentials, the four-file SpoolGen import, fabrication and QC evidence, NDE with a real
+repair cycle, erection to derived Ready For Test, tracking and flange, a Test Pack through
+pre-commissioning, and two real report downloads.
 
-There is also **no longer a mode switch**. The demo implementation, `lib/app-mode.ts` and every
-client-side store were removed in Track 07; Supabase is the only implementation. Any instruction
-below or in an older script to `export NEXT_PUBLIC_PIPEQC_MODE=supabase` is inert, and every
-"confirm there is no DEMO MODE label" step now passes trivially because the label cannot exist.
+**Mode B — from-scratch setup smoke (optional).**
 
-## Agent operating contract
-
-Use this contract verbatim when delegating a run to Codex through Playwright MCP.
-
-```text
-Use Playwright MCP and only http://localhost:3000 (127.0.0.1 needs allowedDevOrigins in
-next.config.mjs; it is configured, but localhost is the tested host).
-Read docs/qa/local-supabase-browser-runbook.md and execute its requested mode.
-
-Do not read .env, .env.local, shell history, or any secret. Do not request, print,
-copy, upload, or persist credentials. Do not use direct SQL, Supabase Studio, service
-keys, db reset, Git, or source-file edits. Do not change any non-local website.
-
-Permitted side effects are only the explicitly listed UI actions in fixture project
-TRACK01-A. Stop before any action that is not listed. For each case return PASS, FAIL,
-or BLOCKED with its case ID, URL, expected result, actual result, and the first relevant
-console or network error. Take a screenshot on every FAIL. Do not retry a mutation after
-it succeeded or after its state is unclear.
+```bash
+npm run demo:prepare -- --confirm-local-reset
+npm run dev
 ```
 
-The operator starts the stack and fixtures. The agent performs browser work only. It
-must ask the operator to change user if a case requires a different authenticated account.
+then follow
+[`docs/runbooks/track-12-setup-walkthrough.md`](../runbooks/track-12-setup-walkthrough.md) —
+configuring a project (`TRACK-SETUP-CHECK`) with visible UI controls only, assigning a Project
+Admin, a Project Editor and a Project Reader, and building one real dependency chain until the
+readiness panel reports **Gate B: Ready for Import**.
+
+**Mode B pollutes the stand on purpose**, so the order is not negotiable:
+
+```text
+demo:prepare  ->  setup walkthrough  ->  demo:prepare again  ->  main demo
+```
+
+Mode B intentionally leaves a third project, `TRACK-SETUP-CHECK`, on the stand, plus new
+memberships on it for the setup-walkthrough personas (§3/§5 of the setup walkthrough). Neither
+touches `TRACK01-B`, which remains the sparse isolation control throughout.
+
+Skipping the second `demo:prepare` therefore means `npm run demo:check` is **not expected to report
+a full PASS** before it runs: the `projects` check compares against exactly two projects and sees a
+third (`scripts/demo/preflight.ts:324-374`), and the `users` check compares memberships exactly and
+sees the added `TRACK-SETUP-CHECK` memberships (`scripts/demo/preflight.ts:421-470`). Both are
+expected deviations after Mode B, not defects — static source review shows the `isolation` check
+reads only `TRACK01-B`'s own reference rows and is unaffected by a third project existing elsewhere
+(`scripts/demo/preflight.ts:696-714`), so it should not be declared failed on that basis without
+actual live evidence to the contrary. The second `demo:prepare` is what removes the Mode B state and
+restores the normal two-project main-demo baseline; that is exactly why the reset comes before the
+main demo.
+
+`npm run demo:check` is read-only and safe to run at any time, including mid-demo.
+
+### What Tracks 01–11 are now
+
+The per-track walkthroughs below remain valid as **focused historical / regression references** for
+one subsystem at a time. They are **not** the entry point for a demo or for an end-to-end
+acceptance run, and their `bootstrap:track0X-browser-fixtures` commands are **not** used by either
+Track 12 mode.
+
+- [`tracks-01-05-agent-walkthrough.md`](tracks-01-05-agent-walkthrough.md) — access, referentials,
+  generic imports, revisions, the fabrication golden path.
+- [`track-06-agent-walkthrough.md`](track-06-agent-walkthrough.md) — NDE batches, repairs, tracers,
+  the escalation.
+- [`track-07-agent-walkthrough.md`](track-07-agent-walkthrough.md) — field erection and derived
+  Ready For Test.
+- [`track-08-agent-walkthrough.md`](track-08-agent-walkthrough.md) — spool tracking.
+- [`track-09-agent-walkthrough.md`](track-09-agent-walkthrough.md) — flange management.
+- [`track-10-agent-walkthrough.md`](track-10-agent-walkthrough.md) — Test Pack build and pressure
+  test.
+- [`track-11-agent-walkthrough.md`](track-11-agent-walkthrough.md) — reports.
+
+### Correction to earlier revisions of this file
+
+An earlier revision stated that Tracking, Test Pack, Flange and Reports "have no implementation on
+this branch", "render a placeholder naming the track that builds them", are "hidden from the
+sidebar", and that there is "nothing there to smoke-test". **All four claims are wrong on this
+branch and are withdrawn.** From source:
+
+| Module | Real routes | Sidebar entry | Capability gate |
+| --- | --- | --- | --- |
+| Tracking | `/tracking`, `/tracking/data-analysis`, `/tracking/print-barcodes`, `/tracking/devices` | CONSTRUCTION → **Tracking** → **Dashboard**, **Data Analysis**, **Barcode Printing**, **Mobile Device Management** | `tracking.view` |
+| Test Pack | `/testpack`, `/testpack/builder`, `/testpack/explorer`, `/testpack/pressure-test/**` | TESTING → **Testpack** | `testpack.view` |
+| Flange | `/flange` (browse), `/erection/flange-progress` (operate) | TESTING → **Flange Management**, CONSTRUCTION → **Flange Progress** | `flange.view` |
+| Reports | `/reports` | **REPORTS** → **Reports** | `reports.view` |
+
+(`config/navigation.ts:141-357`, `config/route-capabilities.ts`.) Each is a Supabase-backed module
+with durable commands, and each is exercised by the Track 12 main demo. A missing sidebar item
+means the signed-in role lacks the capability, or the sidebar is collapsed to icons — expand it
+with **Toggle Sidebar** in the top bar.
+
+There is also **no mode switch**. The demo implementation, `lib/app-mode.ts` and every client-side
+store were removed in Track 07; Supabase is the only implementation. Any instruction below or in an
+older script to `export NEXT_PUBLIC_PIPEQC_MODE=supabase` is inert, and every "confirm there is no
+DEMO MODE label" step now passes trivially because the label cannot exist.
+
+## Who may do what
+
+The two roles are separate on purpose, and the split is the same for Mode A, Mode B and any
+Track 01–11 regression run.
+
+### Human presenter / operator
+
+May:
+
+- enter secrets interactively at a masked prompt (`SUPABASE_SERVICE_ROLE_KEY`,
+  `TRACK01_FIXTURE_PASSWORD`) and type an account password into the login form;
+- run `npm run demo:prepare -- --confirm-local-reset`, `npm run dev` and `npm run demo:check`;
+- decide when to re-prepare the stand;
+- after preparation, drive the whole session through the UI alone — Mode A and Mode B require no
+  further terminal command.
+
+### Browser agent
+
+May:
+
+- open only `http://localhost:3000`;
+- perform UI gestures — click, type, select, upload the four `demo-data/spoolgen/*.txt` files where
+  the procedure says so;
+- read the DOM, the network log and the console, and take screenshots.
+
+Must not:
+
+- read or write `.env`, `.env.local`, shell history, or any secret; request, print, copy, upload or
+  persist a credential;
+- use a service key, direct SQL, Supabase Studio, a direct Supabase client call, `supabase db
+  reset`, `demo:prepare`, Git, or any source-file edit;
+- perform any action outside the procedure it was given, or touch any non-local site;
+- **retry an ambiguous mutation.** If a click produced no toast or the result is unclear: hard
+  refresh, read the durable state, and report it. Never click again "to be sure".
+
+It must ask the operator to change user when a case needs a different authenticated account.
+
+Use this contract verbatim when delegating a run:
+
+```text
+Use only http://localhost:3000 (127.0.0.1 needs allowedDevOrigins in next.config.mjs; it is
+configured, but localhost is the tested host).
+Read docs/qa/local-supabase-browser-runbook.md, then execute the procedure you were given:
+  - docs/runbooks/track-12-demo.md              (main demo), or
+  - docs/runbooks/track-12-setup-walkthrough.md (setup smoke), or
+  - one docs/qa/track-XX-agent-walkthrough.md   (historical regression).
+
+Do not read .env, .env.local, shell history, or any secret. Do not request, print, copy,
+upload, or persist credentials. Do not use direct SQL, Supabase Studio, service keys, direct
+Supabase calls, db reset, demo:prepare, Git, or source-file edits. Do not change any non-local
+website.
+
+Permitted side effects are only the UI actions the chosen procedure lists, in its project.
+Stop before any action that is not listed. For each case return PASS, FAIL, or BLOCKED with its
+case ID, URL, actor, active project, expected result, actual result, and the first relevant
+console or network error. Take a screenshot on every FAIL. Never retry a mutation after it
+succeeded or after its state is unclear — refresh, inspect the durable state, and report.
+```
 
 ## Safety rules
 
@@ -73,21 +187,48 @@ must ask the operator to change user if a case requires a different authenticate
 - A fixture bootstrap is idempotent for its reference data, but it does **not** undo
   fabrication events already recorded by a browser workflow. Use a clean database when
   replaying a completed golden path.
+- `demo:prepare` is **reset-based, not incremental**. Running it again destroys every result of a
+  rehearsal and restores the known start state. It is the recovery tool of last resort, not a
+  routine "just to be safe" step ten minutes before a demo.
 
-## Fixture accounts
+## Accounts
 
-All use the password supplied as `TRACK01_FIXTURE_PASSWORD`.
+Every account uses the password supplied interactively as `TRACK01_FIXTURE_PASSWORD`. It is typed
+into the login form by the human presenter and appears in no document, slide, screenshot or
+evidence file.
 
-| Persona | Email | Expected local access |
+### Track 12 stand (Modes A and B)
+
+Created by `npm run demo:prepare`. The authoritative list is
+`scripts/demo/manifest.ts:435-540`; the roles below are read from it.
+
+| Persona | Email | Access on the prepared stand |
 | --- | --- | --- |
-| Platform Admin | `track01.platform-admin@example.test` | Platform admin; Projects A and B |
-| Platform Observer | `track01.platform-observer@example.test` | Platform admin; no membership |
-| Project Admin A | `track01.project-admin-a@example.test` | Project Admin, `TRACK01-A` only |
-| Reader QC | `track01.reader-qc@example.test` | Project Reader + QC Engineer, A |
-| QC Editor | `track01.qc-editor@example.test` | Project Editor + QC Engineer, A |
-| NDE Subcontractor | `track01.nde-subcontractor@example.test` | NDE Inspector, `TRACK01-SUB-A` / `TRACK01-PDS-A` only |
+| Platform Admin | `track01.platform-admin@example.test` | platform admin; Project Admin on `TRACK01-A` and `TRACK01-B` |
+| Platform Observer | `track01.platform-observer@example.test` | platform admin; no membership |
+| Project Admin A | `track01.project-admin-a@example.test` | Project Admin on `TRACK01-A`; Project Reader on `TRACK01-B` |
+| QC Editor | `track01.qc-editor@example.test` | Project Editor on `TRACK01-A` + QC Engineer, NDE Inspector, Spooling Team, Fabrication Contributor, Erection Contributor, Tracking Operator |
+| Reader QC | `track01.reader-qc@example.test` | Project Reader on `TRACK01-A` + QC Engineer |
+| NDE Subcontractor | `track01.nde-subcontractor@example.test` | Subcontractor on `TRACK01-A` + NDE Inspector, scoped to `NDE-A` / `PDS-100` |
 
-## Start the local stack and seed every fixture
+Mode B changes three of these memberships on the setup project; see the setup walkthrough §3 and
+§5.
+
+### Track 01–11 bootstrap fixtures (historical only)
+
+The per-track `bootstrap:track0X-browser-fixtures` scripts create the same six emails with
+**different** project scoping — the NDE subcontractor is scoped to `TRACK01-SUB-A` /
+`TRACK01-PDS-A` rather than `NDE-A` / `PDS-100`, and only `TRACK01-A`/`TRACK01-B` reference data
+from those tracks exists. Read `docs/TRACK01_BROWSER_FIXTURES.md` for that access matrix. **Do not
+mix the two stands in one session** — the Track 12 modes must never be run on top of a
+per-track bootstrap, and vice versa.
+
+## Start the local stack and seed every fixture (Tracks 01–11 only)
+
+**Neither Track 12 mode uses this section.** For Mode A or Mode B, run
+`npm run demo:prepare -- --confirm-local-reset` and `npm run dev` as described in
+[`docs/runbooks/track-12-demo.md` §1](../runbooks/track-12-demo.md) and stop there. What follows is
+the historical per-track bootstrap chain, kept for single-subsystem regression work.
 
 Use one terminal. Do **not** paste the hidden `read` prompts together with the other
 commands: enter each value manually when prompted.
@@ -208,7 +349,12 @@ For every scenario capture:
    (method, path, HTTP status and safe response message; never include Authorization).
 5. For a durable mutation: hard-refresh the named route and confirm the stated result.
 
-## Browser scenarios
+## Browser scenarios (Tracks 01–11 regression only)
+
+**These cases are not the demo path and are not an end-to-end acceptance run.** They exercise one
+subsystem at a time against the per-track bootstrap fixtures. For an integrated run use Mode A; for
+a from-scratch configuration run use Mode B. The Track 12 browser acceptance protocol is a separate
+document produced under Task 9.
 
 ### B00 — Baseline and isolation
 
@@ -296,6 +442,13 @@ Confirm the completed Access Rights mutation appears in `public.audit_events` fo
 2. Confirm the invariant error appears and the dialog remains open.
 3. Submit a valid total of 100.
 4. Reload and confirm every phase row reflects the one successful replacement.
+5. With no project selected, confirm the page reads *"Select a project to manage its progress
+   weights."* rather than rendering an editor against a placeholder project id.
+
+**Negative — Project Reader:** on the same URL the mutating controls (**Add Activity**,
+**Save Weights**, the per-row inputs and delete actions) must be **absent**, not merely rejected on
+submit. The page derives `canManage` from `project_referential.manage`, the capability
+`set_project_progress_weights` itself enforces.
 
 #### T02-04 — Branding and isolation
 
@@ -449,8 +602,12 @@ real run. Do not paraphrase it here; run it. What this policy document adds:
 **Actor:** Project Admin A unless a route guard says otherwise.
 
 Open every route below. For each, record whether it renders, has no uncaught browser error,
-has a sensible empty/fixture state, and respects its guard. Do not infer durable real-mode
-business support from this smoke pass.
+has a sensible empty/fixture state, and respects its guard.
+
+This sweep proves reachability, nothing more. It is **not** evidence that a module lacks durable
+business support, and the absence of data on a route under a per-track fixture set says nothing
+about the module: Tracking, Test Pack, Flange and Reports all carry real Supabase-backed commands
+and are exercised properly by the Track 12 main demo, not here.
 
 - Erection: `/erection/dashboard`, `/erection/to-site`, `/erection/material-check`,
   `/erection/erected`, `/erection/welded-bolted`, `/erection/supported`,
@@ -469,9 +626,9 @@ business support from this smoke pass.
 ```md
 # Local Supabase Browser Acceptance — YYYY-MM-DD
 
-Mode: full chain | Track 04 UI-import mode
+Mode: Track 12 main demo | Track 12 setup smoke | Tracks 01-11 full chain | Track 04 UI-import
 App URL: http://localhost:3000
-Fixture project: TRACK01-A
+Project: TRACK01-A | TRACK01-B | TRACK-SETUP-CHECK
 Run by: human | agent name
 
 | Case | Persona | Status | URL | Result / evidence |
@@ -492,6 +649,19 @@ Not run / blocked:
 ```
 
 ## References
+
+Track 12 (the recommended path):
+
+- [`docs/runbooks/track-12-demo.md`](../runbooks/track-12-demo.md) — Mode A, the presenter demo.
+- [`docs/runbooks/track-12-setup-walkthrough.md`](../runbooks/track-12-setup-walkthrough.md) —
+  Mode B, the UI-only setup smoke.
+- [`docs/superpowers/plans/2026-08-10-track-12-demo-release.md`](../superpowers/plans/2026-08-10-track-12-demo-release.md)
+  and
+  [`docs/superpowers/specs/2026-08-10-track-12-demo-release-design.md`](../superpowers/specs/2026-08-10-track-12-demo-release-design.md)
+  — plan and design.
+- `scripts/demo/manifest.ts` — the authoritative account, project and reference manifest.
+
+Tracks 01–11 (historical / regression):
 
 - `docs/TRACK01_BROWSER_FIXTURES.md` — local fixture users and access matrix.
 - `docs/TRACK02_BROWSER_FIXTURES.md` and `docs/TRACK03_BROWSER_FIXTURES.md` — generic

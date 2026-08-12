@@ -42,6 +42,41 @@ export interface ProjectDefinition extends ProjectDefinitionInput {
   updatedAt: string
 }
 
+/**
+ * Creation is not the update payload minus a few fields. Logo paths are produced by the branding
+ * upload and written back by it, `status` and the timestamps belong to the server, and `id` must
+ * stay unguessable — so the create form owns its own, smaller input.
+ */
+export interface ProjectCreationInput {
+  activityCode: string
+  projectTitle: string
+  owner: string
+  contractor: string
+  contractNumber: string
+  maxTransitTimeDays: number
+}
+
+type CreatableProjectColumn =
+  | "activity_code"
+  | "title"
+  | "owner_name"
+  | "contractor_name"
+  | "contract_number"
+  | "maximum_transit_time_days"
+  | "created_by"
+
+export type ProjectCreationInsert = Required<
+  Pick<Database["public"]["Tables"]["projects"]["Insert"], CreatableProjectColumn>
+>
+
+export type ProjectCreationField = keyof ProjectCreationInput
+
+export interface ProjectCreationValidation {
+  isValid: boolean
+  errors: Partial<Record<ProjectCreationField, string>>
+  value: ProjectCreationInput
+}
+
 export type ProjectDefinitionField = keyof ProjectDefinitionInput
 
 export interface ProjectDefinitionValidation {
@@ -114,6 +149,65 @@ export function validateProjectDefinition(
     isValid: Object.keys(errors).length === 0,
     errors,
     value,
+  }
+}
+
+/**
+ * Every identity rule is shared with the edit form, so creation borrows it rather than growing a
+ * second copy that can drift. Only the contract number is creation-specific, and it is optional.
+ */
+export function validateProjectCreation(
+  input: ProjectCreationInput,
+): ProjectCreationValidation {
+  const shared = validateProjectDefinition({
+    activityCode: input.activityCode,
+    projectTitle: input.projectTitle,
+    owner: input.owner,
+    contractor: input.contractor,
+    ownerLogoUrl: "",
+    contractorLogoUrl: "",
+    maxTransitTimeDays: input.maxTransitTimeDays,
+  })
+
+  return {
+    isValid: shared.isValid,
+    errors: shared.errors,
+    value: {
+      activityCode: shared.value.activityCode,
+      projectTitle: shared.value.projectTitle,
+      owner: shared.value.owner,
+      contractor: shared.value.contractor,
+      contractNumber: input.contractNumber.trim(),
+      maxTransitTimeDays: shared.value.maxTransitTimeDays,
+    },
+  }
+}
+
+export function toProjectCreationInsert(
+  input: ProjectCreationInput,
+  creatorId: string,
+): ProjectCreationInsert {
+  const validation = validateProjectCreation(input)
+  const firstError = Object.values(validation.errors)[0]
+
+  if (firstError) {
+    throw new Error(firstError)
+  }
+  // The policy compares created_by to auth.uid(), so an empty creator would be refused by the
+  // database anyway — failing here keeps the reason readable.
+  if (!creatorId.trim()) {
+    throw new Error("Creator is required")
+  }
+
+  const value = validation.value
+  return {
+    activity_code: value.activityCode,
+    title: value.projectTitle,
+    owner_name: value.owner,
+    contractor_name: value.contractor,
+    contract_number: value.contractNumber || null,
+    maximum_transit_time_days: value.maxTransitTimeDays,
+    created_by: creatorId,
   }
 }
 
