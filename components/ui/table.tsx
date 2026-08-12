@@ -52,12 +52,43 @@ function TableFooter({ className, ...props }: React.ComponentProps<'tfoot'>) {
   )
 }
 
-function TableRow({ className, ...props }: React.ComponentProps<'tr'>) {
+function TableRow({
+  className,
+  interactive,
+  onClick,
+  onKeyDown,
+  ...props
+}: React.ComponentProps<'tr'> & {
+  /**
+   * Set on a row that opens an editor or selects a record. A bare <tr> offers the keyboard no
+   * way in and, because every row already tints on hover, no way to tell it apart by eye.
+   */
+  interactive?: boolean
+}) {
+  const activateOnKey = (event: React.KeyboardEvent<HTMLTableRowElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      // Dispatching the real click keeps one code path for both input methods, rather than
+      // casting a keyboard event into the row's onClick signature.
+      event.preventDefault()
+      event.currentTarget.click()
+    }
+    onKeyDown?.(event)
+  }
+
   return (
     <tr
       data-slot="table-row"
+      role={interactive ? 'button' : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={interactive ? activateOnKey : onKeyDown}
       className={cn(
-        'hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors',
+        'data-[state=selected]:bg-muted border-b transition-colors',
+        // The muted tint sits on every row, so it cannot also carry the meaning "clickable".
+        // An interactive row takes a stronger, distinct one plus a visible focus ring.
+        interactive
+          ? 'hover:bg-accent focus-visible:ring-ring cursor-pointer focus-visible:ring-2 focus-visible:ring-inset focus-visible:outline-none'
+          : 'hover:bg-muted/50',
         className,
       )}
       {...props}

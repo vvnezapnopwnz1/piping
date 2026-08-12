@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { ChevronRight } from "lucide-react"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
@@ -229,18 +230,23 @@ export function FieldWeldProgressScreen({
                     <TableHead>Weld date</TableHead>
                     <TableHead>NDE</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="w-8">
+                      <span className="sr-only">Opens the record form</span>
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {welds.map((weld) => (
                     <TableRow
                       key={weld.weldJointRevisionId}
+                      interactive
                       onClick={() => setSelectedWeld(weld)}
-                      className={
+                      data-state={
                         selectedWeld?.weldJointRevisionId === weld.weldJointRevisionId
-                          ? "bg-muted"
-                          : ""
+                          ? "selected"
+                          : undefined
                       }
+                      aria-label={`Record progress for field weld ${weld.weldNumber}`}
                     >
                       <TableCell className="font-mono text-xs">{weld.weldNumber}</TableCell>
                       <TableCell>{weld.diameterInch ?? "—"}</TableCell>
@@ -254,11 +260,14 @@ export function FieldWeldProgressScreen({
                       <TableCell>
                         {weld.isLocked ? <Badge variant="outline">Locked</Badge> : null}
                       </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                      </TableCell>
                     </TableRow>
                   ))}
                   {welds.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-muted-foreground text-sm">
+                      <TableCell colSpan={9} className="text-muted-foreground text-sm">
                         {weldsFailed
                           ? "Field joints could not be loaded, so none are listed and nothing has been changed."
                           : "This spool revision has no field joints."}
@@ -370,7 +379,13 @@ export function FieldWeldProgressScreen({
                 </Button>
               </CardContent>
             </Card>
-          ) : null}
+          ) : (
+            <Card>
+              <CardContent className="text-muted-foreground py-6 text-sm">
+                Select a field joint above to record its progress.
+              </CardContent>
+            </Card>
+          )}
 
           {stage ? (
             <ErectionStageCard

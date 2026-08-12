@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { ChevronRight } from "lucide-react"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
@@ -88,12 +89,12 @@ export function FlangeManagementScreen({ projectId, canManage, mode = "operate" 
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <Table>
-            <TableHeader><TableRow><TableHead>Flange</TableHead><TableHead>ISO / Spool</TableHead><TableHead>Rev</TableHead><TableHead>Line / PDS</TableHead><TableHead>Rating</TableHead><TableHead>Status</TableHead><TableHead>UT</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>Flange</TableHead><TableHead>ISO / Spool</TableHead><TableHead>Rev</TableHead><TableHead>Line / PDS</TableHead><TableHead>Rating</TableHead><TableHead>Status</TableHead><TableHead>UT</TableHead><TableHead className="w-8"><span className="sr-only">Opens the flange record</span></TableHead></TableRow></TableHeader>
             <TableBody>
-              {rows.map((row) => <TableRow key={row.flangeJointRevisionId} data-state={row.flangeJointRevisionId === selectedId ? "selected" : undefined} onClick={() => setSelectedId(row.flangeJointRevisionId)} className="cursor-pointer">
-                <TableCell className="font-mono text-xs">{row.flangeNumber ?? "—"}</TableCell><TableCell>{row.isoNumber ?? "—"} / {row.spoolNumber ?? "—"}</TableCell><TableCell>{row.revisionNumber ?? "—"}</TableCell><TableCell>{row.lineNumber ?? "—"} / {row.pdsCode ?? "—"}</TableCell><TableCell>{row.flangeRating ?? "—"}</TableCell><TableCell><Badge variant="outline">{row.progressState ?? "not_started"}</Badge></TableCell><TableCell>{row.calculatedUt ?? "Not configured"}</TableCell>
+              {rows.map((row) => <TableRow key={row.flangeJointRevisionId} interactive aria-label={`Open flange ${row.flangeNumber ?? "record"}`} data-state={row.flangeJointRevisionId === selectedId ? "selected" : undefined} onClick={() => setSelectedId(row.flangeJointRevisionId)}>
+                <TableCell className="font-mono text-xs">{row.flangeNumber ?? "—"}</TableCell><TableCell>{row.isoNumber ?? "—"} / {row.spoolNumber ?? "—"}</TableCell><TableCell>{row.revisionNumber ?? "—"}</TableCell><TableCell>{row.lineNumber ?? "—"} / {row.pdsCode ?? "—"}</TableCell><TableCell>{row.flangeRating ?? "—"}</TableCell><TableCell><Badge variant="outline">{row.progressState ?? "not_started"}</Badge></TableCell><TableCell>{row.calculatedUt ?? "Not configured"}</TableCell><TableCell className="text-muted-foreground"><ChevronRight className="h-4 w-4" aria-hidden="true" /></TableCell>
               </TableRow>)}
-              {rows.length === 0 && <TableRow><TableCell colSpan={7} className="text-muted-foreground">No flange joints in the current revision.</TableCell></TableRow>}
+              {rows.length === 0 && <TableRow><TableCell colSpan={8} className="text-muted-foreground">No flange joints in the current revision.</TableCell></TableRow>}
             </TableBody>
           </Table>
         </CardContent>

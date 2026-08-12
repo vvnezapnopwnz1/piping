@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { ChevronRight } from "lucide-react"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
@@ -178,14 +179,23 @@ export function WeldProgressScreen({ projectId }: { projectId: string }) {
                   <TableHead>Weld date</TableHead>
                   <TableHead>NDE</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="w-8">
+                    <span className="sr-only">Opens the record form</span>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {welds.map((weld) => (
                   <TableRow
                     key={weld.weldJointRevisionId}
+                    interactive
                     onClick={() => setSelected(weld)}
-                    className={selected?.weldJointRevisionId === weld.weldJointRevisionId ? "bg-muted" : ""}
+                    data-state={
+                      selected?.weldJointRevisionId === weld.weldJointRevisionId
+                        ? "selected"
+                        : undefined
+                    }
+                    aria-label={`Record progress for weld ${weld.weldNumber}`}
                   >
                     <TableCell className="font-mono text-xs">{weld.weldNumber}</TableCell>
                     <TableCell>{weld.diameterInch ?? "—"}</TableCell>
@@ -201,6 +211,9 @@ export function WeldProgressScreen({ projectId }: { projectId: string }) {
                       {weld.weldLocation !== "shop" ? (
                         <Badge variant="outline">{weld.weldLocation}</Badge>
                       ) : null}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      <ChevronRight className="h-4 w-4" aria-hidden="true" />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -305,7 +318,13 @@ export function WeldProgressScreen({ projectId }: { projectId: string }) {
               </Button>
             </CardContent>
           </Card>
-        ) : null}
+        ) : (
+          <Card>
+            <CardContent className="text-muted-foreground py-6 text-sm">
+              Select a weld joint above to record its progress.
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   )
