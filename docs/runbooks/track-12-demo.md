@@ -59,6 +59,16 @@ export SUPABASE_SERVICE_ROLE_KEY TRACK01_FIXTURE_PASSWORD
 The same password applies to every demo account. At sign-in the presenter types it directly into
 the login form; it is never displayed on the slide, in the terminal, or in this runbook.
 
+**If the values already live in `.env.local`, skip §1.1–§1.2 entirely.** The local npm scripts run
+under `tsx --env-file-if-exists=.env.local` and read `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and
+`TRACK01_FIXTURE_PASSWORD` from that gitignored file themselves — no `source`, no `export`, no
+interactive prompt. Shell exports still take precedence when they are set, so the hosted procedure
+(`set -a; . ~/.pipeqc-hosted.env; set +a`) is unaffected.
+
+Whoever runs the preparation — presenter or agent — **must never invent a password**. `demo:prepare`
+resets the password of every demo account to whatever `TRACK01_FIXTURE_PASSWORD` holds at that
+moment, so a substituted value silently locks the stand's owner out until the next reset.
+
 ### 1.3 The only two commands
 
 ```bash
