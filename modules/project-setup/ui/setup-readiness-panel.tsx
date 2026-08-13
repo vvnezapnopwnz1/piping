@@ -22,11 +22,11 @@ export function SetupReadinessPanel({
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-semibold">Project Setup Readiness</CardTitle>
           <div className="flex items-center gap-2">
-            <Badge variant={isGateBReady ? "default" : "outline"} className={isGateBReady ? "bg-emerald-600" : "text-amber-600 border-amber-500/30"}>
+            <Badge variant={isGateBReady ? "default" : "outline"} className={isGateBReady ? "bg-success-bg text-success-fg border-success-border" : "text-warning-fg border-warning-border"}>
               {isGateBReady ? <CheckCircle2 className="mr-1 h-3 w-3" /> : <AlertTriangle className="mr-1 h-3 w-3" />}
               Gate B: {isGateBReady ? "Ready for Import" : "Incomplete"}
             </Badge>
-            <Badge variant={isAdminDone ? "default" : "outline"} className={isAdminDone ? "bg-emerald-600" : "text-amber-600 border-amber-500/30"}>
+            <Badge variant={isAdminDone ? "default" : "outline"} className={isAdminDone ? "bg-success-bg text-success-fg border-success-border" : "text-warning-fg border-warning-border"}>
               {isAdminDone ? <CheckCircle2 className="mr-1 h-3 w-3" /> : <AlertTriangle className="mr-1 h-3 w-3" />}
               Gate C: {isAdminDone ? "Referential Complete" : "Incomplete"}
             </Badge>
@@ -38,7 +38,7 @@ export function SetupReadinessPanel({
       </CardHeader>
       <CardContent>
         {readiness.missingCodes.length === 0 ? (
-          <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400 font-medium">
+          <div className="text-success-fg flex items-center gap-2 text-sm font-medium">
             <CheckCircle2 className="h-4 w-4" />
             All project referential requirements are satisfied. The project is ready for engineering imports and execution.
           </div>

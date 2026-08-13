@@ -77,8 +77,8 @@ export function ErectionStageCard({ row, stage, canRecord, onRecorded }: Erectio
               onChange={(event) => setOccurredOn(event.target.value)}
             />
           </label>
-          <Button type="button" onClick={() => void save()} disabled={!gate.allowed || isSaving}>
-            {isSaving ? "Saving…" : `Record ${label}`}
+          <Button type="button" onClick={() => void save()} loading={isSaving} disabled={!gate.allowed}>
+            {`Record ${label}`}
           </Button>
         </div>
 

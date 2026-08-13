@@ -6,6 +6,7 @@ import { toast } from "sonner"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
+import { DataTable, useTableUrlState, type DataColumn } from "@/components/ui/data-table"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -19,7 +20,7 @@ import { buildTrackingDataDumpFiles } from "../application/export-tracking-data"
 import { createLatestProjectLoader, createTrackingIdempotencyKey } from "../application/manage-tracking"
 import type { TrackingDeviceUsageRow, TrackingEventRow, TrackingInconsistencyRow, TrackingOccupancyRow, TrackingTransitAlertRow, TrackingWorklistRow } from "../domain/tracking"
 import { getTrackingDataDump, loadTrackingDeviceUsage, loadTrackingEvents, loadTrackingInconsistencies, loadTrackingOccupancy, loadTrackingTransitAlerts, loadTrackingWorklist, recordTrackingEvent } from "../infrastructure/supabase-tracking-repository"
-import { filterTrackingWorklist, groupActiveSpoolsByDesignArea } from "./tracking-screen-model"
+import { groupActiveSpoolsByDesignArea } from "./tracking-screen-model"
 
 interface AnalysisState { projectId: string; worklist: TrackingWorklistRow[]; events: TrackingEventRow[]; occupancy: TrackingOccupancyRow[]; transit: TrackingTransitAlertRow[]; usage: TrackingDeviceUsageRow[]; inconsistencies: TrackingInconsistencyRow[] }
 
@@ -28,12 +29,41 @@ function download(filename: string, content: BlobPart, type: string) {
   const anchor = document.createElement("a"); anchor.href = url; anchor.download = filename; anchor.click(); URL.revokeObjectURL(url)
 }
 
+/**
+ * Spool location, as an operator narrows it: by area, by construction status, and by whether the
+ * spool is in transit — none of which the old single "Filter by ISO, spool, area or location" box
+ * could express, because a substring match cannot say "in transit AND not in area A-12".
+ */
+const SPOOL_LOCATION_COLUMNS: ReadonlyArray<DataColumn<TrackingWorklistRow>> = [
+  { id: "isoNumber", header: "ISO", value: (row) => row.isoNumber, searchable: true, filter: "text", className: "font-mono text-xs" },
+  { id: "spoolNumber", header: "Spool", value: (row) => row.spoolNumber, searchable: true, filter: "text", pinned: true, alwaysVisible: true, className: "font-mono text-xs" },
+  { id: "pdsAreaCode", header: "Area", value: (row) => row.pdsAreaCode, searchable: true, filter: "select", cell: (row) => row.pdsAreaCode ?? "Not configured" },
+  { id: "constructionStatus", header: "Status", value: (row) => row.constructionStatus, filter: "select" },
+  {
+    id: "currentLocationCode",
+    header: "Location",
+    value: (row) => (row.isInTransit ? "In transit" : (row.currentLocationCode ?? "Not scanned")),
+    searchable: true,
+    filter: "select",
+  },
+  {
+    id: "open",
+    header: "",
+    sortable: false,
+    alwaysVisible: true,
+    value: () => "",
+    headerClassName: "w-8",
+    className: "text-muted-foreground w-8",
+    cell: () => <ChevronRight className="h-4 w-4" aria-hidden="true" />,
+  },
+]
+
 export function TrackingDataAnalysisScreen({ projectId, projectCode, canRecord, canAdmin }: { projectId: string; projectCode: string; canRecord: boolean; canAdmin: boolean }) {
   const loader = React.useRef(createLatestProjectLoader<AnalysisState>())
   const [state, setState] = React.useState<AnalysisState | null>(null)
   const [errorProjectId, setErrorProjectId] = React.useState<string | null>(null)
   const [refreshToken, setRefreshToken] = React.useState(0)
-  const [query, setQuery] = React.useState("")
+  const [tableState, setTableState] = useTableUrlState({ namespace: "loc" })
   const [selectedSpoolId, setSelectedSpoolId] = React.useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [direction, setDirection] = React.useState<"in" | "out" | "manual">("in")
@@ -82,7 +112,6 @@ export function TrackingDataAnalysisScreen({ projectId, projectCode, canRecord, 
 
   if (errorProjectId === projectId) return <Alert variant="destructive"><AlertTitle>Unable to load Tracking Data Analysis</AlertTitle><AlertDescription>Check access and retry.</AlertDescription></Alert>
   if (!state || state.projectId !== projectId) return <Skeleton className="h-64 w-full" />
-  const filtered = filterTrackingWorklist(state.worklist, query)
   const selected = state.worklist.find((row) => row.spoolId === selectedSpoolId) ?? null
   const history = state.events.filter((event) => event.spoolId === selectedSpoolId)
   const designs = groupActiveSpoolsByDesignArea(state.worklist)
@@ -92,8 +121,25 @@ export function TrackingDataAnalysisScreen({ projectId, projectCode, canRecord, 
     <Tabs defaultValue="spools">
       <TabsList className="flex h-auto flex-wrap"><TabsTrigger value="spools">Spool Location</TabsTrigger><TabsTrigger value="locations">Location</TabsTrigger><TabsTrigger value="design">Design Area</TabsTrigger><TabsTrigger value="consolidation">Consolidation</TabsTrigger></TabsList>
       <TabsContent value="spools" className="space-y-4">
-        <div className="flex flex-wrap gap-2"><Input className="max-w-sm" aria-label="Filter spools" placeholder="Filter by ISO, spool, area or location" value={query} onChange={(event) => setQuery(event.target.value)} />{canRecord && <Button disabled={!selected} onClick={() => openEvent(false)}><Plus />Add Event</Button>}{canAdmin && <Button variant="outline" disabled={!selected} onClick={() => openEvent(true)}>Add Correction</Button>}</div>
-        <Card><CardContent><Table><TableHeader><TableRow><TableHead>ISO</TableHead><TableHead>Spool</TableHead><TableHead>Area</TableHead><TableHead>Status</TableHead><TableHead>Location</TableHead><TableHead className="w-8"><span className="sr-only">Opens the spool history</span></TableHead></TableRow></TableHeader><TableBody>{filtered.length === 0 ? <TableRow><TableCell colSpan={6}>No spools match this project and filter.</TableCell></TableRow> : filtered.map((row) => <TableRow key={row.spoolId} interactive aria-label={`Open history for spool ${row.spoolNumber}`} data-state={row.spoolId === selectedSpoolId ? "selected" : undefined} onClick={() => setSelectedSpoolId(row.spoolId)}><TableCell>{row.isoNumber}</TableCell><TableCell>{row.spoolNumber}</TableCell><TableCell>{row.pdsAreaCode ?? "Not configured"}</TableCell><TableCell>{row.constructionStatus}</TableCell><TableCell>{row.isInTransit ? "In transit" : row.currentLocationCode ?? "Not scanned"}</TableCell><TableCell className="text-muted-foreground"><ChevronRight className="h-4 w-4" aria-hidden="true" /></TableCell></TableRow>)}</TableBody></Table></CardContent></Card>
+        <Card><CardContent>
+          <DataTable
+            columns={SPOOL_LOCATION_COLUMNS}
+            rows={state.worklist}
+            state={tableState}
+            onStateChange={setTableState}
+            rowId={(row) => row.spoolId}
+            onRowClick={(row) => setSelectedSpoolId(row.spoolId)}
+            selectedRowId={selectedSpoolId}
+            searchPlaceholder="Search ISO, spool, area or location…"
+            emptyTitle="No spools in this project scope."
+            toolbarActions={
+              <>
+                {canRecord && <Button disabled={!selected} onClick={() => openEvent(false)}><Plus />Add Event</Button>}
+                {canAdmin && <Button variant="outline" disabled={!selected} onClick={() => openEvent(true)}>Add Correction</Button>}
+              </>
+            }
+          />
+        </CardContent></Card>
         {selected && <Card><CardHeader><CardTitle>{selected.spoolNumber} history</CardTitle><CardDescription>No managed spool image is available.</CardDescription></CardHeader><CardContent><Table><TableHeader><TableRow><TableHead>Time</TableHead><TableHead>Direction</TableHead><TableHead>Location</TableHead><TableHead>Reason</TableHead></TableRow></TableHeader><TableBody>{history.map((event) => <TableRow key={event.id}><TableCell>{new Date(event.occurredAt).toLocaleString()}</TableCell><TableCell>{event.direction}</TableCell><TableCell>{event.locationCode}</TableCell><TableCell>{event.reason ?? "—"}</TableCell></TableRow>)}</TableBody></Table></CardContent></Card>}
       </TabsContent>
       <TabsContent value="locations"><Card><CardHeader><CardTitle>Locations</CardTitle><CardDescription>Current active occupancy; erected spools are excluded.</CardDescription></CardHeader><CardContent><Table><TableHeader><TableRow><TableHead>Location</TableHead><TableHead>Category</TableHead><TableHead>Current / capacity</TableHead><TableHead>Transit departures</TableHead></TableRow></TableHeader><TableBody>{state.occupancy.map((row) => <TableRow key={row.locationId}><TableCell>{row.locationCode}</TableCell><TableCell>{row.categoryCode}</TableCell><TableCell>{row.currentCount} / {row.capacity ?? "Not configured"}</TableCell><TableCell>{state.transit.filter((item) => item.departureLocationCode === row.locationCode).length}</TableCell></TableRow>)}</TableBody></Table></CardContent></Card></TabsContent>

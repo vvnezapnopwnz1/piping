@@ -1,21 +1,14 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { ChevronRight } from "lucide-react"
 import { toast } from "sonner"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { DataTable, useTableUrlState } from "@/components/ui/data-table"
+import { ChangeHighlight, IdentityHeadline } from "@/components/ui/record-target"
+import { WELD_COLUMNS } from "../weld-columns"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { describeFieldWeldProgressGate } from "../../application/record-field-weld-progress"
 import { toWeldProgressPayload } from "../../application/record-weld-progress"
@@ -75,6 +68,7 @@ export function FieldWeldProgressScreen({
   const [rootPercent, setRootPercent] = useState(50)
   const [isSaving, setIsSaving] = useState(false)
   const [weldsFailed, setWeldsFailed] = useState(false)
+  const [weldTable, setWeldTable] = useTableUrlState({ namespace: "weld" })
 
   useEffect(() => {
     if (!projectId) return
@@ -218,71 +212,43 @@ export function FieldWeldProgressScreen({
             <CardHeader>
               <CardTitle>Field joints</CardTitle>
             </CardHeader>
-            <CardContent className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Joint</TableHead>
-                    <TableHead>Dia</TableHead>
-                    <TableHead>Thk</TableHead>
-                    <TableHead>WPS</TableHead>
-                    <TableHead>Welders</TableHead>
-                    <TableHead>Weld date</TableHead>
-                    <TableHead>NDE</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-8">
-                      <span className="sr-only">Opens the record form</span>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {welds.map((weld) => (
-                    <TableRow
-                      key={weld.weldJointRevisionId}
-                      interactive
-                      onClick={() => setSelectedWeld(weld)}
-                      data-state={
-                        selectedWeld?.weldJointRevisionId === weld.weldJointRevisionId
-                          ? "selected"
-                          : undefined
-                      }
-                      aria-label={`Record progress for field weld ${weld.weldNumber}`}
-                    >
-                      <TableCell className="font-mono text-xs">{weld.weldNumber}</TableCell>
-                      <TableCell>{weld.diameterInch ?? "—"}</TableCell>
-                      <TableCell>{weld.thicknessMm ?? "—"}</TableCell>
-                      <TableCell>{weld.wpsCode ?? "—"}</TableCell>
-                      <TableCell>{weld.welders.join(", ") || "—"}</TableCell>
-                      <TableCell>{weld.weldOn ?? "—"}</TableCell>
-                      <TableCell>
-                        {weld.obligationPending}/{weld.obligationTotal}
-                      </TableCell>
-                      <TableCell>
-                        {weld.isLocked ? <Badge variant="outline">Locked</Badge> : null}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        <ChevronRight className="h-4 w-4" aria-hidden="true" />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {welds.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={9} className="text-muted-foreground text-sm">
-                        {weldsFailed
-                          ? "Field joints could not be loaded, so none are listed and nothing has been changed."
-                          : "This spool revision has no field joints."}
-                      </TableCell>
-                    </TableRow>
-                  ) : null}
-                </TableBody>
-              </Table>
+            <CardContent>
+              <DataTable
+                columns={WELD_COLUMNS}
+                rows={welds}
+                state={weldTable}
+                onStateChange={setWeldTable}
+                rowId={(weld) => weld.weldJointRevisionId}
+                onRowClick={setSelectedWeld}
+                selectedRowId={selectedWeld?.weldJointRevisionId ?? null}
+                searchPlaceholder="Search joint or WPS…"
+                emptyTitle={
+                  weldsFailed
+                    ? "Field joints could not be loaded, so none are listed and nothing has been changed."
+                    : "This spool revision has no field joints."
+                }
+              />
             </CardContent>
           </Card>
 
           {selectedWeld ? (
+            <ChangeHighlight
+              id={selectedWeld.weldJointRevisionId}
+              announce={`Now recording field weld ${selectedWeld.weldNumber}`}
+            >
             <Card>
               <CardHeader>
-                <CardTitle>Record {selectedWeld.weldNumber}</CardTitle>
+                <IdentityHeadline
+                  kind="Recording field weld"
+                  identity={selectedWeld.weldNumber}
+                  meta={[
+                    selectedWeld.wpsCode ? `WPS ${selectedWeld.wpsCode}` : null,
+                    selectedWeld.diameterInch ? `${selectedWeld.diameterInch}"` : null,
+                    selectedWeld.thicknessMm ? `${selectedWeld.thicknessMm} mm` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                />
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -373,12 +339,13 @@ export function FieldWeldProgressScreen({
                 <Button
                   type="button"
                   onClick={() => void save()}
-                  disabled={!gate.allowed || isSaving}
+                  loading={isSaving} disabled={!gate.allowed}
                 >
-                  {isSaving ? "Saving…" : "Record field weld progress"}
+                  Record field weld progress
                 </Button>
               </CardContent>
             </Card>
+            </ChangeHighlight>
           ) : (
             <Card>
               <CardContent className="text-muted-foreground py-6 text-sm">

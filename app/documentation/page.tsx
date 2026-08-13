@@ -11,9 +11,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 type Status = "live" | "partial" | "placeholder";
 
 const statusClass: Record<Status, string> = {
-  live: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  partial: "border-amber-200 bg-amber-50 text-amber-800",
-  placeholder: "border-slate-200 bg-slate-100 text-slate-600",
+  live: "border-success-border bg-success-bg text-success-fg",
+  partial: "border-warning-border bg-warning-bg text-warning-fg",
+  placeholder: "border-neutral-border bg-neutral-bg text-neutral-fg",
 };
 
 const heroFlows = [
@@ -353,14 +353,14 @@ function ChecklistRow({
       />
       <Link
         href={route}
-        className="text-sm font-medium text-sky-700 underline-offset-4 hover:underline"
+        className="text-sm font-medium text-primary underline-offset-4 hover:underline"
       >
         {route}
       </Link>
-      <label htmlFor={id} className="text-sm leading-6 text-slate-700">
-        <span className="font-medium text-slate-950">click/check:</span>{" "}
-        {action} <span className="text-slate-400">{"->"}</span>{" "}
-        <span className="font-medium text-slate-950">expected:</span> {expected}
+      <label htmlFor={id} className="text-sm leading-6 text-foreground">
+        <span className="font-medium text-foreground">click/check:</span>{" "}
+        {action} <span className="text-muted-foreground">{"->"}</span>{" "}
+        <span className="font-medium text-foreground">expected:</span> {expected}
       </label>
     </div>
   );
@@ -371,14 +371,14 @@ export default function DocumentationPage() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-900 bg-slate-950 p-5 text-white shadow-sm">
+      <div className="rounded-2xl border border-foreground bg-foreground p-5 text-white shadow-sm">
         <Badge className="mb-3 border-orange-300 bg-orange-200 text-orange-950">
           alpha demo devlog
         </Badge>
         <h1 className="text-3xl font-semibold tracking-tight">
           PipeQC Development Log
         </h1>
-        <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-200">
+        <p className="mt-3 max-w-4xl text-sm leading-6 text-muted-foreground">
           This is a development-process devlog, not user documentation. Many
           screens are placeholders. Data is mock data, with persistence only in
           Zustand store / localStorage.
@@ -401,7 +401,7 @@ export default function DocumentationPage() {
               <CardHeader>
                 <CardTitle>What this page is</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4 text-sm leading-6 text-slate-700">
+              <CardContent className="space-y-4 text-sm leading-6 text-foreground">
                 <p>
                   PipeQC is an alpha demo of a piping QC workflow for oil & gas
                   / EPC discovery sessions. It exists to inspect assumptions,
@@ -499,7 +499,7 @@ export default function DocumentationPage() {
                         <td className="py-3 pr-4">
                           <Link
                             href={item.page}
-                            className="text-sky-700 underline-offset-4 hover:underline"
+                            className="text-primary underline-offset-4 hover:underline"
                           >
                             {item.page}
                           </Link>
@@ -512,7 +512,7 @@ export default function DocumentationPage() {
                             {item.status}
                           </Badge>
                         </td>
-                        <td className="py-3 text-slate-700">{item.notes}</td>
+                        <td className="py-3 text-foreground">{item.notes}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -540,7 +540,7 @@ export default function DocumentationPage() {
                         <Badge>{phase}</Badge>
                         <span className="font-medium">{description}</span>
                       </div>
-                      <div className="mt-3 flex gap-3 text-sm text-slate-700">
+                      <div className="mt-3 flex gap-3 text-sm text-foreground">
                         <Checkbox
                           id={id}
                           checked={!!checked[id]}
@@ -579,11 +579,11 @@ export default function DocumentationPage() {
                 {nextTracks.map(([phase, description]) => (
                   <div
                     key={phase}
-                    className="flex items-start gap-3 rounded-lg border bg-slate-50 p-3 text-sm"
+                    className="flex items-start gap-3 rounded-lg border bg-muted p-3 text-sm"
                   >
                     <Badge
                       variant="outline"
-                      className="border-slate-300 bg-white text-slate-600"
+                      className="border-border bg-white text-muted-foreground"
                     >
                       {phase}
                     </Badge>

@@ -42,6 +42,10 @@ export function PaintLaydownScreen({
   const [locationId, setLocationId] = useState("")
   const [storedOn, setStoredOn] = useState(today())
   const [refreshToken, setRefreshToken] = useState(0)
+  // Browsing for another spool has to take the joint list and the record form with it:
+  // they belong to the spool being replaced, and leaving them on screen invites recording
+  // against a spool the operator has already moved on from.
+  const [browsingSpools, setBrowsingSpools] = useState(false)
 
   useEffect(() => {
     const client = getSupabaseBrowserClient()
@@ -78,22 +82,17 @@ export function PaintLaydownScreen({
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[20rem_1fr]">
-      <Card>
-        <CardHeader>
-          <CardTitle>Spools</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <SpoolPicker
+    <div className="space-y-4">
+      <SpoolPicker
             projectId={projectId}
             value={spool?.spoolRevisionId ?? null}
             onChange={setSpool}
+            browsing={browsingSpools}
+            onBrowsingChange={setBrowsingSpools}
             refreshToken={refreshToken}
           />
-        </CardContent>
-      </Card>
 
-      {spool ? (
+      {spool && !browsingSpools ? (
         <div className="space-y-4">
           <Card>
             <CardHeader>

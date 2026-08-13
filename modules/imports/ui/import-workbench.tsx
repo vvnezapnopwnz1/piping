@@ -195,7 +195,7 @@ export function ImportWorkbench({
         </div>
 
         {importType === "test_pack_composition" && (
-          <p role="status" className="text-sm text-amber-700">
+          <p role="status" className="text-warning-fg text-sm">
             Existing Test Packs can be updated only after conflict confirmation. Additional ISO membership is a manual Builder action and is never added silently by import.
           </p>
         )}

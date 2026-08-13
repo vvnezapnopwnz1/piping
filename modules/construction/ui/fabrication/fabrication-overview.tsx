@@ -3,16 +3,9 @@
 import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 
-import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { DataTable, useTableUrlState } from "@/components/ui/data-table"
+import { FABRICATION_SPOOL_COLUMNS } from "./spool-columns"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { CONSTRUCTION_STAGES, stageLabel } from "../../domain/construction-phase"
 import {
@@ -26,6 +19,7 @@ import {
  */
 export function FabricationOverview({ projectId }: { projectId: string }) {
   const [statuses, setStatuses] = useState<SpoolStatus[]>([])
+  const [tableState, setTableState] = useTableUrlState({ namespace: "spool" })
 
   useEffect(() => {
     void loadSpoolStatuses(getSupabaseBrowserClient(), projectId)
@@ -67,45 +61,17 @@ export function FabricationOverview({ projectId }: { projectId: string }) {
         <CardHeader>
           <CardTitle>Spools</CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ISO</TableHead>
-                <TableHead>Spool</TableHead>
-                <TableHead>Rev</TableHead>
-                <TableHead>Stage</TableHead>
-                <TableHead>Material</TableHead>
-                <TableHead>Welds</TableHead>
-                <TableHead>Supports</TableHead>
-                <TableHead>NDE outstanding</TableHead>
-                <TableHead>PWHT outstanding</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {statuses.map((status) => (
-                <TableRow key={status.spoolRevisionId}>
-                  <TableCell className="font-mono text-xs">{status.isoNumber}</TableCell>
-                  <TableCell className="font-mono text-xs">{status.spoolNumber}</TableCell>
-                  <TableCell>{status.revisionNumber}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{status.currentStage ?? "not started"}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    {status.lineChecked}/{status.lineTotal}
-                  </TableCell>
-                  <TableCell>
-                    {status.weldComplete}/{status.weldTotal}
-                  </TableCell>
-                  <TableCell>
-                    {status.supportRecorded}/{status.supportTotal}
-                  </TableCell>
-                  <TableCell>{status.ndePending}</TableCell>
-                  <TableCell>{status.pwhtPending}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <CardContent>
+          <DataTable
+            columns={FABRICATION_SPOOL_COLUMNS}
+            rows={statuses}
+            state={tableState}
+            onStateChange={setTableState}
+            rowId={(status) => status.spoolRevisionId}
+            searchPlaceholder="Search spool or ISO…"
+            emptyTitle="No spool is available on this project."
+            emptyDescription="Spools appear once an engineering revision carrying them is accepted."
+          />
         </CardContent>
       </Card>
     </div>

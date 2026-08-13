@@ -166,14 +166,14 @@ export function SpoolingImportScreen({
                 className="sr-only"
                 type="file"
                 accept=".txt,.csv,.tsv,text/plain"
-                disabled={!canManage || busy}
+                disabled={busy || !canManage}
                 onChange={(event) =>
                   pickFile(role, event.target.files?.[0] ?? null)
                 }
               />
               <Button
                 type="button"
-                disabled={!canManage || busy}
+                loading={busy} disabled={!canManage}
                 onClick={() => fileInputs.current[role]?.click()}
               >
                 {files[role]
@@ -193,7 +193,7 @@ export function SpoolingImportScreen({
             onClick={validate}
             disabled={!canManage || busy || presentRoles.length === 0}
           >
-            {busy ? "Validating…" : "Validate files"}
+            Validate files
           </Button>
           {jobId ? (
             <span className="text-sm text-muted-foreground">

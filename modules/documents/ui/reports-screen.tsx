@@ -94,10 +94,15 @@ export function ReportsScreen({
               <CardContent className="space-y-3">
                 <p className="text-xs text-muted-foreground">{report.code} · {report.outputFormat.toUpperCase()}</p>
                 {reportError ? <p className="text-sm text-destructive">Could not generate report: {reportError}</p> : null}
-                {lastDownloaded === report.code ? <p className="text-sm text-emerald-700">File downloaded from the current project snapshot.</p> : null}
-                <Button type="button" onClick={() => void generate(report.code)} disabled={pendingCode !== null}>
-                  <Download className="mr-2 size-4" />
-                  {pending ? "Generating…" : `Download ${report.outputFormat.toUpperCase()}`}
+                {lastDownloaded === report.code ? <p className="text-success-fg text-sm">File downloaded from the current project snapshot.</p> : null}
+                <Button
+                  type="button"
+                  onClick={() => void generate(report.code)}
+                  loading={pending}
+                  disabled={pendingCode !== null}
+                >
+                  {pending ? null : <Download className="mr-2 size-4" />}
+                  {`Download ${report.outputFormat.toUpperCase()}`}
                 </Button>
               </CardContent>
             </Card>

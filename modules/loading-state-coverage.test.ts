@@ -60,9 +60,13 @@ test("every shared frame a screen may delegate its loading state to actually ren
   )
   assert.equal(owners.length, 2, "both shared loading owners must exist")
   for (const path of owners) {
+    const source = readFileSync(path, "utf8")
+    // Either the frame draws the skeleton itself, or it hands the flag to `DataTable`, which
+    // draws a skeleton shaped like the table it is about to fill. What must not happen is a
+    // frame that is trusted for a loading state and renders nothing during the fetch.
     assert.ok(
-      readFileSync(path, "utf8").includes("Skeleton"),
-      `${path} is trusted by screens to render their loading state and must render a Skeleton`,
+      source.includes("Skeleton") || /loading=\{/.test(source),
+      `${path} is trusted by screens to render their loading state and must render one`,
     )
   }
 })

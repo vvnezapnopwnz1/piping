@@ -20,6 +20,25 @@
   --accent-foreground: #1e3a8a;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
+  /* Status tones. `--destructive` stays what it always was — the colour of a button that destroys
+     something. These describe the state a record is *in*, which is a different job: a rejected NDE
+     result is not an action, and painting it with the delete colour is how the two get confused.
+     Each tone carries `-fg` on `-bg` at >=4.5:1 so the text, not the tint, does the work. */
+  --success-fg: #047857;
+  --success-bg: #ecfdf5;
+  --success-border: #6ee7b7;
+  --warning-fg: #b45309;
+  --warning-bg: #fffbeb;
+  --warning-border: #fcd34d;
+  --info-fg: #1d4ed8;
+  --info-bg: #eff6ff;
+  --info-border: #93c5fd;
+  --danger-fg: #b91c1c;
+  --danger-bg: #fef2f2;
+  --danger-border: #fca5a5;
+  --neutral-fg: #475569;
+  --neutral-bg: #f8fafc;
+  --neutral-border: #cbd5e1;
   --border: #e5e7eb;
   --input: #e5e7eb;
   --ring: #3b82f6;
@@ -62,6 +81,23 @@
   --accent-foreground: #bfdbfe;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
+  /* Dark mode is not the light tones inverted: the surface goes to the deepest step of the hue and
+     the text to a light one, which is the only way a tinted badge stays legible on #171717. */
+  --success-fg: #6ee7b7;
+  --success-bg: #022c22;
+  --success-border: #065f46;
+  --warning-fg: #fcd34d;
+  --warning-bg: #451a03;
+  --warning-border: #92400e;
+  --info-fg: #93c5fd;
+  --info-bg: #172554;
+  --info-border: #1e40af;
+  --danger-fg: #fca5a5;
+  --danger-bg: #450a0a;
+  --danger-border: #991b1b;
+  --neutral-fg: #cbd5e1;
+  --neutral-bg: #262626;
+  --neutral-border: #52525b;
   --border: #404040;
   --input: #404040;
   --ring: #3b82f6;
@@ -105,6 +141,21 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success-fg: var(--success-fg);
+  --color-success-bg: var(--success-bg);
+  --color-success-border: var(--success-border);
+  --color-warning-fg: var(--warning-fg);
+  --color-warning-bg: var(--warning-bg);
+  --color-warning-border: var(--warning-border);
+  --color-info-fg: var(--info-fg);
+  --color-info-bg: var(--info-bg);
+  --color-info-border: var(--info-border);
+  --color-danger-fg: var(--danger-fg);
+  --color-danger-bg: var(--danger-bg);
+  --color-danger-border: var(--danger-border);
+  --color-neutral-fg: var(--neutral-fg);
+  --color-neutral-bg: var(--neutral-bg);
+  --color-neutral-border: var(--neutral-border);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -156,5 +207,37 @@
   button:not(:disabled),
   [role='button']:not([aria-disabled='true']) {
     @apply cursor-pointer;
+  }
+}
+
+/* The signal that a form has swapped which record it edits. A tint that arrives at once and
+   leaves over half a second reads as "this just changed"; the ring outlives it slightly so the
+   card is still marked when the eye arrives. Both are drawn on an overlay, so nothing under them
+   reflows and the form's own focus and scroll position are untouched. */
+@keyframes record-target-change {
+  0% {
+    background-color: color-mix(in srgb, var(--ring) 22%, transparent);
+    box-shadow: inset 0 0 0 2px var(--ring);
+  }
+  60% {
+    background-color: color-mix(in srgb, var(--ring) 8%, transparent);
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--ring) 60%, transparent);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: inset 0 0 0 2px transparent;
+  }
+}
+
+.animate-record-target-change {
+  animation: record-target-change 900ms ease-out forwards;
+}
+
+/* Reduced motion still needs the change reported — the headline and the polite announcement in
+   `ChangeHighlight` carry it, so the tint simply holds still and fades on its own schedule
+   rather than pulsing. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-record-target-change {
+    animation: none;
   }
 }

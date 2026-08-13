@@ -1,12 +1,23 @@
 "use client"
 
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge, type StatusTone } from "@/components/ui/status-badge"
 import type { ImportIssue, ImportIssueSeverity } from "../domain/import-issue"
 
+/**
+ * Import severities are their own vocabulary — a `conflict` is not a workflow state — so they name
+ * their tone here rather than going through the status map. The literal `red-100`/`amber-100`
+ * surfaces they used to carry stayed light when the app went dark.
+ */
+const SEVERITY_TONE: Record<ImportIssueSeverity, StatusTone> = {
+  blocker: "danger",
+  conflict: "warning",
+  warning: "neutral",
+}
+
 const SEVERITY_STYLE: Record<ImportIssueSeverity, string> = {
-  blocker: "bg-red-100 text-red-900 border-red-300",
-  conflict: "bg-amber-100 text-amber-900 border-amber-300",
-  warning: "bg-slate-100 text-slate-700 border-slate-300",
+  blocker: "bg-danger-bg text-danger-fg border-danger-border",
+  conflict: "bg-warning-bg text-warning-fg border-warning-border",
+  warning: "bg-neutral-bg text-neutral-fg border-neutral-border",
 }
 
 const SEVERITY_LABEL: Record<ImportIssueSeverity, string> = {
@@ -27,7 +38,12 @@ export function ImportIssueList({ issues }: { issues: readonly ImportIssue[] }) 
           key={`${issue.code}-${issue.rowNumber ?? "sheet"}-${index}`}
           className={`flex items-start gap-3 rounded-md border px-3 py-2 text-sm ${SEVERITY_STYLE[issue.severity]}`}
         >
-          <Badge variant="outline">{SEVERITY_LABEL[issue.severity]}</Badge>
+          <StatusBadge
+            status={issue.severity}
+            tone={SEVERITY_TONE[issue.severity]}
+            label={SEVERITY_LABEL[issue.severity]}
+            className="bg-transparent"
+          />
           <span className="font-mono text-xs">
             {issue.rowNumber === null ? "Sheet" : `Row ${issue.rowNumber}`}
             {issue.columnName ? ` · ${issue.columnName}` : ""}

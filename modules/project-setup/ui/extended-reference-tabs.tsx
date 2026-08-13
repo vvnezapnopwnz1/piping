@@ -368,9 +368,7 @@ export function ExtendedReferenceTabs({
               )}
 
               {canManage && (
-                <Button onClick={handleSaveAssembly} disabled={isSavingAssembly}>
-                  {isSavingAssembly ? "Saving…" : "Save Assembly Settings"}
-                </Button>
+                <Button onClick={handleSaveAssembly} loading={isSavingAssembly}>Save Assembly Settings</Button>
               )}
 
               {!canManage && (
@@ -478,7 +476,7 @@ export function ExtendedReferenceTabs({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsAddDeviceOpen(false); setDevCode(""); setDevDesc(""); setDevErrors({}) }}>Cancel</Button>
-            <Button onClick={handleAddDevice} disabled={isSubmittingDevice}>{isSubmittingDevice ? "Creating…" : "Create"}</Button>
+            <Button onClick={handleAddDevice} loading={isSubmittingDevice}>Create</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

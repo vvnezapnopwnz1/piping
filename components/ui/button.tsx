@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { Slot } from '@radix-ui/react-slot'
 import { cva, type VariantProps } from 'class-variance-authority'
+import { Loader2 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
@@ -41,19 +42,49 @@ function Button({
   variant,
   size,
   asChild = false,
+  loading = false,
+  disabled,
+  children,
   ...props
 }: React.ComponentProps<'button'> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean
+    /**
+     * Set while the action this button started is in flight. Every screen used to do this by
+     * swapping the label for "Saving…", which changes the button's width mid-click, gives no
+     * indication of progress, and — on the screens that forgot — left the button live long enough
+     * to record the same weld twice.
+     *
+     * The label stays put and the spinner takes the place of any leading icon, so the button does
+     * not resize and the pointer stays over the same target.
+     */
+    loading?: boolean
   }) {
   const Comp = asChild ? Slot : 'button'
 
   return (
     <Comp
       data-slot="button"
+      // `aria-busy` is what tells a screen reader the press was received; `disabled` alone reads
+      // as "this control is unavailable", which is a different thing.
+      aria-busy={loading || undefined}
+      disabled={asChild ? disabled : loading || disabled}
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
-    />
+    >
+      {/* A Slot accepts exactly one child, and `React.Children.only` counts the `null` an inline
+          conditional leaves behind — so under `asChild` the children are passed through untouched
+          rather than wrapped. A Slot button wraps a link or a menu item anyway, neither of which
+          has an in-flight action to report. */}
+      {asChild ? (
+        children
+      ) : (
+        <>
+          {loading ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
+          {children}
+        </>
+      )}
+    </Comp>
   )
 }
 

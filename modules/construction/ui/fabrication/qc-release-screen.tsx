@@ -5,6 +5,7 @@ import Link from "next/link"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/ui/status-badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -47,6 +48,10 @@ export function QcReleaseScreen({ projectId }: { projectId: string }) {
   const [releasedOn, setReleasedOn] = useState(today())
   const [chartNumber, setChartNumber] = useState("")
   const [refreshToken, setRefreshToken] = useState(0)
+  // Browsing for another spool has to take the joint list and the record form with it:
+  // they belong to the spool being replaced, and leaving them on screen invites recording
+  // against a spool the operator has already moved on from.
+  const [browsingSpools, setBrowsingSpools] = useState(false)
 
   const reload = useCallback(async () => {
     if (!spool) return
@@ -87,22 +92,17 @@ export function QcReleaseScreen({ projectId }: { projectId: string }) {
     : { allowed: false, reason: "Select a spool." }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[20rem_1fr]">
-      <Card>
-        <CardHeader>
-          <CardTitle>Spools</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <SpoolPicker
+    <div className="space-y-4">
+      <SpoolPicker
             projectId={projectId}
             value={spool?.spoolRevisionId ?? null}
             onChange={setSpool}
+            browsing={browsingSpools}
+            onBrowsingChange={setBrowsingSpools}
             refreshToken={refreshToken}
           />
-        </CardContent>
-      </Card>
 
-      {spool ? (
+      {spool && !browsingSpools ? (
         <div className="space-y-4">
           <Card>
             <CardHeader>
@@ -230,7 +230,7 @@ export function QcReleaseScreen({ projectId }: { projectId: string }) {
                       <TableCell>{obligation.requiredCoverage}%</TableCell>
                       <TableCell>{obligation.selectionMode}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{obligation.disposition}</Badge>
+                        <StatusBadge status={obligation.disposition} />
                       </TableCell>
                       <TableCell>
                         <Link href="/nde">

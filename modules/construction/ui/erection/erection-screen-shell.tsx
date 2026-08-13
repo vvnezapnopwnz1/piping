@@ -1,8 +1,7 @@
 "use client"
 
-import type { ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { FieldSpoolPicker } from "./field-spool-picker"
 import type { ErectionReadinessState } from "./use-erection-readiness"
@@ -26,6 +25,9 @@ export function ErectionScreenShell({
   children,
 }: ErectionScreenShellProps) {
   const { projectId, isLoading, loadFailed, rows, selected, select, canView } = state
+  // Browsing for another spool has to take the body with it: everything a screen renders below is
+  // about the spool being replaced.
+  const [browsingSpools, setBrowsingSpools] = useState(false)
 
   if (!projectId) {
     return (
@@ -50,43 +52,34 @@ export function ErectionScreenShell({
         <p className="text-muted-foreground mt-1 text-sm">{description}</p>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[20rem_1fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Field spools</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="space-y-1">
-                <Skeleton className="h-7 w-full" />
-                <Skeleton className="h-7 w-full" />
-                <Skeleton className="h-7 w-full" />
-              </div>
-            ) : loadFailed ? (
-              <p className="text-destructive text-sm">
-                Field spools could not be loaded, so none are listed and nothing has been
-                changed. Reload the page, and report this if it persists.
-              </p>
-            ) : (
-              <FieldSpoolPicker
-                rows={rows}
-                value={selected?.spoolRevisionId ?? null}
-                onChange={select}
-              />
-            )}
-          </CardContent>
-        </Card>
+      {/* Stacked, not side by side: the spool list is a table with a toolbar and a pagination
+          footer now, and none of that fits a 20rem column. It folds to one line once a spool is
+          picked, so the form below still gets the page. */}
+      {loadFailed ? (
+        <p className="text-destructive text-sm">
+          Field spools could not be loaded, so none are listed and nothing has been changed.
+          Reload the page, and report this if it persists.
+        </p>
+      ) : (
+        <FieldSpoolPicker
+          rows={rows}
+          value={selected?.spoolRevisionId ?? null}
+          onChange={select}
+          browsing={browsingSpools}
+          onBrowsingChange={setBrowsingSpools}
+          loading={isLoading}
+        />
+      )}
 
-        {selected ? (
-          <div className="space-y-4">{children(selected)}</div>
-        ) : isLoading ? (
-          <Skeleton className="h-64 w-full" />
-        ) : (
-          <p className="text-muted-foreground text-sm">
-            {loadFailed ? "" : "Select a field spool to record erection progress against it."}
-          </p>
-        )}
-      </div>
+      {selected && !browsingSpools ? (
+        <div className="space-y-4">{children(selected)}</div>
+      ) : browsingSpools ? null : isLoading ? (
+        <Skeleton className="h-64 w-full" />
+      ) : (
+        <p className="text-muted-foreground text-sm">
+          {loadFailed ? "" : "Select a field spool to record erection progress against it."}
+        </p>
+      )}
     </div>
   )
 }

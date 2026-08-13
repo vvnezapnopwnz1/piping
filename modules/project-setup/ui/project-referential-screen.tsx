@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { AlertCircle, RefreshCw } from "lucide-react"
 
 import { Card, CardContent } from "@/components/ui/card"
@@ -18,6 +19,8 @@ import { ExecutionReferenceTabs } from "./execution-reference-tabs"
 import { ExtendedReferenceTabs } from "./extended-reference-tabs"
 import { ProgressWeightsScreen } from "./progress-weights-screen"
 
+const TABS = ["general", "fabrication", "testpack", "spooling", "system", "weights"]
+
 export function ProjectReferentialScreen({
   projectId,
   canManage = true,
@@ -28,7 +31,23 @@ export function ProjectReferentialScreen({
   const [readiness, setReadiness] = useState<ProjectSetupReadiness | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState("general")
+  // The tab belongs in the address bar. `SetupReadinessPanel` links straight at a referential,
+  // and a readiness item that cannot be linked to is a readiness item somebody has to be told how
+  // to find. It also makes the back button out of a dialog land on the tab it left.
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const activeTab = TABS.includes(searchParams.get("tab") ?? "") ? searchParams.get("tab")! : "general"
+  const setActiveTab = useCallback(
+    (tab: string) => {
+      const params = new URLSearchParams(searchParams.toString())
+      if (tab === "general") params.delete("tab")
+      else params.set("tab", tab)
+      const query = params.toString()
+      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+    },
+    [pathname, router, searchParams],
+  )
 
   const fetchReadiness = useCallback(async () => {
     setLoading(true)
@@ -70,8 +89,13 @@ export function ProjectReferentialScreen({
     <div className="space-y-6">
       <SetupReadinessPanel readiness={readiness} onNavigateTab={setActiveTab} />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full overflow-x-auto whitespace-nowrap">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        variant="underline"
+        className="w-full"
+      >
+        <TabsList>
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="fabrication">Welding & Quality</TabsTrigger>
           <TabsTrigger value="testpack">Testpack & Tracking</TabsTrigger>

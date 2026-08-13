@@ -23,24 +23,45 @@ test("buttons declare a pointer cursor in the base layer", () => {
 
 /**
  * A list whose rows open an editor needs more than a cursor: the row has to react under the
- * pointer and show where the keyboard is. Both spool pickers shipped with neither, so their
- * selected item was the only styled state.
+ * pointer, show where the keyboard is, and tell assistive technology which one is selected. Both
+ * spool pickers shipped with none of that, and now neither of them draws a row at all — they hand
+ * their spools to `DataTable`, so the affordances are asserted where they actually live.
  */
 const PICKERS = [
   "../../modules/construction/ui/fabrication/spool-picker.tsx",
   "../../modules/construction/ui/erection/field-spool-picker.tsx",
 ]
 
-test("the spool pickers show hover, focus and selection state", () => {
+test("the spool pickers delegate their rows to the shared table", () => {
   for (const picker of PICKERS) {
     const source = readFileSync(new URL(picker, import.meta.url), "utf8")
 
-    assert.match(source, /hover:bg-/, `${picker} must react under the pointer`)
-    assert.match(source, /focus-visible:/, `${picker} must show keyboard focus`)
     assert.match(
       source,
-      /aria-current/,
-      `${picker} must expose the selected spool to assistive technology, not only as a tint`,
+      /RecordSelectTable/,
+      `${picker} must render the shared spool table rather than its own list`,
     )
+    assert.match(source, /onSelect=/, `${picker} must still report the chosen spool`)
+    assert.match(source, /selectedId=/, `${picker} must still mark the chosen spool`)
   }
+})
+
+test("the shared table gives a clickable row every state a selection list needs", () => {
+  const dataTable = readFileSync(new URL("./data-table/data-table.tsx", import.meta.url), "utf8")
+  const table = readFileSync(new URL("./table.tsx", import.meta.url), "utf8")
+
+  assert.match(
+    dataTable,
+    /interactive=\{Boolean\(onRowClick\)\}/,
+    "a row that opens something must declare itself interactive",
+  )
+  assert.match(
+    dataTable,
+    /aria-current=\{selectedRowId === id \? 'true' : undefined\}/,
+    "the selected row must announce itself, not only tint itself",
+  )
+  assert.match(dataTable, /data-state=\{selectedRowId === id/, "and it must be visibly selected")
+
+  assert.match(table, /hover:bg-accent/, "an interactive row must react under the pointer")
+  assert.match(table, /focus-visible:ring-2/, "and must show where the keyboard is")
 })

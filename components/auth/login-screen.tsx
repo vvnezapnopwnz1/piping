@@ -75,9 +75,7 @@ export function LoginScreen() {
                 {error}
               </p>
             )}
-            <Button className="w-full" disabled={isSubmitting} type="submit">
-              {isSubmitting ? "Signing in…" : "Sign in"}
-            </Button>
+            <Button className="w-full" loading={isSubmitting} type="submit">Sign in</Button>
           </form>
         </CardContent>
       </Card>

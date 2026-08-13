@@ -168,7 +168,7 @@ export function RevisionWorkbench({
             onClick={apply}
             disabled={!canManage || busy || !gate.allowed}
           >
-            {busy ? "Applying…" : "Apply import"}
+            Apply import
           </Button>
           {gate.reason ? (
             <span className="text-sm text-muted-foreground">{gate.reason}</span>

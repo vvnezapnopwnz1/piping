@@ -39,7 +39,7 @@ export function AdminCardGrid({ items }: { items: AdminCard[] }) {
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {items.map((item) => (
-        <Card key={item.title} className="border-slate-200">
+        <Card key={item.title} className="border-border">
           <CardHeader>
             <div className="flex items-start justify-between gap-3">
               <div className="space-y-1">
@@ -77,15 +77,15 @@ export function AdminDemoTable({
   rows: AdminTableRow[];
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+    <div className="overflow-hidden rounded-xl border border-border bg-white">
       <div className="overflow-auto">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50">
-            <tr className="border-b border-slate-200">
+          <thead className="bg-muted">
+            <tr className="border-b border-border">
               {columns.map((column) => (
                 <th
                   key={column}
-                  className="whitespace-nowrap px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-600"
+                  className="whitespace-nowrap px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground"
                 >
                   {column}
                 </th>
@@ -98,14 +98,14 @@ export function AdminDemoTable({
                 key={`${row[columns[0]]}-${index}`}
                 className={
                   index % 2 === 0
-                    ? "border-b border-slate-100 bg-white"
-                    : "border-b border-slate-100 bg-slate-50/50"
+                    ? "border-b border-border bg-white"
+                    : "border-b border-border bg-muted/50"
                 }
               >
                 {columns.map((column) => (
                   <td
                     key={column}
-                    className="whitespace-nowrap px-3 py-2 text-xs text-slate-700"
+                    className="whitespace-nowrap px-3 py-2 text-xs text-foreground"
                   >
                     {row[column]}
                   </td>
@@ -129,7 +129,7 @@ export function ReferentialGroup({
   items: string[];
 }) {
   return (
-    <Card className="border-slate-200">
+    <Card className="border-border">
       <CardHeader>
         <CardTitle className="text-base">{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
@@ -139,10 +139,10 @@ export function ReferentialGroup({
           {items.map((item) => (
             <div
               key={item}
-              className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
+              className="rounded-lg border border-border bg-muted px-3 py-2"
             >
-              <div className="text-xs font-medium text-slate-800">{item}</div>
-              <div className="mt-1 text-[11px] text-slate-500">
+              <div className="text-xs font-medium text-foreground">{item}</div>
+              <div className="mt-1 text-[11px] text-muted-foreground">
                 Demo reference placeholder
               </div>
             </div>
@@ -161,7 +161,7 @@ export function ImportPlaceholder({
   comingSoon?: boolean
 }) {
   return (
-    <Card className="border-slate-200">
+    <Card className="border-border">
       <CardHeader>
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -174,8 +174,8 @@ export function ImportPlaceholder({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center justify-between gap-3 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-3">
-          <div className="text-xs text-slate-500">Upload placeholder</div>
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-dashed border-border bg-muted px-3 py-3">
+          <div className="text-xs text-muted-foreground">Upload placeholder</div>
           <Button variant="outline" size="sm" disabled className="h-8">
             <Upload className="mr-2 h-3.5 w-3.5" />
             Select file

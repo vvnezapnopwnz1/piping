@@ -20,6 +20,7 @@ import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Card,
   CardContent,
@@ -66,6 +67,10 @@ import {
 } from "../domain/welding-quality-reference"
 import { ReferenceStatusBadge } from "./reference-status-badge"
 
+type WeldingQualityTab = 
+    "service-classes" | "weld-types" | "welders" | "nde" | "thickness" | "pml" | "rework" | "joint-categories"
+  
+
 export function WeldingQualityTabs({
   projectId,
   canManage,
@@ -76,9 +81,7 @@ export function WeldingQualityTabs({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<LoadedWeldingQualityReferences | null>(null)
-  const [activeTab, setActiveTab] = useState<
-    "service-classes" | "weld-types" | "welders" | "nde" | "thickness" | "pml" | "rework" | "joint-categories"
-  >("service-classes")
+  const [activeTab, setActiveTab] = useState<WeldingQualityTab>("service-classes")
 
   // Add Service Class Dialog
   const [isAddScOpen, setIsAddScOpen] = useState(false)
@@ -542,102 +545,50 @@ export function WeldingQualityTabs({
   )
 
   return (
-    <div className="space-y-4">
-      {/* Sub-tabs header */}
-      <div className="flex border-b text-sm font-medium gap-4 overflow-x-auto">
-        <button
-          className={`pb-2 border-b-2 transition-colors whitespace-nowrap ${
-            activeTab === "service-classes"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-          onClick={() => setActiveTab("service-classes")}
-        >
+    <Tabs
+      value={activeTab}
+      onValueChange={(value) => setActiveTab(value as WeldingQualityTab)}
+      variant="underline"
+      className="space-y-4"
+    >
+      <TabsList>
+        <TabsTrigger value="service-classes">
           Service Classes ({data?.serviceClasses.length ?? 0})
-        </button>
-        <button
-          className={`pb-2 border-b-2 transition-colors whitespace-nowrap ${
-            activeTab === "weld-types"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-          onClick={() => setActiveTab("weld-types")}
-        >
+        </TabsTrigger>
+        <TabsTrigger value="weld-types">
           Weld Types ({data?.weldTypes.length ?? 0})
-        </button>
-        <button
-          className={`pb-2 border-b-2 transition-colors whitespace-nowrap ${
-            activeTab === "welders"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-          onClick={() => setActiveTab("welders")}
-        >
+        </TabsTrigger>
+        <TabsTrigger value="welders">
           Welders ({data?.welderQualifications.length ?? 0})
-        </button>
-        <button
-          className={`pb-2 border-b-2 transition-colors whitespace-nowrap flex items-center gap-1.5 ${
-            activeTab === "nde"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-          onClick={() => setActiveTab("nde")}
-        >
+        </TabsTrigger>
+        <TabsTrigger value="nde">
           <span>NDE Matrix ({data?.ndeMatrixRules.length ?? 0})</span>
           {ndeCoverage.missingTuples.length > 0 ? (
-            <Badge variant="outline" className="text-xs text-amber-600 border-amber-500/30">
+            <Badge variant="outline" className="text-warning-fg border-warning-border text-xs">
               Incomplete ({ndeCoverage.missingTuples.length})
             </Badge>
           ) : (
-            <Badge variant="outline" className="text-xs text-emerald-600 border-emerald-500/30">
+            <Badge variant="outline" className="text-success-fg border-success-border text-xs">
               Complete
             </Badge>
           )}
-        </button>
-        <button
-          className={`pb-2 border-b-2 transition-colors whitespace-nowrap ${
-            activeTab === "thickness"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-          onClick={() => setActiveTab("thickness")}
-        >
+        </TabsTrigger>
+        <TabsTrigger value="thickness">
           Thickness / Flange ({data?.thicknessFlangeRules.length ?? 0})
-        </button>
-        <button
-          className={`pb-2 border-b-2 transition-colors whitespace-nowrap ${
-            activeTab === "pml"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-          onClick={() => setActiveTab("pml")}
-        >
+        </TabsTrigger>
+        <TabsTrigger value="pml">
           PML Records ({data?.pipingMaterialRecords.length ?? 0})
-        </button>
-        <button
-          className={`pb-2 border-b-2 transition-colors whitespace-nowrap ${
-            activeTab === "rework"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-          onClick={() => setActiveTab("rework")}
-        >
+        </TabsTrigger>
+        <TabsTrigger value="rework">
           Rework Codes ({data?.reworkCodes.length ?? 0})
-        </button>
-        <button
-          className={`pb-2 border-b-2 transition-colors whitespace-nowrap ${
-            activeTab === "joint-categories"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-          onClick={() => setActiveTab("joint-categories")}
-        >
+        </TabsTrigger>
+        <TabsTrigger value="joint-categories">
           Joint Categories ({data?.jointCategories.length ?? 0})
-        </button>
-      </div>
+        </TabsTrigger>
+      </TabsList>
 
       {/* Service Classes View */}
-      {activeTab === "service-classes" && (
+      <TabsContent value="service-classes">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
@@ -683,10 +634,10 @@ export function WeldingQualityTabs({
             </div>
           </CardContent>
         </Card>
-      )}
+      </TabsContent>
 
       {/* Weld Types View */}
-      {activeTab === "weld-types" && (
+      <TabsContent value="weld-types">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
@@ -724,7 +675,7 @@ export function WeldingQualityTabs({
                         <td className="p-3">{wt.description}</td>
                         <td className="p-3">
                           {wt.countsInDiaInch ? (
-                            <Badge variant="outline" className="text-emerald-600 border-emerald-500/30">Yes</Badge>
+                            <Badge variant="outline" className="text-success-fg border-success-border">Yes</Badge>
                           ) : (
                             <Badge variant="secondary">No</Badge>
                           )}
@@ -740,10 +691,10 @@ export function WeldingQualityTabs({
             </div>
           </CardContent>
         </Card>
-      )}
+      </TabsContent>
 
       {/* Welders View */}
-      {activeTab === "welders" && (
+      <TabsContent value="welders">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
@@ -787,7 +738,7 @@ export function WeldingQualityTabs({
                         <td className="p-3 font-mono">{w.expiresOn}</td>
                         <td className="p-3">
                           {w.isCurrentlyQualified ? (
-                            <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">Valid</Badge>
+                            <Badge className="bg-success-bg text-success-fg border-success-border">Valid</Badge>
                           ) : (
                             <Badge variant="destructive">Expired</Badge>
                           )}
@@ -803,10 +754,10 @@ export function WeldingQualityTabs({
             </div>
           </CardContent>
         </Card>
-      )}
+      </TabsContent>
 
       {/* NDE Matrix View */}
-      {activeTab === "nde" && (
+      <TabsContent value="nde">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
@@ -821,7 +772,7 @@ export function WeldingQualityTabs({
           </CardHeader>
           <CardContent className="space-y-4">
             {ndeCoverage.missingTuples.length > 0 && (
-              <div className="flex items-center gap-2 rounded-md bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400 border border-amber-500/20">
+              <div className="bg-warning-bg text-warning-fg border-warning-border flex items-center gap-2 rounded-md border p-3 text-sm">
                 <AlertTriangle className="h-4 w-4 shrink-0" />
                 <span>
                   Missing NDE coverage for {ndeCoverage.missingTuples.length} combinations of active Service Classes and Weld Types.
@@ -880,10 +831,10 @@ export function WeldingQualityTabs({
             </div>
           </CardContent>
         </Card>
-      )}
+      </TabsContent>
 
       {/* Thickness / Flange Rules View */}
-      {activeTab === "thickness" && (
+      <TabsContent value="thickness">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
@@ -933,10 +884,10 @@ export function WeldingQualityTabs({
             </div>
           </CardContent>
         </Card>
-      )}
+      </TabsContent>
 
       {/* PML Records View */}
-      {activeTab === "pml" && (
+      <TabsContent value="pml">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
@@ -984,10 +935,10 @@ export function WeldingQualityTabs({
             </div>
           </CardContent>
         </Card>
-      )}
+      </TabsContent>
 
       {/* Rework Codes View */}
-      {activeTab === "rework" && (
+      <TabsContent value="rework">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
@@ -1033,10 +984,10 @@ export function WeldingQualityTabs({
             </div>
           </CardContent>
         </Card>
-      )}
+      </TabsContent>
 
       {/* Joint Categories View */}
-      {activeTab === "joint-categories" && (
+      <TabsContent value="joint-categories">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <div>
@@ -1086,7 +1037,7 @@ export function WeldingQualityTabs({
             </div>
           </CardContent>
         </Card>
-      )}
+      </TabsContent>
 
       {/* Add Service Class Dialog */}
       <Dialog open={isAddScOpen} onOpenChange={setIsAddScOpen}>
@@ -1766,11 +1717,11 @@ export function WeldingQualityTabs({
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsAddJointCategoryOpen(false)} disabled={isSubmittingJointCategory}>Cancel</Button>
-              <Button type="submit" disabled={isSubmittingJointCategory}>{isSubmittingJointCategory ? "Creating…" : "Create"}</Button>
+              <Button type="submit" loading={isSubmittingJointCategory}>Create</Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </Tabs>
   )
 }

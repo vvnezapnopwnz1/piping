@@ -1,21 +1,14 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { ChevronRight } from "lucide-react"
 import { toast } from "sonner"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { DataTable, useTableUrlState } from "@/components/ui/data-table"
+import { ChangeHighlight, IdentityHeadline } from "@/components/ui/record-target"
+import { WELD_COLUMNS } from "../weld-columns"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { describeWeldProgressGate, toWeldProgressPayload } from "../../application/record-weld-progress"
 import type { PointAssignment, WeldPointType } from "../../domain/weld-progress"
@@ -50,6 +43,11 @@ export function WeldProgressScreen({ projectId }: { projectId: string }) {
   const [capWelderId, setCapWelderId] = useState("")
   const [rootPercent, setRootPercent] = useState(50)
   const [refreshToken, setRefreshToken] = useState(0)
+  // Browsing for another spool has to take the joint list and the record form with it:
+  // they belong to the spool being replaced, and leaving them on screen invites recording
+  // against a spool the operator has already moved on from.
+  const [browsingSpools, setBrowsingSpools] = useState(false)
+  const [weldTable, setWeldTable] = useTableUrlState({ namespace: "weld" })
 
   useEffect(() => {
     void loadWeldFormReferentials(getSupabaseBrowserClient(), projectId)
@@ -144,88 +142,58 @@ export function WeldProgressScreen({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[20rem_1fr]">
-      <Card>
-        <CardHeader>
-          <CardTitle>Spools</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <SpoolPicker
+    <div className="space-y-4">
+      <SpoolPicker
             projectId={projectId}
             value={spool?.spoolRevisionId ?? null}
             onChange={(status) => {
               setSpool(status)
               setSelected(null)
             }}
+            browsing={browsingSpools}
+            onBrowsingChange={setBrowsingSpools}
             refreshToken={refreshToken}
           />
-        </CardContent>
-      </Card>
 
-      <div className="space-y-4">
+      {spool && !browsingSpools ? (
+        <div className="space-y-4">
         <Card>
           <CardHeader>
             <CardTitle>Shop weld joints</CardTitle>
           </CardHeader>
-          <CardContent className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Joint</TableHead>
-                  <TableHead>Dia</TableHead>
-                  <TableHead>Thk</TableHead>
-                  <TableHead>WPS</TableHead>
-                  <TableHead>Welders</TableHead>
-                  <TableHead>Weld date</TableHead>
-                  <TableHead>NDE</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-8">
-                    <span className="sr-only">Opens the record form</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {welds.map((weld) => (
-                  <TableRow
-                    key={weld.weldJointRevisionId}
-                    interactive
-                    onClick={() => setSelected(weld)}
-                    data-state={
-                      selected?.weldJointRevisionId === weld.weldJointRevisionId
-                        ? "selected"
-                        : undefined
-                    }
-                    aria-label={`Record progress for weld ${weld.weldNumber}`}
-                  >
-                    <TableCell className="font-mono text-xs">{weld.weldNumber}</TableCell>
-                    <TableCell>{weld.diameterInch ?? "—"}</TableCell>
-                    <TableCell>{weld.thicknessMm ?? "—"}</TableCell>
-                    <TableCell>{weld.wpsCode ?? "—"}</TableCell>
-                    <TableCell>{weld.welders.join(", ") || "—"}</TableCell>
-                    <TableCell>{weld.weldOn ?? "—"}</TableCell>
-                    <TableCell>
-                      {weld.obligationPending}/{weld.obligationTotal}
-                    </TableCell>
-                    <TableCell>
-                      {weld.isLocked ? <Badge variant="outline">Locked</Badge> : null}
-                      {weld.weldLocation !== "shop" ? (
-                        <Badge variant="outline">{weld.weldLocation}</Badge>
-                      ) : null}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      <ChevronRight className="h-4 w-4" aria-hidden="true" />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <CardContent>
+            <DataTable
+              columns={WELD_COLUMNS}
+              rows={welds}
+              state={weldTable}
+              onStateChange={setWeldTable}
+              rowId={(weld) => weld.weldJointRevisionId}
+              onRowClick={setSelected}
+              selectedRowId={selected?.weldJointRevisionId ?? null}
+              searchPlaceholder="Search joint or WPS…"
+              emptyTitle="This spool revision has no shop joints."
+            />
           </CardContent>
         </Card>
 
         {selected ? (
+          <ChangeHighlight
+            id={selected.weldJointRevisionId}
+            announce={`Now recording shop weld ${selected.weldNumber}`}
+          >
           <Card>
             <CardHeader>
-              <CardTitle>Record {selected.weldNumber}</CardTitle>
+              <IdentityHeadline
+                kind="Recording shop weld"
+                identity={selected.weldNumber}
+                meta={[
+                  selected.wpsCode ? `WPS ${selected.wpsCode}` : null,
+                  selected.diameterInch ? `${selected.diameterInch}"` : null,
+                  selected.thicknessMm ? `${selected.thicknessMm} mm` : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              />
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="grid gap-3 sm:grid-cols-2">
@@ -318,6 +286,7 @@ export function WeldProgressScreen({ projectId }: { projectId: string }) {
               </Button>
             </CardContent>
           </Card>
+          </ChangeHighlight>
         ) : (
           <Card>
             <CardContent className="text-muted-foreground py-6 text-sm">
@@ -325,7 +294,8 @@ export function WeldProgressScreen({ projectId }: { projectId: string }) {
             </CardContent>
           </Card>
         )}
-      </div>
+        </div>
+      ) : null}
     </div>
   )
 }

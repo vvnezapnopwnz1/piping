@@ -97,15 +97,15 @@ export function SupabaseWpsTab() {
   if (loading) {
     return (
       <div className="flex h-32 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-slate-300" />
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 text-slate-500">
-        <AlertCircle className="mb-4 h-8 w-8 text-red-500" />
+      <div className="flex flex-col items-center justify-center p-8 text-muted-foreground">
+        <AlertCircle className="mb-4 h-8 w-8 text-destructive" />
         <p className="mb-4">Failed to load WPS data.</p>
         <Button onClick={() => loadData(activeProjectId)}>Retry</Button>
       </div>
@@ -185,7 +185,7 @@ export function SupabaseWpsTab() {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-medium">Welding Procedures</h3>
-          <p className="text-sm text-slate-500">Manage project-specific welding procedures.</p>
+          <p className="text-sm text-muted-foreground">Manage project-specific welding procedures.</p>
         </div>
         <Button
           onClick={handleOpenCreate}
@@ -197,54 +197,54 @@ export function SupabaseWpsTab() {
       </div>
 
       {!data.canEdit && (
-        <div className="rounded-md bg-amber-50 p-4 border border-amber-200">
-          <p className="text-sm text-amber-800">
+        <div className="bg-warning-bg border-warning-border rounded-md border p-4">
+          <p className="text-warning-fg text-sm">
             You do not have permission to administer this project. Form actions are disabled.
           </p>
         </div>
       )}
 
       {missingPrerequisites && (
-        <div className="rounded-md bg-amber-50 p-4 border border-amber-200">
-          <p className="text-sm text-amber-800">
+        <div className="bg-warning-bg border-warning-border rounded-md border p-4">
+          <p className="text-warning-fg text-sm">
             Cannot create WPS. Ensure active Material Types and Subcontractors exist in this project.
           </p>
         </div>
       )}
 
       {data.procedures.length === 0 ? (
-        <Card className="border-slate-200 bg-slate-50 border-dashed">
-          <CardContent className="flex flex-col items-center justify-center p-12 text-slate-500">
+        <Card className="border-border bg-muted border-dashed">
+          <CardContent className="flex flex-col items-center justify-center p-12 text-muted-foreground">
             <p>No welding procedures found for this project.</p>
           </CardContent>
         </Card>
       ) : (
-        <div className="rounded-md border border-slate-200">
+        <div className="rounded-md border border-border">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50">
-              <tr className="border-b border-slate-200">
-                <th className="px-4 py-3 text-left font-medium text-slate-600">Code</th>
-                <th className="px-4 py-3 text-left font-medium text-slate-600">Process</th>
-                <th className="px-4 py-3 text-left font-medium text-slate-600">Material / Subcontractor</th>
-                <th className="px-4 py-3 text-left font-medium text-slate-600">Ranges</th>
-                <th className="px-4 py-3 text-left font-medium text-slate-600">Revision / Date</th>
-                <th className="px-4 py-3 text-left font-medium text-slate-600">Status</th>
-                <th className="px-4 py-3 text-right font-medium text-slate-600">Actions</th>
+            <thead className="bg-muted">
+              <tr className="border-b border-border">
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Code</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Process</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Material / Subcontractor</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Ranges</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Revision / Date</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
+                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Actions</th>
               </tr>
             </thead>
             <tbody>
               {data.procedures.map((wps) => (
-                <tr key={wps.id} className="border-b border-slate-100 last:border-0">
+                <tr key={wps.id} className="border-b border-border last:border-0">
                   <td className="px-4 py-3">
                     <div className="font-medium">{wps.code}</div>
-                    {wps.description && <div className="text-xs text-slate-500">{wps.description}</div>}
+                    {wps.description && <div className="text-xs text-muted-foreground">{wps.description}</div>}
                   </td>
                   <td className="px-4 py-3">{wps.process}</td>
                   <td className="px-4 py-3">
                     <div className="text-xs font-medium">
                       {data.materialTypes.find(m => m.id === wps.materialTypeId)?.code || wps.materialTypeId}
                     </div>
-                    <div className="text-xs text-slate-500">
+                    <div className="text-xs text-muted-foreground">
                       {data.subcontractors.find(s => s.id === wps.subcontractorId)?.code || wps.subcontractorId}
                     </div>
                   </td>
@@ -254,7 +254,7 @@ export function SupabaseWpsTab() {
                   </td>
                   <td className="px-4 py-3 text-xs">
                     <div>{wps.revision}</div>
-                    <div className="text-slate-500">{wps.approvedOn}</div>
+                    <div className="text-muted-foreground">{wps.approvedOn}</div>
                   </td>
                   <td className="px-4 py-3">
                     <Badge variant={wps.status === 'active' ? 'default' : wps.status === 'inactive' ? 'secondary' : 'outline'}>
@@ -266,21 +266,21 @@ export function SupabaseWpsTab() {
                       {data.canEdit && (
                         <>
                           <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(wps)}>
-                            <Edit2 className="h-4 w-4 text-slate-500" />
+                            <Edit2 className="h-4 w-4 text-muted-foreground" />
                           </Button>
                           {getWeldingProcedureStatusActions(wps.status).includes('deactivate') && (
                             <Button variant="ghost" size="icon" onClick={() => handleStatusChange(wps.id, 'inactive')} title="Deactivate">
-                              <Pause className="h-4 w-4 text-slate-500" />
+                              <Pause className="h-4 w-4 text-muted-foreground" />
                             </Button>
                           )}
                           {getWeldingProcedureStatusActions(wps.status).includes('reactivate') && (
                             <Button variant="ghost" size="icon" onClick={() => handleStatusChange(wps.id, 'active')} title="Reactivate">
-                              <Play className="h-4 w-4 text-slate-500" />
+                              <Play className="h-4 w-4 text-muted-foreground" />
                             </Button>
                           )}
                           {getWeldingProcedureStatusActions(wps.status).includes('archive') && (
                             <Button variant="ghost" size="icon" onClick={() => setArchiveConfirmOpen({ open: true, wps })} title="Archive">
-                              <Archive className="h-4 w-4 text-slate-500" />
+                              <Archive className="h-4 w-4 text-muted-foreground" />
                             </Button>
                           )}
                         </>
@@ -310,7 +310,7 @@ export function SupabaseWpsTab() {
                   value={formData.code}
                   onChange={(e) => setFormData({...formData, code: e.target.value})}
                 />
-                {formErrors.code && <p className="text-xs text-red-500">{formErrors.code}</p>}
+                {formErrors.code && <p className="text-xs text-destructive">{formErrors.code}</p>}
               </div>
               <div className="space-y-2">
                 <Label>Process *</Label>
@@ -318,7 +318,7 @@ export function SupabaseWpsTab() {
                   value={formData.process}
                   onChange={(e) => setFormData({...formData, process: e.target.value})}
                 />
-                {formErrors.process && <p className="text-xs text-red-500">{formErrors.process}</p>}
+                {formErrors.process && <p className="text-xs text-destructive">{formErrors.process}</p>}
               </div>
             </div>
             <div className="space-y-2">
@@ -341,7 +341,7 @@ export function SupabaseWpsTab() {
                     ))}
                   </SelectContent>
                 </Select>
-                {formErrors.materialTypeId && <p className="text-xs text-red-500">{formErrors.materialTypeId}</p>}
+                {formErrors.materialTypeId && <p className="text-xs text-destructive">{formErrors.materialTypeId}</p>}
               </div>
               <div className="space-y-2">
                 <Label>Subcontractor *</Label>
@@ -355,7 +355,7 @@ export function SupabaseWpsTab() {
                     ))}
                   </SelectContent>
                 </Select>
-                {formErrors.subcontractorId && <p className="text-xs text-red-500">{formErrors.subcontractorId}</p>}
+                {formErrors.subcontractorId && <p className="text-xs text-destructive">{formErrors.subcontractorId}</p>}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -368,7 +368,7 @@ export function SupabaseWpsTab() {
                 <Input type="number" value={formData.diameterTo} onChange={(e) => setFormData({...formData, diameterTo: e.target.value})} />
               </div>
             </div>
-            {formErrors.diameter && <p className="text-xs text-red-500 mt-0">{formErrors.diameter}</p>}
+            {formErrors.diameter && <p className="text-xs text-destructive mt-0">{formErrors.diameter}</p>}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Thickness From *</Label>
@@ -379,17 +379,17 @@ export function SupabaseWpsTab() {
                 <Input type="number" value={formData.thicknessTo} onChange={(e) => setFormData({...formData, thicknessTo: e.target.value})} />
               </div>
             </div>
-            {formErrors.thickness && <p className="text-xs text-red-500 mt-0">{formErrors.thickness}</p>}
+            {formErrors.thickness && <p className="text-xs text-destructive mt-0">{formErrors.thickness}</p>}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Revision *</Label>
                 <Input value={formData.revision} onChange={(e) => setFormData({...formData, revision: e.target.value})} />
-                {formErrors.revision && <p className="text-xs text-red-500">{formErrors.revision}</p>}
+                {formErrors.revision && <p className="text-xs text-destructive">{formErrors.revision}</p>}
               </div>
               <div className="space-y-2">
                 <Label>Approval Date *</Label>
                 <Input type="date" value={formData.approvedOn} onChange={(e) => setFormData({...formData, approvedOn: e.target.value})} />
-                {formErrors.approvedOn && <p className="text-xs text-red-500">{formErrors.approvedOn}</p>}
+                {formErrors.approvedOn && <p className="text-xs text-destructive">{formErrors.approvedOn}</p>}
               </div>
             </div>
           </div>

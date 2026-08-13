@@ -3,8 +3,8 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
-import type { RevisionStatus } from "../domain/revision";
 import {
   loadIsometrics,
   loadRevisionGraph,
@@ -13,11 +13,6 @@ import {
   type RevisionSummary,
   type SpoolNode,
 } from "../infrastructure/supabase-engineering-repository";
-const style: Record<RevisionStatus, string> = {
-  draft: "bg-slate-100 text-slate-700",
-  accepted: "bg-emerald-100 text-emerald-900",
-  superseded: "bg-slate-200 text-slate-600",
-};
 export function EngineeringBrowser({
   projectId,
   refreshToken,
@@ -107,9 +102,7 @@ export function EngineeringBrowser({
               className={`flex w-full justify-between rounded px-2 py-1 ${selectedRevision === revision.id ? "bg-muted" : ""}`}
             >
               <span>{revision.revisionNumber}</span>
-              <Badge variant="outline" className={style[revision.status]}>
-                {revision.status}
-              </Badge>
+              <StatusBadge status={revision.status} />
             </button>
           ))}
         </CardContent>

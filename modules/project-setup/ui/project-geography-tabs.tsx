@@ -5,6 +5,7 @@ import { AlertCircle, Plus, RefreshCw, Search } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Card,
   CardContent,
@@ -51,6 +52,8 @@ const NO_SELECTION = "__none__"
 const optionalId = (value: string): string | null =>
   value === "" || value === NO_SELECTION ? null : value
 
+type GeographyTab = "subcontractors" | "units" | "pds"
+
 export function ProjectGeographyTabs({
   projectId,
   canManage,
@@ -61,7 +64,7 @@ export function ProjectGeographyTabs({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [geography, setGeography] = useState<LoadedProjectGeography | null>(null)
-  const [activeTab, setActiveTab] = useState<"subcontractors" | "units" | "pds">("subcontractors")
+  const [activeTab, setActiveTab] = useState<GeographyTab>("subcontractors")
 
   // Search filters
   const [subSearch, setSubSearch] = useState("")
@@ -354,43 +357,26 @@ export function ProjectGeographyTabs({
   )
 
   return (
-    <div className="space-y-4">
-      {/* Sub-tabs header */}
-      <div className="flex border-b text-sm font-medium gap-4">
-        <button
-          className={`pb-2 border-b-2 transition-colors ${
-            activeTab === "subcontractors"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-          onClick={() => setActiveTab("subcontractors")}
-        >
+    <Tabs
+      value={activeTab}
+      onValueChange={(value) => setActiveTab(value as GeographyTab)}
+      variant="underline"
+      className="space-y-4"
+    >
+      <TabsList>
+        <TabsTrigger value="subcontractors">
           Subcontractors ({geography?.subcontractors.length ?? 0})
-        </button>
-        <button
-          className={`pb-2 border-b-2 transition-colors ${
-            activeTab === "units"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-          onClick={() => setActiveTab("units")}
-        >
+        </TabsTrigger>
+        <TabsTrigger value="units">
           Units & Area Classifications ({geography?.areaClassifications.length ?? 0})
-        </button>
-        <button
-          className={`pb-2 border-b-2 transition-colors ${
-            activeTab === "pds"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-          onClick={() => setActiveTab("pds")}
-        >
+        </TabsTrigger>
+        <TabsTrigger value="pds">
           PDS Areas ({geography?.pdsAreas.length ?? 0})
-        </button>
-      </div>
+        </TabsTrigger>
+      </TabsList>
 
       {/* Subcontractors View */}
-      {activeTab === "subcontractors" && (
+      <TabsContent value="subcontractors">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
@@ -447,10 +433,10 @@ export function ProjectGeographyTabs({
             </div>
           </CardContent>
         </Card>
-      )}
+      </TabsContent>
 
       {/* Units & Area Classifications View */}
-      {activeTab === "units" && (
+      <TabsContent value="units">
         <div className="space-y-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
@@ -555,10 +541,10 @@ export function ProjectGeographyTabs({
           </CardContent>
         </Card>
         </div>
-      )}
+      </TabsContent>
 
       {/* PDS Areas View */}
-      {activeTab === "pds" && (
+      <TabsContent value="pds">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
@@ -619,7 +605,7 @@ export function ProjectGeographyTabs({
             </div>
           </CardContent>
         </Card>
-      )}
+      </TabsContent>
 
       {/* Add Subcontractor Dialog */}
       <Dialog open={isAddSubOpen} onOpenChange={setIsAddSubOpen}>
@@ -972,6 +958,6 @@ export function ProjectGeographyTabs({
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </Tabs>
   )
 }

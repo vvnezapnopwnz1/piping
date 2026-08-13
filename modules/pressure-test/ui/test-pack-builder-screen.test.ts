@@ -9,9 +9,12 @@ import { readFileSync } from "node:fs"
  * so it is pinned here the same way `referential-dialogs.test.ts` pins its dialog defects.
  */
 const source = readFileSync(new URL("./test-pack-builder-screen.tsx", import.meta.url), "utf8")
+// The field descriptors moved out of the screen when they stopped being bare property names and
+// gained the labels a presenter actually reads.
+const model = readFileSync(new URL("./test-pack-builder-model.ts", import.meta.url), "utf8")
 
 test("free-text Builder fields carry no referential ids", () => {
-  const textFields = /const TEXT_FIELDS = \[([^\]]*)\]/.exec(source)
+  const textFields = /export const TEST_PACK_FIELDS: readonly TestPackField\[\] = \[([\s\S]*?)\n\]/.exec(model)
   assert.ok(textFields, "the Builder must name the fields it still renders as free text")
   for (const field of ["systemId", "subsystemId", "serviceClassId", "lineServiceId"]) {
     assert.equal(
@@ -20,13 +23,42 @@ test("free-text Builder fields carry no referential ids", () => {
       `${field} is a project reference and must not be a typed text input`,
     )
   }
-  for (const field of ["testPackNumber", "location", "priority", "plannedStartOn", "plannedEndOn", "pressure", "volumeM3"]) {
+  for (const field of ["testPackNumber", "location", "plannedStartOn", "plannedEndOn", "pressure", "volumeM3"]) {
     assert.ok(textFields[1].includes(field), `${field} must stay a typed Builder field`)
   }
 })
 
+/**
+ * `priority` used to be one of the typed fields, so two presenters could file "high", "High" and
+ * "HIGH" against the same project and no filter would group them.
+ */
+test("priority is chosen from a fixed set rather than typed", () => {
+  assert.match(model, /TEST_PACK_PRIORITIES = \[/, "the priorities must be enumerated")
+  assert.match(source, /id="pack-priority"/, "and offered as a select")
+  const textFields = /export const TEST_PACK_FIELDS: readonly TestPackField\[\] = \[([\s\S]*?)\n\]/.exec(model)
+  assert.equal(textFields?.[1].includes("priority"), false, "priority must not be a text input")
+})
+
+/** Every label the presenter reads must be prose, never the property name behind it. */
+test("no Builder field is labelled with its own property name", () => {
+  for (const propertyName of [
+    "testPackNumber",
+    "plannedStartOn",
+    "plannedEndOn",
+    "volumeM3",
+    "systemId",
+    "serviceClassId",
+  ]) {
+    assert.equal(
+      new RegExp(`label: "${propertyName}"`).test(model),
+      false,
+      `${propertyName} must carry a written label, not its own key`,
+    )
+  }
+})
+
 test("the four project references are rendered as project-scoped selects", () => {
-  const referenceFields = /const REFERENCE_FIELDS = \[([\s\S]*?)\]\s*as const/.exec(source)
+  const referenceFields = /TEST_PACK_REFERENCE_FIELDS = \[([\s\S]*?)\]\s*as const/.exec(model)
   assert.ok(referenceFields, "the Builder must declare its referential select fields")
   for (const field of ["systemId", "subsystemId", "serviceClassId", "lineServiceId"]) {
     assert.ok(referenceFields[1].includes(field), `${field} must be offered as a select`)
@@ -43,8 +75,11 @@ test("the four project references are rendered as project-scoped selects", () =>
     source.includes("subsystemOptionsForSystem"),
     "Subsystem options must depend on the selected System",
   )
-  assert.ok(
-    source.includes('keepSelectedOption(current.subsystemId'),
+  assert.match(
+    // Whitespace-tolerant: the call now wraps across lines. What matters is the argument, not
+    // where the formatter put the newline.
+    source,
+    /keepSelectedOption\(\s*current\.subsystemId/,
     "changing System must drop a Subsystem that the new System does not own",
   )
 })
@@ -70,16 +105,20 @@ test("available ISOs are listed by their business ISO number with the id kept as
 test("the submit button carries an in-flight guard, not just the capability check", () => {
   assert.ok(source.includes("submitting"), "the Builder must track a submitting/in-flight state")
   assert.ok(
-    /disabled=\{!canManage \|\| submitting\}/.test(source) ||
+    // `loading` is the stronger form of the same guard: the shared Button disables itself while
+    // it is set, and adds the spinner and aria-busy a bare `disabled` never had.
+    /loading=\{submitting\}/.test(source) ||
+      /disabled=\{!canManage \|\| submitting\}/.test(source) ||
       /disabled=\{submitting \|\| !canManage\}/.test(source),
-    "the submit button must disable while a submit is in flight, not only when the user lacks capability",
+    "the submit button must be blocked while a submit is in flight, not only when the user lacks capability",
   )
   assert.ok(
-    /if \(!canManage \|\| submitting\) return/.test(source),
+    // `editable` is `canManage` narrowed further — an archived pack is read-only for everyone.
+    /if \(!(canManage|editable) \|\| submitting\) return/.test(source),
     "submit must refuse re-entry while a previous submit is still in flight",
   )
   assert.ok(
-    /finally \{ setSubmitting\(false\) \}/.test(source),
+    /finally \{\s*setSubmitting\(false\)\s*\}/.test(source),
     "the in-flight flag must clear even when the mutation throws",
   )
 })

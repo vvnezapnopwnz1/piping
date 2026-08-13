@@ -50,13 +50,24 @@ test("batches and obligations cross-reference each other", () => {
     "each batch row must render its obligation count",
   )
   assert.ok(
-    source.includes("ob.batchNumber ?? \"—\""),
-    "each obligation row must render its allocating batch, or a dash when unallocated",
+    /id: "batchNumber",[\s\S]{0,120}value: \(ob\) => ob\.batchNumber/.test(source),
+    "each obligation row must render its allocating batch (the table draws a dash when it is null)",
   )
 })
 
 // A column added to a table whose empty state spans a hardcoded colSpan silently misaligns it.
-test("empty-state colSpans still match the widened tables", () => {
+// The Batches table still writes its own markup and so still needs the literal checked; the
+// Obligations table is a DataTable, which spans whatever columns are visible — including after
+// the operator hides one — so a literal there would be the bug rather than the guard.
+test("empty states span their tables however wide they are", () => {
   assert.ok(source.includes("colSpan={7}"), "the Batches empty state must span its 7 columns")
-  assert.ok(source.includes("colSpan={9}"), "the Obligations empty state must span its 9 columns")
+  assert.equal(
+    /colSpan=\{9\}/.test(source),
+    false,
+    "the Obligations empty state must not pin a column count the operator can change",
+  )
+  assert.ok(
+    source.includes("<DataTable"),
+    "the Obligations table must be a DataTable, which computes its own empty-state span",
+  )
 })

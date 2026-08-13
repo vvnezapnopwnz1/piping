@@ -51,10 +51,13 @@ export function useErectionReadiness(): ErectionReadinessState {
       const next = await loadErectionReadinessForProject(getSupabaseBrowserClient(), projectId)
       setLoadFailed(false)
       setRows(next)
+      // Keep the selection if the refresh still carries it, otherwise nothing. Falling back to
+      // the first row opened every erection screen with a form already pointed at a spool the
+      // operator never chose — and since both phases list the same project in the same order,
+      // that first row is usually whatever they had open in fabrication, which reads as state
+      // leaking between modules. It is not: it is this line.
       setSelectedId((current) =>
-        current && next.some((row) => row.spoolRevisionId === current)
-          ? current
-          : (next[0]?.spoolRevisionId ?? null),
+        current && next.some((row) => row.spoolRevisionId === current) ? current : null,
       )
     } catch (error: unknown) {
       setLoadFailed(true)

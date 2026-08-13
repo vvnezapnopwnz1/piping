@@ -6,6 +6,7 @@ import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Card,
   CardContent,
@@ -164,38 +165,35 @@ export function ProgressWeightsScreen({ projectId, canManage = true }: { project
   return (
     <div className="space-y-6">
       {!canManage && (
-        <div className="flex items-center gap-2 rounded-md bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400 border border-amber-500/20">
+        <div className="bg-warning-bg text-warning-fg border-warning-border flex items-center gap-2 rounded-md border p-3 text-sm">
           <ShieldAlert className="h-4 w-4 shrink-0" />
           <span>Project manager rights required to update progress weights. Read-only mode active.</span>
         </div>
       )}
 
-      {/* Phase selection tabs */}
-      <div className="flex border-b text-sm font-medium gap-4">
-        {(["prefabrication", "painting", "assembly", "erection"] as ProgressWeightPhase[]).map(
-          (phase) => (
-            <button
-              key={phase}
-              className={`pb-2 border-b-2 transition-colors ${
-                activePhase === phase
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-              onClick={() => handlePhaseChange(phase)}
-            >
-              {PHASE_LABELS[phase]}
-              {phase === "assembly" && !data?.assemblyEnabled && (
-                <Badge variant="outline" className="ml-2 text-xs text-amber-600 border-amber-500/30">
-                  Disabled
-                </Badge>
-              )}
-            </button>
-          )
-        )}
-      </div>
+      <Tabs
+        value={activePhase}
+        onValueChange={(value) => handlePhaseChange(value as ProgressWeightPhase)}
+        variant="underline"
+      >
+        <TabsList>
+          {(["prefabrication", "painting", "assembly", "erection"] as ProgressWeightPhase[]).map(
+            (phase) => (
+              <TabsTrigger key={phase} value={phase}>
+                {PHASE_LABELS[phase]}
+                {phase === "assembly" && !data?.assemblyEnabled && (
+                  <Badge variant="outline" className="text-warning-fg border-warning-border ml-2 text-xs">
+                    Disabled
+                  </Badge>
+                )}
+              </TabsTrigger>
+            )
+          )}
+        </TabsList>
+      </Tabs>
 
       {isAssemblyDisabled && (
-        <div className="flex items-center gap-2 rounded-md bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400 border border-amber-500/20">
+        <div className="bg-warning-bg text-warning-fg border-warning-border flex items-center gap-2 rounded-md border p-3 text-sm">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           <span>Assembly phase is disabled in Project Settings for this project.</span>
         </div>
@@ -213,13 +211,13 @@ export function ProgressWeightsScreen({ projectId, canManage = true }: { project
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 font-mono text-sm font-semibold">
               <span>Total:</span>
-              <span className={isTotalValid ? "text-emerald-600" : "text-amber-600"}>
+              <span className={isTotalValid ? "text-success-fg" : "text-warning-fg"}>
                 {currentTotal.toFixed(2)}%
               </span>
               {isTotalValid ? (
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                <CheckCircle2 className="text-success-fg h-4 w-4" />
               ) : (
-                <AlertCircle className="h-4 w-4 text-amber-600" />
+                <AlertCircle className="text-warning-fg h-4 w-4" />
               )}
             </div>
 

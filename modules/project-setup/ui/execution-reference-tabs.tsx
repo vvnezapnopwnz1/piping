@@ -823,7 +823,7 @@ export function ExecutionReferenceTabs({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsAddTeamOpen(false); resetTeamForm() }}>Cancel</Button>
-            <Button onClick={handleAddTeam} disabled={isSubmittingTeam}>{isSubmittingTeam ? "Creating…" : "Create"}</Button>
+            <Button onClick={handleAddTeam} loading={isSubmittingTeam}>Create</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -849,7 +849,7 @@ export function ExecutionReferenceTabs({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsAddSystemOpen(false); setSysCode(""); setSysDesc(""); setSysErrors({}) }}>Cancel</Button>
-            <Button onClick={handleAddSystem} disabled={isSubmittingSystem}>{isSubmittingSystem ? "Creating…" : "Create"}</Button>
+            <Button onClick={handleAddSystem} loading={isSubmittingSystem}>Create</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -887,7 +887,7 @@ export function ExecutionReferenceTabs({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsAddSubsystemOpen(false) }}>Cancel</Button>
-            <Button onClick={handleAddSubsystem} disabled={isSubmittingSubsystem}>{isSubmittingSubsystem ? "Creating…" : "Create"}</Button>
+            <Button onClick={handleAddSubsystem} loading={isSubmittingSubsystem}>Create</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -913,7 +913,7 @@ export function ExecutionReferenceTabs({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsAddLineServiceOpen(false); setLsCode(""); setLsDesc(""); setLsErrors({}) }}>Cancel</Button>
-            <Button onClick={handleAddLineService} disabled={isSubmittingLineService}>{isSubmittingLineService ? "Creating…" : "Create"}</Button>
+            <Button onClick={handleAddLineService} loading={isSubmittingLineService}>Create</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -943,7 +943,7 @@ export function ExecutionReferenceTabs({
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsAddUnitTimeOpen(false)} disabled={isSubmittingUnitTime}>Cancel</Button>
-              <Button type="submit" disabled={isSubmittingUnitTime}>{isSubmittingUnitTime ? "Creating…" : "Create"}</Button>
+              <Button type="submit" loading={isSubmittingUnitTime}>Create</Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -970,7 +970,7 @@ export function ExecutionReferenceTabs({
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsAddPunchCodeOpen(false)} disabled={isSubmittingPunchCode}>Cancel</Button>
-              <Button type="submit" disabled={isSubmittingPunchCode}>{isSubmittingPunchCode ? "Creating…" : "Create"}</Button>
+              <Button type="submit" loading={isSubmittingPunchCode}>Create</Button>
             </DialogFooter>
           </form>
         </DialogContent>

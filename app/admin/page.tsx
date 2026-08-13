@@ -51,7 +51,7 @@ export default function AdminPage() {
         ]}
       />
 
-      <Card className="border-slate-200">
+      <Card className="border-border">
         <CardHeader>
           <CardTitle className="text-base">Setup sequence</CardTitle>
           <CardDescription>
@@ -59,27 +59,27 @@ export default function AdminPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ol className="grid gap-3 text-sm text-slate-700 md:grid-cols-4">
-            <li className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <div className="text-xs font-semibold uppercase text-slate-500">
+          <ol className="grid gap-3 text-sm text-foreground md:grid-cols-4">
+            <li className="rounded-lg border border-border bg-muted p-3">
+              <div className="text-xs font-semibold uppercase text-muted-foreground">
                 Step 1
               </div>
               Project definition
             </li>
-            <li className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <div className="text-xs font-semibold uppercase text-slate-500">
+            <li className="rounded-lg border border-border bg-muted p-3">
+              <div className="text-xs font-semibold uppercase text-muted-foreground">
                 Step 2
               </div>
               System and project referentials
             </li>
-            <li className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <div className="text-xs font-semibold uppercase text-slate-500">
+            <li className="rounded-lg border border-border bg-muted p-3">
+              <div className="text-xs font-semibold uppercase text-muted-foreground">
                 Step 3
               </div>
               Access rights
             </li>
-            <li className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <div className="text-xs font-semibold uppercase text-slate-500">
+            <li className="rounded-lg border border-border bg-muted p-3">
+              <div className="text-xs font-semibold uppercase text-muted-foreground">
                 Step 4
               </div>
               Import settings

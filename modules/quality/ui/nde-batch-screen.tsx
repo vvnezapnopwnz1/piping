@@ -1,9 +1,11 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
+import { DataTable, useTableUrlState, type DataColumn } from "@/components/ui/data-table"
+import { StatusBadge } from "@/components/ui/status-badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -52,6 +54,49 @@ const METHOD_LABELS: Record<NdtMethod, string> = {
   vt: "VT (Visual Testing)",
 }
 
+/**
+ * The inspector's worklist. Method, cycle and disposition are the three things an inspector
+ * narrows by — "show me the open RT repairs" — so all three are faceted rather than left to the
+ * search box, which cannot express "one of these two".
+ */
+const OBLIGATION_COLUMNS: ReadonlyArray<DataColumn<NdeObligation>> = [
+  { id: "spoolNumber", header: "Spool", value: (ob) => ob.spoolNumber, searchable: true, filter: "text", className: "font-mono" },
+  { id: "weldNumber", header: "Joint", value: (ob) => ob.weldNumber, searchable: true, filter: "text", pinned: true, alwaysVisible: true, className: "font-mono font-medium" },
+  { id: "batchNumber", header: "Batch", value: (ob) => ob.batchNumber, searchable: true, filter: "select", className: "font-mono" },
+  { id: "method", header: "Method", value: (ob) => ob.method, filter: "select", className: "font-mono uppercase" },
+  { id: "jointStatus", header: "Status (manual)", value: (ob) => jointStatusLabel(ob), filter: "select", className: "font-mono" },
+  {
+    id: "cycle",
+    header: "Cycle",
+    value: (ob) => (ob.cycleKind === "original" ? "Original" : `${ob.cycleKind} ${ob.cycleOrdinal}`),
+    filter: "select",
+    cell: (ob) => (
+      <Badge variant="outline">
+        {ob.cycleKind === "original"
+          ? "Original"
+          : `${ob.cycleKind} (${ob.cycleKind === "repair" ? "R" : "T"}${ob.cycleOrdinal})`}
+      </Badge>
+    ),
+  },
+  {
+    id: "requiredCoverage",
+    header: "Coverage",
+    numeric: true,
+    value: (ob) => ob.requiredCoverage,
+    filter: "number",
+    cell: (ob) => `${ob.requiredCoverage}%`,
+  },
+  {
+    id: "disposition",
+    header: "Disposition",
+    value: (ob) => ob.disposition,
+    filter: "select",
+    cell: (ob) => (
+      <StatusBadge status={ob.disposition} tone={ob.disposition === "satisfied" ? "success" : undefined} />
+    ),
+  },
+]
+
 export function NdeBatchScreen({ projectId }: { projectId: string }) {
   const [batches, setBatches] = useState<NdeBatch[]>([])
   const [obligationCounts, setObligationCounts] = useState<Record<string, number>>({})
@@ -61,6 +106,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
     reworkCodes: [],
   })
   const [loading, setLoading] = useState(true)
+  const [obligationTable, setObligationTable] = useTableUrlState({ namespace: "ob" })
 
   // Create Batch Form
   const [isCreateOpen, setIsCreateOpen] = useState(false)
@@ -133,6 +179,29 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
       }
     },
     [],
+  )
+
+  // Only an issued obligation can take a result, so the button is absent rather than disabled on
+  // the rest — a disabled control on every row reads as a broken screen.
+  const obligationColumns = useMemo(
+    () => [
+      ...OBLIGATION_COLUMNS,
+      {
+        id: "action",
+        header: "Action",
+        sortable: false,
+        alwaysVisible: true,
+        numeric: true,
+        value: () => "",
+        cell: (ob: NdeObligation) =>
+          ob.disposition === "issued" ? (
+            <Button size="sm" variant="outline" onClick={() => void openResultDialog(ob)}>
+              Record Result
+            </Button>
+          ) : null,
+      } satisfies DataColumn<NdeObligation>,
+    ],
+    [openResultDialog],
   )
 
   const jointWelders = referentials.welders.filter((welder) =>
@@ -336,7 +405,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
       {escalatedBatches.length > 0 && (
         <div
           role="status"
-          className="rounded-md border border-red-500/50 bg-red-500/10 px-4 py-3 text-sm"
+          className="border-danger-border bg-danger-bg text-danger-fg rounded-md border px-4 py-3 text-sm"
         >
           <p className="font-medium">Penalty shoot: 100 % control in force</p>
           <ul className="mt-1 list-disc pl-5 text-muted-foreground">
@@ -453,72 +522,17 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
             <CardTitle>NDE Obligations ({obligations.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Spool</TableHead>
-                  <TableHead>Joint</TableHead>
-                  <TableHead>Batch</TableHead>
-                  <TableHead>Method</TableHead>
-                  <TableHead>Status (manual)</TableHead>
-                  <TableHead>Cycle</TableHead>
-                  <TableHead>Coverage</TableHead>
-                  <TableHead>Disposition</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {obligations.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center text-muted-foreground">
-                      No NDE obligations found.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  obligations.map((ob) => (
-                    <TableRow key={ob.id}>
-                      <TableCell className="font-mono">{ob.spoolNumber}</TableCell>
-                      <TableCell className="font-mono font-medium">{ob.weldNumber}</TableCell>
-                      <TableCell className="font-mono">{ob.batchNumber ?? "—"}</TableCell>
-                      <TableCell className="uppercase font-mono">{ob.method}</TableCell>
-                      <TableCell className="font-mono">{jointStatusLabel(ob)}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {ob.cycleKind === "original"
-                            ? "Original"
-                            : `${ob.cycleKind} (${ob.cycleKind === "repair" ? "R" : "T"}${ob.cycleOrdinal})`}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{ob.requiredCoverage}%</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            ob.disposition === "satisfied"
-                              ? "default"
-                              : ob.disposition === "rejected"
-                              ? "destructive"
-                              : "secondary"
-                          }
-                        >
-                          {ob.disposition}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {ob.disposition === "issued" && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => void openResultDialog(ob)}
-                          >
-                            Record Result
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+            <DataTable
+              columns={obligationColumns}
+              rows={obligations}
+              state={obligationTable}
+              onStateChange={setObligationTable}
+              rowId={(ob) => ob.id}
+              loading={loading}
+              searchPlaceholder="Search joint, spool or batch…"
+              emptyTitle="No NDE obligations found."
+              emptyDescription="Obligations appear once a weld with an NDE requirement is recorded."
+            />
           </CardContent>
         </Card>
       </div>
@@ -574,7 +588,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
               className="w-full"
               disabled={previewLoading || allocating || previewCandidates.length === 0}
             >
-              {allocating ? "Allocating…" : `Allocate at ${targetPercentage}% coverage`}
+              {`Allocate at ${targetPercentage}% coverage`}
             </Button>
           </div>
         </DialogContent>

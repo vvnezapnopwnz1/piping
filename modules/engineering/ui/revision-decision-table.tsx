@@ -25,11 +25,15 @@ import {
   REVISION_DECISIONS,
   type RevisionDecision,
 } from "../domain/revision";
+/**
+ * A revision diff is read by comparing rows against each other, so the four change types have to
+ * stay four distinct colours in both themes — which the literal `-100`/`-900` pairs did not.
+ */
 export const CHANGE_STYLE: Record<ChangeType, string> = {
-  new: "bg-emerald-100 text-emerald-900 border-emerald-300",
-  revised: "bg-amber-100 text-amber-900 border-amber-300",
-  unchanged: "bg-slate-100 text-slate-700 border-slate-300",
-  removed: "bg-red-100 text-red-900 border-red-300",
+  new: "bg-success-bg text-success-fg border-success-border",
+  revised: "bg-warning-bg text-warning-fg border-warning-border",
+  unchanged: "bg-neutral-bg text-neutral-fg border-neutral-border",
+  removed: "bg-danger-bg text-danger-fg border-danger-border",
 };
 export function RevisionDecisionTable({
   items,

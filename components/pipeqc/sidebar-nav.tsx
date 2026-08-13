@@ -57,7 +57,7 @@ function NavTreeItem({ item, depth = 0 }: { item: NavItem; depth?: number }) {
           <div
             className={cn(
               "absolute inset-y-0 left-0 w-1",
-              isActive ? "bg-primary" : "bg-slate-300 dark:bg-slate-600",
+              isActive ? "bg-primary" : "bg-border dark:bg-foreground",
             )}
           />
         )}
@@ -84,7 +84,7 @@ function NavTreeItem({ item, depth = 0 }: { item: NavItem; depth?: number }) {
           <div
             className={cn(
               "absolute inset-y-0 left-0 w-1",
-              isActive ? "bg-primary" : "bg-slate-300 dark:bg-slate-600",
+              isActive ? "bg-primary" : "bg-border dark:bg-foreground",
             )}
           />
         )}
@@ -106,7 +106,7 @@ function NavTreeItem({ item, depth = 0 }: { item: NavItem; depth?: number }) {
           <div
             className={cn(
               "absolute inset-y-0 left-0 w-1",
-              isActive ? "bg-primary" : "bg-slate-300 dark:bg-slate-600",
+              isActive ? "bg-primary" : "bg-border dark:bg-foreground",
             )}
           />
         )}

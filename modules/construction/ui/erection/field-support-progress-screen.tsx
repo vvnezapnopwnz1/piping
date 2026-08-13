@@ -167,13 +167,10 @@ export function FieldSupportProgressScreen({
                           size="sm"
                           variant={support.installedPhase === "erection" ? "outline" : "default"}
                           onClick={() => void record(support)}
-                          disabled={!canRecord || savingId === support.supportRevisionId}
+                          loading={savingId === support.supportRevisionId}
+                          disabled={!canRecord}
                         >
-                          {savingId === support.supportRevisionId
-                            ? "Saving…"
-                            : support.installedOn
-                              ? "Re-record"
-                              : "Record installed"}
+                          {support.installedOn ? "Re-record" : "Record installed"}
                         </Button>
                       </TableCell>
                     </TableRow>

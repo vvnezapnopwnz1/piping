@@ -278,7 +278,7 @@ export default function ProjectDefinitionPage() {
       />
 
       {canCreateProject ? (
-        <Card className="border-slate-200">
+        <Card className="border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <div>
               <CardTitle className="text-base">Create a new project</CardTitle>
@@ -300,7 +300,7 @@ export default function ProjectDefinitionPage() {
       ) : null}
 
       {loadError ? (
-        <Card className="border-slate-200">
+        <Card className="border-border">
           <CardHeader>
             <CardTitle className="text-base">Unable to load project definition</CardTitle>
             <CardDescription>
@@ -317,7 +317,7 @@ export default function ProjectDefinitionPage() {
 
       {displayedDefinition ? (
         <>
-          <Card className="border-slate-200">
+          <Card className="border-border">
             <CardHeader>
               <CardTitle className="text-base">Currently saved</CardTitle>
               <CardDescription>
@@ -342,7 +342,7 @@ export default function ProjectDefinitionPage() {
                 <SummaryItem label="Owner Logo">
                   {displayedDefinition.ownerLogoUrl ? (
                     <a
-                      className="text-sky-600 underline truncate inline-block max-w-full"
+                      className="text-primary underline truncate inline-block max-w-full"
                       href={displayedDefinition.ownerLogoUrl}
                       target="_blank"
                       rel="noreferrer"
@@ -350,13 +350,13 @@ export default function ProjectDefinitionPage() {
                       {displayedDefinition.ownerLogoUrl}
                     </a>
                   ) : (
-                    <span className="text-slate-400">—</span>
+                    <span className="text-muted-foreground">—</span>
                   )}
                 </SummaryItem>
                 <SummaryItem label="Contractor Logo">
                   {displayedDefinition.contractorLogoUrl ? (
                     <a
-                      className="text-sky-600 underline truncate inline-block max-w-full"
+                      className="text-primary underline truncate inline-block max-w-full"
                       href={displayedDefinition.contractorLogoUrl}
                       target="_blank"
                       rel="noreferrer"
@@ -364,14 +364,14 @@ export default function ProjectDefinitionPage() {
                       {displayedDefinition.contractorLogoUrl}
                     </a>
                   ) : (
-                    <span className="text-slate-400">—</span>
+                    <span className="text-muted-foreground">—</span>
                   )}
                 </SummaryItem>
               </dl>
             </CardContent>
           </Card>
 
-          <Card className="border-slate-200">
+          <Card className="border-border">
             <CardHeader>
               <CardTitle className="text-base">Edit project record</CardTitle>
               <CardDescription>
@@ -539,9 +539,9 @@ function CreationField({
         placeholder={placeholder}
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
-        className={error ? "border-red-500" : ""}
+        className={error ? "border-destructive" : ""}
       />
-      {error ? <p className="text-xs text-red-500">{error}</p> : null}
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </div>
   );
 }
@@ -554,7 +554,7 @@ function ProjectDefinitionMessage({
   description: string;
 }) {
   return (
-    <Card className="border-slate-200">
+    <Card className="border-border">
       <CardHeader>
         <CardTitle className="text-base">{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
@@ -593,10 +593,10 @@ function ProjectDefinitionFields({
           onChange={(event) => onActivityChange(event.target.value)}
           onBlur={onActivityBlur}
           placeholder="e.g. PQ-001"
-          className={activityError ? "border-red-500" : ""}
+          className={activityError ? "border-destructive" : ""}
           disabled={disabled}
         />
-        {activityError ? <p className="text-xs text-red-500">{activityError}</p> : null}
+        {activityError ? <p className="text-xs text-destructive">{activityError}</p> : null}
       </div>
 
       <div className="grid gap-1.5">
@@ -682,7 +682,7 @@ function ProjectDefinitionFields({
           onChange={(event) => onChange("maxTransitTimeDays", event.target.value)}
           disabled={disabled}
         />
-        <p className="text-[11px] text-slate-500">
+        <p className="text-[11px] text-muted-foreground">
           Days before a spool transit is flagged overdue.
         </p>
       </div>
@@ -707,11 +707,11 @@ function SummaryItem({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-      <dt className="text-[11px] uppercase tracking-wider text-slate-500">
+    <div className="rounded-lg border border-border bg-muted px-3 py-2">
+      <dt className="text-[11px] uppercase tracking-wider text-muted-foreground">
         {label}
       </dt>
-      <dd className="mt-0.5 text-xs text-slate-800 break-words">{children}</dd>
+      <dd className="mt-0.5 text-xs text-foreground break-words">{children}</dd>
     </div>
   );
 }

@@ -309,7 +309,7 @@ export function SystemReferentialScreen() {
   return (
     <div className="space-y-6">
       {!canManage && (
-        <div className="flex items-center gap-2 rounded-md bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400 border border-amber-500/20">
+        <div className="bg-warning-bg text-warning-fg border-warning-border flex items-center gap-2 rounded-md border p-3 text-sm">
           <ShieldAlert className="h-4 w-4 shrink-0" />
           <span>Platform administrator rights are required to manage System Referentials. Read-only mode active.</span>
         </div>
@@ -495,7 +495,7 @@ export function SystemReferentialScreen() {
                 <Label htmlFor="ut-coefficient-rating">Rating coefficient</Label>
                 <Input id="ut-coefficient-rating" type="number" step="0.001" value={utCoefficientRating} onChange={(e) => setUtCoefficientRating(e.target.value)} disabled={isAddingUt} />
                 {utErrors.coefficientRating && <p className="text-xs text-destructive">{utErrors.coefficientRating}</p>}
-                <Button type="submit" className="w-full" disabled={isAddingUt}>{isAddingUt ? "Adding…" : "Add UT Calculation Rule"}</Button>
+                <Button type="submit" className="w-full" loading={isAddingUt}>Add UT Calculation Rule</Button>
               </div>
             </form>
           )}
@@ -554,7 +554,7 @@ export function SystemReferentialScreen() {
                 <Input id="torquing-description" placeholder="Manual torqueing" value={torquingDescription} onChange={(e) => setTorquingDescription(e.target.value)} disabled={isAddingTorquing} />
                 {torquingErrors.description && <p className="text-xs text-destructive">{torquingErrors.description}</p>}
               </div>
-              <Button type="submit" disabled={isAddingTorquing}>{isAddingTorquing ? "Adding…" : "Add Torquing Requirement"}</Button>
+              <Button type="submit" loading={isAddingTorquing}>Add Torquing Requirement</Button>
             </form>
           )}
           <div className="flex flex-wrap gap-2">

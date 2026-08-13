@@ -231,7 +231,7 @@ export function FieldMaterialCheckScreen({
                 onClick={() => void save()}
                 disabled={!gate.allowed || isSaving || loadFailed}
               >
-                {isSaving ? "Saving…" : "Record field traces"}
+                Record field traces
               </Button>
               <p className="text-muted-foreground text-xs">
                 Material Check is derived, not entered: it appears on the ledger under the

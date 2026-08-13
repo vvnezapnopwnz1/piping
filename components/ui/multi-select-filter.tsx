@@ -51,7 +51,9 @@ export function MultiSelectFilter({
           type="button"
           variant="outline"
           className={cn(
-            "h-8 w-full justify-between gap-1 bg-white border-slate-300 text-slate-900 text-sm font-normal shadow-none hover:bg-white px-2.5",
+            // This used to pin itself to white on slate-300, which meant the one filter control in
+            // the app was the one control that stayed light when the app went dark.
+            "h-8 w-full justify-between gap-1 px-2.5 text-sm font-normal shadow-none",
             className,
           )}
         >
@@ -67,14 +69,13 @@ export function MultiSelectFilter({
           {options.map((option) => (
             <label
               key={option}
-              className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 hover:bg-slate-100"
+              className="hover:bg-accent hover:text-accent-foreground flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5"
             >
               <Checkbox
                 checked={value.includes(option)}
                 onCheckedChange={() => toggle(option)}
-                className="border-slate-300 data-[state=checked]:bg-sky-600 data-[state=checked]:border-sky-600"
               />
-              <span className="text-sm text-slate-700">{option}</span>
+              <span className="text-sm">{option}</span>
             </label>
           ))}
         </div>
