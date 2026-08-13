@@ -17,6 +17,7 @@ import {
   DEMO_MANIFEST,
   EMPTY_AT_DEMO_START,
   EXEMPT_FROM_EMPTY_AT_DEMO_START,
+  SHOWCASE_PROJECT_CODE,
   type DemoMembership,
   type DemoProject,
   type DemoProjectRole,
@@ -1362,10 +1363,17 @@ function buildDemoSystemReferencePlan(): DemoSystemReferencePlan {
 export function buildDemoReferencePlan(
   resolvedIds: DemoReferenceResolvedIds,
   preparedOn: Date,
+  /**
+   * Which project the referential rows are addressed to. Defaults to golden, so every existing
+   * call site is unchanged; the showcase project passes its own id to get the same 36 families.
+   * Membership scopes are deliberately NOT parameterized — they stay bound to the golden
+   * project's memberships, because showcase members are unscoped on purpose.
+   */
+  targetProjectId: string = resolvedIds.goldenProjectId,
 ): DemoReferencePlan {
   assertDemoProgressWeightTotals()
   const references = DEMO_MANIFEST.references
-  const projectId = resolvedIds.goldenProjectId
+  const projectId = targetProjectId
   const dates = resolveDemoDates(preparedOn)
   const scopedUser = DEMO_MANIFEST.users.find(
     (user) => user.key === "nde_subcontractor",
@@ -2736,6 +2744,34 @@ export class SupabaseDemoStandCore {
           subcontractorScopes: plan.membership_subcontractor_scopes,
           pdsAreaScopes: plan.membership_pds_area_scopes,
         }),
+    )
+
+    // The showcase project gets the same 36 referential families, addressed to its own id. The
+    // SpoolGen import and every downstream command validate against them, so without this the
+    // seeded dataset cannot be built. No scope replacement: see buildDemoReferencePlan.
+    const showcaseProjectId = this.projectIds.get(SHOWCASE_PROJECT_CODE)
+    if (!showcaseProjectId) {
+      throw new Error(
+        `${SHOWCASE_PROJECT_CODE} was not created before its referentials.`,
+      )
+    }
+    const showcasePlan = buildDemoReferencePlan(
+      this.referenceResolvedIds(),
+      preparedOn,
+      showcaseProjectId,
+    )
+    await this.reconcileReferenceBatches(
+      projectReferenceBatches({
+        ...showcasePlan,
+        // `project_device_users` is the one family that links a project-scoped row to a
+        // membership id, and the resolved ids are golden's memberships — a SHOWCASE-1 device
+        // cannot be assigned to a TRACK01-A membership. PDA device assignment is a tracking
+        // concern the showcase dataset does not cover, so the family is dropped rather than
+        // re-resolved against showcase memberships.
+        project_device_users: [],
+        // An empty batch is not a no-op: the reconciler derives the target project from the
+        // rows it is given, so it must never see one.
+      }).filter((batch) => batch.rows.length > 0),
     )
   }
 

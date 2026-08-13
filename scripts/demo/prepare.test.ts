@@ -625,6 +625,32 @@ function databaseRowsForReferencePlan(
   }
 }
 
+test("buildDemoReferencePlan can be built for a project other than golden", () => {
+  const preparedOn = new Date("2026-08-13T00:00:00.000Z")
+  const golden = buildDemoReferencePlan(REFERENCE_RESOLVED_IDS, preparedOn)
+  const showcase = buildDemoReferencePlan(
+    REFERENCE_RESOLVED_IDS,
+    preparedOn,
+    "showcase-project-id",
+  )
+
+  assert.equal(golden.project_pds_areas[0].insert.project_id, "project-a")
+  assert.equal(
+    showcase.project_pds_areas[0].insert.project_id,
+    "showcase-project-id",
+  )
+  assert.equal(
+    showcase.project_pds_areas.length,
+    golden.project_pds_areas.length,
+  )
+  // Scopes stay bound to the golden project's memberships: the showcase members are unscoped on
+  // purpose, so the restrictive PDS guard never hides seeded rows.
+  assert.deepEqual(
+    showcase.membership_pds_area_scopes,
+    golden.membership_pds_area_scopes,
+  )
+})
+
 test("buildDemoReferencePlan locks every approved table, row count, status, and dependency order", () => {
   const plan = buildDemoReferencePlan(
     REFERENCE_RESOLVED_IDS,
@@ -1529,6 +1555,7 @@ function configuredReferenceGateway(): RecordingReferenceGateway {
   gateway.projects = [
     projectRecord("golden", "project-a"),
     projectRecord("isolation", "project-b"),
+    projectRecord("showcase", "project-showcase"),
   ]
   return gateway
 }
@@ -1555,10 +1582,16 @@ test("reference preparation writes system, parent, dependent, extended, progress
   )
 
   const tableOrder = Object.keys(REFERENCE_PLAN_COUNTS)
+  const projectWrites = tableOrder.slice(3, -2).map((table) => `write:${table}`)
   assert.deepEqual(gateway.referenceEvents, [
     ...tableOrder.slice(0, 3).map((table) => `write:${table}`),
-    ...tableOrder.slice(3, -2).map((table) => `write:${table}`),
+    ...projectWrites,
     "replace:membership-scopes",
+    // The showcase project takes the same project-scoped families in the same dependency order,
+    // addressed to its own id. Scopes are golden-only, so they are not repeated, and
+    // project_device_users is omitted because it would link a SHOWCASE-1 device to a TRACK01-A
+    // membership.
+    ...projectWrites.filter((event) => event !== "write:project_device_users"),
   ])
   assert.equal(
     gateway.batches.some((batch) =>
@@ -1571,6 +1604,12 @@ test("reference preparation writes system, parent, dependent, extended, progress
       JSON.stringify(batch).includes("TRACK01-B"),
     ),
     false,
+  )
+  assert.equal(
+    gateway.batches.some((batch) =>
+      JSON.stringify(batch).includes("project-showcase"),
+    ),
+    true,
   )
 })
 
@@ -1657,7 +1696,7 @@ test("readSnapshot combines all current core sections with observed references, 
 
   assert.deepEqual(
     snapshot.projects.map((project) => project.activityCode),
-    ["TRACK01-A", "TRACK01-B"],
+    ["SHOWCASE-1", "TRACK01-A", "TRACK01-B"],
   )
   assert.equal(snapshot.users.length, DEMO_MANIFEST.users.length)
   assert.deepEqual(snapshot.emptyCounts, {
@@ -1757,7 +1796,7 @@ test("readSnapshot reports missing demo projects as business state without refer
 })
 
 function projectRecord(
-  key: "golden" | "isolation",
+  key: "golden" | "isolation" | "showcase",
   id: string,
   createdBy = "platform-id",
 ): DemoProjectRecord {
