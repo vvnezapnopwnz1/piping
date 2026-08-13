@@ -39,6 +39,20 @@ dashboards read. It is listed in `EXEMPT_FROM_EMPTY_AT_DEMO_START`, so the empty
 skips it while `demo:check` still verifies it exists. It is built by `npm run demo:showcase`
 **after** `demo:prepare` — never inside it, because `demo:prepare` runs `supabase db reset`.
 
+**Order matters: run `npm run verify` before `demo:showcase`, not after.** The pgTAP suite asserts
+against globally empty engineering tables (for example
+`supabase/tests/database/050_material_traceability.test.sql` counts `material_check_records`
+project-wide), which held only while every stand started empty. A seeded `SHOWCASE-1` makes those
+assertions fail. The whole sequence is:
+
+```zsh
+npm run demo:prepare -- --confirm-local-reset
+npm run verify          # lint, typecheck, unit, pgTAP — needs the empty stand
+npm run demo:showcase   # seeds SHOWCASE-1; demo:check stays green afterwards
+```
+
+`npm run demo:check` is unaffected and stays green either way.
+
 The hosted stand is separate and holds curated acceptance data. Never re-seed it unprompted.
 
 ## RLS: a narrowing check must be RESTRICTIVE

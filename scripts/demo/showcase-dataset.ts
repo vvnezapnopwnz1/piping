@@ -29,7 +29,27 @@ const SPOOL_LETTERS = ["A", "B"] as const
 /** Referential codes, all seeded for the showcase project by `prepareProjectReferences`. */
 const SERVICE_CLASS = "SC-CS150"
 const MATERIAL_CLASS = "CS150"
-const WELDER_CODES = ["WDR-001", "WDR-002", "WDR-003", "WDR-004"] as const
+
+/**
+ * Bill-of-materials lines, keyed to receipts the manifest already seeds into
+ * `piping_material_records`. `record_material_check` matches on ident code **and** trace number,
+ * so both must exist in the PML or the check is refused with "Active piping material evidence is
+ * missing".
+ */
+export const SHOWCASE_MATERIALS = [
+  {
+    identCode: "ID-DEMO-100",
+    traceNumber: "HEAT-100-A",
+    description: "Carbon steel pipe 6in",
+    quantity: "2",
+  },
+  {
+    identCode: "ID-DEMO-200",
+    traceNumber: "HEAT-200-A",
+    description: "Carbon steel elbow 6in",
+    quantity: "1",
+  },
+] as const
 
 export const SHOWCASE_ISO_NUMBERS = [
   "SHOW-1001",
@@ -120,7 +140,17 @@ export interface ShowcaseStage {
 export interface ShowcaseWeldedJoint {
   readonly weldNumber: string
   readonly weldedOn: string
-  readonly welderCode: string
+  /**
+   * Position in the welder rotation. The seeder maps it onto the welders actually qualified for
+   * the WPS it selects, taking root from the rotation and cap from the next position — they must
+   * differ, because `weld_point_assignments` is unique on
+   * (weld_progress_record_id, welder_qualification_id).
+   *
+   * Welder identity is deliberately NOT decided here: `record_weld_progress` rejects a welder who
+   * is not qualified for the record's WPS, and which welders hold which qualification is a fact
+   * about the seeded referentials, not about the dataset's shape.
+   */
+  readonly welderRotation: number
 }
 
 export interface ShowcaseSpoolPlan {
@@ -130,8 +160,10 @@ export interface ShowcaseSpoolPlan {
   readonly stages: readonly ShowcaseStage[]
   /** Dates for the derived-stage commands. Absent when the spool never reaches that stage. */
   readonly materialCheckOn?: string
+  readonly supportsInstalledOn?: string
   readonly qualityReleaseOn?: string
   readonly paintedOn?: string
+  readonly finalQcOn?: string
   readonly laydownOn?: string
   readonly weldedJoints: readonly ShowcaseWeldedJoint[]
 }
@@ -158,13 +190,49 @@ function isFieldWeld(entry: LadderEntry, ordinal: number): boolean {
 }
 
 /**
- * Day inside the twelve-week window, as a UTC date string. Week 11 ends on the base date, and the
- * day offset is clamped so the last week's dates never land in the future — a future progress
- * date would be both wrong and invisible on any chart that stops at today.
+ * Service class, weld type and location together must hit a seeded NDE matrix rule, or the
+ * server-side import revalidation raises `SRV_NDE_MATRIX_MISSING` and refuses the job. The
+ * manifest covers `SC-CS150` for BW/shop, BW/field and SW/shop — but **not** SW/field, so field
+ * welds are always butt welds. `SHOWCASE_WELD_COMBINATIONS` states the same fact for the tests.
  */
-function weekDay(baseDate: Date, week: number, dayOffset = 0): string {
+function weldType(location: string, ordinal: number): string {
+  if (location === "field") return "BW"
+  return ordinal % 3 === 0 ? "SW" : "BW"
+}
+
+/** Every (weld type, location) pair the generator is allowed to emit for `SC-CS150`. */
+export const SHOWCASE_WELD_COMBINATIONS: readonly string[] = [
+  "BW|shop",
+  "SW|shop",
+  "BW|field",
+]
+
+/**
+ * Days after a spool's start week, one per ladder step. The commands enforce ordering — a release
+ * cannot precede fabrication completion, laydown cannot precede final QC — so these must be
+ * strictly increasing, and `stepDatesAreOrdered` in the tests holds them to it.
+ */
+const STEP_DAYS = {
+  startFab: 0,
+  materialCheck: 2,
+  firstWeld: 7,
+  supports: 15,
+  qualityRelease: 17,
+  sentToPaint: 19,
+  painted: 21,
+  finalQc: 23,
+  laydown: 25,
+  firstErection: 28,
+} as const
+
+/**
+ * A date inside the twelve-week window. `dayFromStart` counts days after the spool's start week,
+ * and the result is clamped so nothing lands in the future — a future progress date would be both
+ * wrong and invisible on a chart that stops at today.
+ */
+function ladderDate(baseDate: Date, startWeek: number, dayFromStart: number): string {
   const oldest = -7 * (SHOWCASE_WEEK_COUNT - 1)
-  return addUtcDays(baseDate, Math.min(oldest + week * 7 + dayOffset, 0))
+  return addUtcDays(baseDate, Math.min(oldest + startWeek * 7 + dayFromStart, 0))
 }
 
 export function buildShowcaseSpoolgenFiles(isoNumber: string): {
@@ -190,6 +258,7 @@ export function buildShowcaseSpoolgenFiles(isoNumber: string): {
 
     for (let ordinal = 1; ordinal <= WELDS_PER_SPOOL; ordinal += 1) {
       const diameter = ordinal % 2 === 0 ? "4" : "6"
+      const location = isFieldWeld(entry, ordinal) ? "field" : "shop"
       weldRows.push(
         [
           isoNumber,
@@ -201,18 +270,32 @@ export function buildShowcaseSpoolgenFiles(isoNumber: string): {
           weight,
           MATERIAL_CLASS,
           showcaseWeldNumber(spoolNumber, ordinal),
-          ordinal % 3 === 0 ? "SW" : "BW",
-          isFieldWeld(entry, ordinal) ? "field" : "shop",
+          weldType(location, ordinal),
+          location,
           diameter,
           diameter === "6" ? "8.2" : "6.0",
         ].join("\t"),
       )
     }
 
-    traceRows.push(
-      [isoNumber, spoolNumber, `ID-${suffix}-100`, "Carbon steel pipe 6in", "2", "EA", ""].join("\t"),
-      [isoNumber, spoolNumber, `ID-${suffix}-200`, "Carbon steel elbow 6in", "1", "EA", ""].join("\t"),
-    )
+    // Material lines must resolve against the project's PML: `record_material_check` looks up
+    // `piping_material_records` by ident code AND trace number, and refuses the item when no
+    // active row matches. So these reuse the manifest's seeded receipts rather than inventing
+    // codes. Unlike `demo-data/spoolgen/trace.txt`, the trace column is filled in — that file
+    // leaves it blank for an operator to type during the live walkthrough.
+    for (const material of SHOWCASE_MATERIALS) {
+      traceRows.push(
+        [
+          isoNumber,
+          spoolNumber,
+          material.identCode,
+          material.description,
+          material.quantity,
+          "EA",
+          material.traceNumber,
+        ].join("\t"),
+      )
+    }
     suppRows.push(
       [isoNumber, spoolNumber, `SUP-${suffix}-${letter}01`, "GUIDE", "2"].join("\t"),
     )
@@ -254,8 +337,9 @@ export function buildShowcaseProgressPlan(baseDate: Date): ShowcaseProgressPlan 
       }
 
       const start = entry.startWeek
+      const on = (dayFromStart: number) => ladderDate(baseDate, start, dayFromStart)
       const stages: ShowcaseStage[] = [
-        { phase: "fabrication", stage: "start_fab", occurredOn: weekDay(baseDate, start) },
+        { phase: "fabrication", stage: "start_fab", occurredOn: on(STEP_DAYS.startFab) },
       ]
 
       // A spool short of `qc_release` has only some of its welds done, which is what keeps
@@ -263,10 +347,15 @@ export function buildShowcaseProgressPlan(baseDate: Date): ShowcaseProgressPlan 
       const weldedCount = reaches(entry, "qc_release") ? WELDS_PER_SPOOL : 4
       const weldedJoints: ShowcaseWeldedJoint[] = []
       for (let ordinal = 1; ordinal <= weldedCount; ordinal += 1) {
+        // Field welds belong to the erection module: `record_weld_progress` refuses them with
+        // "Joint … is a field weld and belongs to the assembly or erection module". They stay
+        // unwelded here, which is also what happens on a real site.
+        if (isFieldWeld(entry, ordinal)) continue
         weldedJoints.push({
           weldNumber: showcaseWeldNumber(spoolNumber, ordinal),
-          weldedOn: weekDay(baseDate, Math.min(start + 1 + Math.floor((ordinal - 1) / 3), SHOWCASE_WEEK_COUNT - 1), ordinal % 5),
-          welderCode: WELDER_CODES[welderCursor++ % WELDER_CODES.length],
+          // One weld a day, so `fabricated` lands before the support and release steps.
+          weldedOn: on(STEP_DAYS.firstWeld + (ordinal - 1)),
+          welderRotation: welderCursor++,
         })
       }
 
@@ -277,22 +366,29 @@ export function buildShowcaseProgressPlan(baseDate: Date): ShowcaseProgressPlan 
         spoolNumber,
         stages,
         weldedJoints,
-        materialCheckOn: weekDay(baseDate, start, 2),
+        materialCheckOn: on(STEP_DAYS.materialCheck),
       }
 
       if (reaches(entry, "qc_release")) {
-        plan.qualityReleaseOn = weekDay(baseDate, Math.min(start + 3, SHOWCASE_WEEK_COUNT - 1))
+        // `release_quality_record` refuses a spool whose supports are not installed
+        // ("Supports are incomplete: 0 of 1 installed"), so the support date comes first, and it
+        // refuses a release date before the fabrication completion date.
+        plan.supportsInstalledOn = on(STEP_DAYS.supports)
+        plan.qualityReleaseOn = on(STEP_DAYS.qualityRelease)
       }
       if (reaches(entry, "painted")) {
         stages.push({
           phase: "fabrication",
           stage: "sent_to_paint",
-          occurredOn: weekDay(baseDate, Math.min(start + 4, SHOWCASE_WEEK_COUNT - 1)),
+          occurredOn: on(STEP_DAYS.sentToPaint),
         })
-        plan.paintedOn = weekDay(baseDate, Math.min(start + 4, SHOWCASE_WEEK_COUNT - 1), 3)
+        plan.paintedOn = on(STEP_DAYS.painted)
       }
       if (reaches(entry, "laydown")) {
-        plan.laydownOn = weekDay(baseDate, Math.min(start + 5, SHOWCASE_WEEK_COUNT - 1))
+        // `record_laydown` refuses a spool without a final QC, and `final_qc` is derived from the
+        // paint record's `final_qc_on` — the same command that derives `painted`.
+        plan.finalQcOn = on(STEP_DAYS.finalQc)
+        plan.laydownOn = on(STEP_DAYS.laydown)
       }
 
       if (entry.erection !== undefined) {
@@ -304,11 +400,7 @@ export function buildShowcaseProgressPlan(baseDate: Date): ShowcaseProgressPlan 
           stages.push({
             phase: "erection",
             stage,
-            occurredOn: weekDay(
-              baseDate,
-              Math.min(start + 6 + index, SHOWCASE_WEEK_COUNT - 1),
-              index,
-            ),
+            occurredOn: on(STEP_DAYS.firstErection + index * 3),
           })
         })
       }

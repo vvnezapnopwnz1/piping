@@ -18,6 +18,7 @@
     "bootstrap:track10-browser-fixtures": "tsx --env-file-if-exists=.env.local scripts/bootstrap-track10-browser-fixtures.ts",
     "demo:prepare": "tsx --env-file-if-exists=.env.local scripts/prepare-track12-demo.ts",
     "demo:check": "tsx --env-file-if-exists=.env.local scripts/check-track12-demo.ts",
+    "demo:showcase": "tsx --env-file-if-exists=.env.local scripts/bootstrap-showcase-dataset.ts",
     "demo:prepare:hosted": "tsx scripts/prepare-hosted-demo.ts",
     "demo:check:hosted": "tsx scripts/check-hosted-demo.ts",
     "typecheck": "tsc --noEmit --incremental false",
