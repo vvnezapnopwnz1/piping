@@ -22,7 +22,7 @@ insert into public.project_pds_areas (id, project_id, code, description)
 values ('50000000-0000-0000-0000-000000000421', '30000000-0000-0000-0000-000000000421', 'PDS-A', 'Area A');
 
 insert into public.system_reference_entries (id, kind, code, description)
-values ('50100000-0000-0000-0000-000000000421', 'material_type', 'CS', 'Carbon Steel')
+values ('50100000-0000-0000-0000-000000000421', 'material_type', 'CS-042', 'Carbon Steel')
 on conflict do nothing;
 
 insert into public.project_service_classes (id, project_id, material_type_id, code, description)

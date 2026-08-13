@@ -20,7 +20,7 @@ insert into public.project_subcontractors (id, project_id, code, description)
 values ('50000000-0000-0000-0000-000000000611', '30000000-0000-0000-0000-000000000611', 'SUB-1', 'Fab Sub 1');
 
 insert into public.system_reference_entries (id, kind, code, description)
-values ('53000000-0000-0000-0000-000000000611', 'material_type', 'CS', 'Carbon steel')
+values ('53000000-0000-0000-0000-000000000611', 'material_type', 'CS-061', 'Carbon steel')
 on conflict do nothing;
 
 insert into public.project_service_classes (id, project_id, material_type_id, code, description)
@@ -31,7 +31,7 @@ insert into public.project_weld_types (id, project_id, code, description)
 values ('52000000-0000-0000-0000-000000000611', '30000000-0000-0000-0000-000000000611', 'BW', 'Butt weld');
 
 insert into public.project_spooling_material_types (id, project_id, code, description)
-values ('54000000-0000-0000-0000-000000000611', '30000000-0000-0000-0000-000000000611', 'CS', 'Carbon steel');
+values ('54000000-0000-0000-0000-000000000611', '30000000-0000-0000-0000-000000000611', 'CS-061', 'Carbon steel');
 
 insert into public.project_spooling_material_classes (id, project_id, external_class_code, material_type_id)
 values ('55000000-0000-0000-0000-000000000611', '30000000-0000-0000-0000-000000000611', 'A1',

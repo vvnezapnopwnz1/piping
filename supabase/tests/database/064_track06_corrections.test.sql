@@ -32,7 +32,7 @@ values
    '10000000-0000-0000-0000-000000000642', 'system_admin', 'project_admin', true);
 
 insert into public.system_reference_entries (id, kind, code, description)
-values ('53000000-0000-0000-0000-000000000641', 'material_type', 'CS', 'Carbon steel')
+values ('53000000-0000-0000-0000-000000000641', 'material_type', 'CS-064', 'Carbon steel')
 on conflict do nothing;
 
 -- Referentials for both projects, distinguished by the 641/642 suffix.
@@ -55,8 +55,8 @@ values
 
 insert into public.project_spooling_material_types (id, project_id, code, description)
 values
-  ('54000000-0000-0000-0000-000000000641', '30000000-0000-0000-0000-000000000641', 'CS', 'Carbon steel'),
-  ('54000000-0000-0000-0000-000000000642', '30000000-0000-0000-0000-000000000642', 'CS', 'Carbon steel');
+  ('54000000-0000-0000-0000-000000000641', '30000000-0000-0000-0000-000000000641', 'CS-064', 'Carbon steel'),
+  ('54000000-0000-0000-0000-000000000642', '30000000-0000-0000-0000-000000000642', 'CS-064', 'Carbon steel');
 
 insert into public.project_spooling_material_classes (id, project_id, external_class_code, material_type_id)
 values

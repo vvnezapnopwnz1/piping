@@ -51,9 +51,18 @@ select has_index(
   'nde_matrix_rules has lookup index'
 );
 
+-- Own project, so the test does not depend on rows already present in the database.
+insert into auth.users (id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at)
+values ('10000000-0000-0000-0000-000000000201', 'authenticated', 'authenticated',
+        'referentials.020@example.test', 'not-used', now(), now(), now());
+
+insert into public.projects (id, activity_code, title, owner_name, contractor_name, maximum_transit_time_days, created_by)
+values ('30000000-0000-0000-0000-000000000201', 'P-TEST-020-AS', 'P', 'O', 'C', 1,
+        '10000000-0000-0000-0000-000000000201');
+
 select lives_ok(
   $$insert into public.project_assembly_settings(project_id, enabled)
-    select id, false from public.projects limit 1$$,
+    values ('30000000-0000-0000-0000-000000000201', false)$$,
   'can insert project_assembly_settings row'
 );
 
