@@ -96,6 +96,7 @@ function validSnapshot(): DemoStandSnapshot {
     projects: [
       DEMO_MANIFEST.projects.golden,
       DEMO_MANIFEST.projects.isolation,
+      DEMO_MANIFEST.projects.showcase,
     ],
     users: DEMO_MANIFEST.users.map((user) => ({
       ...user,
@@ -1483,7 +1484,7 @@ class RecordingReferenceGateway
       ),
       [
         {
-          membershipId: "membership-7",
+          membershipId: "membership-10",
           subcontractorCode: "NDE-A",
         },
       ],
@@ -1493,7 +1494,7 @@ class RecordingReferenceGateway
         membershipId: insert.membership_id,
         pdsAreaCode: parents.pdsAreaCode,
       })),
-      [{ membershipId: "membership-7", pdsAreaCode: "PDS-100" }],
+      [{ membershipId: "membership-10", pdsAreaCode: "PDS-100" }],
     )
   }
 
@@ -2068,6 +2069,7 @@ test("prepareProjects reconciles exact manifest definitions and requires the pre
   const expectedWrites = [
     DEMO_MANIFEST.projects.golden,
     DEMO_MANIFEST.projects.isolation,
+    DEMO_MANIFEST.projects.showcase,
   ].map((project) => ({
     activityCode: project.activityCode,
     title: project.title,
@@ -2078,15 +2080,18 @@ test("prepareProjects reconciles exact manifest definitions and requires the pre
     status: project.status,
     createdBy: "platform-id",
   }))
+  // Golden is created, the pre-existing isolation row is repaired, and the showcase project is
+  // created alongside them.
   assert.deepEqual(
     gateway.calls.map((call) => call.method),
-    ["listProjects", "createProject", "updateProject"],
+    ["listProjects", "createProject", "updateProject", "createProject"],
   )
   assert.deepEqual(gateway.calls[1].payload, expectedWrites[0])
   assert.deepEqual(gateway.calls[2].payload, {
     projectId: "existing-b",
     project: expectedWrites[1],
   })
+  assert.deepEqual(gateway.calls[3].payload, expectedWrites[2])
 
   const unpreparedGateway = new FakeGateway()
   await assert.rejects(
@@ -2141,6 +2146,13 @@ test("prepareAccess writes only manifest memberships with compatible legacy role
         isActive: true,
       },
       {
+        projectId: "created-project-1",
+        userId: "platform-id",
+        accessRoleCode: "project_admin",
+        legacyRole: "system_admin",
+        isActive: true,
+      },
+      {
         projectId: "project-a",
         userId: "user-2",
         accessRoleCode: "project_admin",
@@ -2155,7 +2167,21 @@ test("prepareAccess writes only manifest memberships with compatible legacy role
         isActive: true,
       },
       {
+        projectId: "created-project-1",
+        userId: "user-2",
+        accessRoleCode: "project_admin",
+        legacyRole: "system_admin",
+        isActive: true,
+      },
+      {
         projectId: "project-a",
+        userId: "user-3",
+        accessRoleCode: "project_editor",
+        legacyRole: "qc_engineer",
+        isActive: true,
+      },
+      {
+        projectId: "created-project-1",
         userId: "user-3",
         accessRoleCode: "project_editor",
         legacyRole: "qc_engineer",
@@ -2205,7 +2231,9 @@ test("prepareAccess stops on the first gateway failure and sanitizes the error",
   await core.prepareUsers("FAKE-PASSWORD")
   await core.prepareProjects()
   gateway.calls.length = 0
-  gateway.failMembershipAt = 3
+  // platform_admin now writes three memberships (A, B, SHOWCASE-1) before project_admin_a's
+  // first, so the fourth write is the one that identifies TRACK01-A/project_admin_a.
+  gateway.failMembershipAt = 4
 
   await assert.rejects(core.prepareAccess(), (error: unknown) => {
     const message = String(error)
@@ -2218,13 +2246,13 @@ test("prepareAccess stops on the first gateway failure and sanitizes the error",
   })
   assert.equal(
     gateway.calls.filter((call) => call.method === "upsertMembership").length,
-    3,
+    4,
   )
   assert.equal(
     gateway.calls.filter(
       (call) => call.method === "replaceFunctionalRoles",
     ).length,
-    2,
+    3,
   )
 })
 
@@ -2387,7 +2415,11 @@ test("core preparation is idempotent and repairs partial stale users, projects, 
       .sort((left, right) =>
         left.activityCode.localeCompare(right.activityCode),
       ),
-    [DEMO_MANIFEST.projects.golden, DEMO_MANIFEST.projects.isolation]
+    [
+      DEMO_MANIFEST.projects.golden,
+      DEMO_MANIFEST.projects.isolation,
+      DEMO_MANIFEST.projects.showcase,
+    ]
       .map((project) => ({
         activityCode: project.activityCode,
         title: project.title,
@@ -2402,14 +2434,14 @@ test("core preparation is idempotent and repairs partial stale users, projects, 
         left.activityCode.localeCompare(right.activityCode),
       ),
   )
-  assert.equal(gateway.memberships.length, 7)
+  assert.equal(gateway.memberships.length, 10)
   assert.equal(
     new Set(
       gateway.memberships.map(
         (membership) => `${membership.projectId}/${membership.userId}`,
       ),
     ).size,
-    7,
+    10,
   )
 
   const usersByEmail = new Map(

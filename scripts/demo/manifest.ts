@@ -349,6 +349,15 @@ export interface DemoSpoolgenManifest {
   }
 }
 
+export const SHOWCASE_PROJECT_CODE = "SHOWCASE-1"
+
+/**
+ * The showcase project exists to hold data — twelve weeks of backdated progress the charts
+ * read. Asserting it is empty would assert the opposite of its purpose, so the empty-table
+ * checks skip it. TRACK01-A and TRACK01-B keep the rule.
+ */
+export const EXEMPT_FROM_EMPTY_AT_DEMO_START = [SHOWCASE_PROJECT_CODE] as const
+
 export const EMPTY_AT_DEMO_START = [
   "import_jobs",
   "isometrics",
@@ -378,6 +387,7 @@ export interface DemoManifest {
   readonly projects: {
     readonly golden: DemoProject
     readonly isolation: DemoProject
+    readonly showcase: DemoProject
   }
   readonly users: readonly DemoUser[]
   readonly references: DemoReferences
@@ -431,6 +441,16 @@ export const DEMO_MANIFEST = {
       transitDays: 3,
       status: "active",
     },
+    showcase: {
+      key: "showcase",
+      activityCode: "SHOWCASE-1",
+      title: "PipeQC Showcase Project",
+      ownerName: "Demo Owner",
+      contractorName: "Demo EPC",
+      contractNumber: "DEMO-S-001",
+      transitDays: 3,
+      status: "active",
+    },
   },
   users: [
     {
@@ -448,6 +468,12 @@ export const DEMO_MANIFEST = {
         },
         {
           projectCode: "TRACK01-B",
+          role: "project_admin",
+          source: "creator",
+          functionalRoles: [],
+        },
+        {
+          projectCode: "SHOWCASE-1",
           role: "project_admin",
           source: "creator",
           functionalRoles: [],
@@ -481,6 +507,16 @@ export const DEMO_MANIFEST = {
           source: "direct",
           functionalRoles: [],
         },
+        // The showcase project is the seeded dataset the dashboards read. The presenter switches
+        // projects rather than re-logging in, so the operator account carries admin here too.
+        // Deliberately unscoped: no subcontractor or PDS-area scope rows, so the restrictive
+        // PDS guard never hides seeded rows.
+        {
+          projectCode: "SHOWCASE-1",
+          role: "project_admin",
+          source: "direct",
+          functionalRoles: [],
+        },
       ],
     },
     {
@@ -492,6 +528,19 @@ export const DEMO_MANIFEST = {
       memberships: [
         {
           projectCode: "TRACK01-A",
+          role: "project_editor",
+          source: "direct",
+          functionalRoles: [
+            "qc_engineer",
+            "nde_inspector",
+            "spooling_team",
+            "fabrication_contributor",
+            "erection_contributor",
+            "tracking_operator",
+          ],
+        },
+        {
+          projectCode: "SHOWCASE-1",
           role: "project_editor",
           source: "direct",
           functionalRoles: [

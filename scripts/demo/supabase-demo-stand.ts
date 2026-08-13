@@ -16,6 +16,7 @@ import {
 import {
   DEMO_MANIFEST,
   EMPTY_AT_DEMO_START,
+  EXEMPT_FROM_EMPTY_AT_DEMO_START,
   type DemoMembership,
   type DemoProject,
   type DemoProjectRole,
@@ -39,6 +40,15 @@ type DirectEmptyTable = Exclude<EmptyTable, "pwht_results">
 type DemoProjectCode =
   | typeof DEMO_MANIFEST.projects.golden.activityCode
   | typeof DEMO_MANIFEST.projects.isolation.activityCode
+  | typeof DEMO_MANIFEST.projects.showcase.activityCode
+/**
+ * Projects the empty-at-start rule applies to. The showcase project is excluded at the type
+ * level so a future reader cannot quietly start counting its deliberately non-empty tables.
+ */
+type EmptyCheckedProjectCode = Exclude<
+  DemoProjectCode,
+  (typeof EXEMPT_FROM_EMPTY_AT_DEMO_START)[number]
+>
 type LegacyRole = Database["public"]["Enums"]["app_role"]
 type PublicTables = Database["public"]["Tables"]
 type TableInsert<Table extends keyof PublicTables> =
@@ -2215,6 +2225,7 @@ const CLIENT_OPTIONS: DemoClientOptions = {
 const PROJECT_DEFINITIONS = [
   DEMO_MANIFEST.projects.golden,
   DEMO_MANIFEST.projects.isolation,
+  DEMO_MANIFEST.projects.showcase,
 ] as const
 
 function compareText(left: string, right: string): number {
@@ -2903,16 +2914,26 @@ export class SupabaseDemoStandCore {
       .map(({ user }) => user)
 
     const emptyCounts = {} as Record<
-      DemoProjectCode,
+      EmptyCheckedProjectCode,
       Record<EmptyTable, number | null>
     >
     for (const definition of PROJECT_DEFINITIONS) {
+      // The showcase project holds seeded progress on purpose. Counting its tables would be a
+      // round-trip per table whose only use would be to assert the opposite of its purpose.
+      if (
+        (EXEMPT_FROM_EMPTY_AT_DEMO_START as readonly string[]).includes(
+          definition.activityCode,
+        )
+      ) {
+        continue
+      }
+      const activityCode = definition.activityCode as EmptyCheckedProjectCode
       const project = observedProjects.find(
         (candidate) =>
           candidate.activityCode === definition.activityCode,
       )
       if (!project) {
-        emptyCounts[definition.activityCode] = Object.fromEntries(
+        emptyCounts[activityCode] = Object.fromEntries(
           EMPTY_AT_DEMO_START.map((table) => [table, null]),
         ) as Record<EmptyTable, null>
         continue
@@ -2932,7 +2953,7 @@ export class SupabaseDemoStandCore {
                 this.gateway.countChildProjectRows(strategy, project.id),
               )
       }
-      emptyCounts[definition.activityCode] = counts
+      emptyCounts[activityCode] = counts
     }
 
     return { projects, users, emptyCounts }

@@ -4,6 +4,7 @@ import test from "node:test"
 import {
   DEMO_MANIFEST,
   EMPTY_AT_DEMO_START,
+  SHOWCASE_PROJECT_CODE,
   type DemoReferences,
   resolveDemoDates,
 } from "./manifest"
@@ -59,6 +60,7 @@ function validSnapshot(): MutableSnapshot {
     projects: mutableClone([
       DEMO_MANIFEST.projects.golden,
       DEMO_MANIFEST.projects.isolation,
+      DEMO_MANIFEST.projects.showcase,
     ]),
     users: mutableClone(
       DEMO_MANIFEST.users.map((user) => ({
@@ -150,6 +152,25 @@ test("accepts the complete normalized demo stand with deterministic successful c
     report.checks.length,
   )
   assert.ok(report.checks.every((check) => check.recovery === ""))
+})
+
+test("the showcase project is checked for existence but never for emptiness", () => {
+  const report = evaluateDemoStand(validSnapshot())
+  const emptyIds = report.checks
+    .filter((check) => check.id.startsWith("empty:"))
+    .map((check) => check.id)
+
+  assert.equal(
+    emptyIds.some((id) => id.startsWith(`empty:${SHOWCASE_PROJECT_CODE}:`)),
+    false,
+    "the showcase project holds seeded data and must not be asserted empty",
+  )
+  assert.equal(
+    emptyIds.some((id) => id.startsWith(`empty:${GOLDEN_PROJECT_CODE}:`)),
+    true,
+    "the golden project must still be asserted empty",
+  )
+  assert.equal(checkFor(validSnapshot(), "projects").ok, true)
 })
 
 test("reports persisted WPS approval and welder expiry drift by stable key", () => {
@@ -312,7 +333,7 @@ test("reports a project definition mismatch by stable project code", () => {
   const check = checkFor(snapshot, "projects")
 
   assert.equal(check.ok, false)
-  assert.match(check.expected, /codes=\[TRACK01-A, TRACK01-B\]/)
+  assert.match(check.expected, /codes=\[SHOWCASE-1, TRACK01-A, TRACK01-B\]/)
   assert.match(check.actual, /mismatched codes=\[TRACK01-A\]/)
 })
 
@@ -325,8 +346,8 @@ test("reports a missing project without throwing", () => {
   const check = checkFor(snapshot, "projects")
 
   assert.equal(check.ok, false)
-  assert.match(check.expected, /count=2/)
-  assert.match(check.actual, /count=1/)
+  assert.match(check.expected, /count=3/)
+  assert.match(check.actual, /count=2/)
   assert.match(
     check.actual,
     new RegExp(`missing codes=\\[${missing.activityCode}\\]`),
@@ -347,8 +368,8 @@ test("reports an unexpected project without throwing", () => {
   const check = checkFor(snapshot, "projects")
 
   assert.equal(check.ok, false)
-  assert.match(check.expected, /count=2/)
-  assert.match(check.actual, /count=3/)
+  assert.match(check.expected, /count=3/)
+  assert.match(check.actual, /count=4/)
   assert.match(check.actual, /unexpected codes=\[TRACK01-X\]/)
   assert.equal(check.recovery, DEMO_RECOVERY_COMMAND)
 })

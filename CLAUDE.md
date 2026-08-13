@@ -32,7 +32,12 @@ agent has no TTY: it reads `.env.local` through the npm scripts instead, and nev
 users, projects, access, system references and project referentials, and deliberately leaves the
 engineering tables (`import_jobs`, `isometrics`, `spools`, and every progress table in
 `EMPTY_AT_DEMO_START` in `scripts/demo/manifest.ts`) empty — the spooling import is performed live
-in the UI. Do not seed those tables.
+in the UI. **Never seed those tables on `TRACK01-A` or `TRACK01-B`.**
+
+`SHOWCASE-1` is a third, deliberately **populated** project holding the seeded dataset the
+dashboards read. It is listed in `EXEMPT_FROM_EMPTY_AT_DEMO_START`, so the empty-at-start rule
+skips it while `demo:check` still verifies it exists. It is built by `npm run demo:showcase`
+**after** `demo:prepare` — never inside it, because `demo:prepare` runs `supabase db reset`.
 
 The hosted stand is separate and holds curated acceptance data. Never re-seed it unprompted.
 

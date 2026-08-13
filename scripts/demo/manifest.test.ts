@@ -6,6 +6,8 @@ import {
   DEMO_WELDER_EXPIRY_OFFSET_DAYS,
   DEMO_WPS_APPROVAL_OFFSET_DAYS,
   EMPTY_AT_DEMO_START,
+  EXEMPT_FROM_EMPTY_AT_DEMO_START,
+  SHOWCASE_PROJECT_CODE,
   addUtcDays,
   resolveDemoDates,
   type DemoManifest,
@@ -110,6 +112,16 @@ test("locks the demo projects and stable access identities", () => {
       transitDays: 3,
       status: "active",
     },
+    showcase: {
+      key: "showcase",
+      activityCode: "SHOWCASE-1",
+      title: "PipeQC Showcase Project",
+      ownerName: "Demo Owner",
+      contractorName: "Demo EPC",
+      contractNumber: "DEMO-S-001",
+      transitDays: 3,
+      status: "active",
+    },
   })
 
   assert.deepEqual(
@@ -133,6 +145,12 @@ test("locks the demo projects and stable access identities", () => {
           },
           {
             projectCode: "TRACK01-B",
+            role: "project_admin",
+            source: "creator",
+            functionalRoles: [],
+          },
+          {
+            projectCode: "SHOWCASE-1",
             role: "project_admin",
             source: "creator",
             functionalRoles: [],
@@ -162,6 +180,12 @@ test("locks the demo projects and stable access identities", () => {
             source: "direct",
             functionalRoles: [],
           },
+          {
+            projectCode: "SHOWCASE-1",
+            role: "project_admin",
+            source: "direct",
+            functionalRoles: [],
+          },
         ],
       },
       {
@@ -171,6 +195,19 @@ test("locks the demo projects and stable access identities", () => {
         memberships: [
           {
             projectCode: "TRACK01-A",
+            role: "project_editor",
+            source: "direct",
+            functionalRoles: [
+              "qc_engineer",
+              "nde_inspector",
+              "spooling_team",
+              "fabrication_contributor",
+              "erection_contributor",
+              "tracking_operator",
+            ],
+          },
+          {
+            projectCode: "SHOWCASE-1",
             role: "project_editor",
             source: "direct",
             functionalRoles: [
@@ -865,6 +902,20 @@ test("locks all project-scoped tables that must be empty at demo start", () => {
   ])
   assert.deepEqual(DEMO_MANIFEST.emptyAtDemoStart, EMPTY_AT_DEMO_START)
   assertUnique(EMPTY_AT_DEMO_START, "empty-at-start table names")
+})
+
+test("the manifest declares a showcase project that is exempt from the empty-at-start rule", () => {
+  assert.equal(DEMO_MANIFEST.projects.showcase.activityCode, "SHOWCASE-1")
+  assert.equal(SHOWCASE_PROJECT_CODE, "SHOWCASE-1")
+  assert.notEqual(
+    DEMO_MANIFEST.projects.showcase.activityCode,
+    DEMO_MANIFEST.projects.golden.activityCode,
+  )
+  assert.equal(EXEMPT_FROM_EMPTY_AT_DEMO_START.includes(SHOWCASE_PROJECT_CODE), true)
+  assert.equal(
+    (EXEMPT_FROM_EMPTY_AT_DEMO_START as readonly string[]).includes("TRACK01-A"),
+    false,
+  )
 })
 
 test("uses canonical keys independently in every manifest family", () => {

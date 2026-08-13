@@ -3,6 +3,7 @@ import { isDeepStrictEqual } from "node:util"
 import {
   DEMO_MANIFEST,
   EMPTY_AT_DEMO_START,
+  EXEMPT_FROM_EMPTY_AT_DEMO_START,
   type DemoManifest,
   type DemoMembership,
   type DemoProject,
@@ -26,10 +27,31 @@ export interface DemoPreflightReport {
 
 const GOLDEN_PROJECT_CODE = DEMO_MANIFEST.projects.golden.activityCode
 const ISOLATION_PROJECT_CODE = DEMO_MANIFEST.projects.isolation.activityCode
-const DEMO_PROJECT_CODES = [
-  GOLDEN_PROJECT_CODE,
-  ISOLATION_PROJECT_CODE,
+
+/**
+ * Every project the stand declares. `projectCheck` compares this set exactly, so a project the
+ * stand creates but this list omits is reported as "unexpected".
+ */
+const DEMO_PROJECTS = [
+  DEMO_MANIFEST.projects.golden,
+  DEMO_MANIFEST.projects.isolation,
+  DEMO_MANIFEST.projects.showcase,
 ] as const
+
+/**
+ * The subset the empty-at-start rule applies to. `SHOWCASE-1` is deliberately absent: it holds
+ * twelve weeks of seeded progress, so asserting it is empty would assert the opposite of its
+ * purpose. `EXEMPT_FROM_EMPTY_AT_DEMO_START` records that intent, and the preflight tests hold
+ * the two lists to it.
+ */
+const DEMO_PROJECT_CODES = DEMO_PROJECTS.map(
+  (project) => project.activityCode,
+).filter(
+  (code) => !(EXEMPT_FROM_EMPTY_AT_DEMO_START as readonly string[]).includes(code),
+) as readonly Exclude<
+  (typeof DEMO_PROJECTS)[number]["activityCode"],
+  (typeof EXEMPT_FROM_EMPTY_AT_DEMO_START)[number]
+>[]
 
 type DemoProjectCode = (typeof DEMO_PROJECT_CODES)[number]
 type EmptyDemoTable = (typeof EMPTY_AT_DEMO_START)[number]
@@ -322,10 +344,7 @@ function check(
 }
 
 function projectCheck(snapshot: DemoStandSnapshot): DemoCheckResult {
-  const expectedRows = [
-    DEMO_MANIFEST.projects.golden,
-    DEMO_MANIFEST.projects.isolation,
-  ]
+  const expectedRows = [...DEMO_PROJECTS]
   const actualRows = snapshot.projects
   const difference = keyedDifference(expectedRows, actualRows, (key) => {
     const expected = expectedRows.find((project) => project.key === key)
