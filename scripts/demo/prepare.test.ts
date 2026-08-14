@@ -1764,7 +1764,16 @@ test("prepareShowcaseProjectReferences writes only showcase-addressed batches", 
   )
 
   // Every write is addressed to the showcase project id, never golden's.
+  // existingHostedGateway() pre-populates golden/isolation directly, so prepareShowcaseProject()'s
+  // createProject call is the gateway's first, yielding "created-project-1" (see the
+  // "prepareShowcaseAccess upserts..." test above for the same fixture id).
   assert.ok(gateway.referenceEvents.length > 0)
+  assert.equal(
+    gateway.batches.some((batch) =>
+      JSON.stringify(batch).includes("created-project-1"),
+    ),
+    true,
+  )
   assert.equal(
     gateway.batches.some((batch) =>
       JSON.stringify(batch).includes("hosted-project-a"),
