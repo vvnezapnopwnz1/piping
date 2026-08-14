@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import { readFileSync } from "node:fs"
 
-const source = readFileSync(new URL("./page.tsx", import.meta.url), "utf8")
+const source = readFileSync(new URL("../modules/home/ui/home-executive-overview.tsx", import.meta.url), "utf8")
 
 // Tracking (Track 08) and Reports (Track 11) both closed and shipped before Track 12; neither
 // track's own deferred-items file claims the module is unfinished. The `live: false` / `note:

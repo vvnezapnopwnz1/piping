@@ -258,6 +258,35 @@ export interface QualityReferentials {
   reworkCodes: { id: string; code: string; description: string | null }[]
 }
 
+export interface NdeChartData {
+  outcomes: Database["public"]["Functions"]["nde_outcome_trend"]["Returns"]
+  workflow: Database["public"]["Functions"]["nde_inspection_workflow_distribution"]["Returns"]
+  methods: Database["public"]["Functions"]["nde_method_distribution"]["Returns"]
+}
+
+/**
+ * Dashboard aggregates are scoped server-side. Keeping these three small RPCs separate from the
+ * KPI queries means a chart failure does not blank the operational summary above it.
+ */
+export async function loadNdeChartData(
+  client: SupabaseClient<Database>,
+  projectId: string,
+): Promise<NdeChartData> {
+  const [outcomes, workflow, methods] = await Promise.all([
+    client.rpc("nde_outcome_trend", { target_project_id: projectId }),
+    client.rpc("nde_inspection_workflow_distribution", { target_project_id: projectId }),
+    client.rpc("nde_method_distribution", { target_project_id: projectId }),
+  ])
+  fail(outcomes.error)
+  fail(workflow.error)
+  fail(methods.error)
+  return {
+    outcomes: required(outcomes.data),
+    workflow: required(workflow.data),
+    methods: required(methods.data),
+  }
+}
+
 export async function loadQualityReferentials(
   client: SupabaseClient<Database>,
   projectId: string

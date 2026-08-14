@@ -1,13 +1,19 @@
 "use client"
 
+import { useEffect, useState } from "react"
+import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DataTable, useTableUrlState, type DataColumn } from "@/components/ui/data-table"
 import { StatusBadge } from "@/components/ui/status-badge"
+import { Skeleton } from "@/components/ui/skeleton"
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import {
   currentErectionStageLabel,
   describeRftShortfall,
 } from "../../application/describe-erection-readiness"
 import type { ErectionReadiness } from "../../infrastructure/supabase-erection-repository"
+import { loadErectionChartData, type ErectionChartData } from "../../infrastructure/supabase-erection-repository"
+import { ErectionChartsPanel } from "./erection-charts-panel"
 import { useErectionReadiness } from "./use-erection-readiness"
 
 /**
@@ -104,15 +110,29 @@ export function ErectionReadinessScreen({
   title,
   description,
   note,
+  showCharts = false,
 }: {
   title: string
   description: string
   /** An extra sentence for routes whose own module is not built yet. */
   note?: string
+  showCharts?: boolean
 }) {
   const { projectId, isLoading, loadFailed, rows, canView } = useErectionReadiness()
+  const [charts, setCharts] = useState<ErectionChartData | null>(null)
+  const [chartsLoadedProjectId, setChartsLoadedProjectId] = useState<string | null>(null)
   // Namespaced so this table's filters survive alongside anything else the route puts in the URL.
   const [tableState, setTableState] = useTableUrlState({ namespace: "rft" })
+
+  useEffect(() => {
+    if (!showCharts || !projectId || !canView) return
+    let cancelled = false
+    void loadErectionChartData(getSupabaseBrowserClient(), projectId)
+      .then((data) => { if (!cancelled) setCharts(data) })
+      .catch((error: unknown) => toast.error(error instanceof Error ? error.message : "The erection charts could not be loaded."))
+      .finally(() => { if (!cancelled) setChartsLoadedProjectId(projectId) })
+    return () => { cancelled = true }
+  }, [projectId, canView, showCharts])
 
   if (!projectId) {
     return (
@@ -136,6 +156,12 @@ export function ErectionReadinessScreen({
         <p className="text-muted-foreground mt-1 text-sm">{description}</p>
         {note ? <p className="text-muted-foreground mt-2 text-sm">{note}</p> : null}
       </div>
+
+      {showCharts ? (
+        chartsLoadedProjectId !== projectId
+          ? <Skeleton className="h-[38rem] w-full" />
+          : <ErectionChartsPanel data={charts} loading={false} />
+      ) : null}
 
       <Card>
         <CardHeader>

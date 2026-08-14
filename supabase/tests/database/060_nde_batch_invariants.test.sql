@@ -1,6 +1,6 @@
 -- 060: NDE Batch Invariants and Lifecycle Test
 begin;
-select plan(12);
+select plan(18);
 
 insert into auth.users (id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at)
 values
@@ -174,6 +174,34 @@ select is(
 select lives_ok(
   $$select public.close_nde_batch(id) from public.nde_batches where batch_number = 'BATCH-001'$$,
   'batch closes after all items have results'
+);
+
+select has_function(
+  'public', 'nde_outcome_trend', array['uuid'],
+  'the weekly NDE outcome trend is available to the dashboard'
+);
+select has_function(
+  'public', 'nde_inspection_workflow_distribution', array['uuid'],
+  'the NDE workflow funnel is available to the dashboard'
+);
+select has_function(
+  'public', 'nde_method_distribution', array['uuid'],
+  'the NDE method distribution is available to the dashboard'
+);
+select is(
+  (select accepted_count::int from public.nde_outcome_trend('30000000-0000-0000-0000-000000000601')),
+  1,
+  'the outcome trend counts accepted examination results in their week'
+);
+select is(
+  (select obligation_count::int from public.nde_inspection_workflow_distribution('30000000-0000-0000-0000-000000000601') where status = 'pending'),
+  1,
+  'the workflow funnel keeps unallocated obligations pending'
+);
+select is(
+  (select accepted_count::int from public.nde_method_distribution('30000000-0000-0000-0000-000000000601') where method = 'rt'),
+  1,
+  'the method distribution counts the accepted RT result'
 );
 
 select * from finish();

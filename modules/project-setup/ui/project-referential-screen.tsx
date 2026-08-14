@@ -4,7 +4,8 @@ import { useCallback, useEffect, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { AlertCircle, RefreshCw } from "lucide-react"
 
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { SupabaseWpsTab } from "@/components/admin/supabase-wps-tab"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -108,8 +109,18 @@ export function ProjectReferentialScreen({
           <ProjectGeographyTabs projectId={projectId} canManage={canManage} />
         </TabsContent>
 
-        <TabsContent value="fabrication" className="mt-6">
+        <TabsContent value="fabrication" className="mt-6 space-y-6">
           <WeldingQualityTabs projectId={projectId} canManage={canManage} />
+          {/* WPS is a range qualification with its own optimistic-concurrency contract, so it
+              keeps its own editor rather than joining the generic referential tabs above. */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Welding Procedures (WPS)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <SupabaseWpsTab />
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="testpack" className="mt-6">

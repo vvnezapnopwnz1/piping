@@ -1,5 +1,5 @@
 begin;
-select plan(10);
+select plan(19);
 
 insert into auth.users (id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at)
 values
@@ -19,6 +19,9 @@ values ('20000000-0000-0000-0000-000000000531', '30000000-0000-0000-0000-0000000
 
 insert into public.project_subcontractors (id, project_id, code, description)
 values ('50000000-0000-0000-0000-000000000531', '30000000-0000-0000-0000-000000000531', 'SUB-1', 'Fab Sub 1');
+
+insert into public.project_pds_areas (id, project_id, code, description)
+values ('50500000-0000-0000-0000-000000000531', '30000000-0000-0000-0000-000000000531', 'PDS-0531', 'Chart test area');
 
 insert into public.system_reference_entries (id, kind, code, description)
 values ('53000000-0000-0000-0000-000000000531', 'material_type', 'CS2', 'Carbon steel 2')
@@ -99,9 +102,9 @@ insert into public.supports (id, project_id, support_number)
 values ('49000000-0000-0000-0000-000000000531', '30000000-0000-0000-0000-000000000531', 'SUP-0531-01');
 
 insert into public.isometric_revisions (
-  id, isometric_id, revision_number, revision_ordinal, status, service_class_id, accepted_at)
+  id, isometric_id, revision_number, revision_ordinal, status, pds_area_id, service_class_id, accepted_at)
 values ('42000000-0000-0000-0000-000000000531', '40000000-0000-0000-0000-000000000531', 'R0', 1,
-        'accepted', '51000000-0000-0000-0000-000000000531', now());
+        'accepted', '50500000-0000-0000-0000-000000000531', '51000000-0000-0000-0000-000000000531', now());
 
 insert into public.spool_revisions (id, spool_id, isometric_revision_id, sequence_number, material_class)
 values ('43000000-0000-0000-0000-000000000531', '41000000-0000-0000-0000-000000000531',
@@ -179,6 +182,71 @@ select is(
    where spool_revision_id = '43000000-0000-0000-0000-000000000531' and stage = 'fabricated'),
   0,
   'no fabricated event was ever written'
+);
+set local role postgres;
+select is(
+  (select current_stage from public.fabrication_spool_projections
+   where spool_revision_id = '43000000-0000-0000-0000-000000000531'),
+  'fabricated'::public.construction_stage,
+  'the stored projection is refreshed by fabrication commands'
+);
+select is(
+  (select weld_complete from public.fabrication_spool_projections
+   where spool_revision_id = '43000000-0000-0000-0000-000000000531'),
+  1,
+  'the stored projection carries the completed shop-weld count'
+);
+select is(
+  (select support_recorded from public.fabrication_spool_projections
+   where spool_revision_id = '43000000-0000-0000-0000-000000000531'),
+  1,
+  'the stored projection carries the completed support count'
+);
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000532', true);
+select set_config('request.jwt.claims',
+  '{"sub":"10000000-0000-0000-0000-000000000532","role":"authenticated"}', true);
+select is(
+  (select count(*)::int from public.list_fabrication_spools(
+    '30000000-0000-0000-0000-000000000531', null, null, null, null, 50
+  )),
+  1,
+  'the browser-facing list reads the stored projection'
+);
+select is(
+  (select current_stage from public.list_fabrication_spools(
+    '30000000-0000-0000-0000-000000000531', null, null, null, null, 50
+  )),
+  'fabricated'::public.construction_stage,
+  'the browser-facing list returns the refreshed fabrication stage'
+);
+select is(
+  (select start_fab_count::int from public.fabrication_progress_s_curve(
+    '30000000-0000-0000-0000-000000000531'
+  )),
+  1,
+  'the actual S-curve cumulatively counts the first fabrication milestone'
+);
+select is(
+  (select fabricated_count::int from public.fabrication_progress_s_curve(
+    '30000000-0000-0000-0000-000000000531'
+  )),
+  1,
+  'the actual S-curve cumulatively counts the derived fabricated milestone'
+);
+select is(
+  (select spool_count::int from public.fabrication_stage_distribution(
+    '30000000-0000-0000-0000-000000000531'
+  ) where stage = 'fabricated'),
+  1,
+  'the stage distribution retains the projection stage ordering and count'
+);
+select is(
+  (select in_progress_count::int from public.fabrication_progress_by_pds_area(
+    '30000000-0000-0000-0000-000000000531'
+  ) where pds_area_code = 'PDS-0531'),
+  1,
+  'progress by area counts a fabricated spool as in progress until laydown'
 );
 
 select is(

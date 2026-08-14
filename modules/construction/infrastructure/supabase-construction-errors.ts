@@ -54,6 +54,8 @@ export function mapSupabaseConstructionError(
       return "One of the values entered is not allowed by the project rules."
     case "23503":
       return "A referenced value does not exist in this project."
+    case "57014":
+      return "The fabrication read timed out. Refresh the page and try again."
     default:
       return GENERIC
   }

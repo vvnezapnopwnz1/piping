@@ -3,6 +3,7 @@ import test from "node:test"
 
 import {
   allocateNdeBatchCandidates,
+  loadNdeChartData,
   loadNdeBatchObligationCounts,
   previewNdeBatchCandidates,
   toObligation,
@@ -99,6 +100,27 @@ test("previewNdeBatchCandidates maps the candidate rows the allocation would tak
 
 test("previewNdeBatchCandidates treats an empty candidate set as an empty list", async () => {
   assert.deepEqual(await previewNdeBatchCandidates(rpcClient([], []), "batch-1"), [])
+})
+
+test("loadNdeChartData requests the three scoped dashboard aggregates together", async () => {
+  const calls: unknown[] = []
+  const client = {
+    rpc(name: string, args: Record<string, unknown>) {
+      calls.push([name, args])
+      return Promise.resolve({ data: [{ name }], error: null })
+    },
+  } as never
+
+  const charts = await loadNdeChartData(client, "p-1")
+
+  assert.deepEqual(calls, [
+    ["nde_outcome_trend", { target_project_id: "p-1" }],
+    ["nde_inspection_workflow_distribution", { target_project_id: "p-1" }],
+    ["nde_method_distribution", { target_project_id: "p-1" }],
+  ])
+  assert.equal(charts.outcomes.length, 1)
+  assert.equal(charts.workflow.length, 1)
+  assert.equal(charts.methods.length, 1)
 })
 
 function selectClient(data: Record<string, unknown>[], calls: unknown[]) {

@@ -44,7 +44,23 @@ Progress status is queried via real-time database projections and view layers:
   2. Shop Welding completeness (`weld_complete >= weld_total`)
   3. Support Installation completeness (`support_recorded >= support_total`)
   4. NDE / PWHT clearance (`nde_pending == 0`, `pwht_pending == 0`)
-- **`spool_construction_status`**: Aggregates current stage, dates, totals, and release eligibility into a single queryable projection for screens and dashboards.
+- **`spool_construction_status`**: The compatibility view that aggregates current stage, dates, totals, and release eligibility. It remains useful for controlled parity checks, but is not the browser read path.
+- **`fabrication_spool_projections`**: The stored, one-row-per-spool-revision fabrication read model. Row-level refresh triggers recompute only the spool affected by a fabrication input; the browser accesses it only through scoped RPCs.
+
+### Scalable fabrication reads
+
+Fabrication worklists use `list_fabrication_spools(project_id, stage, cursor…, limit)` with a
+stable `(ISO, spool number, spool revision)` cursor and a bounded page size of 1–100. Dashboard
+cards use `fabrication_spool_stage_counts(project_id)`, so their totals are not derived from the
+currently loaded batch. Both RPCs check `fabrication.view` and the caller's PDS scope before
+returning data; direct browser selection on the projection table is revoked.
+
+For an existing local dataset, run `npm run fabrication:projection:backfill`, then
+`npm run fabrication:projection:check`. The latter compares each accepted demo spool's readiness
+counters with the former readiness calculation before changing the read path. At very large import
+volumes, keep this per-row projection refresh design for online commands, but schedule bulk-import
+rebuilds in bounded batches rather than treating a full-project recomputation as an interactive
+request.
 
 ---
 

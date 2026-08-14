@@ -6,7 +6,7 @@ import { Repeat2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { IdentityHeadline } from "@/components/ui/record-target"
-import { DataTable, type DataColumn } from "./data-table"
+import { DataTable, type DataColumn, type ServerPagination } from "./data-table"
 import { useTableUrlState } from "./use-table-url-state"
 
 /**
@@ -39,6 +39,8 @@ export function RecordSelectTable<Row>({
   emptyTitle,
   emptyDescription,
   toolbarActions,
+  pagination = true,
+  serverPagination,
 }: {
   title: string
   columns: ReadonlyArray<DataColumn<Row>>
@@ -66,6 +68,10 @@ export function RecordSelectTable<Row>({
   emptyDescription?: string
   /** Screen-specific actions for the open list — "New Test Pack" and the like. */
   toolbarActions?: ReactNode
+  /** Server-paged record selectors already own navigation outside this reusable table. */
+  pagination?: boolean
+  /** Cursor navigation rendered in the normal table footer. */
+  serverPagination?: ServerPagination
 }) {
   const [tableState, setTableState] = useTableUrlState({ namespace })
 
@@ -118,6 +124,8 @@ export function RecordSelectTable<Row>({
           emptyTitle={emptyTitle}
           emptyDescription={emptyDescription}
           toolbarActions={toolbarActions}
+          pagination={pagination}
+          serverPagination={serverPagination}
           containerClassName="max-h-[50vh]"
         />
       </CardContent>

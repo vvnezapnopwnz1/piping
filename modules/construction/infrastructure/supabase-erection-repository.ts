@@ -43,6 +43,12 @@ export interface ErectionReadiness {
   rftOn: string | null
 }
 
+export interface ErectionChartData {
+  curve: Database["public"]["Functions"]["erection_progress_s_curve"]["Returns"]
+  stages: Database["public"]["Functions"]["erection_stage_distribution"]["Returns"]
+  blockers: Database["public"]["Functions"]["erection_rft_blocker_distribution"]["Returns"]
+}
+
 const numberOrZero = (value: unknown): number => (value === null || value === undefined ? 0 : Number(value))
 
 export function toErectionReadiness(row: Row): ErectionReadiness {
@@ -107,6 +113,16 @@ export async function loadErectionReadinessForProject(
     .order("spool_number")
   fail(error)
   return (data ?? []).map((row) => toErectionReadiness(row))
+}
+
+export async function loadErectionChartData(client: SupabaseClient<Database>, projectId: string): Promise<ErectionChartData> {
+  const [curve, stages, blockers] = await Promise.all([
+    client.rpc("erection_progress_s_curve", { target_project_id: projectId }),
+    client.rpc("erection_stage_distribution", { target_project_id: projectId }),
+    client.rpc("erection_rft_blocker_distribution", { target_project_id: projectId }),
+  ])
+  fail(curve.error); fail(stages.error); fail(blockers.error)
+  return { curve: curve.data ?? [], stages: stages.data ?? [], blockers: blockers.data ?? [] }
 }
 
 export async function recordErectionProgress(

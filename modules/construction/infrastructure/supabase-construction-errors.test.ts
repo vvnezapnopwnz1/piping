@@ -31,6 +31,7 @@ assert.match(mapSupabaseConstructionError({ code: "PQC38" }), /already/)
 assert.match(mapSupabaseConstructionError({ code: "PQC39" }), /referential|project setup/i)
 assert.match(mapSupabaseConstructionError({ code: "42501" }), /permission/)
 assert.match(mapSupabaseConstructionError({ code: "23505" }), /already/)
+assert.match(mapSupabaseConstructionError({ code: "57014" }), /timed out|timeout/i)
 
 // A server message is never shown verbatim.
 const raw = mapSupabaseConstructionError({

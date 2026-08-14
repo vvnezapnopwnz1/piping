@@ -172,15 +172,15 @@ membership, so its top bar shows the project as static text — that is correct,
 **S1.2 — Show readiness (read-only, no mutation)**
 - Route: `/admin/project-referential`
 - Persona: Project Admin · project `TRACK01-A`
-- Controls: the **Project Setup Readiness** card at the top of the page
-- Expected: badge **Gate B: Ready for Import** and badge **Gate C: Referential Complete**, both
-  green, plus the line "All project referential requirements are satisfied. The project is ready for
-  engineering imports and execution."
-- Hard refresh checkpoint: `Cmd+Shift+R`. Both badges must come back green — the panel is computed
-  from database rows, not from page state.
-- If a badge is amber: **stop the walkthrough**. The stand is not the prepared start state. Run
-  `npm run demo:check` in the terminal and read which check failed. Do not "fix" referentials by
-  hand during a demo.
+- Controls: the top of the page, above the tab strip
+- Expected: **no readiness card at all** — the page opens straight onto the tab strip. The
+  *Setup incomplete* card renders only while a referential is still missing
+  (`setup-readiness-panel.tsx:20`), so its absence is the pass signal on a prepared stand.
+- Hard refresh checkpoint: `Cmd+Shift+R`. The card must stay absent — readiness is computed from
+  database rows, not from page state.
+- If an amber **Setup incomplete** card appears: **stop the walkthrough**. The stand is not the
+  prepared start state. Run `npm run demo:check` in the terminal and read which check failed. Do
+  not "fix" referentials by hand during a demo.
 
 ---
 
@@ -843,7 +843,7 @@ source-verified" means in the status line.
 | sidebar | sections `SETUP`/`PREPARATION`/`CONSTRUCTION`/`REPORTS`/`TESTING`, item **Reports** → `/reports` | `config/navigation.ts:301-309` |
 | route gating | `/reports` → `reports.view`; `/erection/flange-progress` → `flange.view`; `/testpack` → `testpack.view` | `config/route-capabilities.ts` |
 | capability model | `project_admin` bypasses the functional gate; `qc_engineer` grants `testpack.manage`, `flange.manage` | `supabase/migrations/20260731090000_access_capability_catalog.sql` |
-| `/admin/project-referential` | *Project Setup Readiness*, **Gate B: Ready for Import**, **Gate C: Referential Complete**; tabs **General**, **Welding & Quality**, **Testpack & Tracking**, **Spooling & Painting**, **System Referentials**, **Progress Weights**; card *Welding Procedures (WPS)* | `modules/project-setup/ui/setup-readiness-panel.tsx`, `modules/project-setup/ui/project-referential-screen.tsx:75-101`, `app/admin/project-referential/page.tsx` |
+| `/admin/project-referential` | no readiness card on a complete project (*Setup incomplete* appears only while a referential is missing); tabs **General**, **Welding & Quality**, **Testpack & Tracking**, **Spooling & Painting**, **System Referentials**, **Progress Weights**; card *Welding Procedures (WPS)* | `modules/project-setup/ui/setup-readiness-panel.tsx:20`, `modules/project-setup/ui/project-referential-screen.tsx:75-101`, `app/admin/project-referential/page.tsx` |
 | `/spooling/import` | *SpoolGen import*, **Upload weld.txt** … **Upload supp.txt**, **Validate files**, toast `Validated N rows: X errors, Y warnings.` | `modules/engineering/ui/spooling-import-screen.tsx:32-43,126-128,196` |
 | `/spooling/import` | *Revision decisions*, **Apply import**, toast `Applied N definition rows.`, `Not required` | `modules/engineering/ui/revision-workbench.tsx:101,171`, `modules/engineering/ui/revision-decision-table.tsx` |
 | import validation | 20 staging rows; `SRV_WPS_MISSING` is a warning, never a blocker | `docs/superpowers/plans/2026-08-10-track-12-demo-release.md`, `supabase/migrations/20260803092000_spooling_import_apply.sql:669-686` |

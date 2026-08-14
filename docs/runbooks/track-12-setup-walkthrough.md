@@ -232,11 +232,18 @@ Active project: `TRACK-SETUP-CHECK`. Every step is on **one route**:
 
 > `/admin/project-referential`
 
-The **Project Setup Readiness** card sits at the top of that page and re-reads
+The **Setup incomplete** card sits at the top of that page and re-reads
 `get_project_setup_readiness` on every page load
 (`project-referential-screen.tsx:33-49`, `supabase-setup-readiness-repository.ts:10`). It is the
 only place in the application that shows readiness, and it is gated on
 `project_referential.manage`, so **only an admin ever sees it**.
+
+The card is a to-do list, not a status light: it renders **only while at least one referential is
+missing** (`setup-readiness-panel.tsx:20`), so a fully configured project shows nothing here at all
+— which is why it is absent on the prepared demo stands (`TRACK01-A`, `SHOWCASE-1`). On
+`TRACK-SETUP-CHECK` it is on screen for the whole of §6, shrinking as you build the chain. It does
+**not** vanish at the end: the six unreachable codes of §1.2 keep it visible, which is the honest
+end state described there.
 
 Tab strip on that page: **General**, **Welding & Quality**, **Testpack & Tracking**,
 **Spooling & Painting**, **System Referentials**, **Progress Weights**
@@ -244,8 +251,8 @@ Tab strip on that page: **General**, **Welding & Quality**, **Testpack & Trackin
 tabs on the same page (`app/admin/project-referential/page.tsx`).
 
 **S6.0 — Record the baseline**
-- Expected: badge **Gate B: Incomplete** (amber) and badge **Gate C: Incomplete** (amber), and the
-  block *MISSING REFERENTIALS (n)* listing one clickable chip per missing requirement. Each chip
+- Expected: the amber card headed **Setup incomplete — n referentials missing**, carrying the badge
+  **Not ready for engineering import**, over one clickable chip per missing requirement. Each chip
   jumps to the owning tab.
 - The chips you should see, with the labels the panel prints
   (`modules/project-setup/domain/setup-readiness.ts:7-36`): Subcontractors · PDS Areas · Service
@@ -414,17 +421,17 @@ PML record SETUP-ID-100 (independent)
 
 **S6.11 — Gate B checkpoint**
 - Hard refresh (`Cmd+Shift+R`) `/admin/project-referential`.
-- Expected: the badge reads **Gate B: Ready for Import** in green, the badge **Gate C: Incomplete**
-  stays amber, and *MISSING REFERENTIALS (15)* now lists exactly: Project Teams · Systems ·
-  Subsystems · Line Services · Tracking Locations · Pressure Unit · Prefabrication Weights ·
-  Painting Weights · Erection Weights · Spooling Material Types · Spooling Material Classes ·
-  Spooling Checklist · RAL Codes · Paint Matrix · Tracking Devices.
-- The badge text is literal: `Gate B: {isGateBReady ? "Ready for Import" : "Incomplete"}` and
-  `Gate C: {isAdminDone ? "Referential Complete" : "Incomplete"}`
-  (`setup-readiness-panel.tsx:25-32`). Gate B is defined as the twelve import-critical codes;
-  Gate C is *"no missing code at all"* (`setup-readiness.ts:45-66`).
-- The refresh matters: the panel is computed by an RPC over database rows, so a green Gate B that
-  survives `Cmd+Shift+R` is proof of durable configuration, not of page state.
+- Expected: the badge flips to green **Ready for engineering import**, the card stays on screen
+  headed **Setup incomplete — 15 referentials missing**, and the chips are now exactly: Project
+  Teams · Systems · Subsystems · Line Services · Tracking Locations · Pressure Unit ·
+  Prefabrication Weights · Painting Weights · Erection Weights · Spooling Material Types ·
+  Spooling Material Classes · Spooling Checklist · RAL Codes · Paint Matrix · Tracking Devices.
+- The badge text is literal: `{isGateBReady ? "Ready for engineering import" : "Not ready for
+  engineering import"}` (`setup-readiness-panel.tsx:37-43`). Gate B — the internal name for that
+  badge — is defined as the twelve import-critical codes; the card's own visibility is the Gate C
+  condition, *"no missing code at all"* (`setup-readiness.ts:45-66`).
+- The refresh matters: the panel is computed by an RPC over database rows, so a green import badge
+  that survives `Cmd+Shift+R` is proof of durable configuration, not of page state.
 
 ### The readiness ledger
 
@@ -472,8 +479,9 @@ Run these only if you have the time; they change nothing about Gate B.
   (`progress-weights-screen.tsx:108,227`). **Assembly** is badged `Disabled` for this project and
   is not required.
 
-After all of that the panel still reads **Gate C: Incomplete** with the six unreachable codes of
-§1.2. That is the correct, honest end state — do not promise otherwise.
+After all of that the card is still on screen, headed **Setup incomplete — 6 referentials missing**
+and listing exactly the six unreachable codes of §1.2. That is the correct, honest end state — do
+not promise otherwise.
 
 ---
 
@@ -558,7 +566,7 @@ administrator holds `system_referential.manage`. Show that too; it is the cleane
 that project admin ≠ system admin.
 
 **S7.5 — What the Reader cannot see about readiness**
-- The **Project Setup Readiness** card lives only on `/admin/project-referential`, which is gated on
+- The **Setup incomplete** card lives only on `/admin/project-referential`, which is gated on
   `project_referential.manage`. A Project Reader therefore **never sees readiness at all** — not a
   greyed-out version, not a read-only version. State this plainly rather than implying a read-only
   readiness view exists.
@@ -667,7 +675,7 @@ unique in the repository.
 | project definition rules | `^[A-Z0-9-]+$`; required title/owner/contractor; transit ≥ 1 whole day | `lib/project-definition.ts` |
 | `/admin/access-rights` | **Add member**, **Edit**, **Deactivate**, dialog *Add project member* / *Edit access*, **Email**, **Access role**, **Functional roles**, **Save**, toasts `Member added` / `Access updated` | `modules/access/ui/access-rights-screen.tsx`, `access-member-dialog.tsx`, `access-members-table.tsx:9-15` |
 | duplicate member | *"Profile is already a project member"* | `supabase/migrations/20260801095000_security_and_policy_cleanup.sql:52` |
-| `/admin/project-referential` | *Project Setup Readiness*, **Gate B: Ready for Import** / **Gate B: Incomplete**, **Gate C: Referential Complete** / **Gate C: Incomplete**, *Missing Referentials (n)*; tabs **General**, **Welding & Quality**, **Testpack & Tracking**, **Spooling & Painting**, **System Referentials**, **Progress Weights**; card *Welding Procedures (WPS)* | `modules/project-setup/ui/setup-readiness-panel.tsx:23-49`, `project-referential-screen.tsx:75-105`, `app/admin/project-referential/page.tsx` |
+| `/admin/project-referential` | *Setup incomplete — n referentials missing* (absent when none are), badge **Ready for engineering import** / **Not ready for engineering import**; tabs **General**, **Welding & Quality**, **Testpack & Tracking**, **Spooling & Painting**, **System Referentials**, **Progress Weights**; card *Welding Procedures (WPS)* | `modules/project-setup/ui/setup-readiness-panel.tsx:20-43`, `project-referential-screen.tsx:75-105`, `app/admin/project-referential/page.tsx` |
 | readiness computation | RPC `get_project_setup_readiness`; global material types; assembly-conditional codes | `modules/project-setup/infrastructure/supabase-setup-readiness-repository.ts:10`, `supabase/migrations/20260801091000_referential_invariants.sql:383-504` |
 | Gate B / Gate C definition | 12 import-critical codes; Gate C = zero missing | `modules/project-setup/domain/setup-readiness.ts:45-66` |
 | missing-code labels | Subcontractors, PDS Areas, … Tracking Devices | `modules/project-setup/domain/setup-readiness.ts:7-36` |
@@ -700,11 +708,12 @@ Each of these is an expectation from source that only a browser run can settle.
    Admin membership is present in `/admin/access-rights` immediately, and the project survives a
    hard refresh. A second submit of the same code reports the duplicate message and creates no
    second row.
-2. The **Project Setup Readiness** panel renders for a project with no references at all, rather
-   than erroring — confirm the *Missing Referentials* block and the amber badge pair.
+2. The **Setup incomplete** panel renders for a project with no references at all, rather than
+   erroring — confirm the chip list and the amber **Not ready for engineering import** badge.
 3. The **exact baseline missing count** on the freshly claimed project (predicted 25) and the exact
    list, including the absence of Material Types, NDE Matrix — Assembly and Assembly Weights.
-4. Gate B flips to **Ready for Import** after S6.10 and stays green across `Cmd+Shift+R`.
+4. The badge flips to **Ready for engineering import** after S6.10 and stays green across
+   `Cmd+Shift+R`.
 5. Every toast string quoted in §5–§6 appears verbatim, and every button label matches.
 6. **Add WPS** and **Add Subsystem** and **Add Location** really are disabled before their
    prerequisites exist, and enable afterwards.
@@ -713,7 +722,7 @@ Each of these is an expectation from source that only a browser run can settle.
    really offers `SETUP-AC-01` after S6.1b.
 8. The **NDE Matrix** sub-tab badge really flips from **Incomplete (n)** to **Complete** after the
    field rule.
-9. Gate C is still **Incomplete** at the end, listing exactly the six unreachable codes of §1.2.
+9. The card is still on screen at the end, listing exactly the six unreachable codes of §1.2.
 10. Each Reader denial in S7.4 renders the *Access denied* card with the predicted section name and
     the project code `TRACK-SETUP-CHECK`.
 11. The Reader's sidebar really contains **Admin Module → Imports** and nothing else under SETUP.

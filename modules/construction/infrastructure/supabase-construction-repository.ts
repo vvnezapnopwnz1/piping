@@ -45,6 +45,23 @@ export interface SpoolStatus {
   pwhtPending: number
 }
 
+export interface FabricationSpoolCursor {
+  isoNumber: string
+  spoolNumber: string
+  spoolRevisionId: string
+}
+
+export interface FabricationSpoolPage {
+  rows: SpoolStatus[]
+  nextCursor: FabricationSpoolCursor | null
+}
+
+export interface FabricationChartData {
+  curve: Database["public"]["Functions"]["fabrication_progress_s_curve"]["Returns"]
+  stages: Database["public"]["Functions"]["fabrication_stage_distribution"]["Returns"]
+  pdsAreas: Database["public"]["Functions"]["fabrication_progress_by_pds_area"]["Returns"]
+}
+
 export function toSpoolStatus(row: Row): SpoolStatus {
   return {
     spoolRevisionId: row.spool_revision_id,
@@ -74,6 +91,16 @@ export function toSpoolStatus(row: Row): SpoolStatus {
     supportRecorded: row.support_recorded ?? 0,
     ndePending: row.nde_pending ?? 0,
     pwhtPending: row.pwht_pending ?? 0,
+  }
+}
+
+export function toFabricationSpoolCursor(
+  status: SpoolStatus,
+): FabricationSpoolCursor {
+  return {
+    isoNumber: status.isoNumber,
+    spoolNumber: status.spoolNumber,
+    spoolRevisionId: status.spoolRevisionId,
   }
 }
 
@@ -224,37 +251,68 @@ export interface WeldFormReferentials {
 
 // Reads -----------------------------------------------------------------------
 
-// Progress can only be recorded against the accepted revision — a superseded one is
-// refused with PQC31 — so offering superseded revisions offers guaranteed failures. Once
-// an isometric has a second revision the picker otherwise lists every spool twice under
-// an identical label. spool_construction_status carries revision_number but not the
-// revision's status; spool_fabrication_readiness carries revision_status, so the accepted
-// set comes from there. Narrowing the projection itself would need a migration.
+// The projection stores only accepted, non-removed revisions. That keeps every fabrication
+// picker on the record it can act on and avoids duplicate spool labels after an ISO revision.
 export async function loadSpoolStatuses(
   client: SupabaseClient<Database>,
   projectId: string,
 ): Promise<SpoolStatus[]> {
-  const [statuses, accepted] = await Promise.all([
-    client
-      .from("spool_construction_status")
-      .select("*")
-      .eq("project_id", projectId)
-      .order("iso_number")
-      .order("spool_number"),
-    client
-      .from("spool_fabrication_readiness")
-      .select("spool_revision_id")
-      .eq("project_id", projectId)
-      .eq("revision_status", "accepted"),
-  ])
-  fail(statuses.error)
-  fail(accepted.error)
-  const acceptedIds = new Set(
-    (accepted.data ?? []).map((row: Row) => row.spool_revision_id as string),
+  return (await loadFabricationSpoolPage(client, projectId)).rows
+}
+
+export async function loadFabricationSpoolPage(
+  client: SupabaseClient<Database>,
+  projectId: string,
+  cursor: FabricationSpoolCursor | null = null,
+  stage: ConstructionStage | null = null,
+  pageLimit = 50,
+): Promise<FabricationSpoolPage> {
+  const { data, error } = await client.rpc("list_fabrication_spools", {
+    target_project_id: projectId,
+    target_stage: stage ?? undefined,
+    after_iso_number: cursor?.isoNumber,
+    after_spool_number: cursor?.spoolNumber,
+    after_spool_revision_id: cursor?.spoolRevisionId,
+    page_limit: pageLimit,
+  })
+  fail(error)
+  const rows = (data ?? []).map(toSpoolStatus)
+  return {
+    rows,
+    nextCursor: rows.length === pageLimit ? toFabricationSpoolCursor(rows.at(-1)!) : null,
+  }
+}
+
+export async function loadFabricationSpoolStageCounts(
+  client: SupabaseClient<Database>,
+  projectId: string,
+): Promise<Map<string, number>> {
+  const { data, error } = await client.rpc("fabrication_spool_stage_counts", {
+    target_project_id: projectId,
+  })
+  fail(error)
+  return new Map(
+    (data ?? []).map((row) => [row.current_stage, Number(row.spool_count)]),
   )
-  return (statuses.data ?? [])
-    .filter((row: Row) => acceptedIds.has(row.spool_revision_id as string))
-    .map(toSpoolStatus)
+}
+
+export async function loadFabricationChartData(
+  client: SupabaseClient<Database>,
+  projectId: string,
+): Promise<FabricationChartData> {
+  const [curve, stages, pdsAreas] = await Promise.all([
+    client.rpc("fabrication_progress_s_curve", { target_project_id: projectId }),
+    client.rpc("fabrication_stage_distribution", { target_project_id: projectId }),
+    client.rpc("fabrication_progress_by_pds_area", { target_project_id: projectId }),
+  ])
+  fail(curve.error)
+  fail(stages.error)
+  fail(pdsAreas.error)
+  return {
+    curve: curve.data ?? [],
+    stages: stages.data ?? [],
+    pdsAreas: pdsAreas.data ?? [],
+  }
 }
 
 export async function loadSpoolStatus(
@@ -262,9 +320,7 @@ export async function loadSpoolStatus(
   spoolRevisionId: string,
 ): Promise<SpoolStatus> {
   const { data, error } = await client
-    .from("spool_construction_status")
-    .select("*")
-    .eq("spool_revision_id", spoolRevisionId)
+    .rpc("get_fabrication_spool", { target_spool_revision_id: spoolRevisionId })
     .single()
   fail(error)
   return toSpoolStatus(required(data))
@@ -275,9 +331,7 @@ export async function loadReadiness(
   spoolRevisionId: string,
 ): Promise<FabricationReadiness> {
   const { data, error } = await client
-    .from("spool_fabrication_readiness")
-    .select("line_total, line_checked, weld_total, weld_complete, support_total, support_recorded, nde_pending, pwht_pending, revision_status")
-    .eq("spool_revision_id", spoolRevisionId)
+    .rpc("get_fabrication_spool", { target_spool_revision_id: spoolRevisionId })
     .single()
   fail(error)
   return toReadiness(required(data))

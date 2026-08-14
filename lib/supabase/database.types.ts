@@ -7,6 +7,31 @@ export type Json =
   | Json[]
 
 export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       audit_events: {
@@ -504,6 +529,231 @@ export type Database = {
             foreignKeyName: "construction_progress_events_spool_revision_id_fkey"
             columns: ["spool_revision_id"]
             isOneToOne: false
+            referencedRelation: "test_pack_spool_status"
+            referencedColumns: ["spool_revision_id"]
+          },
+        ]
+      }
+      fabrication_spool_projections: {
+        Row: {
+          current_erection_stage:
+            | Database["public"]["Enums"]["construction_stage"]
+            | null
+          current_stage:
+            | Database["public"]["Enums"]["construction_stage"]
+            | null
+          erected_on: string | null
+          fabricated_on: string | null
+          field_nde_pending: number
+          field_pwht_pending: number
+          field_support_recorded: number
+          field_support_total: number
+          field_weld_complete: number
+          field_weld_total: number
+          final_qc_on: string | null
+          is_fabricated: boolean
+          is_releasable: boolean
+          is_removed: boolean
+          is_rft: boolean
+          iso_number: string
+          laydown_on: string | null
+          line_checked: number
+          line_total: number
+          material_check_on: string | null
+          nde_pending: number
+          painted_on: string | null
+          pds_area_id: string | null
+          project_id: string
+          projection_version: number
+          pwht_pending: number
+          qc_release_on: string | null
+          revision_number: string
+          revision_status: string
+          rft_on: string | null
+          sent_to_paint_on: string | null
+          spool_number: string
+          spool_revision_id: string
+          start_fab_on: string | null
+          support_recorded: number
+          support_total: number
+          supported_on: string | null
+          to_site_on: string | null
+          updated_at: string
+          weld_complete: number
+          weld_total: number
+          welded_bolted_on: string | null
+        }
+        Insert: {
+          current_erection_stage?:
+            | Database["public"]["Enums"]["construction_stage"]
+            | null
+          current_stage?:
+            | Database["public"]["Enums"]["construction_stage"]
+            | null
+          erected_on?: string | null
+          fabricated_on?: string | null
+          field_nde_pending?: number
+          field_pwht_pending?: number
+          field_support_recorded?: number
+          field_support_total?: number
+          field_weld_complete?: number
+          field_weld_total?: number
+          final_qc_on?: string | null
+          is_fabricated?: boolean
+          is_releasable?: boolean
+          is_removed?: boolean
+          is_rft?: boolean
+          iso_number: string
+          laydown_on?: string | null
+          line_checked?: number
+          line_total?: number
+          material_check_on?: string | null
+          nde_pending?: number
+          painted_on?: string | null
+          pds_area_id?: string | null
+          project_id: string
+          projection_version?: number
+          pwht_pending?: number
+          qc_release_on?: string | null
+          revision_number: string
+          revision_status: string
+          rft_on?: string | null
+          sent_to_paint_on?: string | null
+          spool_number: string
+          spool_revision_id: string
+          start_fab_on?: string | null
+          support_recorded?: number
+          support_total?: number
+          supported_on?: string | null
+          to_site_on?: string | null
+          updated_at?: string
+          weld_complete?: number
+          weld_total?: number
+          welded_bolted_on?: string | null
+        }
+        Update: {
+          current_erection_stage?:
+            | Database["public"]["Enums"]["construction_stage"]
+            | null
+          current_stage?:
+            | Database["public"]["Enums"]["construction_stage"]
+            | null
+          erected_on?: string | null
+          fabricated_on?: string | null
+          field_nde_pending?: number
+          field_pwht_pending?: number
+          field_support_recorded?: number
+          field_support_total?: number
+          field_weld_complete?: number
+          field_weld_total?: number
+          final_qc_on?: string | null
+          is_fabricated?: boolean
+          is_releasable?: boolean
+          is_removed?: boolean
+          is_rft?: boolean
+          iso_number?: string
+          laydown_on?: string | null
+          line_checked?: number
+          line_total?: number
+          material_check_on?: string | null
+          nde_pending?: number
+          painted_on?: string | null
+          pds_area_id?: string | null
+          project_id?: string
+          projection_version?: number
+          pwht_pending?: number
+          qc_release_on?: string | null
+          revision_number?: string
+          revision_status?: string
+          rft_on?: string | null
+          sent_to_paint_on?: string | null
+          spool_number?: string
+          spool_revision_id?: string
+          start_fab_on?: string | null
+          support_recorded?: number
+          support_total?: number
+          supported_on?: string | null
+          to_site_on?: string | null
+          updated_at?: string
+          weld_complete?: number
+          weld_total?: number
+          welded_bolted_on?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fabrication_spool_projections_pds_area_id_fkey"
+            columns: ["pds_area_id"]
+            isOneToOne: false
+            referencedRelation: "project_pds_areas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fabrication_spool_projections_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fabrication_spool_projections_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "flange_joint_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "fabrication_spool_projections_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "flange_joint_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "fabrication_spool_projections_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "spool_construction_status"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "fabrication_spool_projections_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "spool_erection_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "fabrication_spool_projections_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "spool_fabrication_readiness"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "fabrication_spool_projections_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "spool_revisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fabrication_spool_projections_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "spool_tracking_worklist"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "fabrication_spool_projections_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
+            referencedRelation: "spool_transit_alerts"
+            referencedColumns: ["spool_revision_id"]
+          },
+          {
+            foreignKeyName: "fabrication_spool_projections_spool_revision_id_fkey"
+            columns: ["spool_revision_id"]
+            isOneToOne: true
             referencedRelation: "test_pack_spool_status"
             referencedColumns: ["spool_revision_id"]
           },
@@ -10648,6 +10898,33 @@ export type Database = {
       }
       engineering_numeric: { Args: { value: string }; Returns: number }
       engineering_numeric_key: { Args: { value: number }; Returns: string }
+      erection_progress_s_curve: {
+        Args: { target_project_id: string }
+        Returns: {
+          erected_count: number
+          rft_count: number
+          supported_count: number
+          to_site_count: number
+          week_start: string
+          welded_bolted_count: number
+        }[]
+      }
+      erection_rft_blocker_distribution: {
+        Args: { target_project_id: string }
+        Returns: {
+          blocker: string
+          blocker_order: number
+          spool_count: number
+        }[]
+      }
+      erection_stage_distribution: {
+        Args: { target_project_id: string }
+        Returns: {
+          spool_count: number
+          stage: string
+          stage_order: number
+        }[]
+      }
       evaluate_nde_penalty: {
         Args: {
           source_batch_id: string
@@ -10656,6 +10933,45 @@ export type Database = {
         }
         Returns: boolean
       }
+      fabrication_progress_by_pds_area: {
+        Args: { target_project_id: string }
+        Returns: {
+          complete_count: number
+          in_progress_count: number
+          not_started_count: number
+          pds_area_code: string
+          pds_area_id: string
+        }[]
+      }
+      fabrication_progress_s_curve: {
+        Args: { target_project_id: string }
+        Returns: {
+          fabricated_count: number
+          final_qc_count: number
+          laydown_count: number
+          material_check_count: number
+          painted_count: number
+          qc_release_count: number
+          sent_to_paint_count: number
+          start_fab_count: number
+          week_start: string
+        }[]
+      }
+      fabrication_spool_stage_counts: {
+        Args: { target_project_id: string }
+        Returns: {
+          current_stage: string
+          spool_count: number
+        }[]
+      }
+      fabrication_stage_distribution: {
+        Args: { target_project_id: string }
+        Returns: {
+          spool_count: number
+          stage: string
+          stage_order: number
+        }[]
+      }
       flange_revision_in_pds_scope: {
         Args: { target_revision_id: string }
         Returns: boolean
@@ -10663,6 +10979,63 @@ export type Database = {
       generate_weld_obligations: {
         Args: { ctx: Database["public"]["CompositeTypes"]["weld_context"] }
         Returns: number
+      }
+      get_fabrication_spool: {
+        Args: { target_spool_revision_id: string }
+        Returns: {
+          current_erection_stage:
+            | Database["public"]["Enums"]["construction_stage"]
+            | null
+          current_stage:
+            | Database["public"]["Enums"]["construction_stage"]
+            | null
+          erected_on: string | null
+          fabricated_on: string | null
+          field_nde_pending: number
+          field_pwht_pending: number
+          field_support_recorded: number
+          field_support_total: number
+          field_weld_complete: number
+          field_weld_total: number
+          final_qc_on: string | null
+          is_fabricated: boolean
+          is_releasable: boolean
+          is_removed: boolean
+          is_rft: boolean
+          iso_number: string
+          laydown_on: string | null
+          line_checked: number
+          line_total: number
+          material_check_on: string | null
+          nde_pending: number
+          painted_on: string | null
+          pds_area_id: string | null
+          project_id: string
+          projection_version: number
+          pwht_pending: number
+          qc_release_on: string | null
+          revision_number: string
+          revision_status: string
+          rft_on: string | null
+          sent_to_paint_on: string | null
+          spool_number: string
+          spool_revision_id: string
+          start_fab_on: string | null
+          support_recorded: number
+          support_total: number
+          supported_on: string | null
+          to_site_on: string | null
+          updated_at: string
+          weld_complete: number
+          weld_total: number
+          welded_bolted_on: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "fabrication_spool_projections"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_project_access_matrix: {
         Args: { target_project_id: string }
@@ -10753,6 +11126,43 @@ export type Database = {
           project_status: Database["public"]["Enums"]["project_reference_status"]
           subcontractor_ids: string[]
           title: string
+        }[]
+      }
+      list_fabrication_spools: {
+        Args: {
+          after_iso_number?: string
+          after_spool_number?: string
+          after_spool_revision_id?: string
+          page_limit?: number
+          target_project_id: string
+          target_stage?: string
+        }
+        Returns: {
+          current_stage: Database["public"]["Enums"]["construction_stage"]
+          fabricated_on: string
+          final_qc_on: string
+          is_fabricated: boolean
+          is_releasable: boolean
+          iso_number: string
+          laydown_on: string
+          line_checked: number
+          line_total: number
+          material_check_on: string
+          nde_pending: number
+          painted_on: string
+          pds_area_id: string
+          project_id: string
+          pwht_pending: number
+          qc_release_on: string
+          revision_number: string
+          sent_to_paint_on: string
+          spool_number: string
+          spool_revision_id: string
+          start_fab_on: string
+          support_recorded: number
+          support_total: number
+          weld_complete: number
+          weld_total: number
         }[]
       }
       list_tracking_device_user_candidates: {
@@ -10849,6 +11259,14 @@ export type Database = {
           candidate_welded_on: string
         }[]
       }
+      nde_inspection_workflow_distribution: {
+        Args: { target_project_id: string }
+        Returns: {
+          obligation_count: number
+          status: string
+          status_order: number
+        }[]
+      }
       nde_joint_status_label: {
         Args: {
           coverage_regime: string
@@ -10857,6 +11275,25 @@ export type Database = {
           disposition: string
         }
         Returns: string
+      }
+      nde_method_distribution: {
+        Args: { target_project_id: string }
+        Returns: {
+          accepted_count: number
+          allocated_count: number
+          issued_count: number
+          method: string
+          pending_count: number
+          rejected_count: number
+        }[]
+      }
+      nde_outcome_trend: {
+        Args: { target_project_id: string }
+        Returns: {
+          accepted_count: number
+          rejected_count: number
+          week_start: string
+        }[]
       }
       pressure_test_assert_pack: {
         Args: { target_test_pack_id: string }
@@ -10902,6 +11339,14 @@ export type Database = {
           previous_payload: Json
           requires_decision: boolean
         }[]
+      }
+      recompute_erection_spool_projection: {
+        Args: { target_spool_revision_id: string }
+        Returns: undefined
+      }
+      recompute_fabrication_spool_projection: {
+        Args: { target_spool_revision_id: string }
+        Returns: undefined
       }
       record_blinding: {
         Args: {
@@ -12169,6 +12614,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: [

@@ -7,6 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import type { ProjectSetupReadiness } from "../domain/setup-readiness"
 import { evaluateReadinessStatus, getRequirementDetails } from "../domain/setup-readiness"
 
+// This panel is a to-do list, not a status light. A fully configured project has nothing left to
+// say here, so it renders nothing rather than a permanent green banner that stops being read —
+// which also keeps the top of the referential page clear on a seeded project.
 export function SetupReadinessPanel({
   readiness,
   onNavigateTab,
@@ -14,56 +17,54 @@ export function SetupReadinessPanel({
   readiness: ProjectSetupReadiness
   onNavigateTab?: (tab: string) => void
 }) {
-  const { isGateBReady, isAdminDone } = evaluateReadinessStatus(readiness.missingCodes)
+  if (readiness.missingCodes.length === 0) return null
+
+  // Only the import gate is worth a badge: the card is on screen precisely because setup is
+  // incomplete, so a second badge saying so would repeat the heading.
+  const { isGateBReady } = evaluateReadinessStatus(readiness.missingCodes)
 
   return (
-    <Card className="border-primary/20 bg-primary/5">
+    <Card className="border-warning-border bg-warning-bg">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base font-semibold">Project Setup Readiness</CardTitle>
-          <div className="flex items-center gap-2">
-            <Badge variant={isGateBReady ? "default" : "outline"} className={isGateBReady ? "bg-success-bg text-success-fg border-success-border" : "text-warning-fg border-warning-border"}>
-              {isGateBReady ? <CheckCircle2 className="mr-1 h-3 w-3" /> : <AlertTriangle className="mr-1 h-3 w-3" />}
-              Gate B: {isGateBReady ? "Ready for Import" : "Incomplete"}
-            </Badge>
-            <Badge variant={isAdminDone ? "default" : "outline"} className={isAdminDone ? "bg-success-bg text-success-fg border-success-border" : "text-warning-fg border-warning-border"}>
-              {isAdminDone ? <CheckCircle2 className="mr-1 h-3 w-3" /> : <AlertTriangle className="mr-1 h-3 w-3" />}
-              Gate C: {isAdminDone ? "Referential Complete" : "Incomplete"}
-            </Badge>
-          </div>
+        <div className="flex items-center justify-between gap-4">
+          <CardTitle className="text-base font-semibold">
+            Setup incomplete — {readiness.missingCodes.length}{" "}
+            {readiness.missingCodes.length === 1 ? "referential" : "referentials"} missing
+          </CardTitle>
+          <Badge
+            variant="outline"
+            className={
+              isGateBReady
+                ? "bg-success-bg text-success-fg border-success-border shrink-0"
+                : "bg-background text-warning-fg border-warning-border shrink-0"
+            }
+          >
+            {isGateBReady ? <CheckCircle2 className="mr-1 h-3 w-3" /> : <AlertTriangle className="mr-1 h-3 w-3" />}
+            {isGateBReady ? "Ready for engineering import" : "Not ready for engineering import"}
+          </Badge>
         </div>
         <CardDescription>
-          Gate B readiness is required before importing engineering packages (ISO, Spool, Weld). Gate C represents full setup completion.
+          {isGateBReady
+            ? "Everything the ISO, spool and weld import reads is in place. The referentials below are still needed before execution."
+            : "The ISO, spool and weld import reads these referentials, so engineering data cannot be loaded until they exist."}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {readiness.missingCodes.length === 0 ? (
-          <div className="text-success-fg flex items-center gap-2 text-sm font-medium">
-            <CheckCircle2 className="h-4 w-4" />
-            All project referential requirements are satisfied. The project is ready for engineering imports and execution.
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Missing Referentials ({readiness.missingCodes.length})
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {readiness.missingCodes.map((code) => {
-                const req = getRequirementDetails(code)
-                return (
-                  <button
-                    key={code}
-                    onClick={() => onNavigateTab && onNavigateTab(req.tab)}
-                    className="inline-flex items-center gap-1.5 rounded-md border bg-background px-2.5 py-1 text-xs font-medium hover:bg-accent transition-colors"
-                  >
-                    <span>{req.label}</span>
-                    <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {readiness.missingCodes.map((code) => {
+            const req = getRequirementDetails(code)
+            return (
+              <button
+                key={code}
+                onClick={() => onNavigateTab && onNavigateTab(req.tab)}
+                className="inline-flex items-center gap-1.5 rounded-md border bg-background px-2.5 py-1 text-xs font-medium hover:bg-accent transition-colors"
+              >
+                <span>{req.label}</span>
+                <ArrowRight className="h-3 w-3 text-muted-foreground" />
+              </button>
+            )
+          })}
+        </div>
       </CardContent>
     </Card>
   )

@@ -7,6 +7,7 @@ export default function ErectionDashboardPage() {
     <ErectionReadinessScreen
       title="Erection Dashboard"
       description="Live field-spool progress from the Supabase construction ledger."
+      showCharts
     />
   )
 }

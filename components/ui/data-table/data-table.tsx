@@ -53,6 +53,19 @@ export type DataColumn<Row> = {
   headerClassName?: string
 }
 
+/**
+ * Navigation for a cursor-paged query. The table still owns the familiar footer and page-size
+ * control, while the caller owns the opaque cursor that lets the database fetch the next page.
+ */
+export type ServerPagination = {
+  pageIndex: number
+  pageSize: number
+  hasNextPage: boolean
+  onPreviousPage: () => void
+  onNextPage: () => void
+  onPageSizeChange: (pageSize: number) => void
+}
+
 const compareValues = (a: unknown, b: unknown): number => {
   // Blanks sort last in both directions. A column of dates whose empty rows float to the top puts
   // the rows with no information where the operator looks first, which is exactly backwards.
@@ -82,6 +95,8 @@ export function DataTable<Row>({
   emptyTitle = 'Nothing here yet',
   emptyDescription,
   toolbarActions,
+  pagination = true,
+  serverPagination,
   containerClassName,
   className,
 }: {
@@ -97,6 +112,10 @@ export function DataTable<Row>({
   emptyTitle?: string
   emptyDescription?: string
   toolbarActions?: React.ReactNode
+  /** The caller owns navigation when rows come from a keyset-paged server query. */
+  pagination?: boolean
+  /** Keeps a cursor-paged table visually consistent with ordinary worklists. */
+  serverPagination?: ServerPagination
   containerClassName?: string
   className?: string
 }) {
@@ -148,8 +167,12 @@ export function DataTable<Row>({
   // read as "no results".
   const pageIndex = Math.min(state.pageIndex, pageCount - 1)
   const paged = React.useMemo(
-    () => sorted.slice(pageIndex * state.pageSize, (pageIndex + 1) * state.pageSize),
-    [sorted, pageIndex, state.pageSize],
+    () => serverPagination
+      ? sorted
+      : pagination
+      ? sorted.slice(pageIndex * state.pageSize, (pageIndex + 1) * state.pageSize)
+      : sorted,
+    [serverPagination, pagination, sorted, pageIndex, state.pageSize],
   )
 
   /** Facet counts come from the rows the *other* filters left, so a facet never offers a dead end. */
@@ -349,6 +372,54 @@ export function DataTable<Row>({
         </Table>
       </div>
 
+      {serverPagination ? (
+        <div className="text-muted-foreground flex flex-wrap items-center justify-between gap-2 text-sm">
+          <span className="tabular-nums">
+            {sorted.length === 0
+              ? 'No rows'
+              : `${sorted.length} rows in this page`}
+            {filteringActive && rows.length !== sorted.length ? ` (${sorted.length} matching)` : ''}
+          </span>
+
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-1">
+              <span className="sr-only sm:not-sr-only">Rows per page</span>
+              <select
+                value={serverPagination.pageSize}
+                onChange={(event) => serverPagination.onPageSizeChange(Number(event.target.value))}
+                aria-label="Rows per page"
+                className="border-input bg-background h-8 rounded-md border px-2 text-sm"
+              >
+                {PAGE_SIZES.map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <Button
+              variant="outline"
+              size="icon-sm"
+              aria-label="Previous page"
+              disabled={loading || serverPagination.pageIndex === 0}
+              onClick={serverPagination.onPreviousPage}
+            >
+              <ChevronLeft />
+            </Button>
+            <span className="tabular-nums">Page {serverPagination.pageIndex + 1}</span>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              aria-label="Next page"
+              disabled={loading || !serverPagination.hasNextPage}
+              onClick={serverPagination.onNextPage}
+            >
+              <ChevronRight />
+            </Button>
+          </div>
+        </div>
+      ) : pagination ? (
       <div className="text-muted-foreground flex flex-wrap items-center justify-between gap-2 text-sm">
         <span className="tabular-nums">
           {sorted.length === 0
@@ -397,6 +468,7 @@ export function DataTable<Row>({
           </Button>
         </div>
       </div>
+      ) : null}
     </div>
   )
 }

@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 
 import {
   toBillLine,
+  toFabricationSpoolCursor,
   toReadiness,
   toSpoolStatus,
   toSupportRow,
@@ -42,6 +43,12 @@ assert.equal(status.currentStage, "start_fab")
 assert.equal(status.dates.start_fab, "2026-08-04")
 assert.equal(status.dates.material_check, null)
 assert.equal(status.isReleasable, false)
+
+assert.deepEqual(toFabricationSpoolCursor(status), {
+  isoNumber: "ISO-A",
+  spoolNumber: "SP-1",
+  spoolRevisionId: "spool-rev-1",
+})
 
 const weld = toWeldSummary({
   weld_joint_revision_id: "wjr-1",

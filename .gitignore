@@ -817,3 +817,11 @@ docs/.obsidian/workspace.json
 package-lock.json
 __pycache__/mapping.cpython-314.pyc
 runbook.md
+PipeQC-Walkthrough.pptx
+
+# Raw + rendered demo video capture (regenerate with `npm run demo:record-video`)
+demo-video/
+
+# Remotion render output (regenerate with `npm run demo:render-video`) + local cache
+out/
+.remotion/

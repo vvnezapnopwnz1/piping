@@ -6,10 +6,18 @@ import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
-import { loadNdeKpis, type NdeKpis } from "../infrastructure/supabase-quality-repository"
+import { NdeChartsPanel } from "./nde-charts-panel"
+import {
+  loadNdeChartData,
+  loadNdeKpis,
+  type NdeChartData,
+  type NdeKpis,
+} from "../infrastructure/supabase-quality-repository"
 
 export function NdeDashboardScreen({ projectId }: { projectId: string }) {
   const [kpis, setKpis] = useState<NdeKpis | null>(null)
+  const [charts, setCharts] = useState<NdeChartData | null>(null)
+  const [chartsLoadedProjectId, setChartsLoadedProjectId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   const reload = useCallback(async () => {
@@ -27,6 +35,21 @@ export function NdeDashboardScreen({ projectId }: { projectId: string }) {
   useEffect(() => {
     void reload()
   }, [reload])
+
+  useEffect(() => {
+    let cancelled = false
+    void loadNdeChartData(getSupabaseBrowserClient(), projectId)
+      .then((data) => {
+        if (!cancelled) setCharts(data)
+      })
+      .catch((err: unknown) =>
+        toast.error(err instanceof Error ? err.message : "The NDE charts could not be loaded."),
+      )
+      .finally(() => {
+        if (!cancelled) setChartsLoadedProjectId(projectId)
+      })
+    return () => { cancelled = true }
+  }, [projectId])
 
   if (loading) return <Skeleton className="h-64 w-full" />
 
@@ -76,6 +99,8 @@ export function NdeDashboardScreen({ projectId }: { projectId: string }) {
           </CardContent>
         </Card>
       </div>
+
+      <NdeChartsPanel data={charts} loading={chartsLoadedProjectId !== projectId} />
     </div>
   )
 }
