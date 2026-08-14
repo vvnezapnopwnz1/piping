@@ -2725,27 +2725,46 @@ export class SupabaseDemoStandCore {
           )
         }
         const subject = `${membership.projectCode}/${user.key}`
-        const created = await safely("Preparing demo access", subject, () =>
-          this.gateway.upsertMembership({
-            projectId,
-            userId,
-            accessRoleCode: membership.role,
-            legacyRole: legacyRoleFor(membership),
-            isActive: true,
-          }),
+        const membershipId = await this.writeMembershipRow(
+          projectId,
+          userId,
+          membership,
+          subject,
         )
-        if (!created.id) {
-          throw safeFailure("Preparing demo access", subject)
-        }
-        this.membershipIds.set(subject, created.id)
-        await safely("Preparing demo functional roles", subject, () =>
-          this.gateway.replaceFunctionalRoles(
-            created.id as string,
-            membership.functionalRoles,
-          ),
-        )
+        this.membershipIds.set(subject, membershipId)
       }
     }
+  }
+
+  // Shared upsert-and-replace-roles body for a single membership row: upserts via
+  // upsertMembership, validates the write returned an id, then replaces functional roles for
+  // that membership. Returns the resolved membership id. Callers own the
+  // `this.membershipIds.set(...)` afterward.
+  private async writeMembershipRow(
+    projectId: string,
+    userId: string,
+    membership: DemoMembership,
+    subject: string,
+  ): Promise<string> {
+    const created = await safely("Preparing demo access", subject, () =>
+      this.gateway.upsertMembership({
+        projectId,
+        userId,
+        accessRoleCode: membership.role,
+        legacyRole: legacyRoleFor(membership),
+        isActive: true,
+      }),
+    )
+    if (!created.id) {
+      throw safeFailure("Preparing demo access", subject)
+    }
+    await safely("Preparing demo functional roles", subject, () =>
+      this.gateway.replaceFunctionalRoles(
+        created.id as string,
+        membership.functionalRoles,
+      ),
+    )
+    return created.id
   }
 
   async prepareSystemReferences(): Promise<void> {
@@ -2903,6 +2922,37 @@ export class SupabaseDemoStandCore {
       existingProjects,
     )
     this.projectIds.set(definition.activityCode, projectId)
+  }
+
+  async prepareShowcaseAccess(): Promise<void> {
+    const projectId = this.projectIds.get(SHOWCASE_PROJECT_CODE)
+    if (!projectId) {
+      throw new Error(
+        "SHOWCASE-1 must be resolved by prepareShowcaseProject before prepareShowcaseAccess.",
+      )
+    }
+
+    for (const user of DEMO_MANIFEST.users) {
+      const membership = user.memberships.find(
+        (candidate) => candidate.projectCode === SHOWCASE_PROJECT_CODE,
+      )
+      if (!membership) continue
+
+      const userId = this.userIds.get(user.key)
+      if (!userId) {
+        throw new Error(
+          `${user.key} must be resolved by resolveShowcasePrerequisiteIds before prepareShowcaseAccess.`,
+        )
+      }
+      const subject = `${membership.projectCode}/${user.key}`
+      const membershipId = await this.writeMembershipRow(
+        projectId,
+        userId,
+        membership,
+        subject,
+      )
+      this.membershipIds.set(subject, membershipId)
+    }
   }
 
   async readSnapshot(): Promise<DemoStandSnapshot> {

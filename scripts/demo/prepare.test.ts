@@ -1712,6 +1712,44 @@ test("prepareShowcaseProject requires resolveShowcasePrerequisiteIds first", asy
   )
 })
 
+test("prepareShowcaseAccess upserts exactly the SHOWCASE-1 memberships and no others", async () => {
+  const gateway = existingHostedGateway()
+  const core = new SupabaseDemoStandCore(gateway)
+  await core.resolveShowcasePrerequisiteIds()
+  await core.prepareShowcaseProject()
+
+  await core.prepareShowcaseAccess()
+
+  const showcaseMembers = DEMO_MANIFEST.users.filter((user) =>
+    user.memberships.some(
+      (membership) => membership.projectCode === "SHOWCASE-1",
+    ),
+  )
+  const upserts = gateway.calls.filter(
+    (call) => call.method === "upsertMembership",
+  )
+  assert.equal(upserts.length, showcaseMembers.length)
+  for (const call of upserts) {
+    const payload = call.payload as { projectId: string }
+    assert.equal(payload.projectId, "created-project-1")
+  }
+  const roleWrites = gateway.calls.filter(
+    (call) => call.method === "replaceFunctionalRoles",
+  )
+  assert.equal(roleWrites.length, showcaseMembers.length)
+})
+
+test("prepareShowcaseAccess requires the SHOWCASE-1 project first", async () => {
+  const gateway = existingHostedGateway()
+  const core = new SupabaseDemoStandCore(gateway)
+  await core.resolveShowcasePrerequisiteIds()
+
+  await assert.rejects(
+    core.prepareShowcaseAccess(),
+    /SHOWCASE-1 must be resolved by prepareShowcaseProject/,
+  )
+})
+
 test("reference preparation writes system, parent, dependent, extended, progress, and final scopes in exact order", async () => {
   const gateway = configuredReferenceGateway()
   const core = await preparedReferenceCore(gateway)
