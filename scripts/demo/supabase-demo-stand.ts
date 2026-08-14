@@ -2659,39 +2659,53 @@ export class SupabaseDemoStandCore {
     )
 
     for (const definition of PROJECT_DEFINITIONS) {
-      const existing = existingProjects.find(
-        (project) => project.activityCode === definition.activityCode,
+      const projectId = await this.writeProjectRow(
+        definition,
+        creatorId,
+        existingProjects,
       )
-      const payload = projectWrite(definition, creatorId)
-      let projectId: string | null
-
-      if (existing) {
-        const updated = await safely(
-          "Preparing demo project",
-          definition.activityCode,
-          () => this.gateway.updateProject(existing.id, payload),
-        )
-        if (updated.ids.length !== 1 || updated.ids[0] !== existing.id) {
-          throw safeFailure(
-            "Preparing demo project",
-            definition.activityCode,
-          )
-        }
-        projectId = existing.id
-      } else {
-        const created = await safely(
-          "Preparing demo project",
-          definition.activityCode,
-          () => this.gateway.createProject(payload),
-        )
-        projectId = created.id
-      }
-
-      if (!projectId) {
-        throw safeFailure("Preparing demo project", definition.activityCode)
-      }
       this.projectIds.set(definition.activityCode, projectId)
     }
+  }
+
+  // Shared create-or-update body for a single project row: finds any existing row by
+  // activityCode, writes it via createProject/updateProject, and validates the write actually
+  // touched that one row. Returns the resolved project id. Callers own the `listProjects()` fetch
+  // (so they can batch it once per manifest sweep) and the `this.projectIds.set(...)` afterward.
+  private async writeProjectRow(
+    definition: DemoProject,
+    creatorId: string,
+    existingProjects: readonly DemoProjectRecord[],
+  ): Promise<string> {
+    const existing = existingProjects.find(
+      (project) => project.activityCode === definition.activityCode,
+    )
+    const payload = projectWrite(definition, creatorId)
+    let projectId: string | null
+
+    if (existing) {
+      const updated = await safely(
+        "Preparing demo project",
+        definition.activityCode,
+        () => this.gateway.updateProject(existing.id, payload),
+      )
+      if (updated.ids.length !== 1 || updated.ids[0] !== existing.id) {
+        throw safeFailure("Preparing demo project", definition.activityCode)
+      }
+      projectId = existing.id
+    } else {
+      const created = await safely(
+        "Preparing demo project",
+        definition.activityCode,
+        () => this.gateway.createProject(payload),
+      )
+      projectId = created.id
+    }
+
+    if (!projectId) {
+      throw safeFailure("Preparing demo project", definition.activityCode)
+    }
+    return projectId
   }
 
   async prepareAccess(): Promise<void> {
@@ -2883,34 +2897,11 @@ export class SupabaseDemoStandCore {
       "project list",
       () => this.gateway.listProjects(),
     )
-    const existing = existingProjects.find(
-      (project) => project.activityCode === definition.activityCode,
+    const projectId = await this.writeProjectRow(
+      definition,
+      creatorId,
+      existingProjects,
     )
-    const payload = projectWrite(definition, creatorId)
-    let projectId: string | null
-
-    if (existing) {
-      const updated = await safely(
-        "Preparing demo project",
-        definition.activityCode,
-        () => this.gateway.updateProject(existing.id, payload),
-      )
-      if (updated.ids.length !== 1 || updated.ids[0] !== existing.id) {
-        throw safeFailure("Preparing demo project", definition.activityCode)
-      }
-      projectId = existing.id
-    } else {
-      const created = await safely(
-        "Preparing demo project",
-        definition.activityCode,
-        () => this.gateway.createProject(payload),
-      )
-      projectId = created.id
-    }
-
-    if (!projectId) {
-      throw safeFailure("Preparing demo project", definition.activityCode)
-    }
     this.projectIds.set(definition.activityCode, projectId)
   }
 
