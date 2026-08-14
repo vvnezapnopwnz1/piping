@@ -2524,6 +2524,15 @@ function userMemberships(
     .sort((left, right) => compareText(left.projectCode, right.projectCode))
 }
 
+// The three golden-project (TRACK01-A) manifest users whose ids and memberships
+// `resolveShowcasePrerequisiteIds` must resolve, because `referenceResolvedIds()` structurally
+// requires them even for a flow that never writes to TRACK01-A.
+const GOLDEN_REFERENCE_MEMBERSHIP_KEYS = [
+  "project_admin_a",
+  "qc_editor",
+  "nde_subcontractor",
+] as const
+
 export class SupabaseDemoStandCore {
   private readonly userIds = new Map<string, string>()
   private readonly projectIds = new Map<string, string>()
@@ -2775,23 +2784,15 @@ export class SupabaseDemoStandCore {
     )
   }
 
-  /**
-   * Read-only. Populates the ids `prepareShowcaseProject`, `prepareShowcaseAccess`, and
-   * `prepareShowcaseProjectReferences` need, without ever calling a create/update/upsert
-   * gateway method — so this is safe to call against a stand that already holds curated
-   * TRACK01-A/B data. Never writes a TRACK01-A/B row.
-   */
+  // Resolves the ids of every manifest user `resolveShowcasePrerequisiteIds` needs: the
+  // golden-project reference memberships plus any user with a SHOWCASE-1 membership.
   private async resolveShowcaseUserIds(): Promise<void> {
     const existingUsers = await safely(
       "Resolving demo users",
       "auth user list",
       () => this.gateway.listAuthUsers(),
     )
-    const requiredUserKeys = new Set<string>([
-      "project_admin_a",
-      "qc_editor",
-      "nde_subcontractor",
-    ])
+    const requiredUserKeys = new Set<string>(GOLDEN_REFERENCE_MEMBERSHIP_KEYS)
     for (const user of DEMO_MANIFEST.users) {
       if (
         user.memberships.some(
@@ -2819,6 +2820,12 @@ export class SupabaseDemoStandCore {
     }
   }
 
+  /**
+   * Read-only. Populates the ids `prepareShowcaseProject`, `prepareShowcaseAccess`, and
+   * `prepareShowcaseProjectReferences` need, without ever calling a create/update/upsert
+   * gateway method — so this is safe to call against a stand that already holds curated
+   * TRACK01-A/B data. Never writes a TRACK01-A/B row.
+   */
   async resolveShowcasePrerequisiteIds(): Promise<void> {
     await this.resolveShowcaseUserIds()
 
@@ -2843,11 +2850,7 @@ export class SupabaseDemoStandCore {
       "membership list",
       () => this.gateway.readMemberships(),
     )
-    for (const key of [
-      "project_admin_a",
-      "qc_editor",
-      "nde_subcontractor",
-    ] as const) {
+    for (const key of GOLDEN_REFERENCE_MEMBERSHIP_KEYS) {
       const userId = this.userIds.get(key)
       if (!userId) {
         throw new Error(
