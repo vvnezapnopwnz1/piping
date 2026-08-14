@@ -29,8 +29,8 @@ export interface SeedHostedShowcaseInput {
 
 export interface SeedHostedShowcaseDependencies {
   createPort: (url: string, serviceRoleKey: string) => ShowcaseSeedPort
-  readonly fetchPublishableKey: () => string
-  readonly seedEngineeringData: (
+  fetchPublishableKey: () => string
+  seedEngineeringData: (
     context: ShowcaseSeedContext,
     log: (line: string) => void,
   ) => Promise<void>
@@ -46,24 +46,35 @@ export function parseHostedShowcaseSeedArguments(
   return { confirmed: true }
 }
 
-export function fetchHostedPublishableKey(): string {
-  const result = spawnSync(
-    "supabase",
-    [
-      "projects",
-      "api-keys",
-      "--project-ref",
-      PIPEQC_HOSTED_DEMO_PROJECT_REF,
-      "--output-format",
-      "json",
-    ],
-    { encoding: "utf8" },
-  )
+export type SpawnCaptureLike = (
+  command: string,
+  args: readonly string[],
+) => { readonly status: number | null; readonly stdout: string }
+
+export function fetchHostedPublishableKey(
+  spawn: SpawnCaptureLike = (command, args) =>
+    spawnSync(command, args, { encoding: "utf8" }),
+): string {
+  const result = spawn("supabase", [
+    "projects",
+    "api-keys",
+    "--project-ref",
+    PIPEQC_HOSTED_DEMO_PROJECT_REF,
+    "--output-format",
+    "json",
+  ])
   if (result.status !== 0 || !result.stdout) {
     throw new Error("Fetching the hosted publishable key failed.")
   }
-  const parsed = JSON.parse(result.stdout) as {
+  let parsed: {
     readonly keys: readonly { readonly type: string; readonly api_key: string }[]
+  }
+  try {
+    parsed = JSON.parse(result.stdout) as {
+      readonly keys: readonly { readonly type: string; readonly api_key: string }[]
+    }
+  } catch {
+    throw new Error("The hosted publishable key response was not valid JSON.")
   }
   const publishable = parsed.keys.find((key) => key.type === "publishable")
   if (!publishable) {

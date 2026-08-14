@@ -2,10 +2,12 @@ import assert from "node:assert/strict"
 import test from "node:test"
 
 import {
+  fetchHostedPublishableKey,
   parseHostedShowcaseSeedArguments,
   runSeedHostedShowcase,
   type SeedHostedShowcaseDependencies,
   type SeedHostedShowcaseInput,
+  type SpawnCaptureLike,
 } from "./bootstrap-showcase-dataset-hosted"
 import { PIPEQC_HOSTED_DEMO_PROJECT_REF } from "./demo/hosted-target"
 import type { ShowcaseSeedContext } from "./bootstrap-showcase-dataset"
@@ -149,4 +151,111 @@ test("runSeedHostedShowcase stops before engineering seeding when project setup 
     dependencies.lines.some((line) => line.includes("leaked-detail")),
     false,
   )
+})
+
+test("runSeedHostedShowcase stops before project setup when createPort throws, without a raw error message", async () => {
+  const dependencies = recordingDependencies()
+  dependencies.createPort = () => {
+    throw new Error(
+      "service_role_key=FAKE-SERVICE-KEY leaked-createport=should-not-appear",
+    )
+  }
+
+  const status = await runSeedHostedShowcase(baseInput(), dependencies)
+
+  assert.equal(status, 1)
+  assert.equal(dependencies.portCalls.length, 0)
+  assert.equal(dependencies.seedCalls.length, 0)
+  assert.equal(
+    dependencies.lines.some((line) => line.includes("leaked-createport")),
+    false,
+  )
+})
+
+test("runSeedHostedShowcase stops before engineering seeding when fetchPublishableKey throws, without a raw error message", async () => {
+  const dependencies = recordingDependencies()
+  dependencies.fetchPublishableKey = () => {
+    throw new Error(
+      "service_role_key=FAKE-SERVICE-KEY leaked-publishable=should-not-appear",
+    )
+  }
+
+  const status = await runSeedHostedShowcase(baseInput(), dependencies)
+
+  assert.equal(status, 1)
+  assert.deepEqual(dependencies.portCalls, [
+    "resolveShowcasePrerequisiteIds",
+    "prepareShowcaseProject",
+    "prepareShowcaseAccess",
+    "prepareShowcaseProjectReferences",
+  ])
+  assert.equal(dependencies.seedCalls.length, 0)
+  assert.equal(
+    dependencies.lines.some((line) => line.includes("leaked-publishable")),
+    false,
+  )
+})
+
+test("runSeedHostedShowcase reports failure when seedEngineeringData throws, without a raw error message", async () => {
+  const dependencies = recordingDependencies()
+  dependencies.seedEngineeringData = async () => {
+    throw new Error(
+      "service_role_key=FAKE leaked-again=should-not-appear",
+    )
+  }
+
+  const status = await runSeedHostedShowcase(baseInput(), dependencies)
+
+  assert.equal(status, 1)
+  assert.deepEqual(dependencies.portCalls, [
+    "resolveShowcasePrerequisiteIds",
+    "prepareShowcaseProject",
+    "prepareShowcaseAccess",
+    "prepareShowcaseProjectReferences",
+  ])
+  assert.equal(
+    dependencies.lines.some((line) => line.includes("leaked-again")),
+    false,
+  )
+})
+
+test("fetchHostedPublishableKey throws on a nonzero exit status", () => {
+  const spawn: SpawnCaptureLike = () => ({ status: 1, stdout: "" })
+  assert.throws(() => fetchHostedPublishableKey(spawn))
+})
+
+test("fetchHostedPublishableKey throws on empty stdout", () => {
+  const spawn: SpawnCaptureLike = () => ({ status: 0, stdout: "" })
+  assert.throws(() => fetchHostedPublishableKey(spawn))
+})
+
+test("fetchHostedPublishableKey throws on malformed JSON", () => {
+  const spawn: SpawnCaptureLike = () => ({
+    status: 0,
+    stdout: "{not valid json",
+  })
+  assert.throws(() => fetchHostedPublishableKey(spawn))
+})
+
+test("fetchHostedPublishableKey throws when no publishable-type entry exists", () => {
+  const spawn: SpawnCaptureLike = () => ({
+    status: 0,
+    stdout: JSON.stringify({
+      keys: [{ type: "secret", api_key: "FAKE-SECRET-KEY" }],
+    }),
+  })
+  assert.throws(() => fetchHostedPublishableKey(spawn))
+})
+
+test("fetchHostedPublishableKey returns the publishable entry's api_key", () => {
+  const spawn: SpawnCaptureLike = () => ({
+    status: 0,
+    stdout: JSON.stringify({
+      keys: [
+        { type: "secret", api_key: "FAKE-SECRET-KEY" },
+        { type: "publishable", api_key: "FAKE-PUBLISHABLE-KEY" },
+      ],
+    }),
+  })
+  assert.equal(fetchHostedPublishableKey(spawn), "FAKE-PUBLISHABLE-KEY")
 })
