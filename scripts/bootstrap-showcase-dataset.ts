@@ -458,14 +458,35 @@ async function seedNde(
   return { accepted, rejected: 0, pending: held.length }
 }
 
+/**
+ * Everything `seedShowcaseEngineeringData` needs, gathered by the caller rather than read from
+ * `process.env` here: the local `run()` reads its from `.env.local`, while a hosted caller (Task
+ * 7's entrypoint) builds this from the hosted stand's own env, bypassing this file's `isLocalhost`
+ * guard entirely — that guard only wraps this file's own `run()`.
+ */
 export interface ShowcaseSeedContext {
   readonly url: string
   readonly serviceKey: string
   readonly publishableKey: string
   readonly password: string
+  /**
+   * Whether `--reset-showcase` was passed. It only changes behavior when isometrics already
+   * exist for the project: `true` throws `RESET_GUIDANCE` instead of silently no-op'ing, so an
+   * operator who explicitly asked for a reset finds out the flag can't do that rather than
+   * walking away thinking nothing was wrong.
+   */
   readonly resetFlagPresent: boolean
 }
 
+/**
+ * Seeds the showcase engineering data (isometrics, spools, welds, NDE) into the project identified
+ * by `SHOWCASE_PROJECT_CODE`, which must already exist — this throws if it doesn't, it does not
+ * create the project. Idempotent: if that project already holds any isometrics, this assumes a
+ * prior run already seeded it and returns without writing anything (see `resetFlagPresent` above
+ * for how that no-op path is guarded). `log` defaults to `console.log` but is injectable so a
+ * caller can route progress lines through its own output — e.g. a hosted entrypoint's `writeLine`
+ * — instead of the local CLI's stdout.
+ */
 export async function seedShowcaseEngineeringData(
   context: ShowcaseSeedContext,
   log: (line: string) => void = console.log,
