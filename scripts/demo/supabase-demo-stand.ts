@@ -2775,6 +2775,98 @@ export class SupabaseDemoStandCore {
     )
   }
 
+  /**
+   * Read-only. Populates the ids `prepareShowcaseProject`, `prepareShowcaseAccess`, and
+   * `prepareShowcaseProjectReferences` need, without ever calling a create/update/upsert
+   * gateway method — so this is safe to call against a stand that already holds curated
+   * TRACK01-A/B data. Never writes a TRACK01-A/B row.
+   */
+  private async resolveShowcaseUserIds(): Promise<void> {
+    const existingUsers = await safely(
+      "Resolving demo users",
+      "auth user list",
+      () => this.gateway.listAuthUsers(),
+    )
+    const requiredUserKeys = new Set<string>([
+      "project_admin_a",
+      "qc_editor",
+      "nde_subcontractor",
+    ])
+    for (const user of DEMO_MANIFEST.users) {
+      if (
+        user.memberships.some(
+          (membership) => membership.projectCode === SHOWCASE_PROJECT_CODE,
+        )
+      ) {
+        requiredUserKeys.add(user.key)
+      }
+    }
+
+    for (const key of requiredUserKeys) {
+      const user = DEMO_MANIFEST.users.find(
+        (candidate) => candidate.key === key,
+      )
+      if (!user) throw new Error(`${key} is not a known demo user.`)
+      const existing = existingUsers.find(
+        (candidate) => candidate.email === user.email,
+      )
+      if (!existing) {
+        throw new Error(
+          `${user.email} must already exist on this stand before SHOWCASE-1 can be prepared.`,
+        )
+      }
+      this.userIds.set(user.key, existing.id)
+    }
+  }
+
+  async resolveShowcasePrerequisiteIds(): Promise<void> {
+    await this.resolveShowcaseUserIds()
+
+    const existingProjects = await safely(
+      "Resolving demo projects",
+      "project list",
+      () => this.gateway.listProjects(),
+    )
+    const golden = existingProjects.find(
+      (project) =>
+        project.activityCode === DEMO_MANIFEST.projects.golden.activityCode,
+    )
+    if (!golden) {
+      throw new Error(
+        `${DEMO_MANIFEST.projects.golden.activityCode} must already exist before SHOWCASE-1 can be prepared.`,
+      )
+    }
+    this.projectIds.set(golden.activityCode, golden.id)
+
+    const memberships = await safely(
+      "Resolving demo memberships",
+      "membership list",
+      () => this.gateway.readMemberships(),
+    )
+    for (const key of [
+      "project_admin_a",
+      "qc_editor",
+      "nde_subcontractor",
+    ] as const) {
+      const userId = this.userIds.get(key)
+      if (!userId) {
+        throw new Error(
+          `${key} must be resolved before its TRACK01-A membership.`,
+        )
+      }
+      const membership = memberships.find(
+        (candidate) =>
+          candidate.projectId === golden.id && candidate.userId === userId,
+      )
+      if (!membership) {
+        throw new Error(
+          `${golden.activityCode}/${key} must already exist before SHOWCASE-1 can be prepared.`,
+        )
+      }
+      this.membershipIds.set(`${golden.activityCode}/${key}`, membership.id)
+    }
+  }
+
   async readSnapshot(): Promise<DemoStandSnapshot> {
     const core = await this.readCoreSnapshot()
     const goldenProjectId = this.projectIds.get(

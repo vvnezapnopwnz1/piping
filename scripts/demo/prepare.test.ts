@@ -1572,6 +1572,94 @@ async function preparedReferenceCore(
   return core
 }
 
+function existingHostedGateway(): RecordingReferenceGateway {
+  // Simulates a hosted stand that already has the 2026-08-13 baseline: TRACK01-A/B, their
+  // users, and TRACK01-A's project_admin_a/qc_editor/nde_subcontractor memberships — but no
+  // SHOWCASE-1 project, membership, or referentials yet.
+  const gateway = new RecordingReferenceGateway()
+  gateway.authUsers = DEMO_MANIFEST.users.map((user, index) => ({
+    id: `hosted-user-${index}`,
+    email: user.email,
+    bannedUntil: null,
+  }))
+  gateway.projects = [
+    projectRecord("golden", "hosted-project-a", "hosted-user-0"),
+    projectRecord("isolation", "hosted-project-b", "hosted-user-0"),
+  ]
+  const goldenMembers: ReadonlyArray<readonly [string, string]> = [
+    ["project_admin_a", "hosted-membership-admin-a"],
+    ["qc_editor", "hosted-membership-qc-editor"],
+    ["nde_subcontractor", "hosted-membership-nde-sub"],
+  ]
+  gateway.memberships = goldenMembers.map(([userKey, membershipId]) => {
+    const userIndex = DEMO_MANIFEST.users.findIndex(
+      (user) => user.key === userKey,
+    )
+    const membership = DEMO_MANIFEST.users[userIndex].memberships.find(
+      (candidate) => candidate.projectCode === "TRACK01-A",
+    )
+    if (!membership) throw new Error(`${userKey} has no TRACK01-A membership.`)
+    return {
+      id: membershipId,
+      projectId: "hosted-project-a",
+      userId: `hosted-user-${userIndex}`,
+      accessRoleCode: membership.role,
+      legacyRole: "system_admin",
+      isActive: true,
+    }
+  })
+  return gateway
+}
+
+test("resolveShowcasePrerequisiteIds reads existing golden and showcase-member ids without writing anything", async () => {
+  const gateway = existingHostedGateway()
+  const core = new SupabaseDemoStandCore(gateway)
+
+  await core.resolveShowcasePrerequisiteIds()
+
+  assert.deepEqual(
+    gateway.calls.map((call) => call.method),
+    ["listAuthUsers", "listProjects", "readMemberships"],
+  )
+  // No creates, updates, or upserts of any kind — this method only reads.
+  assert.equal(
+    gateway.calls.some((call) =>
+      [
+        "createAuthUser",
+        "updateAuthUser",
+        "createProject",
+        "updateProject",
+        "upsertMembership",
+      ].includes(call.method),
+    ),
+    false,
+  )
+})
+
+test("resolveShowcasePrerequisiteIds fails clearly when a required user or membership is missing", async () => {
+  const missingUser = existingHostedGateway()
+  missingUser.authUsers = missingUser.authUsers.filter(
+    (user) => user.email !== DEMO_MANIFEST.users[0].email,
+  )
+  await assert.rejects(
+    new SupabaseDemoStandCore(missingUser).resolveShowcasePrerequisiteIds(),
+    new RegExp(
+      `${DEMO_MANIFEST.users[0].email.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")} must already exist`,
+    ),
+  )
+
+  const missingMembership = existingHostedGateway()
+  missingMembership.memberships = missingMembership.memberships.filter(
+    (membership) => membership.id !== "hosted-membership-qc-editor",
+  )
+  await assert.rejects(
+    new SupabaseDemoStandCore(
+      missingMembership,
+    ).resolveShowcasePrerequisiteIds(),
+    /TRACK01-A\/qc_editor must already exist/,
+  )
+})
+
 test("reference preparation writes system, parent, dependent, extended, progress, and final scopes in exact order", async () => {
   const gateway = configuredReferenceGateway()
   const core = await preparedReferenceCore(gateway)
