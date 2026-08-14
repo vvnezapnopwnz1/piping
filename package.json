@@ -26,6 +26,7 @@
     "fabrication:projection:check": "tsx --env-file-if-exists=.env.local scripts/check-fabrication-projection.ts",
     "demo:prepare:hosted": "tsx scripts/prepare-hosted-demo.ts",
     "demo:check:hosted": "tsx scripts/check-hosted-demo.ts",
+    "demo:showcase:hosted": "tsx scripts/bootstrap-showcase-dataset-hosted.ts",
     "typecheck": "tsc --noEmit --incremental false",
     "test:unit": "node --import tsx --test \"modules/**/*.test.ts\" \"lib/**/*.test.ts\" \"config/**/*.test.ts\" \"components/**/*.test.ts\" \"scripts/**/*.test.ts\" \"app/**/*.test.ts\"",
     "test:db": "supabase test db",
