@@ -2533,6 +2533,13 @@ const GOLDEN_REFERENCE_MEMBERSHIP_KEYS = [
   "nde_subcontractor",
 ] as const
 
+export interface ShowcaseSeedPort {
+  resolveShowcasePrerequisiteIds(): Promise<void>
+  prepareShowcaseProject(): Promise<void>
+  prepareShowcaseAccess(): Promise<void>
+  prepareShowcaseProjectReferences(preparedOn: Date): Promise<void>
+}
+
 export class SupabaseDemoStandCore {
   private readonly userIds = new Map<string, string>()
   private readonly projectIds = new Map<string, string>()
