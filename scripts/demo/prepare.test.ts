@@ -1750,6 +1750,48 @@ test("prepareShowcaseAccess requires the SHOWCASE-1 project first", async () => 
   )
 })
 
+test("prepareShowcaseProjectReferences writes only showcase-addressed batches", async () => {
+  const gateway = existingHostedGateway()
+  const core = new SupabaseDemoStandCore(gateway)
+  await core.resolveShowcasePrerequisiteIds()
+  await core.prepareShowcaseProject()
+  await core.prepareShowcaseAccess()
+  gateway.referenceEvents.length = 0
+  gateway.batches.length = 0
+
+  await core.prepareShowcaseProjectReferences(
+    new Date("2026-08-14T00:00:00.000Z"),
+  )
+
+  // Every write is addressed to the showcase project id, never golden's.
+  assert.ok(gateway.referenceEvents.length > 0)
+  assert.equal(
+    gateway.batches.some((batch) =>
+      JSON.stringify(batch).includes("hosted-project-a"),
+    ),
+    false,
+  )
+  assert.equal(
+    gateway.referenceEvents.includes("write:project_device_users"),
+    false,
+  )
+  assert.equal(
+    gateway.referenceEvents.includes("replace:membership-scopes"),
+    false,
+  )
+})
+
+test("prepareShowcaseProjectReferences requires the SHOWCASE-1 project first", async () => {
+  const gateway = existingHostedGateway()
+  const core = new SupabaseDemoStandCore(gateway)
+  await core.resolveShowcasePrerequisiteIds()
+
+  await assert.rejects(
+    core.prepareShowcaseProjectReferences(new Date("2026-08-14T00:00:00.000Z")),
+    /was not created before its referentials/,
+  )
+})
+
 test("reference preparation writes system, parent, dependent, extended, progress, and final scopes in exact order", async () => {
   const gateway = configuredReferenceGateway()
   const core = await preparedReferenceCore(gateway)

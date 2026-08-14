@@ -2787,10 +2787,16 @@ export class SupabaseDemoStandCore {
           pdsAreaScopes: plan.membership_pds_area_scopes,
         }),
     )
+    await this.prepareShowcaseProjectReferences(preparedOn)
+  }
 
-    // The showcase project gets the same 36 referential families, addressed to its own id. The
-    // SpoolGen import and every downstream command validate against them, so without this the
-    // seeded dataset cannot be built. No scope replacement: see buildDemoReferencePlan.
+  /**
+   * The showcase project gets the same 36 referential families as golden/isolation, addressed to
+   * its own id. The SpoolGen import and every downstream command validate against them, so
+   * without this the seeded dataset cannot be built. No scope replacement: see
+   * buildDemoReferencePlan.
+   */
+  async prepareShowcaseProjectReferences(preparedOn: Date): Promise<void> {
     const showcaseProjectId = this.projectIds.get(SHOWCASE_PROJECT_CODE)
     if (!showcaseProjectId) {
       throw new Error(
