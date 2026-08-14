@@ -2870,6 +2870,50 @@ export class SupabaseDemoStandCore {
     }
   }
 
+  async prepareShowcaseProject(): Promise<void> {
+    const creatorId = this.userIds.get("platform_admin")
+    if (!creatorId) {
+      throw new Error(
+        "platform_admin must be resolved by resolveShowcasePrerequisiteIds before prepareShowcaseProject.",
+      )
+    }
+    const definition = DEMO_MANIFEST.projects.showcase
+    const existingProjects = await safely(
+      "Preparing demo projects",
+      "project list",
+      () => this.gateway.listProjects(),
+    )
+    const existing = existingProjects.find(
+      (project) => project.activityCode === definition.activityCode,
+    )
+    const payload = projectWrite(definition, creatorId)
+    let projectId: string | null
+
+    if (existing) {
+      const updated = await safely(
+        "Preparing demo project",
+        definition.activityCode,
+        () => this.gateway.updateProject(existing.id, payload),
+      )
+      if (updated.ids.length !== 1 || updated.ids[0] !== existing.id) {
+        throw safeFailure("Preparing demo project", definition.activityCode)
+      }
+      projectId = existing.id
+    } else {
+      const created = await safely(
+        "Preparing demo project",
+        definition.activityCode,
+        () => this.gateway.createProject(payload),
+      )
+      projectId = created.id
+    }
+
+    if (!projectId) {
+      throw safeFailure("Preparing demo project", definition.activityCode)
+    }
+    this.projectIds.set(definition.activityCode, projectId)
+  }
+
   async readSnapshot(): Promise<DemoStandSnapshot> {
     const core = await this.readCoreSnapshot()
     const goldenProjectId = this.projectIds.get(

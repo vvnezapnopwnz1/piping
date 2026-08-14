@@ -1660,6 +1660,58 @@ test("resolveShowcasePrerequisiteIds fails clearly when a required user or membe
   )
 })
 
+test("prepareShowcaseProject creates SHOWCASE-1 and touches no other project", async () => {
+  const gateway = existingHostedGateway()
+  const core = new SupabaseDemoStandCore(gateway)
+  await core.resolveShowcasePrerequisiteIds()
+
+  await core.prepareShowcaseProject()
+
+  const writes = gateway.calls.filter((call) =>
+    ["createProject", "updateProject"].includes(call.method),
+  )
+  assert.equal(writes.length, 1)
+  assert.equal(writes[0].method, "createProject")
+  assert.deepEqual(writes[0].payload, {
+    activityCode: "SHOWCASE-1",
+    title: DEMO_MANIFEST.projects.showcase.title,
+    ownerName: DEMO_MANIFEST.projects.showcase.ownerName,
+    contractorName: DEMO_MANIFEST.projects.showcase.contractorName,
+    contractNumber: DEMO_MANIFEST.projects.showcase.contractNumber,
+    transitDays: DEMO_MANIFEST.projects.showcase.transitDays,
+    status: DEMO_MANIFEST.projects.showcase.status,
+    createdBy: "hosted-user-0",
+  })
+})
+
+test("prepareShowcaseProject updates an existing SHOWCASE-1 row instead of duplicating it", async () => {
+  const gateway = existingHostedGateway()
+  gateway.projects.push(
+    projectRecord("showcase", "hosted-project-showcase", "hosted-user-0"),
+  )
+  const core = new SupabaseDemoStandCore(gateway)
+  await core.resolveShowcasePrerequisiteIds()
+
+  await core.prepareShowcaseProject()
+
+  const writes = gateway.calls.filter((call) =>
+    ["createProject", "updateProject"].includes(call.method),
+  )
+  assert.deepEqual(writes.map((call) => call.method), ["updateProject"])
+  assert.deepEqual(
+    (writes[0].payload as { projectId: string }).projectId,
+    "hosted-project-showcase",
+  )
+})
+
+test("prepareShowcaseProject requires resolveShowcasePrerequisiteIds first", async () => {
+  const gateway = existingHostedGateway()
+  await assert.rejects(
+    new SupabaseDemoStandCore(gateway).prepareShowcaseProject(),
+    /platform_admin must be resolved/,
+  )
+})
+
 test("reference preparation writes system, parent, dependent, extended, progress, and final scopes in exact order", async () => {
   const gateway = configuredReferenceGateway()
   const core = await preparedReferenceCore(gateway)
