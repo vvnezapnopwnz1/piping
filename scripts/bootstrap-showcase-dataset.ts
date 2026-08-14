@@ -458,22 +458,20 @@ async function seedNde(
   return { accepted, rejected: 0, pending: held.length }
 }
 
-async function run(): Promise<void> {
-  const url = process.env.SUPABASE_URL ?? ""
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""
-  if (!isLocalhost(url)) {
-    throw new Error("Refusing to run against a non-local Supabase URL.")
-  }
-  const publishableKey =
-    process.env.SUPABASE_PUBLISHABLE_KEY ??
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
-    ""
-  const password = process.env.TRACK01_FIXTURE_PASSWORD ?? ""
-  if (!serviceKey || !publishableKey || !password) {
-    throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY, a publishable key and TRACK01_FIXTURE_PASSWORD must be set in .env.local.",
-    )
-  }
+export interface ShowcaseSeedContext {
+  readonly url: string
+  readonly serviceKey: string
+  readonly publishableKey: string
+  readonly password: string
+  readonly resetFlagPresent: boolean
+}
+
+export async function seedShowcaseEngineeringData(
+  context: ShowcaseSeedContext,
+  log: (line: string) => void = console.log,
+): Promise<void> {
+  const { url, serviceKey, publishableKey, password, resetFlagPresent } =
+    context
 
   const admin = createClient(url, serviceKey)
   const { data: project, error: projectError } = await admin
@@ -496,10 +494,8 @@ async function run(): Promise<void> {
   if (countError) throw new Error(`Counting isometrics failed: ${countError.message}`)
 
   if ((count ?? 0) > 0) {
-    if (process.argv.includes(RESET_FLAG)) throw new Error(RESET_GUIDANCE)
-    console.log(
-      `${SHOWCASE_PROJECT_CODE} already holds ${count} isometrics; nothing to do.`,
-    )
+    if (resetFlagPresent) throw new Error(RESET_GUIDANCE)
+    log(`${SHOWCASE_PROJECT_CODE} already holds ${count} isometrics; nothing to do.`)
     return
   }
 
@@ -513,7 +509,7 @@ async function run(): Promise<void> {
         buildShowcaseSpoolgenFiles(isoNumber),
         `Showcase dataset ${isoNumber}`,
       )
-      console.log(
+      log(
         `${isoNumber}: ${result.skipped ? "already present" : `imported ${result.appliedRowCount} rows`}`,
       )
     }
@@ -563,16 +559,11 @@ async function run(): Promise<void> {
       await seedSpoolAfterNde(operator, spool, revisionIdFor(spool), references)
     }
 
-    console.log(
+    log(
       `NDE: ${ndeCounts.accepted} accepted, ${ndeCounts.rejected} rejected, ` +
         `${ndeCounts.pending} left pending on unreleased spools.`,
     )
-    console.log(
-      "\nNote: `npm run test:db` asserts against globally empty engineering tables, so it now\n" +
-        "fails on this stand. Run it before seeding:\n" +
-        "  npm run demo:prepare -- --confirm-local-reset && npm run verify && npm run demo:showcase",
-    )
-    console.log(
+    log(
       `${SHOWCASE_PROJECT_CODE} seeded: ${SHOWCASE_EXPECTED_COUNTS.isometrics} isometrics, ` +
         `${SHOWCASE_EXPECTED_COUNTS.spoolRevisions} spools, ` +
         `${SHOWCASE_EXPECTED_COUNTS.weldJointRevisions} weld joints, ` +
@@ -582,6 +573,37 @@ async function run(): Promise<void> {
   } finally {
     await operator.auth.signOut()
   }
+}
+
+async function run(): Promise<void> {
+  const url = process.env.SUPABASE_URL ?? ""
+  if (!isLocalhost(url)) {
+    throw new Error("Refusing to run against a non-local Supabase URL.")
+  }
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? ""
+  const publishableKey =
+    process.env.SUPABASE_PUBLISHABLE_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+    ""
+  const password = process.env.TRACK01_FIXTURE_PASSWORD ?? ""
+  if (!serviceKey || !publishableKey || !password) {
+    throw new Error(
+      "SUPABASE_SERVICE_ROLE_KEY, a publishable key and TRACK01_FIXTURE_PASSWORD must be set in .env.local.",
+    )
+  }
+
+  console.log(
+    "\nNote: `npm run test:db` asserts against globally empty engineering tables, so it now\n" +
+      "fails on this stand. Run it before seeding:\n" +
+      "  npm run demo:prepare -- --confirm-local-reset && npm run verify && npm run demo:showcase",
+  )
+  await seedShowcaseEngineeringData({
+    url,
+    serviceKey,
+    publishableKey,
+    password,
+    resetFlagPresent: process.argv.includes(RESET_FLAG),
+  })
 }
 
 if (process.argv[1]?.endsWith("bootstrap-showcase-dataset.ts")) {
