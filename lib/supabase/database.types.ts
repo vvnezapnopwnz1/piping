@@ -11122,6 +11122,7 @@ export type Database = {
           is_platform_admin: boolean
           membership_id: string
           pds_area_ids: string[]
+          project_created_at: string
           project_id: string
           project_status: Database["public"]["Enums"]["project_reference_status"]
           subcontractor_ids: string[]

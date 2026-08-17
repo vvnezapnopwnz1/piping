@@ -16,6 +16,7 @@ export interface ProjectAccessSummary extends EffectiveAccess {
   activityCode: string
   title: string
   projectStatus: "active" | "inactive" | "archived"
+  projectCreatedAt: string
 }
 
 export class AccessLoadError extends Error {
@@ -38,6 +39,7 @@ interface ProjectAccessRpcRow {
   activity_code: string
   title: string
   project_status: string
+  project_created_at: string
   access_role_code: string | null
   functional_role_codes: string[] | null
   capability_codes: string[] | null
@@ -91,6 +93,7 @@ function normalizeProjectAccess(row: ProjectAccessRpcRow): ProjectAccessSummary 
     activityCode: row.activity_code,
     title: row.title,
     projectStatus: normalizeProjectStatus(row.project_status),
+    projectCreatedAt: row.project_created_at,
     accessRole: normalizeAccessRole(row.access_role_code),
     functionalRoles: normalizeCodes<FunctionalRole>(
       row.functional_role_codes,

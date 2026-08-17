@@ -23,6 +23,7 @@ const access = {
   projectId: "project",
   activityCode: "PQ-001",
   title: "Old title",
+  projectCreatedAt: "2026-01-01T00:00:00Z",
   accessRole: "project_reader" as const,
   functionalRoles: ["qc_engineer"] as const,
   capabilities: ["project.view"] as const,
@@ -53,6 +54,7 @@ const accesses = [
     projectId: "project-b",
     activityCode: "PQ-020",
     title: "Beta Project",
+    projectCreatedAt: "2026-01-02T00:00:00Z",
     accessRole: "project_reader" as const,
     functionalRoles: ["qc_engineer"] as const,
     capabilities: ["project.view"] as const,
@@ -62,6 +64,7 @@ const accesses = [
     projectId: "project-a",
     activityCode: "PQ-010",
     title: "Alpha Project",
+    projectCreatedAt: "2026-01-01T00:00:00Z",
     accessRole: "project_reader" as const,
     functionalRoles: ["project_manager"] as const,
     capabilities: ["project.view"] as const,
@@ -95,3 +98,33 @@ assert.deepEqual(
   ["project-a", "project-b"]
 )
 assert.equal(accesses[0].projectId, "project-b")
+
+// Regression: an alphabetically-later activity_code created earlier must
+// still win the default pick over an alphabetically-earlier one created
+// later (e.g. TRACK01-A predates SHOWCASE-1 but "S" < "T").
+const createdAtOrderAccesses = [
+  {
+    membershipId: "membership-showcase",
+    projectId: "project-showcase",
+    activityCode: "SHOWCASE-1",
+    title: "Showcase",
+    projectCreatedAt: "2026-02-01T00:00:00Z",
+    accessRole: "project_reader" as const,
+    functionalRoles: [] as const,
+    capabilities: [] as const,
+  },
+  {
+    membershipId: "membership-track01",
+    projectId: "project-track01",
+    activityCode: "TRACK01-A",
+    title: "Track 01",
+    projectCreatedAt: "2026-01-01T00:00:00Z",
+    accessRole: "project_reader" as const,
+    functionalRoles: [] as const,
+    capabilities: [] as const,
+  },
+]
+assert.equal(
+  resolveActiveProjectAccess(createdAtOrderAccesses, null)?.projectId,
+  "project-track01",
+)

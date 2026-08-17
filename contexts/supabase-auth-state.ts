@@ -20,6 +20,7 @@ export interface MembershipProjectDisplay {
 export interface SupabaseProjectAccessDisplay extends MembershipProjectDisplay {
   membershipId: string | null
   projectId: string
+  projectCreatedAt: string
 }
 
 export function deriveSupabaseAccessState(
@@ -56,6 +57,7 @@ export function sortProjectAccessesForDisplay<Access extends SupabaseProjectAcce
 ): Access[] {
   return [...accesses].sort(
     (left, right) =>
+      left.projectCreatedAt.localeCompare(right.projectCreatedAt) ||
       left.activityCode.localeCompare(right.activityCode) ||
       left.title.localeCompare(right.title) ||
       (left.membershipId ?? "").localeCompare(right.membershipId ?? ""),
