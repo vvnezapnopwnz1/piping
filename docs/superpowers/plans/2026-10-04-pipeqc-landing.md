@@ -1,5 +1,7 @@
 # PipeQC — инвесторский лендинг: план реализации
 
+> **Заменено 2026-10-04.** Лендинг встроен в портал «Веха Технологии» как страница продукта `/products/pipeqc/`. Действующие документы — в репозитории `corpservice`: `docs/superpowers/specs/2026-10-04-pipeqc-product.md` и `docs/superpowers/plans/2026-10-04-pipeqc-product.md`. Здесь остаются содержательные решения, тексты и таблица проверенных фактов, на которые ссылается новая спецификация; место, стек, палитра и деплой из этого файла больше не действуют.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Собрать одностраничный русскоязычный лендинг PipeQC для инвестора (отдельный репозиторий `pipeqc-site`), задеплоить превью на Vercel.
