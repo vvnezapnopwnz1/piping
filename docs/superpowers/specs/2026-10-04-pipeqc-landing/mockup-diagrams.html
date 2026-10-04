@@ -1,0 +1,418 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  .pv-wrap { display:flex; flex-direction:column; gap:28px; }
+  .pv-wrap .card { cursor:pointer; }
+  .pv-sheet { background:#F6F4EE; color:#14213D; font-family:'Onest', sans-serif; padding:34px 40px 36px; position:relative; }
+  .pv-grid { background-image:linear-gradient(rgba(20,33,61,.06) 1px, transparent 1px), linear-gradient(90deg, rgba(20,33,61,.06) 1px, transparent 1px); background-size:22px 22px; }
+  .pv-over { font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.14em; color:#0F766E; margin-bottom:10px; }
+  .pv-title { font-size:30px; font-weight:800; letter-spacing:-.03em; line-height:1.1; margin-bottom:8px; }
+  .pv-lead { font-size:15.5px; color:#4A5568; line-height:1.5; max-width:760px; margin-bottom:26px; }
+  .pv-meta { padding:16px 20px 18px; }
+  .pv-meta h3 { font-size:1.05rem; margin:0 0 4px; }
+  .pv-meta p { color:var(--text-secondary); font-size:.88rem; margin:0; max-width:900px; }
+  .pv-part { font-size:.8rem; text-transform:uppercase; letter-spacing:.08em; color:var(--text-secondary); margin:10px 0 -12px; }
+  .pv-sheet svg text { font-family:'Onest', sans-serif; }
+  .pv-sheet svg .m { font-family:'IBM Plex Mono', monospace; }
+
+  /* ---------- P-A · metro ---------- */
+  .metro { display:grid; grid-template-columns:repeat(6, 1fr); gap:14px; }
+  .st { position:relative; }
+  .st .rail { position:relative; height:34px; margin-bottom:6px; }
+  .st .rail::before { content:''; position:absolute; left:-14px; right:0; top:16px; height:3px; background:#14213D; }
+  .st:first-child .rail::before { left:50%; background:linear-gradient(90deg, transparent, #14213D 40%); }
+  .st:last-child .rail::after { content:''; position:absolute; left:50%; right:-40px; top:16px; height:3px; background:repeating-linear-gradient(90deg,#B8BFCB 0 6px, transparent 6px 11px); }
+  .st:last-child .rail::before { right:50%; }
+  .st .node { position:absolute; left:50%; top:6px; width:23px; height:23px; margin-left:-11.5px; border-radius:50%; background:#F6F4EE; border:3px solid #14213D; box-sizing:border-box; z-index:1; }
+  .st.done .node { background:#0F766E; border-color:#0F766E; }
+  .st.done .node::after { content:''; position:absolute; left:5.5px; top:2.5px; width:4px; height:8px; border:solid #fff; border-width:0 2px 2px 0; transform:rotate(45deg); }
+  .st.now .node { background:#fff; border-color:#0F766E; box-shadow:0 0 0 6px rgba(15,118,110,.15); }
+  .st.now .node::after { content:''; position:absolute; inset:4px; background:#0F766E; border-radius:50%; }
+  .st.ext .node { border-style:dashed; border-color:#8A93A3; }
+  .st .num { font-family:'IBM Plex Mono'; font-size:10.5px; color:#8A93A3; text-align:center; letter-spacing:.08em; }
+  .st .name { text-align:center; font-weight:700; font-size:16px; letter-spacing:-.01em; margin:2px 0 12px; }
+  .st.now .name { color:#0F766E; }
+  .st .box { background:#fff; border:1px solid #E6E3DA; border-radius:14px; padding:14px 14px 12px; box-shadow:0 1px 2px rgba(20,33,61,.04), 0 14px 30px -18px rgba(20,33,61,.25); height:300px; box-sizing:border-box; display:flex; flex-direction:column; }
+  .st.ext .box { background:transparent; border-style:dashed; box-shadow:none; }
+  .st.now .box { border-color:#0F766E; box-shadow:0 0 0 3px rgba(15,118,110,.1), 0 18px 34px -16px rgba(15,118,110,.35); }
+  .st .pic { height:64px; display:flex; align-items:center; justify-content:center; margin-bottom:10px; background:#FAF9F5; border-radius:10px; border:1px solid #F0EDE4; }
+  .st .what { font-size:12.8px; line-height:1.45; color:#2D3748; }
+  .st .rec { margin-top:auto; padding-top:10px; border-top:1px solid #F0EDE4; }
+  .st .rec .l { font-family:'IBM Plex Mono'; font-size:9.5px; color:#0F766E; letter-spacing:.1em; margin-bottom:6px; }
+  .st .rec .tags { display:flex; flex-wrap:wrap; gap:4px; }
+  .st .rec span { font-family:'IBM Plex Mono'; font-size:10px; padding:3px 6px; border-radius:5px; background:#EEF6F4; color:#0F5F58; }
+  .st.ext .rec .l { color:#8A93A3; }
+  .st.ext .rec span { background:#EFEDE6; color:#5A6476; }
+  .st .hand { font-family:'IBM Plex Mono'; font-size:10px; color:#8A93A3; margin-top:9px; text-align:center; }
+  .st .hand b { color:#B45309; font-weight:600; }
+
+  /* ---------- P-B · scrollytelling ---------- */
+  .scrolly { display:grid; grid-template-columns:1.35fr 1fr; gap:0; border:1px solid #E1DDD2; border-radius:16px; overflow:hidden; background:#fff; }
+  .scrolly .left { position:relative; min-height:430px; border-right:1px solid #ECE9E0; }
+  .scrolly .left svg { position:absolute; inset:14px; width:calc(100% - 28px); height:calc(100% - 28px); }
+  .scrolly .stick { position:absolute; left:16px; top:14px; font-family:'IBM Plex Mono'; font-size:10px; color:#8A93A3; letter-spacing:.08em; }
+  .scrolly .right { display:grid; grid-template-columns:150px 1fr; }
+  .scrolly .steps { padding:28px 0 28px 22px; border-right:1px solid #F0EDE4; position:relative; }
+  .scrolly .steps::before { content:''; position:absolute; left:31px; top:40px; bottom:52px; width:2px; background:#E6E3DA; }
+  .scrolly .steps::after { content:''; position:absolute; left:31px; top:40px; height:calc(50% + 6px); width:2px; background:#0F766E; }
+  .scrolly .sp { display:flex; align-items:center; gap:12px; height:56px; position:relative; z-index:1; font-size:13px; color:#8A93A3; }
+  .scrolly .sp i { width:20px; height:20px; border-radius:50%; background:#fff; border:2px solid #D3CFC3; box-sizing:border-box; flex-shrink:0; }
+  .scrolly .sp.d { color:#14213D; } .scrolly .sp.d i { background:#0F766E; border-color:#0F766E; }
+  .scrolly .sp.n { color:#0F766E; font-weight:700; } .scrolly .sp.n i { border-color:#0F766E; box-shadow:0 0 0 5px rgba(15,118,110,.15); background:radial-gradient(circle,#0F766E 0 4px,#fff 4.5px); }
+  .scrolly .txt { padding:34px 28px; }
+  .scrolly .txt .o { font-family:'IBM Plex Mono'; font-size:11px; color:#0F766E; letter-spacing:.12em; margin-bottom:10px; }
+  .scrolly .txt .h { font-size:24px; font-weight:800; letter-spacing:-.025em; line-height:1.15; margin-bottom:12px; }
+  .scrolly .txt p { font-size:14px; line-height:1.55; color:#4A5568; margin:0 0 14px; }
+  .scrolly .txt .note { font-size:12.5px; line-height:1.5; background:#FFF7ED; border:1px solid #FBD9B5; color:#7C3A0A; border-radius:10px; padding:10px 12px; }
+  .scrolly .txt .note b { font-family:'IBM Plex Mono'; }
+  .scrolly .scrollhint { font-family:'IBM Plex Mono'; font-size:10px; color:#A3A9B5; margin-top:18px; }
+</style>
+
+<h2>Схемы процессов в стиле AC-2</h2>
+<p class="subtitle">Часть 1 — выбор: как показать путь трубы через стадии. Часть 2 — эскизы трёх ключевых схем: почему программа нужна, как она работает, чем помогает. Их оцените: понятны ли и подходит ли уровень.</p>
+
+<div class="pv-part">Часть 1 · путь трубы — выберите подачу</div>
+<div class="cards pv-wrap">
+
+  <!-- =============== P-A · METRO =============== -->
+  <div class="card" data-choice="journey-metro" onclick="toggleSelect(this)">
+    <div class="pv-sheet">
+      <div class="pv-over">02 · СТАДИИ</div>
+      <div class="pv-title">Путь одной трубы: от чертежа до испытания</div>
+      <div class="pv-lead">У каждой линии один и тот же путь. На каждой стадии работу ведёт другой участник, и на каждой передаче теряются данные. PipeQC ведёт стадии со второй по шестую.</div>
+      <div class="metro">
+        <div class="st ext">
+          <div class="rail"><span class="node"></span></div>
+          <div class="num">01</div><div class="name">Изометрия</div>
+          <div class="box">
+            <div class="pic"><svg width="74" height="50" viewBox="0 0 74 50" fill="none"><rect x="10" y="4" width="42" height="42" rx="2" stroke="#8A93A3" stroke-width="1.5"/><path d="M44 4 v8 h8" stroke="#8A93A3" stroke-width="1.5"/><path d="M16 36 l10 -6 v-10 l10 -6 l8 5" stroke="#14213D" stroke-width="2.2" stroke-linejoin="round"/><circle cx="26" cy="30" r="2" fill="#F6F4EE" stroke="#14213D" stroke-width="1.2"/><circle cx="36" cy="14" r="2" fill="#F6F4EE" stroke="#14213D" stroke-width="1.2"/><path d="M40 40 h8 M40 36 h8" stroke="#8A93A3" stroke-width="1.2"/></svg></div>
+            <div class="what">Проектировщики выдают чертёж каждой линии: все детали, стыки и материалы с номерами.</div>
+            <div class="rec"><div class="l">ПРИХОДИТ В PIPEQC</div><div class="tags"><span>импорт</span><span>ревизии</span></div></div>
+          </div>
+          <div class="hand">передаёт <b>чертежи</b> →</div>
+        </div>
+        <div class="st done">
+          <div class="rail"><span class="node"></span></div>
+          <div class="num">02</div><div class="name">Катушки</div>
+          <div class="box">
+            <div class="pic"><svg width="74" height="50" viewBox="0 0 74 50" fill="none"><path d="M6 34 l18 -10" stroke="#0F766E" stroke-width="6" stroke-linecap="round"/><path d="M32 20 l18 -10" stroke="#0F766E" stroke-width="6" stroke-linecap="round"/><path d="M50 10 l16 9" stroke="#14213D" stroke-width="6" stroke-linecap="round" opacity=".25"/><path d="M27 15 l3 9 M24 27 l3 -9" stroke="#B45309" stroke-width="1.4" stroke-dasharray="2 2"/><circle cx="28" cy="22" r="5.5" stroke="#B45309" stroke-width="1.3" stroke-dasharray="2 2"/></svg></div>
+            <div class="what">Линию режут на катушки размером с фуру. Каждый разрез станет полевым стыком на площадке.</div>
+            <div class="rec"><div class="l">PIPEQC ФИКСИРУЕТ</div><div class="tags"><span>катушки</span><span>стыки цех/поле</span></div></div>
+          </div>
+          <div class="hand">передаёт <b>катушки</b> →</div>
+        </div>
+        <div class="st done">
+          <div class="rail"><span class="node"></span></div>
+          <div class="num">03</div><div class="name">Цех</div>
+          <div class="box">
+            <div class="pic"><svg width="74" height="50" viewBox="0 0 74 50" fill="none"><rect x="6" y="20" width="26" height="12" rx="2" stroke="#14213D" stroke-width="1.6"/><rect x="40" y="20" width="26" height="12" rx="2" stroke="#14213D" stroke-width="1.6"/><path d="M33 18 v16 M36 18 v16 M39 18 v16" stroke="#0F766E" stroke-width="1.8"/><path d="M36 14 l-4 -6 M38 13 l3 -7 M40 15 l6 -4" stroke="#E07A1F" stroke-width="1.4" stroke-linecap="round"/><text x="8" y="44" font-family="IBM Plex Mono" font-size="7" fill="#8A93A3">WPS-07</text></svg></div>
+            <div class="what">Материал сверяют по номеру плавки. Катушку режут, собирают и варят по утверждённой процедуре, каждый шов осматривают.</div>
+            <div class="rec"><div class="l">PIPEQC ФИКСИРУЕТ</div><div class="tags"><span>плавка</span><span>сварщик</span><span>WPS</span></div></div>
+          </div>
+          <div class="hand">передаёт <b>стыки на контроль</b> →</div>
+        </div>
+        <div class="st now">
+          <div class="rail"><span class="node"></span></div>
+          <div class="num">04</div><div class="name">Контроль NDE</div>
+          <div class="box">
+            <div class="pic"><svg width="74" height="50" viewBox="0 0 74 50" fill="none"><rect x="4" y="28" width="66" height="10" rx="2" stroke="#14213D" stroke-width="1.6"/><path d="M37 28 v10" stroke="#0F766E" stroke-width="3"/><path d="M27 18 q10 -8 20 0 M30 13 q7 -6 14 0 M33 8 q4 -3 8 0" stroke="#0F766E" stroke-width="1.5" stroke-linecap="round"/><rect x="31" y="40" width="12" height="7" rx="1" fill="#E7F3F1" stroke="#0F766E" stroke-width="1"/></svg></div>
+            <div class="what">Шов просвечивают, не разрушая. Сколько стыков проверить, задаёт класс среды: от выборки на воде до каждого стыка на опасных средах.</div>
+            <div class="rec"><div class="l">PIPEQC ФИКСИРУЕТ</div><div class="tags"><span>объём контроля</span><span>результат</span><span>брак</span></div></div>
+          </div>
+          <div class="hand">передаёт <b>катушки на площадку</b> →</div>
+        </div>
+        <div class="st">
+          <div class="rail"><span class="node"></span></div>
+          <div class="num">05</div><div class="name">Монтаж</div>
+          <div class="box">
+            <div class="pic"><svg width="74" height="50" viewBox="0 0 74 50" fill="none"><path d="M18 4 v14" stroke="#14213D" stroke-width="1.4"/><path d="M18 18 q0 5 4 5" stroke="#14213D" stroke-width="1.6" fill="none"/><path d="M8 26 h36" stroke="#14213D" stroke-width="6" stroke-linecap="round" opacity=".85"/><path d="M44 26 h20" stroke="#14213D" stroke-width="6" stroke-linecap="round" opacity=".25"/><circle cx="44" cy="26" r="4" stroke="#E07A1F" stroke-width="1.4" stroke-dasharray="2 1.6"/><path d="M14 30 v14 M38 30 v14 M10 44 h8 M34 44 h8" stroke="#8A93A3" stroke-width="1.5"/></svg></div>
+            <div class="what">Катушки ставят на опоры, варят полевые стыки, затягивают фланцы. Инспектор обходит линию и записывает недоделки.</div>
+            <div class="rec"><div class="l">PIPEQC ФИКСИРУЕТ</div><div class="tags"><span>полевые стыки</span><span>опоры</span><span>фланцы</span></div></div>
+          </div>
+          <div class="hand">передаёт <b>линии в пакет</b> →</div>
+        </div>
+        <div class="st">
+          <div class="rail"><span class="node"></span></div>
+          <div class="num">06</div><div class="name">Испытание</div>
+          <div class="box">
+            <div class="pic"><svg width="74" height="50" viewBox="0 0 74 50" fill="none"><path d="M4 38 h66" stroke="#14213D" stroke-width="6" stroke-linecap="round" opacity=".85"/><path d="M37 35 v-8" stroke="#14213D" stroke-width="2"/><circle cx="37" cy="17" r="11" fill="#fff" stroke="#14213D" stroke-width="1.6"/><path d="M37 17 l6 -5" stroke="#E07A1F" stroke-width="1.8" stroke-linecap="round"/><path d="M29 21 a9 9 0 0 1 16 -9" stroke="#0F766E" stroke-width="1.4" fill="none"/><rect x="62" y="31" width="4" height="14" fill="#E07A1F"/></svg></div>
+            <div class="what">Связанные линии объединяют в пакет и держат под давлением воды выше рабочего. После испытания снимают каждую заглушку.</div>
+            <div class="rec"><div class="l">PIPEQC ФИКСИРУЕТ</div><div class="tags"><span>готовность</span><span>заглушки</span></div></div>
+          </div>
+          <div class="hand">дальше <b>пусконаладка</b> ⋯</div>
+        </div>
+      </div>
+    </div>
+    <div class="pv-meta">
+      <h3>P-A · «Линия стадий». Вся цепочка на одном экране</h3>
+      <p>Горизонтальная линия как схема метро: шесть станций с пиктограммами, под каждой две строки «что происходит» и «что фиксирует программа», между станциями видно, кто кому что передаёт. Читатель видит весь путь сразу. Анимация простая: станции загораются по очереди при прокрутке. На телефоне линия становится вертикальной.</p>
+    </div>
+  </div>
+
+  <!-- =============== P-B · SCROLLYTELLING =============== -->
+  <div class="card" data-choice="journey-scrolly" onclick="toggleSelect(this)">
+    <div class="pv-sheet">
+      <div class="pv-over">02 · СТАДИИ · ШАГ 4 ИЗ 6</div>
+      <div class="pv-title">Один чертёж, который меняется по мере чтения</div>
+      <div class="pv-lead">Слева закреплена изометрия линии. Читатель прокручивает стадии справа, а чертёж меняет состояние: окрашиваются готовые катушки, появляются результаты контроля, загораются полевые стыки.</div>
+      <div class="scrolly">
+        <div class="left pv-grid">
+          <div class="stick">ЛИНИЯ 6"-P-2041-A1 · ЗАКРЕПЛЕНО ПРИ ПРОКРУТКЕ</div>
+          <svg viewBox="0 0 640 400" fill="none">
+            <path d="M40 330 L178.6 250 L178.6 150 L291.2 85 L395.1 145 L395.1 235 L481.7 285 L576.9 230" stroke="#14213D" stroke-width="15" stroke-linejoin="round"/>
+            <path d="M40 330 L178.6 250 L178.6 150 L291.2 85 L395.1 145 L395.1 235 L481.7 285 L576.9 230" stroke="#fff" stroke-width="10.5" stroke-linejoin="round"/>
+            <path d="M42 329 L178.6 250 L178.6 157" stroke="#0F766E" stroke-width="10.5" stroke-linejoin="round" opacity=".9"/>
+            <path d="M184 147 L291.2 85 L395.1 145" stroke="#0F766E" stroke-width="10.5" stroke-linejoin="round" opacity=".9"/>
+            <path d="M395.1 150 L395.1 235 L481.7 285 L576.9 230" stroke="#0F766E" stroke-width="10.5" stroke-linejoin="round" opacity=".35"/>
+            <!-- accepted welds -->
+            <g><circle cx="178.6" cy="250" r="10" stroke="#0F766E" stroke-width="2"/><circle cx="178.6" cy="250" r="5" fill="#0F766E"/></g>
+            <g><circle cx="291.2" cy="85" r="10" stroke="#0F766E" stroke-width="2"/><circle cx="291.2" cy="85" r="5" fill="#0F766E"/></g>
+            <!-- rejected weld -->
+            <g><circle cx="395.1" cy="235" r="16" fill="#E07A1F" opacity=".14"/><circle cx="395.1" cy="235" r="10" stroke="#C2410C" stroke-width="2.2"/><path d="M390.5 230.5 l9 9 M399.5 230.5 l-9 9" stroke="#C2410C" stroke-width="2.2" stroke-linecap="round"/></g>
+            <!-- tracers -->
+            <g><circle cx="481.7" cy="285" r="10" stroke="#0F766E" stroke-width="1.8" stroke-dasharray="3 2.5"/><circle cx="481.7" cy="285" r="4.5" fill="#fff" stroke="#0F766E" stroke-width="1.6"/></g>
+            <g><circle cx="178.6" cy="150" r="10" stroke="#0F766E" stroke-width="1.8" stroke-dasharray="3 2.5"/><circle cx="178.6" cy="150" r="4.5" fill="#fff" stroke="#0F766E" stroke-width="1.6"/></g>
+            <g class="m" font-size="11" fill="#14213D">
+              <line x1="178.6" y1="250" x2="214" y2="272" stroke="#14213D" stroke-width=".8"/><text x="218" y="276" class="m">J-02 · RT принят</text>
+              <line x1="291.2" y1="85" x2="291.2" y2="50" stroke="#14213D" stroke-width=".8"/><text x="256" y="44" class="m">J-05 · RT принят</text>
+              <line x1="406" y1="226" x2="450" y2="196" stroke="#C2410C" stroke-width=".9"/><text x="454" y="194" class="m" fill="#C2410C" font-weight="600">J-1029 · брак</text>
+              <line x1="492" y1="291" x2="520" y2="312" stroke="#0F766E" stroke-width=".8"/><text x="524" y="318" class="m" fill="#0F766E">T1 · трассер</text>
+              <line x1="167" y1="144" x2="110" y2="114" stroke="#0F766E" stroke-width=".8"/><text x="40" y="108" class="m" fill="#0F766E">T2 · трассер</text>
+            </g>
+            <g class="m" font-size="10" fill="#4A5568">
+              <circle cx="40" cy="378" r="5" fill="#0F766E"/><text x="52" y="382" class="m">принят</text>
+              <circle cx="120" cy="378" r="5" fill="#fff" stroke="#C2410C" stroke-width="2"/><text x="132" y="382" class="m">брак</text>
+              <circle cx="188" cy="378" r="5" fill="#fff" stroke="#0F766E" stroke-width="1.6" stroke-dasharray="2 2"/><text x="200" y="382" class="m">назначен системой</text>
+            </g>
+          </svg>
+        </div>
+        <div class="right">
+          <div class="steps">
+            <div class="sp d"><i></i>Изометрия</div>
+            <div class="sp d"><i></i>Катушки</div>
+            <div class="sp d"><i></i>Цех</div>
+            <div class="sp n"><i></i>Контроль</div>
+            <div class="sp"><i></i>Монтаж</div>
+            <div class="sp"><i></i>Испытание</div>
+          </div>
+          <div class="txt">
+            <div class="o">04 · КОНТРОЛЬ NDE</div>
+            <div class="h">Шов нельзя разобрать. Поэтому его просвечивают</div>
+            <p>Рентгеном проверяют долю стыков, которую задаёт класс среды. У каждого сварщика своё клеймо, поэтому по снимку видно, кто варил.</p>
+            <div class="note">На чертеже стык <b>J-1029</b> не прошёл рентген. Система сама назначила ремонт и два контрольных стыка того же сварщика: <b>T1</b> и <b>T2</b>.</div>
+            <div class="scrollhint">↓ прокрутите: катушки поедут на площадку</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pv-meta">
+      <h3>P-B · «Живой чертёж». Сторителлинг при прокрутке</h3>
+      <p>Чертёж из первого экрана остаётся слева и проживает все стадии, справа текст шага. Эффектнее и сильнее связывает стадии с продуктом: видно, как каждая запись меняет состояние линии. Сложнее в разработке, на телефоне чертёж встаёт над текстом. Работает только на одной линии, поэтому всё объяснение строится на ней.</p>
+    </div>
+  </div>
+</div>
+
+<div class="pv-part" style="margin-top:34px">Часть 2 · эскизы ключевых схем — оцените понятность и уровень</div>
+<div class="pv-wrap" style="margin-top:22px">
+
+  <!-- =============== WHY · swimlanes =============== -->
+  <div class="card">
+    <div class="pv-sheet">
+      <div class="pv-over">ЗАЧЕМ · ГДЕ ТЕРЯЕТСЯ ИНФОРМАЦИЯ</div>
+      <div class="pv-title">Стадий шесть, участников пять, а стык один</div>
+      <div class="pv-lead">Сегодня каждый участник ведёт свой файл и передаёт данные письмом, звонком или бумагой. С PipeQC все пишут в одну базу, а выводы система делает сама.</div>
+      <svg viewBox="0 0 1240 420" width="100%" fill="none">
+        <!-- lanes -->
+        <g>
+          <rect x="0" y="60" width="1240" height="64" fill="#14213D" opacity=".025"/>
+          <rect x="0" y="188" width="1240" height="64" fill="#14213D" opacity=".025"/>
+          <rect x="0" y="316" width="1240" height="64" fill="#14213D" opacity=".025"/>
+          <g stroke="#E3DFD4"><line x1="0" y1="60" x2="1240" y2="60"/><line x1="0" y1="124" x2="1240" y2="124"/><line x1="0" y1="188" x2="1240" y2="188"/><line x1="0" y1="252" x2="1240" y2="252"/><line x1="0" y1="316" x2="1240" y2="316"/><line x1="0" y1="380" x2="1240" y2="380"/></g>
+          <g font-size="13.5" font-weight="600" fill="#14213D">
+            <text x="8" y="97">Проектный офис</text><text x="8" y="161">Цех</text><text x="8" y="225">Лаборатория NDE</text><text x="8" y="289">Монтаж</text><text x="8" y="353">Испытания</text>
+          </g>
+          <line x1="692" y1="20" x2="692" y2="400" stroke="#14213D" stroke-width="1" stroke-dasharray="2 4" opacity=".35"/>
+          <text x="170" y="36" class="m" font-size="11" letter-spacing="1.4" fill="#8A93A3">СЕГОДНЯ · У КАЖДОГО СВОЙ ФАЙЛ</text>
+          <text x="716" y="36" class="m" font-size="11" letter-spacing="1.4" fill="#0F766E">С PIPEQC · ОДНА БАЗА</text>
+        </g>
+        <!-- left: files -->
+        <g id="file">
+          <g transform="translate(176 76)"><path d="M0 0 h18 l8 8 v24 h-26 z" fill="#fff" stroke="#8A93A3" stroke-width="1.3"/><path d="M18 0 v8 h8" stroke="#8A93A3" stroke-width="1.3"/><text x="2" y="25" class="m" font-size="7.5" fill="#4A5568">xlsx</text></g>
+          <g transform="translate(176 140)"><path d="M0 0 h18 l8 8 v24 h-26 z" fill="#fff" stroke="#8A93A3" stroke-width="1.3"/><path d="M18 0 v8 h8" stroke="#8A93A3" stroke-width="1.3"/><text x="2" y="25" class="m" font-size="7.5" fill="#4A5568">xlsx</text></g>
+          <g transform="translate(176 204)"><path d="M0 0 h18 l8 8 v24 h-26 z" fill="#fff" stroke="#8A93A3" stroke-width="1.3"/><path d="M18 0 v8 h8" stroke="#8A93A3" stroke-width="1.3"/><text x="3" y="25" class="m" font-size="7.5" fill="#4A5568">pdf</text></g>
+          <g transform="translate(176 268)"><path d="M0 0 h18 l8 8 v24 h-26 z" fill="#fff" stroke="#8A93A3" stroke-width="1.3"/><path d="M18 0 v8 h8" stroke="#8A93A3" stroke-width="1.3"/><text x="1" y="25" class="m" font-size="6.5" fill="#4A5568">бум.</text></g>
+          <g transform="translate(176 332)"><path d="M0 0 h18 l8 8 v24 h-26 z" fill="#fff" stroke="#8A93A3" stroke-width="1.3"/><path d="M18 0 v8 h8" stroke="#8A93A3" stroke-width="1.3"/><text x="2" y="25" class="m" font-size="7.5" fill="#4A5568">xlsx</text></g>
+        </g>
+        <!-- left: handoffs -->
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#4A5568"/></marker>
+          <marker id="ahr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#C2410C"/></marker>
+          <marker id="aht" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#0F766E"/></marker>
+        </defs>
+        <g stroke="#4A5568" stroke-width="1.5" stroke-dasharray="5 4" fill="none">
+          <path d="M262 100 V146" marker-end="url(#ah)"/>
+          <path d="M370 164 V210" marker-end="url(#ah)"/>
+          <path d="M574 164 V274" marker-end="url(#ah)"/>
+        </g>
+        <g stroke="#C2410C" stroke-width="1.7" stroke-dasharray="5 4" fill="none">
+          <path d="M478 212 V166" marker-end="url(#ahr)"/>
+          <path d="M640 292 V338" marker-end="url(#ahr)"/>
+        </g>
+        <g fill="#14213D"><circle cx="262" cy="92" r="4"/><circle cx="370" cy="156" r="4"/><circle cx="574" cy="156" r="4"/><circle cx="478" cy="220" r="4" fill="#C2410C"/><circle cx="640" cy="284" r="4" fill="#C2410C"/></g>
+        <g class="m" font-size="10">
+          <rect x="214" y="113" width="96" height="20" rx="6" fill="#fff" stroke="#D9D5C9"/><text x="262" y="127" text-anchor="middle" fill="#4A5568">чертёж · почта</text>
+          <rect x="318" y="177" width="104" height="20" rx="6" fill="#fff" stroke="#D9D5C9"/><text x="370" y="191" text-anchor="middle" fill="#4A5568">заявка · бумага</text>
+          <rect x="430" y="177" width="96" height="20" rx="6" fill="#FFF1E6" stroke="#F4B183"/><text x="478" y="191" text-anchor="middle" fill="#C2410C" font-weight="600">✕ брак · звонок</text>
+          <rect x="508" y="241" width="132" height="20" rx="6" fill="#fff" stroke="#D9D5C9"/><text x="574" y="255" text-anchor="middle" fill="#4A5568">катушки · накладная</text>
+          <rect x="586" y="305" width="100" height="20" rx="6" fill="#FFF1E6" stroke="#F4B183"/><text x="636" y="319" text-anchor="middle" fill="#C2410C" font-weight="600">✕ сводка · Excel</text>
+        </g>
+        <text x="176" y="404" class="m" font-size="10.5" fill="#C2410C">✕ данные теряются: брак не дошёл до цеха, о блокерах узнали в день испытания</text>
+        <!-- right: one base -->
+        <rect x="944" y="66" width="56" height="308" rx="14" fill="#0F766E"/>
+        <text x="972" y="226" class="m" font-size="11" fill="#fff" text-anchor="middle" transform="rotate(-90 972 222)" letter-spacing="1.5">ОДНА БАЗА</text>
+        <g fill="#14213D">
+          <circle cx="720" cy="92" r="6" fill="#14213D"/><circle cx="720" cy="156" r="6"/><circle cx="720" cy="220" r="6"/><circle cx="720" cy="284" r="6"/><circle cx="720" cy="348" r="6"/>
+        </g>
+        <g stroke="#0F766E" stroke-width="2" fill="none">
+          <path d="M728 92 H940" marker-end="url(#aht)"/><path d="M728 156 H940" marker-end="url(#aht)"/><path d="M728 220 H940" marker-end="url(#aht)"/><path d="M728 284 H940" marker-end="url(#aht)"/><path d="M728 348 H940" marker-end="url(#aht)"/>
+        </g>
+        <g font-size="12.5" fill="#14213D">
+          <rect x="756" y="80" width="150" height="24" rx="6" fill="#F6F4EE"/><text x="766" y="96">импорт чертежей</text>
+          <rect x="756" y="144" width="150" height="24" rx="6" fill="#F6F4EE"/><text x="766" y="160">плавка · сварщик</text>
+          <rect x="756" y="208" width="150" height="24" rx="6" fill="#F6F4EE"/><text x="766" y="224">результат контроля</text>
+          <rect x="756" y="272" width="150" height="24" rx="6" fill="#F6F4EE"/><text x="766" y="288">стыки · опоры</text>
+          <rect x="756" y="336" width="150" height="24" rx="6" fill="#F6F4EE"/><text x="766" y="352">видит готовность</text>
+        </g>
+        <g stroke="#0F766E" stroke-width="1.6" fill="none">
+          <path d="M1002 130 C 1026 130, 1022 110, 1044 110" marker-end="url(#aht)"/>
+          <path d="M1002 220 H1042" marker-end="url(#aht)"/>
+          <path d="M1002 310 C 1026 310, 1022 330, 1044 330" marker-end="url(#aht)"/>
+        </g>
+        <g>
+          <rect x="1048" y="90" width="186" height="40" rx="10" fill="#fff" stroke="#E3DFD4"/><text x="1062" y="115" font-size="13" font-weight="600" fill="#14213D">Паспорт каждого стыка</text>
+          <rect x="1048" y="200" width="186" height="40" rx="10" fill="#fff" stroke="#E3DFD4"/><text x="1062" y="225" font-size="13" font-weight="600" fill="#14213D">Каскад при браке</text>
+          <rect x="1048" y="310" width="186" height="40" rx="10" fill="#fff" stroke="#E3DFD4"/><text x="1062" y="335" font-size="13" font-weight="600" fill="#14213D">Готовность к испытанию</text>
+        </g>
+      </svg>
+    </div>
+    <div class="pv-meta"><h3>«Зачем» · дорожки участников: сегодня и с PipeQC</h3><p>Одна схема отвечает, зачем программа нужна: слева разрывы на передачах между участниками, справа одна база и три вывода, которые система делает сама.</p></div>
+  </div>
+
+  <!-- =============== HOW · cascade =============== -->
+  <div class="card">
+    <div class="pv-sheet pv-grid">
+      <div class="pv-over">КАК РАБОТАЕТ · ПРАВИЛА ВМЕСТО ПЕРЕПИСКИ</div>
+      <div class="pv-title">Одна запись лаборатории — три следствия</div>
+      <div class="pv-lead">Инспектор отмечает брак и обязан назвать дефект. Всё остальное система назначает по правилам проекта, без писем и без памяти QC-инженера.</div>
+      <svg viewBox="0 0 1240 360" width="100%" fill="none">
+        <defs><marker id="ah2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#0F766E"/></marker></defs>
+        <!-- input -->
+        <rect x="10" y="96" width="300" height="170" rx="16" fill="#fff" stroke="#E3DFD4"/>
+        <text x="30" y="126" class="m" font-size="10.5" letter-spacing="1.3" fill="#8A93A3">ЛАБОРАТОРИЯ · ОДНА ЗАПИСЬ</text>
+        <text x="30" y="160" font-size="22" font-weight="800" fill="#14213D">J-1029 · RT</text>
+        <rect x="30" y="176" width="104" height="26" rx="7" fill="#FFF1E6" stroke="#F4B183"/><text x="42" y="194" font-size="13" font-weight="600" fill="#C2410C">Отклонён</text>
+        <text x="30" y="226" font-size="13" fill="#4A5568">Дефект: непровар корня, 6 мм</text>
+        <text x="30" y="248" class="m" font-size="10" fill="#8A93A3">без кода дефекта запись не принимается</text>
+        <!-- system node -->
+        <path d="M312 181 H372" stroke="#0F766E" stroke-width="2" marker-end="url(#ah2)"/>
+        <rect x="378" y="146" width="124" height="70" rx="35" fill="#0F766E"/>
+        <text x="440" y="176" font-size="14" font-weight="700" fill="#fff" text-anchor="middle">PipeQC</text>
+        <text x="440" y="196" class="m" font-size="10" fill="#BFE6DF" text-anchor="middle">по правилам</text>
+        <!-- branches -->
+        <g stroke="#0F766E" stroke-width="2" fill="none">
+          <path d="M502 170 C 548 170, 540 66, 590 66" marker-end="url(#ah2)"/>
+          <path d="M502 181 H588" marker-end="url(#ah2)"/>
+        </g>
+        <path d="M502 194 C 548 194, 540 296, 590 296" stroke="#E07A1F" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#ah2)"/>
+        <!-- R1 -->
+        <rect x="596" y="26" width="330" height="82" rx="14" fill="#fff" stroke="#E3DFD4"/>
+        <rect x="614" y="44" width="38" height="24" rx="6" fill="#0F766E"/><text x="633" y="61" class="m" font-size="12" font-weight="600" fill="#fff" text-anchor="middle">R1</text>
+        <text x="664" y="61" font-size="15" font-weight="700" fill="#14213D">Ремонт этого стыка</text>
+        <text x="614" y="90" font-size="12.5" fill="#4A5568">Обязательный повторный контроль после ремонта</text>
+        <!-- R2 -->
+        <path d="M926 67 H966" stroke="#8A93A3" stroke-width="1.4" stroke-dasharray="4 3"/>
+        <rect x="970" y="40" width="250" height="56" rx="12" fill="#F6F4EE" stroke="#D9D5C9" stroke-dasharray="4 3"/>
+        <text x="986" y="63" font-size="12.5" fill="#14213D"><tspan font-weight="700">R2</tspan>, если не прошёл R1</text>
+        <text x="986" y="82" class="m" font-size="10" fill="#8A93A3">третьего ремонта не бывает</text>
+        <!-- tracers -->
+        <rect x="596" y="140" width="330" height="82" rx="14" fill="#fff" stroke="#E3DFD4"/>
+        <rect x="614" y="158" width="38" height="24" rx="6" fill="#fff" stroke="#0F766E" stroke-width="1.5" stroke-dasharray="3 2"/><text x="633" y="175" class="m" font-size="12" font-weight="600" fill="#0F766E" text-anchor="middle">T1</text>
+        <rect x="658" y="158" width="38" height="24" rx="6" fill="#fff" stroke="#0F766E" stroke-width="1.5" stroke-dasharray="3 2"/><text x="677" y="175" class="m" font-size="12" font-weight="600" fill="#0F766E" text-anchor="middle">T2</text>
+        <text x="708" y="175" font-size="15" font-weight="700" fill="#14213D">Два трассера</text>
+        <text x="614" y="204" font-size="12.5" fill="#4A5568">Ещё два стыка того же сварщика уходят на контроль</text>
+        <!-- penalty -->
+        <rect x="596" y="254" width="330" height="96" rx="14" fill="#FFF8F1" stroke="#F4B183" stroke-dasharray="6 4"/>
+        <text x="614" y="282" class="m" font-size="9.5" letter-spacing=".4" fill="#B45309">ЕСЛИ 4 БРАКА ИЛИ БРАК НА ТРАССЕРЕ 2-ГО УРОВНЯ</text>
+        <text x="614" y="308" font-size="15" font-weight="700" fill="#14213D">Сварщик на 100% контроль</text>
+        <text x="614" y="330" font-size="12.5" fill="#4A5568">Проверяется каждый его стык, а не выборка</text>
+        <!-- aside -->
+        <rect x="970" y="150" width="250" height="196" rx="14" fill="#14213D"/>
+        <text x="990" y="180" class="m" font-size="10" letter-spacing="1.2" fill="#8FB5AC">БЕЗ СИСТЕМЫ</text>
+        <text x="990" y="208" font-size="14" fill="#E8EEF6">Эта цепочка живёт</text>
+        <text x="990" y="228" font-size="14" fill="#E8EEF6">в переписке и в памяти</text>
+        <text x="990" y="248" font-size="14" fill="#E8EEF6">QC-инженера. Один</text>
+        <text x="990" y="268" font-size="14" fill="#E8EEF6">пропущенный трассер —</text>
+        <text x="990" y="288" font-size="14" fill="#E8EEF6">непроверенный шов</text>
+        <text x="990" y="308" font-size="14" fill="#E8EEF6">на работающем заводе.</text>
+      </svg>
+    </div>
+    <div class="pv-meta"><h3>«Как работает» · каскад брака</h3><p>Главная «единица ценности»: одна запись запускает цепочку правил. Правила взяты из кода PipeQC, а не придуманы для слайда.</p></div>
+  </div>
+
+  <!-- =============== HELPS · gates =============== -->
+  <div class="card">
+    <div class="pv-sheet">
+      <div class="pv-over">ЧЕМ ПОМОГАЕТ · ГОТОВНОСТЬ СЧИТАЕТ СИСТЕМА</div>
+      <div class="pv-title">О блокерах известно до приезда испытательной бригады</div>
+      <div class="pv-lead">Пакет допускают к гидроиспытанию, только когда закрыты все условия. PipeQC пересчитывает их при каждой записи и называет, что именно держит пакет и у кого.</div>
+      <svg viewBox="0 0 1240 400" width="100%" fill="none">
+        <defs>
+          <marker id="ah3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#14213D"/></marker>
+        </defs>
+        <g font-size="13.5" fill="#14213D">
+          <!-- rows: y = 20 + i*46 -->
+          <g transform="translate(10 18)"><rect width="370" height="36" rx="10" fill="#fff" stroke="#E3DFD4"/><circle cx="20" cy="18" r="8" fill="#0F766E"/><path d="M16.5 18 l2.5 2.5 l4.5 -5" stroke="#fff" stroke-width="1.8" fill="none"/><text x="38" y="23">Сварка в цеху</text><text x="356" y="23" class="m" font-size="11.5" fill="#8A93A3" text-anchor="end">48 / 48</text></g>
+          <g transform="translate(10 64)"><rect width="370" height="36" rx="10" fill="#fff" stroke="#E3DFD4"/><circle cx="20" cy="18" r="8" fill="#0F766E"/><path d="M16.5 18 l2.5 2.5 l4.5 -5" stroke="#fff" stroke-width="1.8" fill="none"/><text x="38" y="23">Полевые стыки</text><text x="356" y="23" class="m" font-size="11.5" fill="#8A93A3" text-anchor="end">12 / 12</text></g>
+          <g transform="translate(10 110)"><rect width="370" height="36" rx="10" fill="#fff" stroke="#E3DFD4"/><circle cx="20" cy="18" r="8" fill="#0F766E"/><path d="M16.5 18 l2.5 2.5 l4.5 -5" stroke="#fff" stroke-width="1.8" fill="none"/><text x="38" y="23">Опоры</text><text x="356" y="23" class="m" font-size="11.5" fill="#8A93A3" text-anchor="end">31 / 31</text></g>
+          <g transform="translate(10 156)"><rect width="370" height="36" rx="10" fill="#FFF8F1" stroke="#F4B183"/><circle cx="20" cy="18" r="8" fill="#E07A1F"/><text x="20" y="22.5" font-size="12" font-weight="800" fill="#fff" text-anchor="middle">!</text><text x="38" y="23">Контроль NDE</text><text x="356" y="23" class="m" font-size="11.5" fill="#C2410C" text-anchor="end">1 ждёт · J-1031</text></g>
+          <g transform="translate(10 202)"><rect width="370" height="36" rx="10" fill="#fff" stroke="#E3DFD4"/><circle cx="20" cy="18" r="8" fill="#0F766E"/><path d="M16.5 18 l2.5 2.5 l4.5 -5" stroke="#fff" stroke-width="1.8" fill="none"/><text x="38" y="23">Термообработка</text><text x="356" y="23" class="m" font-size="11.5" fill="#8A93A3" text-anchor="end">не требуется</text></g>
+          <g transform="translate(10 248)"><rect width="370" height="36" rx="10" fill="#fff" stroke="#E3DFD4"/><circle cx="20" cy="18" r="8" fill="#0F766E"/><path d="M16.5 18 l2.5 2.5 l4.5 -5" stroke="#fff" stroke-width="1.8" fill="none"/><text x="38" y="23">Выпуск катушек из цеха</text><text x="356" y="23" class="m" font-size="11.5" fill="#8A93A3" text-anchor="end">9 / 9</text></g>
+          <g transform="translate(10 294)"><rect width="370" height="36" rx="10" fill="#FFF8F1" stroke="#F4B183"/><circle cx="20" cy="18" r="8" fill="#E07A1F"/><text x="20" y="22.5" font-size="12" font-weight="800" fill="#fff" text-anchor="middle">!</text><text x="38" y="23">Фланцы затянуты</text><text x="356" y="23" class="m" font-size="11.5" fill="#C2410C" text-anchor="end">FL-03 без записи</text></g>
+          <g transform="translate(10 340)"><rect width="370" height="36" rx="10" fill="#fff" stroke="#E3DFD4"/><circle cx="20" cy="18" r="8" fill="#0F766E"/><path d="M16.5 18 l2.5 2.5 l4.5 -5" stroke="#fff" stroke-width="1.8" fill="none"/><text x="38" y="23">Недоделки категории X</text><text x="356" y="23" class="m" font-size="11.5" fill="#8A93A3" text-anchor="end">0 открыто</text></g>
+        </g>
+        <!-- convergence -->
+        <g fill="none" stroke-width="1.6">
+          <path d="M380 36 C 520 36, 520 198, 600 198" stroke="#0F766E" opacity=".55"/>
+          <path d="M380 82 C 510 82, 520 198, 600 198" stroke="#0F766E" opacity=".55"/>
+          <path d="M380 128 C 500 128, 520 198, 600 198" stroke="#0F766E" opacity=".55"/>
+          <path d="M380 174 C 490 174, 520 198, 600 198" stroke="#E07A1F" stroke-width="2.4"/>
+          <path d="M380 220 C 490 220, 520 198, 600 198" stroke="#0F766E" opacity=".55"/>
+          <path d="M380 266 C 500 266, 520 198, 600 198" stroke="#0F766E" opacity=".55"/>
+          <path d="M380 312 C 510 312, 520 198, 600 198" stroke="#E07A1F" stroke-width="2.4"/>
+          <path d="M380 358 C 520 358, 520 198, 600 198" stroke="#0F766E" opacity=".55"/>
+        </g>
+        <!-- gate -->
+        <g transform="translate(650 198)">
+          <rect x="-48" y="-48" width="96" height="96" rx="18" transform="rotate(45)" fill="#fff" stroke="#14213D" stroke-width="2"/>
+          <text y="-4" font-size="12.5" font-weight="700" fill="#14213D" text-anchor="middle">готов</text>
+          <text y="13" font-size="12.5" font-weight="700" fill="#14213D" text-anchor="middle">к испытанию?</text>
+        </g>
+        <path d="M720 198 H770" stroke="#14213D" stroke-width="2" marker-end="url(#ah3)"/>
+        <!-- result -->
+        <rect x="776" y="70" width="450" height="256" rx="18" fill="#fff" stroke="#E3DFD4"/>
+        <text x="800" y="104" class="m" font-size="10.5" letter-spacing="1.3" fill="#8A93A3">TEST PACK TP-12 · 7 ЛИНИЙ</text>
+        <text x="800" y="144" font-size="30" font-weight="800" fill="#C2410C" letter-spacing="-0.6">Не готов</text>
+        <text x="946" y="144" font-size="15" fill="#4A5568">· 2 причины</text>
+        <line x1="800" y1="164" x2="1202" y2="164" stroke="#F0EDE4"/>
+        <circle cx="808" cy="190" r="5" fill="#E07A1F"/><text x="824" y="195" font-size="14" fill="#14213D"><tspan font-weight="700">J-1031</tspan> ждёт рентгена</text><text x="1202" y="195" class="m" font-size="11" fill="#8A93A3" text-anchor="end">лаборатория</text>
+        <circle cx="808" cy="224" r="5" fill="#E07A1F"/><text x="824" y="229" font-size="14" fill="#14213D"><tspan font-weight="700">FL-03</tspan> нет записи о затяжке</text><text x="1202" y="229" class="m" font-size="11" fill="#8A93A3" text-anchor="end">монтаж</text>
+        <line x1="800" y1="254" x2="1202" y2="254" stroke="#F0EDE4"/>
+        <text x="800" y="282" font-size="12.5" fill="#4A5568">Готовность — следствие записей, а не галочка.</text>
+        <text x="800" y="302" font-size="12.5" fill="#4A5568">Закроют оба пункта — пакет станет готов сам.</text>
+      </svg>
+    </div>
+    <div class="pv-meta"><h3>«Чем помогает» · что держит испытание</h3><p>Восемь условий сходятся в одни ворота. Видно, какие два держат пакет и чья это зона. Условия взяты из расчёта готовности в базе PipeQC.</p></div>
+  </div>
+</div>

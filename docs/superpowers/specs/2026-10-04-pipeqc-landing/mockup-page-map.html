@@ -1,0 +1,197 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  .map { display:flex; flex-direction:column; gap:0; border:1px solid var(--border); border-radius:14px; overflow:hidden; font-family:'Onest', sans-serif; }
+  .sec { display:grid; grid-template-columns: 380px 1fr; gap:28px; padding:22px 26px; border-bottom:1px solid var(--border); background:var(--bg-secondary); }
+  .sec:last-child { border-bottom:0; }
+  .thumb { height:150px; border-radius:10px; position:relative; overflow:hidden; border:1px solid rgba(0,0,0,.08); }
+  .t-light { background:#F6F4EE; }
+  .t-white { background:#fff; }
+  .t-ink { background:#14213D; }
+  .t-grid { background-color:#F6F4EE; background-image:linear-gradient(rgba(20,33,61,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(20,33,61,.07) 1px, transparent 1px); background-size:11px 11px; }
+  .b { position:absolute; border-radius:4px; }
+  .ln { background:#14213D; opacity:.85; height:6px; }
+  .ln.s { opacity:.3; height:4px; }
+  .ln.w { background:#E8EEF6; }
+  .tl { background:#0F766E; }
+  .am { background:#E07A1F; }
+  .cd { background:#fff; border:1px solid #E3DFD4; box-shadow:0 4px 10px -6px rgba(20,33,61,.3); }
+  .cd.d { background:#1E2D4D; border-color:#2C3D60; box-shadow:none; }
+  .no { font-family:'IBM Plex Mono'; font-size:11px; color:#0F766E; letter-spacing:.1em; margin-bottom:4px; }
+  .nm { font-size:17px; font-weight:800; letter-spacing:-.02em; color:var(--text-primary); margin-bottom:6px; }
+  .q { font-size:13.5px; color:var(--text-primary); margin-bottom:8px; }
+  .q b { color:#0F766E; }
+  .dt { font-size:12.5px; color:var(--text-secondary); line-height:1.5; }
+  .dt span { display:inline-block; font-family:'IBM Plex Mono'; font-size:10.5px; padding:2px 6px; border-radius:5px; background:var(--bg-tertiary); margin:4px 4px 0 0; color:var(--text-primary); }
+  .act { display:inline-block; font-size:10.5px; font-family:'IBM Plex Mono'; color:#B45309; margin-left:8px; letter-spacing:.06em; }
+  svg.pipe { position:absolute; }
+</style>
+
+<h2>Структура лендинга: десять разделов сверху вниз</h2>
+<p class="subtitle">Слева набросок раскладки и тон фона, справа на какой вопрос инвестора отвечает раздел и чем. Порядок выстроен так, чтобы человек не из отрасли сначала понял стройку, потом проблему, потом продукт.</p>
+
+<div class="map">
+
+  <div class="sec">
+    <div class="thumb t-light">
+      <div class="b ln" style="left:16px;top:44px;width:120px;height:9px"></div><div class="b ln" style="left:16px;top:58px;width:100px;height:9px"></div>
+      <div class="b ln s" style="left:16px;top:76px;width:140px"></div><div class="b ln s" style="left:16px;top:84px;width:120px"></div>
+      <div class="b tl" style="left:16px;top:100px;width:60px;height:14px"></div><div class="b cd" style="left:82px;top:100px;width:60px;height:14px"></div>
+      <div class="b t-grid" style="left:190px;top:10px;width:180px;height:130px;border-radius:6px"></div>
+      <svg class="pipe" style="left:190px;top:10px" width="180" height="130" viewBox="0 0 180 130"><path d="M10 80 L50 57 V30 L82 12 L112 29 V55 L137 70 L165 54" stroke="#14213D" stroke-width="5" fill="none" stroke-linejoin="round"/><path d="M10 80 L50 57 V30 L82 12 L112 29" stroke="#0F766E" stroke-width="3" fill="none" stroke-linejoin="round"/><circle cx="112" cy="55" r="5" fill="none" stroke="#0F766E" stroke-width="1.5"/></svg>
+      <div class="b cd" style="left:250px;top:84px;width:100px;height:48px"></div>
+    </div>
+    <div>
+      <div class="no">00 · ПЕРВЫЙ ЭКРАН</div>
+      <div class="nm">Сто тысяч стыков. У каждого — паспорт.</div>
+      <div class="q">Что это за продукт, <b>в одном кадре</b>?</div>
+      <div class="dt">Утверждённый вариант AC-2: изометрия линии, стык J-1029 связан выноской со своим паспортом. Внизу цепочка стадий, по клику переход к разделам. <span>превью ссылки</span><span>якорное меню</span></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="thumb t-white">
+      <div class="b ln" style="left:16px;top:18px;width:170px;height:8px"></div>
+      <div class="b ln s" style="left:16px;top:32px;width:220px"></div>
+      <div class="b cd" style="left:16px;top:52px;width:108px;height:84px"></div><div class="b cd" style="left:134px;top:52px;width:108px;height:84px"></div><div class="b cd" style="left:252px;top:52px;width:108px;height:84px"></div>
+      <div class="b tl" style="left:26px;top:64px;width:40px;height:10px"></div><div class="b tl" style="left:144px;top:64px;width:40px;height:10px"></div><div class="b tl" style="left:262px;top:64px;width:40px;height:10px"></div>
+    </div>
+    <div>
+      <div class="no">01 · КАК СТРОЯТ ЗАВОД</div>
+      <div class="nm">Речь о трубах внутри завода, а не о магистрали</div>
+      <div class="q">Что вообще строят и <b>почему качество здесь стоит так дорого</b>?</div>
+      <div class="dt">Три карточки. Масштаб: тысячи чертежей, десятки тысяч стыков, годы стройки, много подрядчиков. Цена ошибки: шов не переделать после пуска. Класс среды определяет строгость контроля. Пояснения терминов на полях. <span>иллюстрация «завод = трубы»</span></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="thumb t-light">
+      <div class="b ln" style="left:16px;top:18px;width:190px;height:8px"></div>
+      <div class="b" style="left:22px;top:48px;width:336px;height:2px;background:#14213D"></div>
+      <div class="b tl" style="left:22px;top:43px;width:12px;height:12px;border-radius:50%"></div><div class="b tl" style="left:84px;top:43px;width:12px;height:12px;border-radius:50%"></div><div class="b tl" style="left:146px;top:43px;width:12px;height:12px;border-radius:50%"></div><div class="b" style="left:208px;top:43px;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid #0F766E;box-sizing:border-box"></div><div class="b" style="left:270px;top:43px;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid #14213D;box-sizing:border-box"></div><div class="b" style="left:332px;top:43px;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid #14213D;box-sizing:border-box"></div>
+      <div class="b cd" style="left:8px;top:66px;width:52px;height:72px"></div><div class="b cd" style="left:70px;top:66px;width:52px;height:72px"></div><div class="b cd" style="left:132px;top:66px;width:52px;height:72px"></div><div class="b cd" style="left:194px;top:66px;width:52px;height:72px;border-color:#0F766E"></div><div class="b cd" style="left:256px;top:66px;width:52px;height:72px"></div><div class="b cd" style="left:318px;top:66px;width:52px;height:72px"></div>
+    </div>
+    <div>
+      <div class="no">02 · ПУТЬ ТРУБЫ · ОБЗОР</div>
+      <div class="nm">Шесть стадий от чертежа до испытания</div>
+      <div class="q">Как устроен процесс <b>целиком</b>?</div>
+      <div class="dt">Линия стадий P-A: станции с пиктограммами, «что происходит» и «что фиксирует PipeQC», кто кому что передаёт. Станции загораются по очереди. На телефоне линия вертикальная. <span>SVG</span><span>анимация при прокрутке</span></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="thumb t-white">
+      <div class="b t-grid" style="left:10px;top:10px;width:210px;height:130px;border-radius:6px"></div>
+      <svg class="pipe" style="left:10px;top:10px" width="210" height="130" viewBox="0 0 210 130"><path d="M12 100 L58 74 V40 L96 18 L132 38 V72 L162 90 L196 70" stroke="#14213D" stroke-width="5" fill="none" stroke-linejoin="round"/><path d="M12 100 L58 74 V40 L96 18 L132 38" stroke="#0F766E" stroke-width="3" fill="none" stroke-linejoin="round"/><circle cx="132" cy="72" r="5" fill="none" stroke="#C2410C" stroke-width="1.8"/><circle cx="162" cy="90" r="4" fill="none" stroke="#0F766E" stroke-dasharray="2 2"/></svg>
+      <div class="b" style="left:236px;top:16px;width:2px;height:118px;background:#E3DFD4"></div>
+      <div class="b tl" style="left:231px;top:20px;width:12px;height:12px;border-radius:50%"></div><div class="b tl" style="left:231px;top:44px;width:12px;height:12px;border-radius:50%"></div><div class="b" style="left:231px;top:68px;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid #0F766E;box-sizing:border-box"></div>
+      <div class="b ln" style="left:256px;top:30px;width:100px;height:8px"></div><div class="b ln s" style="left:256px;top:46px;width:110px"></div><div class="b ln s" style="left:256px;top:54px;width:96px"></div><div class="b" style="left:256px;top:68px;width:110px;height:30px;background:#FFF7ED;border:1px solid #FBD9B5"></div>
+    </div>
+    <div>
+      <div class="no">03 · ПУТЬ ТРУБЫ · ПОДРОБНО <span class="act">ГЛАВНЫЙ РАЗДЕЛ</span></div>
+      <div class="nm">Живой чертёж: зачем каждая стадия устроена именно так</div>
+      <div class="q">Почему трубу режут на катушки, почему швы просвечивают выборочно, <b>зачем испытывать пакетом</b>?</div>
+      <div class="dt">Живой чертёж P-B. Чертёж из первого экрана закреплён слева, справа шесть шагов. Каждый шаг меняет состояние линии и показывает, что записала программа. На шаге «Контроль» появляется брак и трассеры, это мост к разделу 05. <span>закреплённый SVG</span><span>6 состояний</span></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="thumb t-ink">
+      <div class="b ln w" style="left:16px;top:16px;width:180px;height:8px"></div>
+      <div class="b cd d" style="left:16px;top:36px;width:200px;height:104px"></div>
+      <div class="b" style="left:26px;top:52px;width:180px;height:1px;background:#2C3D60"></div><div class="b" style="left:26px;top:72px;width:180px;height:1px;background:#2C3D60"></div><div class="b" style="left:26px;top:92px;width:180px;height:1px;background:#2C3D60"></div><div class="b" style="left:26px;top:112px;width:180px;height:1px;background:#2C3D60"></div>
+      <div class="b am" style="left:96px;top:78px;width:8px;height:8px;border-radius:50%"></div><div class="b am" style="left:150px;top:98px;width:8px;height:8px;border-radius:50%"></div>
+      <div class="b tl" style="left:290px;top:36px;width:22px;height:104px;border-radius:6px"></div>
+      <div class="b cd d" style="left:228px;top:36px;width:52px;height:20px"></div><div class="b cd d" style="left:228px;top:78px;width:52px;height:20px"></div><div class="b cd d" style="left:228px;top:118px;width:52px;height:20px"></div>
+      <div class="b cd d" style="left:320px;top:56px;width:48px;height:16px"></div><div class="b cd d" style="left:320px;top:96px;width:48px;height:16px"></div>
+    </div>
+    <div>
+      <div class="no">04 · ЗАЧЕМ</div>
+      <div class="nm">Стадий шесть, участников пять, а стык один</div>
+      <div class="q">Что ломается <b>без такой системы</b>?</div>
+      <div class="dt">Тёмный раздел, единственный «тревожный» на странице. Схема участников «сегодня и с PipeQC», под ней четыре знакомые боли: Excel у каждой бригады, о блокерах узнают в день испытания, сварщик без допуска на ответственном стыке, брак не дошёл до цеха. <span>схема 2a</span></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="thumb t-grid">
+      <div class="b ln" style="left:16px;top:16px;width:180px;height:8px"></div>
+      <div class="b cd" style="left:16px;top:42px;width:96px;height:56px"></div>
+      <div class="b tl" style="left:132px;top:58px;width:50px;height:24px;border-radius:12px"></div>
+      <div class="b cd" style="left:200px;top:36px;width:100px;height:22px"></div><div class="b cd" style="left:200px;top:64px;width:100px;height:22px"></div><div class="b" style="left:200px;top:92px;width:100px;height:22px;background:#FFF8F1;border:1px dashed #F4B183"></div>
+      <div class="b" style="left:312px;top:64px;width:56px;height:58px;background:#14213D"></div>
+      <div class="b cd" style="left:16px;top:112px;width:160px;height:28px"></div>
+    </div>
+    <div>
+      <div class="no">05 · КАК РАБОТАЕТ</div>
+      <div class="nm">Правила проекта вместо переписки</div>
+      <div class="q">Что программа делает <b>сама</b>, а не просто хранит?</div>
+      <div class="dt">Две части. Первая: правила задаются до первой записи (процедуры сварки, допуски сварщиков, матрица контроля, зоны), и система не даёт их нарушить, например материал не из списка проекта. Вторая: каскад брака, одна запись и три следствия. <span>карточки правил</span><span>схема 2b</span></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="thumb t-light">
+      <div class="b ln" style="left:16px;top:16px;width:200px;height:8px"></div>
+      <div class="b cd" style="left:16px;top:40px;width:110px;height:10px"></div><div class="b cd" style="left:16px;top:54px;width:110px;height:10px"></div><div class="b" style="left:16px;top:68px;width:110px;height:10px;background:#FFF8F1;border:1px solid #F4B183"></div><div class="b cd" style="left:16px;top:82px;width:110px;height:10px"></div><div class="b" style="left:16px;top:96px;width:110px;height:10px;background:#FFF8F1;border:1px solid #F4B183"></div><div class="b cd" style="left:16px;top:110px;width:110px;height:10px"></div>
+      <svg class="pipe" style="left:126px;top:40px" width="80" height="84" viewBox="0 0 80 84"><g stroke="#0F766E" stroke-width="1" fill="none" opacity=".6"><path d="M0 5 C 40 5, 40 42, 66 42"/><path d="M0 19 C 40 19, 40 42, 66 42"/><path d="M0 47 C 40 47, 40 42, 66 42"/><path d="M0 75 C 40 75, 40 42, 66 42"/></g><g stroke="#E07A1F" stroke-width="1.6" fill="none"><path d="M0 33 C 40 33, 40 42, 66 42"/><path d="M0 61 C 40 61, 40 42, 66 42"/></g></svg>
+      <div class="b" style="left:196px;top:68px;width:26px;height:26px;transform:rotate(45deg);background:#fff;border:1.5px solid #14213D"></div>
+      <div class="b cd" style="left:238px;top:44px;width:126px;height:76px"></div><div class="b am" style="left:250px;top:58px;width:50px;height:9px"></div>
+    </div>
+    <div>
+      <div class="no">06 · ЧЕМ ПОМОГАЕТ</div>
+      <div class="nm">О блокерах известно до приезда испытательной бригады</div>
+      <div class="q">Что меняется <b>для руководителя проекта</b>?</div>
+      <div class="dt">Схема готовности: восемь условий сходятся в «готов к испытанию?» и называют причины. Ниже полоса про доступ: у каждой роли свой участок, субподрядчик видит только свою зону, и ограничение работает на уровне базы, а не кнопок. <span>схема 2c</span><span>роли</span></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="thumb t-ink">
+      <div class="b ln w" style="left:16px;top:16px;width:160px;height:8px"></div>
+      <div class="b" style="left:16px;top:40px;width:108px;height:84px;background:#E8EEF6;border-radius:6px;transform:rotate(-2deg)"></div>
+      <div class="b" style="left:136px;top:36px;width:108px;height:88px;background:#fff;border-radius:6px"></div>
+      <div class="b" style="left:256px;top:40px;width:108px;height:84px;background:#E8EEF6;border-radius:6px;transform:rotate(2deg)"></div>
+      <div class="b ln s w" style="left:136px;top:132px;width:108px"></div>
+    </div>
+    <div>
+      <div class="no">07 · ЭТО НАСТОЯЩИЙ ПРОДУКТ</div>
+      <div class="nm">Работающая система, а не концепт</div>
+      <div class="q">Существует ли это <b>на самом деле</b>?</div>
+      <div class="dt">Тёмная полоса с 2–3 свежими скриншотами со стенда: каскад, готовность пакета, дашборд цеха. Подпись «экран демонстрационной версии, данные вымышлены». Скриншот открывается на весь экран. <span>3 кадра</span><span>WebP</span></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="thumb t-white">
+      <div class="b ln" style="left:16px;top:16px;width:150px;height:8px"></div>
+      <div class="b" style="left:16px;top:38px;width:166px;height:102px;border-radius:8px;background:#EEF6F4"></div>
+      <div class="b" style="left:196px;top:38px;width:166px;height:102px;border-radius:8px;background:#F6F4EE;border:1px dashed #D9D5C9"></div>
+      <div class="b tl" style="left:28px;top:52px;width:60px;height:7px"></div><div class="b ln s" style="left:28px;top:68px;width:130px"></div><div class="b ln s" style="left:28px;top:78px;width:120px"></div><div class="b ln s" style="left:28px;top:88px;width:126px"></div>
+      <div class="b ln" style="left:208px;top:52px;width:60px;height:7px;opacity:.5"></div><div class="b ln s" style="left:208px;top:68px;width:120px"></div><div class="b ln s" style="left:208px;top:78px;width:110px"></div>
+    </div>
+    <div>
+      <div class="no">08 · ЧТО ГОТОВО</div>
+      <div class="nm">Работает сегодня — и что следующее</div>
+      <div class="q">Где продукт <b>честно</b> сейчас?</div>
+      <div class="dt">Две колонки: что работает, и что в планах. Каждый пункт сверяется с кодом при написании текстов. Незакрытое названо незакрытым. <span>без метрик</span></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="thumb t-ink">
+      <div class="b ln w" style="left:16px;top:30px;width:200px;height:12px"></div>
+      <div class="b ln s w" style="left:16px;top:52px;width:230px"></div>
+      <div class="b" style="left:16px;top:76px;width:110px;height:24px;border-radius:7px;background:#0F766E"></div><div class="b" style="left:134px;top:76px;width:110px;height:24px;border-radius:7px;border:1px solid #2C3D60"></div>
+      <div class="b ln s w" style="left:16px;top:126px;width:340px;opacity:.15"></div>
+    </div>
+    <div>
+      <div class="no">09 · КОНТАКТЫ</div>
+      <div class="nm">Обсудить проект</div>
+      <div class="q">Кто это делает и <b>как связаться</b>?</div>
+      <div class="dt">Кто мы (пара строк), почта и Telegram. Без формы: ссылку отправляют лично, отвечать будут лично. <span>данные от вас</span></div>
+    </div>
+  </div>
+
+</div>

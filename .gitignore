@@ -825,3 +825,6 @@ demo-video/
 # Remotion render output (regenerate with `npm run demo:render-video`) + local cache
 out/
 .remotion/
+
+# Visual brainstorming companion (mockups live in docs/superpowers/specs when approved)
+.superpowers/

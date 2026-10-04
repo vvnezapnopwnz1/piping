@@ -1,0 +1,333 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  .dir-grid { display:flex; flex-direction:column; gap:28px; }
+  .dir-grid .card { cursor:pointer; }
+  .dir-meta { display:flex; justify-content:space-between; gap:24px; align-items:flex-start; padding:16px 20px 18px; }
+  .dir-meta h3 { font-size:1.05rem; margin:0 0 4px; }
+  .dir-meta p { color:var(--text-secondary); font-size:.88rem; margin:0; max-width:680px; }
+  .scale { display:flex; align-items:center; gap:8px; flex-shrink:0; font-size:.72rem; color:var(--text-secondary); }
+  .scale .bar { width:120px; height:8px; border-radius:4px; background:linear-gradient(90deg,#16233A 0 var(--a), #0F766E var(--a) 100%); }
+  .shot { position:relative; width:100%; aspect-ratio: 16 / 7.6; min-height:540px; overflow:hidden; }
+  .mono { font-family:'IBM Plex Mono', monospace; }
+
+  /* ============ XA · Лист проекта (больше чертежа) ============ */
+  .xa { background:#F3F0E8; color:#16233A; font-family:'IBM Plex Sans Condensed', sans-serif;
+        background-image:linear-gradient(rgba(22,35,58,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(22,35,58,.05) 1px, transparent 1px); background-size:22px 22px; }
+  .xa .frame { position:absolute; inset:14px; border:1.5px solid #16233A; }
+  .xa .nav { position:absolute; top:14px; left:14px; right:14px; height:52px; display:flex; align-items:center; justify-content:space-between; padding:0 26px; border-bottom:1px solid rgba(22,35,58,.35); }
+  .xa .logo { font-weight:700; font-size:19px; display:flex; align-items:center; gap:10px; }
+  .xa .logo b { width:22px; height:22px; border:2px solid #16233A; border-radius:50%; position:relative; }
+  .xa .logo b::after { content:''; position:absolute; inset:5px; background:#0F766E; border-radius:50%; }
+  .xa .links { font-family:'IBM Plex Mono'; font-size:11.5px; letter-spacing:.06em; display:flex; gap:26px; text-transform:uppercase; }
+  .xa .body { position:absolute; top:66px; left:14px; right:14px; bottom:14px; display:grid; grid-template-columns: .92fr 1.18fr; }
+  .xa .copy { padding:42px 30px 28px 40px; display:flex; flex-direction:column; border-right:1px dashed rgba(22,35,58,.35); }
+  .xa .over { font-family:'IBM Plex Mono'; font-size:11px; letter-spacing:.14em; color:#0F766E; margin-bottom:18px; }
+  .xa .h { font-size:46px; line-height:1.02; font-weight:700; letter-spacing:-.015em; margin-bottom:18px; }
+  .xa .h span { color:#0F766E; }
+  .xa .sub { font-size:16.5px; line-height:1.45; color:#3A4A63; max-width:430px; }
+  .xa .btns { margin-top:28px; display:flex; gap:12px; }
+  .xa .btn { font-family:'IBM Plex Mono'; font-size:12px; letter-spacing:.06em; text-transform:uppercase; padding:12px 18px; border:1.5px solid #16233A; }
+  .xa .btn.fill { background:#16233A; color:#F3F0E8; }
+  .xa .facts { margin-top:auto; display:grid; grid-template-columns:repeat(3,1fr); border-top:1px solid rgba(22,35,58,.35); }
+  .xa .facts div { padding:12px 10px 0 0; font-family:'IBM Plex Mono'; font-size:10.5px; color:#3A4A63; }
+  .xa .facts strong { display:block; font-family:'IBM Plex Sans Condensed'; font-size:22px; color:#16233A; }
+  .xa .draw { position:relative; }
+  .xa .draw svg { position:absolute; inset:10px 10px 64px 6px; width:calc(100% - 16px); height:calc(100% - 74px); overflow:visible; }
+  .xa .tblock { position:absolute; right:0; bottom:0; display:grid; grid-template-columns:repeat(4,auto); font-family:'IBM Plex Mono'; font-size:10px; border-top:1.5px solid #16233A; border-left:1.5px solid #16233A; }
+  .xa .tblock div { padding:7px 12px; border-right:1px solid rgba(22,35,58,.4); }
+  .xa .tblock div:last-child { border-right:0; }
+  .xa .tblock small { display:block; font-size:8.5px; color:#6B778A; letter-spacing:.08em; margin-bottom:2px; }
+  .xa .legend { position:absolute; left:18px; bottom:14px; display:flex; gap:16px; font-family:'IBM Plex Mono'; font-size:10px; color:#3A4A63; }
+  .xa .legend i { display:inline-block; width:18px; height:8px; border:1.5px solid #16233A; margin-right:6px; vertical-align:-1px; }
+  .xa .pcard { background:#fff; border-radius:12px; border:1px solid #E7E4DA; box-shadow:0 18px 40px -14px rgba(22,35,58,.35); padding:12px 14px; font-family:'Onest', sans-serif; color:#16233A; height:100%; box-sizing:border-box; }
+  .xa .pcard .t { font-size:10.5px; color:#6B778A; }
+  .xa .pcard .n { font-size:24px; font-weight:800; letter-spacing:-.02em; color:#0F766E; margin:2px 0 4px; }
+  .xa .pcard .bar { height:5px; border-radius:5px; background:#ECEAE2; overflow:hidden; }
+  .xa .pcard .bar i { display:block; height:100%; width:94%; background:#0F766E; }
+  .xa .pcard .b { font-size:10.5px; color:#3A4A63; margin-top:7px; line-height:1.4; }
+  .xa .pcard .b b { color:#C2410C; }
+
+  /* ============ XB · Чертёж ведёт к паспорту (поровну) ============ */
+  .xb { background:#F6F4EE; color:#14213D; font-family:'Onest', sans-serif; }
+  .xb .nav { position:absolute; top:0; left:0; right:0; height:66px; display:flex; align-items:center; justify-content:space-between; padding:0 48px; border-bottom:1px solid #E6E3DA; }
+  .xb .logo { font-weight:800; font-size:19px; letter-spacing:-.02em; display:flex; align-items:center; gap:10px; }
+  .xb .logo b { width:20px; height:20px; border:2px solid #14213D; border-radius:50%; position:relative; }
+  .xb .logo b::after { content:''; position:absolute; inset:4px; background:#0F766E; border-radius:50%; }
+  .xb .links { display:flex; gap:26px; font-size:13.5px; color:#4A5568; }
+  .xb .links span::before { font-family:'IBM Plex Mono'; font-size:10.5px; color:#0F766E; margin-right:6px; }
+  .xb .links span:nth-child(1)::before { content:'01'; } .xb .links span:nth-child(2)::before { content:'02'; }
+  .xb .links span:nth-child(3)::before { content:'03'; } .xb .links span:nth-child(4)::before { content:'04'; }
+  .xb .cta { font-size:13.5px; padding:9px 16px; border-radius:10px; background:#14213D; color:#F6F4EE; font-weight:600; }
+  .xb .body { position:absolute; top:66px; left:0; right:0; bottom:0; display:grid; grid-template-columns: .9fr 1.1fr; }
+  .xb .copy { padding:56px 20px 30px 48px; display:flex; flex-direction:column; }
+  .xb .over { font-family:'IBM Plex Mono'; font-size:11px; letter-spacing:.14em; color:#0F766E; margin-bottom:20px; }
+  .xb .h { font-size:50px; line-height:1.02; font-weight:800; letter-spacing:-.035em; margin-bottom:20px; }
+  .xb .h span { color:#0F766E; }
+  .xb .sub { font-size:17px; line-height:1.5; color:#4A5568; max-width:450px; }
+  .xb .btns { display:flex; gap:12px; margin-top:28px; }
+  .xb .btn { font-size:14.5px; padding:13px 20px; border-radius:12px; font-weight:600; }
+  .xb .btn.fill { background:#0F766E; color:#fff; }
+  .xb .btn.ghost { background:#fff; border:1px solid #E2DFD5; }
+  .xb .chain { margin-top:auto; display:flex; align-items:center; gap:8px; font-family:'IBM Plex Mono'; font-size:10.5px; letter-spacing:.06em; color:#4A5568; flex-wrap:wrap; }
+  .xb .chain span { padding:5px 8px; border:1px solid #D9D5C9; border-radius:6px; background:#fff; }
+  .xb .chain span.on { border-color:#0F766E; color:#0F766E; }
+  .xb .chain i { font-style:normal; color:#A3A9B5; }
+  .xb .draw { position:relative;
+              background-image:linear-gradient(rgba(20,33,61,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(20,33,61,.07) 1px, transparent 1px); background-size:22px 22px;
+              -webkit-mask-image:radial-gradient(ellipse 85% 80% at 55% 50%, #000 55%, transparent 100%); mask-image:radial-gradient(ellipse 85% 80% at 55% 50%, #000 55%, transparent 100%); }
+  .xb .drawsvg { position:absolute; inset:18px 28px 16px 0; width:calc(100% - 28px); height:calc(100% - 34px); overflow:visible; }
+  .xb .pass { background:#fff; border-radius:14px; border:1px solid #E6E3DA; box-shadow:0 1px 2px rgba(20,33,61,.05), 0 22px 50px -16px rgba(20,33,61,.3); padding:11px 14px; font-family:'Onest', sans-serif; color:#14213D; height:100%; box-sizing:border-box; }
+  .xb .pass .ph { display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; }
+  .xb .pass .ph b { font-size:14px; }
+  .xb .pass .tag { font-size:9.5px; padding:3px 7px; border-radius:6px; background:#E3F4EF; color:#0F766E; font-weight:600; }
+  .xb .pass .row { display:grid; grid-template-columns:14px 1fr auto; gap:8px; align-items:center; padding:5px 0; border-top:1px solid #F0EEE7; font-size:11px; }
+  .xb .pass .row small { color:#8A93A3; }
+  .xb .pass .row em { font-style:normal; font-family:'IBM Plex Mono'; font-size:9.5px; color:#8A93A3; }
+  .xb .ok { width:13px; height:13px; border-radius:50%; background:#0F766E; position:relative; }
+  .xb .ok::after { content:''; position:absolute; left:4px; top:2.5px; width:3.5px; height:6px; border:solid #fff; border-width:0 1.6px 1.6px 0; transform:rotate(45deg); }
+  .xb .wait { width:13px; height:13px; border-radius:50%; border:1.6px solid #D3CFC3; box-sizing:border-box; }
+
+  /* ============ XC · Продукт на кальке (больше продукта) ============ */
+  .xc { background:#FAFAF7; color:#0E1A17; font-family:'Onest', sans-serif; }
+  .xc .nav { position:absolute; top:0; left:0; right:0; height:66px; display:flex; align-items:center; justify-content:space-between; padding:0 48px; border-bottom:1px solid #ECEBE4; }
+  .xc .logo { font-weight:800; font-size:19px; letter-spacing:-.02em; display:flex; align-items:center; gap:9px; }
+  .xc .logo b { width:20px; height:20px; border-radius:6px; background:#0F766E; position:relative; }
+  .xc .logo b::after { content:''; position:absolute; left:4px; right:4px; top:8.5px; height:3px; background:#FAFAF7; border-radius:2px; }
+  .xc .links { display:flex; gap:28px; font-size:14px; color:#4B5B57; }
+  .xc .cta { font-size:13.5px; padding:9px 16px; border-radius:10px; background:#0E1A17; color:#FAFAF7; font-weight:600; }
+  .xc .body { position:absolute; top:66px; left:0; right:0; bottom:0; display:grid; grid-template-columns: 1fr 1fr; align-items:center; padding:0 48px; gap:40px; }
+  .xc .over { display:inline-flex; gap:8px; align-items:center; font-size:12.5px; font-weight:600; color:#0F766E; background:rgba(15,118,110,.08); padding:6px 12px; border-radius:999px; margin-bottom:22px; }
+  .xc .h { font-size:50px; line-height:1.02; font-weight:800; letter-spacing:-.035em; margin-bottom:20px; }
+  .xc .h span { color:#0F766E; }
+  .xc .sub { font-size:17px; line-height:1.5; color:#4B5B57; max-width:450px; }
+  .xc .btns { display:flex; gap:12px; margin-top:30px; }
+  .xc .btn { font-size:14.5px; padding:13px 20px; border-radius:12px; font-weight:600; }
+  .xc .btn.fill { background:#0F766E; color:#fff; }
+  .xc .btn.ghost { background:#fff; border:1px solid #E2E1D9; }
+  .xc .stack { position:relative; height:440px; }
+  .xc .ghostdraw { position:absolute; left:-70px; top:-30px; width:calc(100% + 90px); height:calc(100% + 50px); overflow:visible; }
+  .xc .pass { position:absolute; right:0; top:0; width:80%; background:#fff; border-radius:18px; border:1px solid #ECEBE4; box-shadow:0 1px 2px rgba(14,26,23,.05), 0 24px 60px -18px rgba(14,26,23,.22); padding:20px 22px; }
+  .xc .ph { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .xc .ph b { font-size:19px; letter-spacing:-.01em; }
+  .xc .tags { display:flex; gap:6px; }
+  .xc .tag { font-size:11.5px; padding:4px 9px; border-radius:7px; background:#F2F1EC; color:#4B5B57; font-weight:500; }
+  .xc .tag.ok { background:#E3F4EF; color:#0F766E; }
+  .xc .row { display:grid; grid-template-columns:22px 1fr auto; gap:12px; align-items:center; padding:9px 0; border-top:1px solid #F0EFE9; font-size:13.5px; }
+  .xc .dot { width:18px; height:18px; border-radius:50%; background:#0F766E; position:relative; }
+  .xc .dot::after { content:''; position:absolute; left:5px; top:4px; width:5px; height:8px; border:solid #fff; border-width:0 2px 2px 0; transform:rotate(45deg); }
+  .xc .dot.wait { background:#fff; border:2px solid #D9D7CE; box-sizing:border-box; }
+  .xc .dot.wait::after { display:none; }
+  .xc .row small { color:#7C8A86; font-size:12px; }
+  .xc .row em { font-style:normal; font-size:11.5px; color:#7C8A86; font-family:'IBM Plex Mono'; }
+  .xc .float { position:absolute; left:-8px; bottom:0; width:54%; background:#0E1A17; color:#EAF2EF; border-radius:16px; padding:16px 18px; box-shadow:0 24px 50px -16px rgba(14,26,23,.45); }
+  .xc .float .t { font-size:12px; color:#8FB5AC; margin-bottom:6px; }
+  .xc .float .n { font-size:26px; font-weight:800; letter-spacing:-.02em; }
+  .xc .bar { height:6px; border-radius:6px; background:#24342F; margin:10px 0 12px; overflow:hidden; }
+  .xc .bar i { display:block; height:100%; width:94%; background:linear-gradient(90deg,#14B8A6,#5EEAD4); }
+  .xc .blk { font-size:12.5px; color:#C7D8D3; line-height:1.55; }
+  .xc .blk b { color:#FBBF24; font-weight:600; }
+</style>
+
+<h2>Смеси A и C: от «больше чертежа» к «больше продукта»</h2>
+<p class="subtitle">Общая идея у всех трёх: чертёж показывает физическую трубу, а карточки показывают, что о ней знает программа. Выберите, где на этой шкале остановиться.</p>
+
+<div class="cards dir-grid">
+
+  <!-- ===================== AC-1 · Лист проекта ===================== -->
+  <div class="card" data-choice="ac1-sheet" onclick="toggleSelect(this)">
+    <div class="shot xa">
+      <div class="frame"></div>
+      <div class="nav">
+        <div class="logo"><b></b>PipeQC</div>
+        <div class="links"><span>01 Как строят</span><span>02 Стадии</span><span>03 Продукт</span><span>04 Что готово</span></div>
+      </div>
+      <div class="body">
+        <div class="copy">
+          <div class="over">КОНТРОЛЬ КАЧЕСТВА · ТЕХНОЛОГИЧЕСКИЕ ТРУБОПРОВОДЫ</div>
+          <div class="h">Сто тысяч сварных стыков. <span>У каждого — паспорт.</span></div>
+          <div class="sub">PipeQC ведёт трубопровод от чертежа до гидроиспытания: кто варил стык, по какой процедуре, что показал рентген и что ещё мешает испытанию.</div>
+          <div class="btns"><div class="btn fill">Как это устроено ↓</div><div class="btn">Связаться</div></div>
+          <div class="facts">
+            <div><strong>6 стадий</strong>от изометрии до испытания</div>
+            <div><strong>1 база</strong>для цеха, NDE и монтажа</div>
+            <div><strong>8 ролей</strong>каждый видит свой участок</div>
+          </div>
+        </div>
+        <div class="draw">
+          <svg viewBox="0 0 640 410" fill="none">
+            <path d="M40 360 L178.6 280 L178.6 180 L291.2 115 L395.1 175 L395.1 265 L481.7 315 L576.9 260" stroke="#16233A" stroke-width="15" stroke-linejoin="round"/>
+            <path d="M40 360 L178.6 280 L178.6 180 L291.2 115 L395.1 175 L395.1 265 L481.7 315 L576.9 260" stroke="#F3F0E8" stroke-width="10.5" stroke-linejoin="round"/>
+            <path d="M42 359 L178.6 280 L178.6 187" stroke="#0F766E" stroke-width="10.5" stroke-linejoin="round"/>
+            <path d="M184 177 L291.2 115 L395.1 175" stroke="#E4572E" stroke-width="10.5" stroke-linejoin="round" opacity=".9"/>
+            <g fill="#F3F0E8" stroke="#16233A" stroke-width="1.6"><circle cx="178.6" cy="280" r="5.5"/><circle cx="291.2" cy="115" r="5.5"/><circle cx="395.1" cy="265" r="5.5"/><circle cx="481.7" cy="315" r="5.5"/></g>
+            <g stroke="#16233A" stroke-width="2.4"><line x1="384" y1="181" x2="406" y2="168"/><line x1="384" y1="188" x2="406" y2="175"/></g>
+            <circle cx="178.6" cy="180" r="12" stroke="#E4572E" stroke-width="1.8" stroke-dasharray="3 3"/>
+            <circle cx="178.6" cy="180" r="5.5" fill="#E4572E" stroke="#16233A" stroke-width="1.6"/>
+            <g font-family="IBM Plex Mono" font-size="10.5" fill="#16233A">
+              <line x1="178.6" y1="280" x2="214" y2="302" stroke="#16233A" stroke-width=".8"/><text x="218" y="306">J-02 · RT принят</text>
+              <line x1="166" y1="172" x2="96" y2="136" stroke="#E4572E" stroke-width=".8"/><text x="18" y="130" fill="#C2410C" font-weight="600">FW-07 · полевой стык</text>
+              <line x1="291.2" y1="115" x2="291.2" y2="78" stroke="#16233A" stroke-width=".8"/><text x="262" y="72">J-05 · сварка</text>
+              <line x1="481.7" y1="315" x2="520" y2="340" stroke="#16233A" stroke-width=".8"/><text x="524" y="344" opacity=".7">J-11 · ждёт</text>
+            </g>
+            <g font-family="IBM Plex Mono" font-size="9.5" font-weight="600">
+              <rect x="70" y="302" width="62" height="18" fill="#0F766E"/><text x="77" y="315" fill="#fff">SP-01 ✓</text>
+              <rect x="252" y="150" width="70" height="18" fill="#E4572E"/><text x="259" y="163" fill="#fff">SP-02 цех</text>
+              <rect x="416" y="332" width="66" height="18" fill="#F3F0E8" stroke="#16233A" stroke-width="1.2"/><text x="423" y="345" fill="#16233A">SP-03 —</text>
+            </g>
+            <line x1="440" y1="124" x2="402" y2="168" stroke="#0F766E" stroke-width="1" stroke-dasharray="3 3"/>
+            <foreignObject x="410" y="0" width="226" height="134">
+              <div xmlns="http://www.w3.org/1999/xhtml" class="pcard">
+                <div class="t">Test Pack TP-12 · готовность к испытанию</div>
+                <div class="n">94%</div>
+                <div class="bar"><i></i></div>
+                <div class="b">Блокирует: <b>J-1031</b> ждёт RT · <b>FL-03</b> нет записи затяжки</div>
+              </div>
+            </foreignObject>
+          </svg>
+          <div class="legend"><span><i style="background:#0F766E"></i>готово</span><span><i style="background:#E4572E"></i>в работе</span><span><i></i>не начато</span></div>
+          <div class="tblock"><div><small>ЛИНИЯ</small>6"-P-2041-A1</div><div><small>ДОКУМЕНТ</small>ISO · REV 3</div><div><small>ЛИСТ</small>1 / 1</div><div><small>СИСТЕМА</small>PipeQC</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="dir-meta">
+      <div>
+        <h3>AC-1 · «Лист проекта». Больше чертежа</h3>
+        <p>Основа от A: рамка, сетка, штамп, номера разделов, узкий инженерный шрифт. Из C взяты бирюзовый цвет «готово» и белые карточки программы, которые лежат прямо на чертеже. Самый «отраслевой» вариант. Карточки — единственное мягкое в строгом листе, поэтому продукт выделяется сам.</p>
+      </div>
+      <div class="scale">чертёж <span class="bar" style="--a:70%"></span> продукт</div>
+    </div>
+  </div>
+
+  <!-- ===================== AC-2 · Чертёж ведёт к паспорту ===================== -->
+  <div class="card" data-choice="ac2-drawing-to-passport" onclick="toggleSelect(this)">
+    <div class="shot xb">
+      <div class="nav">
+        <div class="logo"><b></b>PipeQC</div>
+        <div class="links"><span>Как строят</span><span>Стадии</span><span>Продукт</span><span>Что готово</span></div>
+        <div class="cta">Связаться</div>
+      </div>
+      <div class="body">
+        <div class="copy">
+          <div class="over">КОНТРОЛЬ КАЧЕСТВА ТРУБОПРОВОДОВ</div>
+          <div class="h">Сто тысяч стыков.<br>У каждого — <span>паспорт.</span></div>
+          <div class="sub">PipeQC ведёт трубопровод от чертежа до гидроиспытания: кто варил стык, по какой процедуре, что показал рентген и что ещё мешает испытанию.</div>
+          <div class="btns"><div class="btn fill">Как это устроено</div><div class="btn ghost">Что уже работает</div></div>
+          <div class="chain"><span>ИЗОМЕТРИЯ</span><i>→</i><span>КАТУШКИ</span><i>→</i><span class="on">ЦЕХ</span><i>→</i><span class="on">NDE</span><i>→</i><span>МОНТАЖ</span><i>→</i><span>ИСПЫТАНИЕ</span></div>
+        </div>
+        <div class="draw">
+          <svg class="drawsvg" viewBox="0 0 660 470" fill="none">
+            <text x="30" y="30" font-family="IBM Plex Mono" font-size="10" fill="#14213D" opacity=".55" letter-spacing=".06em">ЛИНИЯ 6"-P-2041-A1 · ISO · REV 3</text>
+            <path d="M30 300 L168.6 220 L168.6 120 L281.2 55 L385.1 115 L385.1 205 L471.7 255 L566.9 200" stroke="#14213D" stroke-width="15" stroke-linejoin="round"/>
+            <path d="M30 300 L168.6 220 L168.6 120 L281.2 55 L385.1 115 L385.1 205 L471.7 255 L566.9 200" stroke="#F6F4EE" stroke-width="10.5" stroke-linejoin="round"/>
+            <path d="M32 299 L168.6 220 L168.6 127" stroke="#0F766E" stroke-width="10.5" stroke-linejoin="round"/>
+            <path d="M174 117 L281.2 55 L385.1 115" stroke="#0F766E" stroke-width="10.5" stroke-linejoin="round"/>
+            <path d="M385.1 120 L385.1 205 L471.7 255 L566.9 200" stroke="#E07A1F" stroke-width="10.5" stroke-linejoin="round" opacity=".9"/>
+            <g fill="#F6F4EE" stroke="#14213D" stroke-width="1.6"><circle cx="168.6" cy="220" r="5.5"/><circle cx="281.2" cy="55" r="5.5"/><circle cx="471.7" cy="255" r="5.5"/></g>
+            <g stroke="#14213D" stroke-width="2.4"><line x1="374" y1="121" x2="396" y2="108"/><line x1="374" y1="128" x2="396" y2="115"/></g>
+            <circle cx="168.6" cy="120" r="12" stroke="#E07A1F" stroke-width="1.8" stroke-dasharray="3 3"/>
+            <circle cx="168.6" cy="120" r="5.5" fill="#E07A1F" stroke="#14213D" stroke-width="1.6"/>
+            <!-- highlighted joint -->
+            <circle cx="385.1" cy="205" r="17" fill="#0F766E" opacity=".12"/>
+            <circle cx="385.1" cy="205" r="11" stroke="#0F766E" stroke-width="2"/>
+            <circle cx="385.1" cy="205" r="5.5" fill="#0F766E" stroke="#14213D" stroke-width="1.6"/>
+            <line x1="385.1" y1="222" x2="385.1" y2="290" stroke="#0F766E" stroke-width="1.4" stroke-dasharray="4 3"/>
+            <g font-family="IBM Plex Mono" font-size="10.5" fill="#14213D">
+              <text x="402" y="200" fill="#0F766E" font-weight="600">J-1029</text>
+              <line x1="156" y1="112" x2="96" y2="80" stroke="#E07A1F" stroke-width=".8"/><text x="22" y="74" fill="#B45309" font-weight="600">FW-07 · полевой</text>
+              <line x1="396" y1="108" x2="440" y2="84" stroke="#14213D" stroke-width=".8"/><text x="444" y="82">FL-03 · фланец</text>
+              <text x="580" y="226" opacity=".55">→ E-104</text>
+            </g>
+            <g font-family="IBM Plex Mono" font-size="9.5" font-weight="600">
+              <rect x="60" y="242" width="62" height="18" fill="#0F766E"/><text x="67" y="255" fill="#fff">SP-01 ✓</text>
+              <rect x="244" y="90" width="62" height="18" fill="#0F766E"/><text x="251" y="103" fill="#fff">SP-02 ✓</text>
+              <rect x="488" y="262" width="88" height="18" fill="#E07A1F"/><text x="495" y="275" fill="#fff">SP-03 монтаж</text>
+            </g>
+            <foreignObject x="200" y="290" width="330" height="172">
+              <div xmlns="http://www.w3.org/1999/xhtml" class="pass">
+                <div class="ph"><b>Стык J-1029</b><span class="tag">Принят</span></div>
+                <div class="row"><span class="ok"></span><span>Материал <small>· плавка H-58812</small></span><em>02.09</em></div>
+                <div class="row"><span class="ok"></span><span>Сварка <small>· WLD-14 · WPS-07</small></span><em>04.09</em></div>
+                <div class="row"><span class="ok"></span><span>Рентген <small>· отчёт RT-0412</small></span><em>09.09</em></div>
+                <div class="row"><span class="wait"></span><span>Гидроиспытание <small>· пакет TP-12</small></span><em>ждёт</em></div>
+              </div>
+            </foreignObject>
+          </svg>
+        </div>
+      </div>
+    </div>
+    <div class="dir-meta">
+      <div>
+        <h3>AC-2 · «Чертёж ведёт к паспорту». Поровну</h3>
+        <p>Чистая продуктовая подача от C: шрифт Onest, мягкие кнопки, крупный заголовок. Справа живой чертёж на сетке, которая растворяется к краям. Выделенный стык J-1029 связан выноской со своим паспортом. Это и есть суть продукта в одном кадре: физический стык на чертеже и вся его история в системе. Внизу цепочка стадий, по ней дальше строится рассказ.</p>
+      </div>
+      <div class="scale">чертёж <span class="bar" style="--a:50%"></span> продукт</div>
+    </div>
+  </div>
+
+  <!-- ===================== AC-3 · Продукт на кальке ===================== -->
+  <div class="card" data-choice="ac3-product-on-tracing" onclick="toggleSelect(this)">
+    <div class="shot xc">
+      <div class="nav">
+        <div class="logo"><b></b>PipeQC</div>
+        <div class="links"><span>Как строят</span><span>Стадии</span><span>Продукт</span><span>Что готово</span></div>
+        <div class="cta">Связаться</div>
+      </div>
+      <div class="body">
+        <div>
+          <div class="over">● Контроль качества трубопроводов</div>
+          <div class="h">Каждый стык завода —<br><span>с доказательствами</span></div>
+          <div class="sub">От чертежа до гидроиспытания в одной системе: кто варил, по какой процедуре, что показал контроль и что ещё мешает испытанию.</div>
+          <div class="btns"><div class="btn fill">Как это устроено</div><div class="btn ghost">Что уже работает</div></div>
+        </div>
+        <div class="stack">
+          <svg class="ghostdraw" viewBox="0 0 700 520" fill="none">
+            <g opacity=".9">
+              <path d="M59.4 375 L120 340 L120 190 L230 126 L330 184 L330 300 L470 380 L560 328 L700 408" stroke="#AEBBC8" stroke-width="9" stroke-linejoin="round"/>
+              <path d="M59.4 375 L120 340 L120 190 L230 126 L330 184 L330 300 L470 380 L560 328 L700 408" stroke="#FAFAF7" stroke-width="5.5" stroke-linejoin="round"/>
+              <g fill="#FAFAF7" stroke="#AEBBC8" stroke-width="1.3"><circle cx="120" cy="340" r="4"/><circle cx="470" cy="380" r="4"/><circle cx="560" cy="328" r="4"/></g>
+              <g stroke="#AEBBC8" stroke-width="1.8"><line x1="508" y1="342" x2="522" y2="364"/><line x1="514" y1="338" x2="528" y2="360"/></g>
+              <g font-family="IBM Plex Mono" font-size="10" fill="#93A3B3">
+                <text x="44" y="300">SP-01</text>
+                <text x="486" y="410">FL-03</text>
+                <text x="590" y="392">→ E-104</text>
+                <text x="470" y="472" letter-spacing=".06em">6"-P-2041-A1 · ISO REV 3</text>
+              </g>
+              
+            </g>
+            <!-- highlighted joint on the drawing -->
+            <circle cx="120" cy="190" r="15" fill="#0F766E" opacity=".12"/>
+            <circle cx="120" cy="190" r="9" stroke="#0F766E" stroke-width="1.8"/>
+            <circle cx="120" cy="190" r="4.5" fill="#0F766E"/>
+            <path d="M128 182 L194 72" stroke="#0F766E" stroke-width="1.2" stroke-dasharray="4 3"/>
+            <text x="58" y="182" font-family="IBM Plex Mono" font-size="10.5" font-weight="600" fill="#0F766E">J-1029</text>
+          </svg>
+          <div class="pass">
+            <div class="ph"><b>Стык J-1029</b><div class="tags"><span class="tag">Цеховой</span><span class="tag">6" · A106 B</span><span class="tag ok">Принят</span></div></div>
+            <div class="row"><span class="dot"></span><span>Материал сверен по плавке <small>· H-58812</small></span><em>02.09</em></div>
+            <div class="row"><span class="dot"></span><span>Сварка <small>· WLD-14 · WPS-07</small></span><em>04.09</em></div>
+            <div class="row"><span class="dot"></span><span>Визуальный контроль <small>· QC</small></span><em>04.09</em></div>
+            <div class="row"><span class="dot"></span><span>Рентген <small>· отчёт RT-0412</small></span><em>09.09</em></div>
+            <div class="row"><span class="dot wait"></span><span>Гидроиспытание <small>· пакет TP-12</small></span><em>ждёт</em></div>
+          </div>
+          <div class="float">
+            <div class="t">Test Pack TP-12 · готовность к испытанию</div>
+            <div class="n">94%</div>
+            <div class="bar"><i></i></div>
+            <div class="blk">Блокирует: <b>J-1031</b> ждёт рентгена · <b>FL-03</b> момент затяжки не записан</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="dir-meta">
+      <div>
+        <h3>AC-3 · «Продукт на кальке». Больше продукта</h3>
+        <p>Почти C, только за карточками бледная калька чертежа: линия, фланец, штамп. Стык на кальке выноской связан с его паспортом. Чертёж здесь — фон и намёк на отрасль, а не главный герой. Самый спокойный и «продуктовый» вариант, без инженерной строгости.</p>
+      </div>
+      <div class="scale">чертёж <span class="bar" style="--a:30%"></span> продукт</div>
+    </div>
+  </div>
+
+</div>
