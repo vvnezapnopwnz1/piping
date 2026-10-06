@@ -1,5 +1,7 @@
 import type { TestPackCatalogRow, TestPackMemberRow } from "../infrastructure/supabase-pressure-test-repository"
+import { TEST_PACK_VIEWS, type TestPackView } from "./test-pack-workspace-model"
 
+export { TEST_PACK_VIEWS, type TestPackView }
 export const explorerTabs = ["General", "Release Tracking", "Operation Management", "Progress Status", "Spool Status", "Isometric Status", "Spool"] as const
 
 export function filterTestPackCatalog(rows: TestPackCatalogRow[], query: string): TestPackCatalogRow[] {

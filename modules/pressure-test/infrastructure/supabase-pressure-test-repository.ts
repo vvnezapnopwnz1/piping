@@ -16,6 +16,7 @@ export interface TestPackCatalogRow {
   revisionNo: number
   lifecycle: string
   activeIsoCount: number
+  pressureUnit?: Database["public"]["Enums"]["pressure_unit"]
   systemId?: string
   subsystemId?: string
   serviceClassId?: string
@@ -49,6 +50,7 @@ export type ReinstatementWorklistRow = ViewRow<"reinstatement_worklist">
 export type RequestDetailsRow = ViewRow<"pressure_test_request_details">
 export type IsometricReadinessRow = ViewRow<"isometric_readiness">
 export type FlangeJointReadinessRow = ViewRow<"flange_joint_readiness">
+export type FlangeReinstatementRecordRow = Database["public"]["Tables"]["flange_reinstatement_records"]["Row"]
 
 export interface ProjectTeamRow {
   id: string
@@ -89,6 +91,7 @@ function toCatalog(row: ViewRow<"test_pack_catalog">): TestPackCatalogRow {
     revisionNo: row.revision_no ?? 0,
     lifecycle: row.lifecycle ?? "active",
     activeIsoCount: row.active_iso_count ?? 0,
+    pressureUnit: row.pressure_unit ?? undefined,
     systemId: row.system_id ?? undefined,
     subsystemId: row.subsystem_id ?? undefined,
     serviceClassId: row.service_class_id ?? undefined,
@@ -105,6 +108,33 @@ function toCatalog(row: ViewRow<"test_pack_catalog">): TestPackCatalogRow {
 
 function toReadiness(row: ViewRow<"test_pack_readiness">): TestPackReadinessRow {
   return { ...row, testPackId: row.test_pack_id ?? "", projectId: row.project_id ?? "", testPackNumber: row.test_pack_number ?? "", revisionNo: row.revision_no ?? 0, memberCount: row.member_count ?? 0, isRft: row.is_rft === true }
+}
+
+export async function getTestPackCatalogRow(client: Client, projectId: string, id: string): Promise<TestPackCatalogRow | null> {
+  const { data, error } = await client.from("test_pack_catalog").select(TEST_PACK_SELECT)
+    .eq("project_id", projectId).eq("id", id).maybeSingle()
+  fail(error)
+  return data ? toCatalog(data) : null
+}
+
+export async function getTestPackReadinessRow(client: Client, projectId: string, id: string): Promise<TestPackReadinessRow | null> {
+  const { data, error } = await client.from("test_pack_readiness").select(READINESS_SELECT)
+    .eq("project_id", projectId).eq("test_pack_id", id).maybeSingle()
+  fail(error)
+  return data ? toReadiness(data) : null
+}
+
+export async function getProjectPressureUnit(
+  client: Client,
+  projectId: string,
+): Promise<Database["public"]["Enums"]["pressure_unit"] | null> {
+  const { data, error } = await client
+    .from("project_pressure_units")
+    .select("unit")
+    .eq("project_id", projectId)
+    .maybeSingle()
+  fail(error)
+  return data?.unit ?? null
 }
 
 export async function listTestPackCatalog(client: Client, projectId: string): Promise<TestPackCatalogRow[]> {
@@ -292,3 +322,61 @@ export async function listFlangeJointReadiness(client: Client, projectId: string
   fail(error)
   return data ?? []
 }
+
+export async function listTestPackReinstatementTargets(
+  client: Client,
+  projectId: string,
+  testPackId: string,
+): Promise<FlangeJointReadinessRow[]> {
+  const members = await listTestPackMembers(client, projectId, testPackId)
+  const memberIsoIds = Array.from(
+    new Set(
+      members
+        .filter((member) => member.removed_at === null && Boolean(member.isometric_id))
+        .map((member) => member.isometric_id as string),
+    ),
+  )
+  if (memberIsoIds.length === 0) return []
+
+  const CHUNK_SIZE = 50
+  const targets: FlangeJointReadinessRow[] = []
+  for (let i = 0; i < memberIsoIds.length; i += CHUNK_SIZE) {
+    const chunk = memberIsoIds.slice(i, i + CHUNK_SIZE)
+    const { data, error } = await client
+      .from("flange_joint_readiness")
+      .select("*")
+      .in("isometric_id", chunk)
+      .eq("requires_reinstatement", true)
+      .eq("is_removed", false)
+      .eq("revision_status", "accepted")
+      .order("flange_joint_revision_id")
+    fail(error)
+    if (data) targets.push(...data)
+  }
+  return targets
+}
+
+export async function listFlangeReinstatementRecords(
+  client: Client,
+  projectId: string,
+  targetRevisionIds: readonly string[],
+): Promise<FlangeReinstatementRecordRow[]> {
+  if (targetRevisionIds.length === 0) return []
+  const uniqueIds = Array.from(new Set(targetRevisionIds))
+  const CHUNK_SIZE = 50
+  const records: FlangeReinstatementRecordRow[] = []
+  for (let i = 0; i < uniqueIds.length; i += CHUNK_SIZE) {
+    const chunk = uniqueIds.slice(i, i + CHUNK_SIZE)
+    const { data, error } = await client
+      .from("flange_reinstatement_records")
+      .select("*")
+      .eq("project_id", projectId)
+      .in("flange_joint_revision_id", chunk)
+      .is("superseded_at", null)
+      .order("created_at")
+    fail(error)
+    if (data) records.push(...data)
+  }
+  return records
+}
+

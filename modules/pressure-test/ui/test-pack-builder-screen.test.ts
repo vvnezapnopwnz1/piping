@@ -8,7 +8,10 @@ import { readFileSync } from "node:fs"
  * walked from the UI after a clean `demo:prepare`. Nothing but the rendered screen can show that,
  * so it is pinned here the same way `referential-dialogs.test.ts` pins its dialog defects.
  */
-const source = readFileSync(new URL("./test-pack-builder-screen.tsx", import.meta.url), "utf8")
+const builderSource = readFileSync(new URL("./test-pack-builder-screen.tsx", import.meta.url), "utf8")
+const definitionSource = readFileSync(new URL("./test-pack-definition-editor.tsx", import.meta.url), "utf8")
+const compositionSource = readFileSync(new URL("./test-pack-composition-editor.tsx", import.meta.url), "utf8")
+const source = `${builderSource}\n${definitionSource}\n${compositionSource}`
 // The field descriptors moved out of the screen when they stopped being bare property names and
 // gained the labels a presenter actually reads.
 const model = readFileSync(new URL("./test-pack-builder-model.ts", import.meta.url), "utf8")

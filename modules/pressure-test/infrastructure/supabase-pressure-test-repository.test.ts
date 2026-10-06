@@ -86,3 +86,218 @@ test("reference loaders map the persisted business columns without inventing lab
   )
   assert.deepEqual(rows, [{ id: "punch-x", code: "X-DEMO", description: "Category X punch raised during Line Check" }])
 })
+
+test("getTestPackCatalogRow maps pressure_unit and filters by project and id", async () => {
+  const calls: Call[] = []
+  const client = {
+    from(table: string) {
+      calls.push(["from", table])
+      const query = {
+        select(cols: string) {
+          calls.push(["select", cols])
+          return query
+        },
+        eq(field: string, val: unknown) {
+          calls.push(["eq", field, val])
+          return query
+        },
+        maybeSingle: async () => ({
+          data: {
+            id: "tp-1",
+            project_id: "p-1",
+            test_pack_number: "TP-01",
+            revision_no: 2,
+            lifecycle: "active",
+            active_iso_count: 3,
+            pressure_unit: "psi",
+            test_pressure: 150,
+          },
+          error: null,
+        }),
+      }
+      return query
+    },
+  } as never
+  const { getTestPackCatalogRow } = await import("./supabase-pressure-test-repository")
+  const row = await getTestPackCatalogRow(client, "p-1", "tp-1")
+  assert.deepEqual(calls, [
+    ["from", "test_pack_catalog"],
+    ["select", "*"],
+    ["eq", "project_id", "p-1"],
+    ["eq", "id", "tp-1"],
+  ])
+  assert.equal(row?.id, "tp-1")
+  assert.equal(row?.pressureUnit, "psi")
+  assert.equal(row?.pressure, 150)
+})
+
+test("getTestPackReadinessRow filters by project and test_pack_id", async () => {
+  const calls: Call[] = []
+  const client = {
+    from(table: string) {
+      calls.push(["from", table])
+      const query = {
+        select(cols: string) {
+          calls.push(["select", cols])
+          return query
+        },
+        eq(field: string, val: unknown) {
+          calls.push(["eq", field, val])
+          return query
+        },
+        maybeSingle: async () => ({
+          data: {
+            test_pack_id: "tp-1",
+            project_id: "p-1",
+            test_pack_number: "TP-01",
+            revision_no: 0,
+            member_count: 2,
+            is_rft: true,
+          },
+          error: null,
+        }),
+      }
+      return query
+    },
+  } as never
+  const { getTestPackReadinessRow } = await import("./supabase-pressure-test-repository")
+  const row = await getTestPackReadinessRow(client, "p-1", "tp-1")
+  assert.deepEqual(calls, [
+    ["from", "test_pack_readiness"],
+    ["select", "*"],
+    ["eq", "project_id", "p-1"],
+    ["eq", "test_pack_id", "tp-1"],
+  ])
+  assert.equal(row?.testPackId, "tp-1")
+  assert.equal(row?.isRft, true)
+})
+
+test("getProjectPressureUnit reads project_pressure_units scoped to project", async () => {
+  const calls: Call[] = []
+  const client = {
+    from(table: string) {
+      calls.push(["from", table])
+      const query = {
+        select(cols: string) {
+          calls.push(["select", cols])
+          return query
+        },
+        eq(field: string, val: unknown) {
+          calls.push(["eq", field, val])
+          return query
+        },
+        maybeSingle: async () => ({
+          data: { unit: "bar" },
+          error: null,
+        }),
+      }
+      return query
+    },
+  } as never
+  const { getProjectPressureUnit } = await import("./supabase-pressure-test-repository")
+  const unit = await getProjectPressureUnit(client, "p-1")
+  assert.deepEqual(calls, [
+    ["from", "project_pressure_units"],
+    ["select", "unit"],
+    ["eq", "project_id", "p-1"],
+  ])
+  assert.equal(unit, "bar")
+})
+
+test("listTestPackReinstatementTargets returns empty when pack has no active members", async () => {
+  const calls: Call[] = []
+  const client = {
+    from(table: string) {
+      calls.push(["from", table])
+      const query = {
+        select: () => query,
+        eq: () => query,
+        order: async () => ({ data: [], error: null }),
+      }
+      return query
+    },
+  } as never
+  const { listTestPackReinstatementTargets } = await import("./supabase-pressure-test-repository")
+  const targets = await listTestPackReinstatementTargets(client, "p-1", "tp-empty")
+  assert.deepEqual(targets, [])
+  assert.deepEqual(calls, [["from", "test_pack_member_worklist"]])
+})
+
+test("listTestPackReinstatementTargets queries flange readiness for active member ISOs only", async () => {
+  const calls: Call[] = []
+  const client = {
+    from(table: string) {
+      calls.push(["from", table])
+      if (table === "test_pack_member_worklist") {
+        const query = {
+          select: () => query,
+          eq: (f: string, v: unknown) => {
+            calls.push(["eq", f, v])
+            return query
+          },
+          order: async () => ({
+            data: [
+              { isometric_id: "iso-1", removed_at: null },
+              { isometric_id: "iso-removed", removed_at: "2026-08-01" },
+            ],
+            error: null,
+          }),
+        }
+        return query
+      }
+      const query = {
+        select: () => query,
+        in: (f: string, v: unknown) => {
+          calls.push(["in", f, v])
+          return query
+        },
+        eq: (f: string, v: unknown) => {
+          calls.push(["eq", f, v])
+          return query
+        },
+        order: async () => ({
+          data: [
+            {
+              flange_joint_revision_id: "flange-rev-1",
+              isometric_id: "iso-1",
+              category_code: "Y",
+              requires_reinstatement: true,
+              is_removed: false,
+              revision_status: "accepted",
+            },
+          ],
+          error: null,
+        }),
+      }
+      return query
+    },
+  } as never
+  const { listTestPackReinstatementTargets } = await import("./supabase-pressure-test-repository")
+  const targets = await listTestPackReinstatementTargets(client, "p-1", "tp-1")
+  assert.equal(targets.length, 1)
+  assert.equal(targets[0].flange_joint_revision_id, "flange-rev-1")
+  assert.deepEqual(calls, [
+    ["from", "test_pack_member_worklist"],
+    ["eq", "project_id", "p-1"],
+    ["eq", "test_pack_id", "tp-1"],
+    ["from", "flange_joint_readiness"],
+    ["in", "isometric_id", ["iso-1"]],
+    ["eq", "requires_reinstatement", true],
+    ["eq", "is_removed", false],
+    ["eq", "revision_status", "accepted"],
+  ])
+})
+
+test("listFlangeReinstatementRecords returns empty without query for empty input", async () => {
+  const calls: Call[] = []
+  const client = {
+    from: () => {
+      calls.push(["from"])
+    },
+  } as never
+  const { listFlangeReinstatementRecords } = await import("./supabase-pressure-test-repository")
+  const records = await listFlangeReinstatementRecords(client, "p-1", [])
+  assert.deepEqual(records, [])
+  assert.equal(calls.length, 0)
+})
+

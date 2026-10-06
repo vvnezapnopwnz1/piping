@@ -14,6 +14,24 @@ interface TestPackField {
   unit?: string
 }
 
+export interface CompositionAttempt {
+  testPackId: string
+  confirmedIsoIds: string[]
+  remainingIsoIds: string[]
+  failure: string | null
+}
+
+export function testPackFields(pressureUnit?: string | null): readonly TestPackField[] {
+  return [
+    { field: "testPackNumber", label: "Test Pack number", type: "text", required: true },
+    { field: "location", label: "Location", type: "text", required: true },
+    { field: "plannedStartOn", label: "Planned start", type: "date", required: true },
+    { field: "plannedEndOn", label: "Planned end", type: "date", required: true },
+    { field: "pressure", label: "Test pressure", type: "number", required: true, unit: pressureUnit ?? undefined },
+    { field: "volumeM3", label: "Volume", type: "number", required: false, unit: "m³" },
+  ]
+}
+
 export const TEST_PACK_FIELDS: readonly TestPackField[] = [
   { field: "testPackNumber", label: "Test Pack number", type: "text", required: true },
   { field: "location", label: "Location", type: "text", required: true },

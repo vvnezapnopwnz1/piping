@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState, type FormEvent } from "react"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,13 +16,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { StatusBadge } from "@/components/ui/status-badge"
+import { useRequestLeave } from "@/components/pipeqc/unsaved-input-guard"
+import { useNameWorkContext, useWorkContextParam } from "@/components/pipeqc/work-context"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import {
-  archiveManagedTestPack,
   composeManagedTestPack,
   createManagedTestPack,
-  moveManagedTestPackIsometric,
-  removeManagedTestPackIsometric,
   updateManagedTestPack,
 } from "../application/manage-test-pack"
 import {
@@ -57,7 +56,9 @@ import {
   mediumLabel,
   missingRequiredFields,
 } from "./test-pack-builder-model"
-import { ConfirmAction, FieldSelect, MoveIsoDialog } from "./test-pack-builder-parts"
+import { FieldSelect } from "./test-pack-builder-parts"
+import { TestPackCompositionEditor } from "./test-pack-composition-editor"
+import { TestPackDefinitionEditor } from "./test-pack-definition-editor"
 
 type FormState = {
   testPackNumber: string
@@ -89,10 +90,6 @@ const emptyForm: FormState = {
   lineServiceId: "",
 }
 
-/**
- * Kept for the field-shape test that pins the Track 12 fix: the four project references are chosen
- * from project-scoped lists, never typed as ids.
- */
 const TEXT_FIELDS = TEST_PACK_FIELDS.map((item) => item.field)
 const REFERENCE_FIELDS = TEST_PACK_REFERENCE_FIELDS
 
@@ -105,11 +102,6 @@ function toInput(form: FormState, isoIds: string[]) {
   }
 }
 
-/**
- * The Test Pack catalogue, as something a presenter can search rather than scroll. It used to be a
- * column of eighteen-rem buttons showing only the number, the revision and an ISO count, with the
- * "New Test Pack" button underneath all of them.
- */
 const PACK_COLUMNS: ReadonlyArray<DataColumn<TestPackCatalogRow>> = [
   {
     id: "testPackNumber",
@@ -141,15 +133,24 @@ const PACK_COLUMNS: ReadonlyArray<DataColumn<TestPackCatalogRow>> = [
   { id: "plannedStartOn", header: "Planned start", value: (pack) => pack.plannedStartOn, filter: "date" },
 ]
 
+export interface TestPackBuilderScreenProps {
+  projectId: string
+  canManage: boolean
+  testPackId?: string
+  initialView?: "definition" | "composition"
+  isNew?: boolean
+}
+
 export function TestPackBuilderScreen({
   projectId,
   canManage,
-}: {
-  projectId: string
-  canManage: boolean
-}) {
+  testPackId,
+  initialView = "definition",
+  isNew = false,
+}: TestPackBuilderScreenProps) {
   const [packs, setPacks] = useState<TestPackCatalogRow[]>([])
-  const [selected, setSelected] = useState<string | null>(null)
+  const [selected, setSelected] = useState<string | null>(testPackId ?? null)
+  const [activeTab, setActiveTab] = useState<"definition" | "composition">(initialView)
   const [members, setMembers] = useState<TestPackMemberRow[]>([])
   const [available, setAvailable] = useState<IsometricReadinessRow[]>([])
   const [isoNumbers, setIsoNumbers] = useState<IsometricNumberRow[]>([])
@@ -163,16 +164,12 @@ export function TestPackBuilderScreen({
   const [notice, setNotice] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  // Browsing the catalogue has to take the definition form and both ISO lists with it: they are
-  // about the pack being replaced.
   const [browsing, setBrowsing] = useState(false)
-  const [creating, setCreating] = useState(false)
-  const [pendingRemoval, setPendingRemoval] = useState<TestPackMemberRow | null>(null)
-  const [pendingMove, setPendingMove] = useState<TestPackMemberRow | null>(null)
-  const [pendingArchive, setPendingArchive] = useState(false)
+  const [creating, setCreating] = useState(isNew && !testPackId)
 
-  const [memberTable, setMemberTable] = useTableUrlState({ namespace: "mem" })
   const [availableTable, setAvailableTable] = useTableUrlState({ namespace: "iso" })
+  const [, setTestPackParam] = useWorkContextParam("testPack")
+  const requestLeave = useRequestLeave()
 
   const refresh = async (packId = selected) => {
     const client = getSupabaseBrowserClient()
@@ -187,23 +184,6 @@ export function TestPackBuilderScreen({
     if (packId) {
       const nextMembers = await listTestPackMembers(client, projectId, packId)
       setMembers(nextMembers)
-      const nextPack = nextPacks.find((pack) => pack.id === packId)
-      if (nextPack) {
-        setForm({
-          testPackNumber: nextPack.testPackNumber,
-          location: nextPack.location ?? "",
-          priority: nextPack.priority ?? "Normal",
-          medium: nextPack.medium ?? "P",
-          pressure: String(nextPack.pressure ?? ""),
-          volumeM3: nextPack.volumeM3 === undefined ? "" : String(nextPack.volumeM3),
-          plannedStartOn: nextPack.plannedStartOn ?? "",
-          plannedEndOn: nextPack.plannedEndOn ?? "",
-          systemId: nextPack.systemId ?? "",
-          subsystemId: nextPack.subsystemId ?? "",
-          serviceClassId: nextPack.serviceClassId ?? "",
-          lineServiceId: nextPack.lineServiceId ?? "",
-        })
-      }
     }
   }
 
@@ -223,9 +203,16 @@ export function TestPackBuilderScreen({
 
   useEffect(() => {
     let active = true
-    setPacks([]); setAvailable([]); setIsoNumbers([]); setMembers([])
-    setSystems([]); setSubsystems([]); setServiceClasses([]); setLineServices([])
-    setSelected(null); setCreating(false); setError(null); setLoading(true)
+    setPacks([])
+    setAvailable([])
+    setIsoNumbers([])
+    setMembers([])
+    setSystems([])
+    setSubsystems([])
+    setServiceClasses([])
+    setLineServices([])
+    setError(null)
+    setLoading(true)
     void Promise.all([refresh(null), loadReferences()])
       .catch((cause) => {
         if (active) setError(cause instanceof Error ? cause.message : "Could not load Builder")
@@ -239,6 +226,26 @@ export function TestPackBuilderScreen({
   }, [projectId])
 
   useEffect(() => {
+    if (testPackId !== undefined && testPackId !== selected) {
+      setSelected(testPackId)
+      setCreating(false)
+    }
+  }, [testPackId])
+
+  useEffect(() => {
+    if (isNew) {
+      setSelected(null)
+      setCreating(true)
+    }
+  }, [isNew])
+
+  useEffect(() => {
+    if (initialView) {
+      setActiveTab(initialView)
+    }
+  }, [initialView])
+
+  useEffect(() => {
     if (!selected) {
       setMembers([])
       return
@@ -247,6 +254,10 @@ export function TestPackBuilderScreen({
       setError(cause instanceof Error ? cause.message : "Could not load Test Pack"),
     )
   }, [selected])
+
+  const selectedPack = packs.find((pack) => pack.id === selected) ?? null
+
+  useNameWorkContext("testPack", selected, selectedPack?.testPackNumber ?? null)
 
   const memberIds = useMemo(() => new Set(members.map((member) => member.isometric_id)), [members])
   const availableOptions = useMemo(
@@ -273,7 +284,6 @@ export function TestPackBuilderScreen({
           ? serviceClassOptions
           : lineServiceOptions
 
-  // A Subsystem belongs to one System, so switching System drops a selection the new one does not own.
   const updateField = (field: keyof FormState, value: string) =>
     setForm((current) =>
       field === "systemId"
@@ -288,18 +298,14 @@ export function TestPackBuilderScreen({
         : { ...current, [field]: value },
     )
 
-  const selectedPack = packs.find((pack) => pack.id === selected) ?? null
-  const isArchived = selectedPack?.lifecycle === "archived"
-  const editable = canManage && !isArchived
-  // Named before the submit rather than discovered from a joined server-error string after it.
   const missing = missingRequiredFields(form)
 
-  // Re-entry matters here beyond the usual: `selected` is set as soon as the create resolves, so a
-  // second click lands on the update branch and bumps the server revision for no reason.
   const submit = async (event: FormEvent) => {
     event.preventDefault()
-    if (!editable || submitting) return
-    setError(null); setNotice(null); setSubmitting(true)
+    if (!canManage || submitting) return
+    setError(null)
+    setNotice(null)
+    setSubmitting(true)
     try {
       if (selected) {
         const result = await updateManagedTestPack(getSupabaseBrowserClient(), selected, toInput(form, []))
@@ -321,14 +327,29 @@ export function TestPackBuilderScreen({
         }
         const createdId = (result.value as { id?: string }).id
         if (createdId) {
+          const failedIsoIds: string[] = []
+          let successCount = 0
           for (const isoId of selectedAvailable) {
-            await composeManagedTestPack(getSupabaseBrowserClient(), createdId, isoId)
+            try {
+              await composeManagedTestPack(getSupabaseBrowserClient(), createdId, isoId)
+              successCount++
+            } catch {
+              failedIsoIds.push(isoId)
+            }
           }
+          if (failedIsoIds.length === 0) {
+            setNotice(`Test Pack created with ${successCount} ISO(s) composed.`)
+          } else {
+            const failedLabels = failedIsoIds.map((id) => isoLabelById.get(id) ?? id).join(", ")
+            setNotice(
+              `Test Pack created with ${successCount} of ${selectedAvailable.length} ISOs composed. Failed: ${failedLabels}. You can compose them in Composition area.`,
+            )
+          }
+          setSelected(createdId)
+          setSelectedAvailable([])
+          setCreating(false)
+          setTestPackParam(createdId, { extra: { view: "composition", new: null } })
         }
-        setNotice("Test Pack created and selected ISOs composed atomically.")
-        setSelected(createdId ?? null)
-        setSelectedAvailable([])
-        setCreating(false)
       }
       await refresh(selected)
     } catch (cause) {
@@ -337,70 +358,6 @@ export function TestPackBuilderScreen({
       setSubmitting(false)
     }
   }
-
-  const run = async (action: () => Promise<void>, success: string, failure: string) => {
-    try {
-      await action()
-      await refresh(selected)
-      setNotice(success)
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : failure)
-    }
-  }
-
-  const addMembers = () =>
-    run(
-      async () => {
-        for (const isoId of selectedAvailable) {
-          await composeManagedTestPack(getSupabaseBrowserClient(), selected!, isoId)
-        }
-        setSelectedAvailable([])
-      },
-      "ISO membership updated by server.",
-      "Could not compose ISO",
-    )
-
-  const memberIsoNumber = (member: TestPackMemberRow) =>
-    member.iso_number ?? isoLabelById.get(member.isometric_id ?? "") ?? member.isometric_id ?? "—"
-
-  const MEMBER_COLUMNS: ReadonlyArray<DataColumn<TestPackMemberRow>> = [
-    {
-      id: "isoNumber",
-      header: "ISO",
-      value: memberIsoNumber,
-      searchable: true,
-      filter: "text",
-      pinned: true,
-      alwaysVisible: true,
-      className: "font-mono text-xs",
-    },
-    { id: "sourceKind", header: "Source", value: (member) => member.source_kind, filter: "select" },
-    { id: "assignedAt", header: "Assigned", value: (member) => member.assigned_at, filter: "date" },
-    {
-      id: "actions",
-      header: "",
-      sortable: false,
-      alwaysVisible: true,
-      numeric: true,
-      value: () => "",
-      cell: (member) => (
-        <span className="flex justify-end gap-1">
-          <Button size="sm" variant="outline" disabled={!editable} onClick={() => setPendingMove(member)}>
-            Move
-          </Button>
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            aria-label={`Remove ${memberIsoNumber(member)} from this Test Pack`}
-            disabled={!editable}
-            onClick={() => setPendingRemoval(member)}
-          >
-            <Trash2 />
-          </Button>
-        </span>
-      ),
-    },
-  ]
 
   const toggleAvailable = (isoId: string) =>
     setSelectedAvailable((current) =>
@@ -413,8 +370,6 @@ export function TestPackBuilderScreen({
       header: "Add",
       sortable: false,
       alwaysVisible: true,
-      // Sorting on the flag lifts what is already ticked to the top, which is how a scattered
-      // selection gets checked before it is committed.
       value: (option) => selectedAvailable.includes(option.id),
       filter: "boolean",
       headerClassName: "w-14",
@@ -422,7 +377,7 @@ export function TestPackBuilderScreen({
         <Checkbox
           aria-label={`Add ${option.label}`}
           checked={selectedAvailable.includes(option.id)}
-          disabled={!editable}
+          disabled={!canManage}
           onCheckedChange={() => toggleAvailable(option.id)}
         />
       ),
@@ -451,14 +406,50 @@ export function TestPackBuilderScreen({
     },
   ]
 
+  const handleSelectPack = (pack: TestPackCatalogRow) => {
+    requestLeave(() => {
+      setSelected(pack.id)
+      setCreating(false)
+      setTestPackParam(pack.id, { extra: { view: activeTab, new: null } })
+    })
+  }
+
+  const handleNewPack = () => {
+    requestLeave(() => {
+      setSelected(null)
+      setForm(emptyForm)
+      setMembers([])
+      setSelectedAvailable([])
+      setCreating(true)
+      setTestPackParam(null, { extra: { new: "1", view: null } })
+    })
+  }
+
+  const handleCancelNew = () => {
+    requestLeave(() => {
+      setCreating(false)
+      setForm(emptyForm)
+      setSelectedAvailable([])
+      setTestPackParam(null, { extra: { new: null } })
+    })
+  }
+
+  const handleTabChange = (tab: "definition" | "composition") => {
+    requestLeave(() => {
+      setActiveTab(tab)
+      if (selected) {
+        setTestPackParam(selected, { extra: { view: tab, new: null } })
+      }
+    })
+  }
+
   if (loading) {
     return (
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-semibold">Test Pack Builder</h1>
           <p className="text-muted-foreground text-sm">
-            Whole-ISO composition. Readiness, lifecycle, and duplicate membership remain
-            server-owned.
+            Whole-ISO composition. Readiness, lifecycle, and duplicate membership remain server-owned.
           </p>
         </div>
         <Skeleton className="h-64 w-full" />
@@ -484,15 +475,7 @@ export function TestPackBuilderScreen({
         <Card>
           <CardContent className="flex flex-wrap items-center justify-between gap-3 py-3">
             <p className="text-sm font-medium">Creating a new Test Pack</p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setCreating(false)
-                setForm(emptyForm)
-                setSelectedAvailable([])
-              }}
-            >
+            <Button variant="outline" size="sm" onClick={handleCancelNew}>
               Cancel
             </Button>
           </CardContent>
@@ -504,7 +487,7 @@ export function TestPackBuilderScreen({
           rows={packs}
           rowId={(pack) => pack.id}
           selectedId={selected}
-          onSelect={(pack) => setSelected(pack.id)}
+          onSelect={handleSelectPack}
           browsing={browsing}
           onBrowsingChange={setBrowsing}
           changeLabel="Change Test Pack"
@@ -519,33 +502,76 @@ export function TestPackBuilderScreen({
             }`
           }
           toolbarActions={
-            <Button
-              disabled={!canManage}
-              onClick={() => {
-                setSelected(null)
-                setForm(emptyForm)
-                setMembers([])
-                setSelectedAvailable([])
-                setCreating(true)
-              }}
-            >
+            <Button disabled={!canManage} onClick={handleNewPack}>
               <Plus /> New Test Pack
             </Button>
           }
         />
       )}
 
-      {showEditor || creating ? (
+      {showEditor ? (
+        <div className="space-y-4">
+          <div className="flex gap-2 border-b pb-2">
+            <Button
+              type="button"
+              variant={activeTab === "definition" ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleTabChange("definition")}
+            >
+              Definition
+            </Button>
+            <Button
+              type="button"
+              variant={activeTab === "composition" ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleTabChange("composition")}
+            >
+              Composition
+            </Button>
+          </div>
+
+          {selectedPack ? (
+            <>
+              {activeTab === "definition" && (
+                <TestPackDefinitionEditor
+                  projectId={projectId}
+                  pack={selectedPack}
+                  canManage={canManage}
+                  dataCurrent={true}
+                  onUpdated={() => void refresh(selected)}
+                  onArchived={() => void refresh(selected)}
+                />
+              )}
+
+              {activeTab === "composition" && (
+                <TestPackCompositionEditor
+                  projectId={projectId}
+                  pack={selectedPack}
+                  canManage={canManage}
+                  dataCurrent={true}
+                  onComposed={() => void refresh(selected)}
+                />
+              )}
+            </>
+          ) : (
+            <Card>
+              <CardContent className="p-6 text-center text-sm text-muted-foreground">
+                Test Pack unavailable or not found in this project.
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      ) : null}
+
+      {creating ? (
         <>
           <Card>
             <CardHeader>
-              <CardTitle>{creating ? "New Test Pack" : "Definition and metadata"}</CardTitle>
+              <CardTitle>New Test Pack</CardTitle>
               <CardDescription>
-                {isArchived
-                  ? "This Test Pack is archived and read-only."
-                  : canManage
-                    ? "Mutations use capability-checked RPCs and refresh projections after success."
-                    : "View-only access: mutation controls are disabled."}
+                {canManage
+                  ? "Mutations use capability-checked RPCs and refresh projections after success."
+                  : "View-only access: mutation controls are disabled."}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -563,7 +589,7 @@ export function TestPackBuilderScreen({
                       type={type}
                       value={form[field]}
                       onChange={(event) => updateField(field, event.target.value)}
-                      disabled={!editable}
+                      disabled={!canManage}
                     />
                   </div>
                 ))}
@@ -573,7 +599,7 @@ export function TestPackBuilderScreen({
                   label="Priority"
                   value={form.priority}
                   placeholder="Select a priority"
-                  disabled={!editable}
+                  disabled={!canManage}
                   options={TEST_PACK_PRIORITIES.map((item) => ({ id: item, label: item }))}
                   onChange={(value) => updateField("priority", value)}
                 />
@@ -582,7 +608,7 @@ export function TestPackBuilderScreen({
                   label="Test medium"
                   value={form.medium}
                   placeholder="Select a medium"
-                  disabled={!editable}
+                  disabled={!canManage}
                   options={TEST_PACK_MEDIA.map((item) => ({ id: item.value, label: item.label }))}
                   onChange={(value) => updateField("medium", value)}
                 />
@@ -595,7 +621,7 @@ export function TestPackBuilderScreen({
                       id={`pack-${field}`}
                       label={label}
                       value={form[field]}
-                      disabled={!editable}
+                      disabled={!canManage}
                       options={options}
                       placeholder={
                         field === "subsystemId" && !form.systemId
@@ -610,21 +636,9 @@ export function TestPackBuilderScreen({
                 })}
 
                 <div className="flex flex-wrap items-end gap-2 sm:col-span-2">
-                  <Button type="submit" loading={submitting} disabled={!editable || missing.length > 0}>
-                    {selected ? "Save metadata" : "Create and compose"}
+                  <Button type="submit" loading={submitting} disabled={!canManage || missing.length > 0}>
+                    Create and compose
                   </Button>
-                  {selected ? (
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      disabled={!editable}
-                      onClick={() => setPendingArchive(true)}
-                    >
-                      Archive
-                    </Button>
-                  ) : null}
-                  {/* Naming what is still empty beats a disabled button with no explanation, and
-                      beats submitting to find out from a joined server-error string. */}
                   {missing.length > 0 ? (
                     <p className="text-muted-foreground text-sm">
                       Still needed: {missing.join(", ")}
@@ -635,134 +649,33 @@ export function TestPackBuilderScreen({
             </CardContent>
           </Card>
 
-          <div className="grid gap-6 xl:grid-cols-2">
-            {selected ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle>ISO members</CardTitle>
-                  <CardDescription>
-                    Removal and move are refused by the server once workflow evidence exists.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <DataTable
-                    columns={MEMBER_COLUMNS}
-                    rows={members}
-                    state={memberTable}
-                    onStateChange={setMemberTable}
-                    rowId={(member) => String(member.id)}
-                    searchPlaceholder="Search ISO…"
-                    emptyTitle="No ISO composed into this Test Pack yet."
-                    emptyDescription="Pick accepted ISOs on the right and add them."
-                    containerClassName="max-h-[40vh]"
-                  />
-                </CardContent>
-              </Card>
-            ) : null}
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Available accepted ISOs</CardTitle>
-                <CardDescription>
-                  Every accepted ISO in scope that is not already composed into this Test Pack.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DataTable
-                  columns={AVAILABLE_COLUMNS}
-                  rows={availableOptions}
-                  state={availableTable}
-                  onStateChange={setAvailableTable}
-                  rowId={(option) => option.id}
-                  searchPlaceholder="Search ISO…"
-                  emptyTitle="No available accepted ISOs in this project scope."
-                  containerClassName="max-h-[40vh]"
-                  toolbarActions={
-                    selected ? (
-                      <Button
-                        disabled={!editable || selectedAvailable.length === 0}
-                        onClick={() => void addMembers()}
-                      >
-                        <Plus /> Add {selectedAvailable.length || ""} selected
-                      </Button>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">
-                        {selectedAvailable.length} will be composed on create
-                      </span>
-                    )
-                  }
-                />
-              </CardContent>
-            </Card>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Available accepted ISOs</CardTitle>
+              <CardDescription>
+                Every accepted ISO in scope that is not already composed into a Test Pack.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DataTable
+                columns={AVAILABLE_COLUMNS}
+                rows={availableOptions}
+                state={availableTable}
+                onStateChange={setAvailableTable}
+                rowId={(option) => option.id}
+                searchPlaceholder="Search ISO…"
+                emptyTitle="No available accepted ISOs in this project scope."
+                containerClassName="max-h-[40vh]"
+                toolbarActions={
+                  <span className="text-muted-foreground text-sm">
+                    {selectedAvailable.length} will be composed on create
+                  </span>
+                }
+              />
+            </CardContent>
+          </Card>
         </>
       ) : null}
-
-      <ConfirmAction
-        open={pendingRemoval !== null}
-        onOpenChange={(open) => !open && setPendingRemoval(null)}
-        title={`Remove ${pendingRemoval ? memberIsoNumber(pendingRemoval) : "ISO"}?`}
-        description="The membership is removed from this Test Pack. Its history is retained by the server."
-        confirmLabel="Remove ISO"
-        destructive
-        onConfirm={() => {
-          const member = pendingRemoval
-          setPendingRemoval(null)
-          if (!member) return
-          void run(
-            () =>
-              removeManagedTestPackIsometric(
-                getSupabaseBrowserClient(),
-                selected!,
-                member.isometric_id ?? "",
-              ).then(() => undefined),
-            "ISO removed; history retained.",
-            "Could not remove ISO",
-          )
-        }}
-      />
-
-      <ConfirmAction
-        open={pendingArchive}
-        onOpenChange={setPendingArchive}
-        title="Archive this Test Pack?"
-        description="Archiving makes the Test Pack read-only. Its composition and history are kept."
-        confirmLabel="Archive"
-        destructive
-        onConfirm={() => {
-          setPendingArchive(false)
-          void run(
-            () => archiveManagedTestPack(getSupabaseBrowserClient(), selected!).then(() => undefined),
-            "Test Pack archived.",
-            "Could not archive Test Pack",
-          )
-        }}
-      />
-
-      <MoveIsoDialog
-        isoNumber={pendingMove ? memberIsoNumber(pendingMove) : ""}
-        open={pendingMove !== null}
-        onOpenChange={(open) => !open && setPendingMove(null)}
-        destinations={packs
-          .filter((pack) => pack.id !== selected && pack.lifecycle !== "archived")
-          .map((pack) => ({ id: pack.id, label: pack.testPackNumber }))}
-        onMove={(destination) => {
-          const member = pendingMove
-          setPendingMove(null)
-          if (!member) return
-          void run(
-            () =>
-              moveManagedTestPackIsometric(
-                getSupabaseBrowserClient(),
-                selected!,
-                member.isometric_id ?? "",
-                destination,
-              ).then(() => undefined),
-            "ISO moved by the server; source and destination revisions refreshed.",
-            "Could not move ISO",
-          )
-        }}
-      />
     </div>
   )
 }

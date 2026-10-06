@@ -25,7 +25,7 @@ test("the Line Check punch code is chosen from the project catalogue, not typed"
     "the option label must be the business code while its value stays the punch code id",
   )
   assert.ok(
-    source.includes('updateDraft(row.request_id ?? "", "punchCodeId"'),
+    source.includes('updateDraft(draftKey, "punchCodeId"'),
     "the selected option must still feed the punchCodeId sent to the RPC",
   )
 })
