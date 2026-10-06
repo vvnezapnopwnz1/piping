@@ -1,0 +1,537 @@
+/* Project state: the expanded process navigation (prototype D). Arrows and dashed lines carry
+   meaning — the order of stages and which stages a shared service works for — never decoration. */
+.room {
+  --cr-ink: var(--foreground);
+  --cr-muted: var(--muted-foreground);
+  --cr-surface: var(--card);
+  --cr-field: #fff9f0;
+  --cr-line: var(--border);
+  --cr-line-strong: #bdb19c;
+  --cr-char: #2e2b25;
+  --cr-sage: #728157;
+  --cr-sage-strong: #56633f;
+  --cr-sage-soft: #e3e9d6;
+  --cr-terra: #c67139;
+  --cr-terra-strong: #9a4f1f;
+  --cr-terra-soft: #fbeee3;
+  --cr-locked: #efe8da;
+  --cr-grid: rgb(32 30 29 / 0.07);
+  --cr-serif: var(--font-source-serif), Georgia, "Times New Roman", serif;
+  --cr-mono: var(--font-mono, ui-monospace), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  color: var(--cr-ink);
+}
+
+:global(.dark) .room {
+  --cr-field: #2a2824;
+  --cr-line-strong: #5a544a;
+  --cr-char: #e9dfcd;
+  --cr-sage: #98aa78;
+  --cr-sage-strong: #c2d3a2;
+  --cr-sage-soft: #333d28;
+  --cr-terra: #de8f58;
+  --cr-terra-strong: #f2b88f;
+  --cr-terra-soft: #3b2a1e;
+  --cr-locked: #2c2925;
+  --cr-grid: rgb(245 234 216 / 0.05);
+}
+
+.mono {
+  font-family: var(--cr-mono);
+}
+
+/* Head */
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.title {
+  margin: 0;
+  font: 400 clamp(24px, 3vw, 30px) / 1.15 var(--cr-serif);
+  letter-spacing: -0.01em;
+}
+
+.lede {
+  max-width: 80ch;
+  margin: 0;
+  color: var(--cr-muted);
+  font-size: 14px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 16px;
+  align-items: start;
+}
+
+.sectionLabel {
+  margin: 0 0 8px;
+  color: var(--cr-muted);
+  font: 600 11px var(--cr-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Map */
+.map {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--cr-line);
+  border-radius: 6px;
+  background-color: var(--cr-surface);
+  background-image:
+    linear-gradient(var(--cr-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--cr-grid) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+.map > .sectionLabel:not(:first-child) {
+  margin-top: 16px;
+}
+
+.stages,
+.services,
+.project {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0 28px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.project {
+  gap: 12px 28px;
+}
+
+.stageCell {
+  position: relative;
+  min-width: 0;
+}
+
+.stageCell > .card,
+.services > li > .card,
+.project > li > .card {
+  height: 100%;
+}
+
+/* The arrow from one stage to the next: work is handed over in this order. */
+.stageCell + .stageCell::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -24px;
+  width: 20px;
+  border-top: 2px solid var(--cr-char);
+}
+
+.stageCell + .stageCell::after {
+  content: "";
+  position: absolute;
+  top: calc(50% - 5px);
+  left: -9px;
+  border: 5px solid transparent;
+  border-right: 0;
+  border-left: 7px solid var(--cr-char);
+}
+
+/* Dashed lines from the stages NDE inspects down to the NDE service. */
+.links {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0 28px;
+  height: 26px;
+}
+
+.links span {
+  position: relative;
+}
+
+.links span[data-linked]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  border-left: 2px dashed var(--cr-muted);
+}
+
+.services {
+  /* Each service sits under the stages it serves, whatever its order in the registry. */
+  grid-auto-flow: row dense;
+}
+
+.services > li {
+  min-width: 0;
+}
+
+.services > li[data-area="tracking"] {
+  grid-column: 1;
+}
+
+.services > li[data-area="nde"] {
+  grid-column: 2 / 4;
+}
+
+.services > li[data-area="flange"] {
+  grid-column: 4;
+}
+
+.srOnlyNarrow {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Cards */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--cr-line-strong);
+  border-radius: 6px;
+  background: var(--cr-field);
+  transition: border-color 0.12s, box-shadow 0.12s, transform 0.12s;
+}
+
+.card[data-state="open"]:hover,
+.card[data-state="attention"]:hover {
+  border-color: var(--cr-char);
+  box-shadow: 0 2px 0 var(--cr-char);
+  transform: translateY(-1px);
+}
+
+.card[data-state="attention"] {
+  border-color: var(--cr-terra);
+}
+
+.card[data-state="locked"] {
+  border-style: dashed;
+  background: var(--cr-locked);
+  color: var(--cr-muted);
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 2px;
+  color: var(--cr-muted);
+  font: 11px var(--cr-mono);
+}
+
+.cardIcon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.cardTitle {
+  margin: 0;
+  font: 400 19px/1.2 var(--cr-serif);
+}
+
+.cardLink {
+  color: inherit;
+  text-decoration: none;
+  outline: none;
+}
+
+/* The whole card opens the module; the link text stays the accessible name. */
+.cardLink::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+}
+
+.cardLink:focus-visible::after {
+  outline: 3px solid var(--cr-terra);
+  outline-offset: 2px;
+}
+
+.cardValue {
+  margin: 4px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.cardSub {
+  margin: 0;
+  color: var(--cr-muted);
+  font-size: 12px;
+}
+
+.readout {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.figure {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  margin: 0;
+}
+
+.figureValue {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.figureOf {
+  color: var(--cr-muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.figureShare {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--cr-sage-soft);
+  color: var(--cr-sage-strong);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.bar {
+  display: block;
+  height: 4px;
+  margin: 4px 0 2px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--cr-line);
+}
+
+.barFill {
+  display: block;
+  height: 100%;
+  background: var(--cr-sage);
+}
+
+.figureNote {
+  margin: 0;
+  color: var(--cr-muted);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.skeleton {
+  display: block;
+  height: 12px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--cr-line) 0%, var(--cr-locked) 50%, var(--cr-line) 100%);
+}
+
+.skeletonLarge {
+  width: 60%;
+  height: 20px;
+}
+
+.skeletonShort {
+  width: 40%;
+}
+
+.errorBox {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-top: 4px;
+}
+
+.errorText {
+  margin: 0;
+  color: var(--cr-terra-strong);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 1px solid var(--cr-line-strong);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--cr-ink);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.retry:hover {
+  border-color: var(--cr-char);
+}
+
+.linkIcon {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+/* Attention queue */
+.attention {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--cr-line);
+  border-radius: 6px;
+  background: var(--cr-surface);
+}
+
+.queue {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.queueItem {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--cr-line);
+  border-radius: 6px;
+  background: var(--cr-field);
+}
+
+.queueItem[data-tone="loading"] {
+  display: block;
+}
+
+.queueItem[data-tone="error"] {
+  background: var(--cr-terra-soft);
+}
+
+.queueIcon {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  color: var(--cr-terra-strong);
+}
+
+.queueItem[data-tone="ok"] .queueIcon {
+  color: var(--cr-sage-strong);
+}
+
+.queueText {
+  min-width: 0;
+}
+
+.queueTitle {
+  margin: 0;
+  font-weight: 600;
+}
+
+.queueDetail {
+  margin: 2px 0 8px;
+  color: var(--cr-muted);
+  font-size: 12px;
+}
+
+.queueAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--cr-line-strong);
+  border-radius: 6px;
+  color: var(--cr-ink);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.queueAction:hover {
+  background: #efe5d2;
+  border-color: var(--cr-char);
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 800px) {
+  .stages,
+  .services,
+  .project {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .stageCell + .stageCell::before {
+    top: -12px;
+    left: 50%;
+    width: 0;
+    height: 10px;
+    border-top: 0;
+    border-left: 2px solid var(--cr-char);
+  }
+
+  .stageCell + .stageCell::after {
+    top: -4px;
+    left: calc(50% - 5px);
+    border: 5px solid transparent;
+    border-bottom: 0;
+    border-top: 7px solid var(--cr-char);
+  }
+
+  .links {
+    display: none;
+  }
+
+  .srOnlyNarrow {
+    position: static;
+    width: auto;
+    height: auto;
+    margin-top: 16px;
+    overflow: visible;
+    clip: auto;
+  }
+
+  .services > li[data-area] {
+    grid-column: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+}

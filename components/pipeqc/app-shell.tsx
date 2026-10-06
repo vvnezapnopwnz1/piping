@@ -1,11 +1,12 @@
 "use client"
 
+import * as React from "react"
+import { usePathname } from "next/navigation"
+
 import { AccessPendingScreen } from "@/components/auth/access-pending-screen"
 import { AuthErrorScreen } from "@/components/auth/auth-error-screen"
 import { LoginScreen } from "@/components/auth/login-screen"
-import { SidebarNav } from "@/components/pipeqc/sidebar-nav"
 import { TopNav } from "@/components/pipeqc/top-nav"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { Toaster } from "@/components/ui/sonner"
 import { useSupabaseAuth } from "@/contexts/supabase-auth-context"
 import { AccessProvider } from "@/modules/access/ui/access-context"
@@ -13,17 +14,43 @@ import { AccessProvider } from "@/modules/access/ui/access-context"
 import { RouteCapabilityGuard } from "./route-capability-guard"
 
 import { getAppShellState } from "./app-shell-state"
+import { HelpProvider } from "./context-help"
+import { ModuleHeader, StageRail } from "./process-nav"
+import { ProjectCatalogShell } from "./project-catalog-shell"
+import { ProjectUrlGate, ProjectUrlSync } from "./project-url-sync"
+import { UnsavedInputGuard } from "./unsaved-input-guard"
+import { WorkContextProvider } from "./work-context"
+import styles from "./workbench-shell.module.css"
 
+/**
+ * One navigation, three zones: the sticky project identity, the process navigation, and the
+ * work area. On the overview the process navigation is the map inside the page, so the compact
+ * stage rail is not drawn there as well.
+ */
 function PipeQCShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+  const overview = pathname === "/"
   return (
-    <SidebarProvider>
-      <SidebarNav />
-      <SidebarInset>
-        <TopNav />
-        <main className="flex-1 overflow-auto p-2">{children}</main>
-      </SidebarInset>
+    <div className={styles.shell}>
+      <a href="#main-content" className={styles.skip}>
+        Skip to content
+      </a>
+      {/* Mounted before the providers so it is listening when they report on first load. */}
       <Toaster richColors position="top-right" />
-    </SidebarProvider>
+      <UnsavedInputGuard>
+        <WorkContextProvider>
+          <HelpProvider>
+            <TopNav />
+            {overview ? null : <StageRail />}
+            {overview ? null : <ModuleHeader />}
+            <main id="main-content" tabIndex={-1} className={styles.main}>
+              <ProjectUrlGate>{children}</ProjectUrlGate>
+            </main>
+            <ProjectUrlSync />
+          </HelpProvider>
+        </WorkContextProvider>
+      </UnsavedInputGuard>
+    </div>
   )
 }
 
@@ -37,8 +64,9 @@ function LoadingScreen() {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { accessState, error, access, signOut, user } = useSupabaseAuth()
+  const pathname = usePathname()
 
-  switch (getAppShellState(accessState, Boolean(error))) {
+  switch (getAppShellState(accessState, Boolean(error), pathname)) {
     case "error":
       return <AuthErrorScreen />
     case "loading":
@@ -47,12 +75,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       return <LoginScreen />
     case "access_pending":
       return <AccessPendingScreen email={user?.email} onSignOut={signOut} />
+    case "catalog":
+      return <ProjectCatalogShell>{children}</ProjectCatalogShell>
     case "shell":
       return access ? (
         <AccessProvider access={access}>
-          <PipeQCShell>
-            <RouteCapabilityGuard>{children}</RouteCapabilityGuard>
-          </PipeQCShell>
+          {/* The shell reads the address bar (project, selected object, return path). */}
+          <React.Suspense fallback={<LoadingScreen />}>
+            <PipeQCShell>
+              <RouteCapabilityGuard>{children}</RouteCapabilityGuard>
+            </PipeQCShell>
+          </React.Suspense>
         </AccessProvider>
       ) : (
         <LoadingScreen />

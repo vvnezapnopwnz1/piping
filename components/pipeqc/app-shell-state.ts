@@ -6,10 +6,12 @@ export type AppShellState =
   | "access_pending"
   | "shell"
   | "error"
+  | "catalog"
 
 export function getAppShellState(
   accessState: SupabaseAccessState,
-  hasError = false
+  hasError = false,
+  pathname = "/"
 ): AppShellState {
   if (hasError) {
     return "error"
@@ -21,8 +23,8 @@ export function getAppShellState(
     case "unauthenticated":
       return "login"
     case "no_membership":
-      return "access_pending"
+      return pathname === "/projects" ? "catalog" : "access_pending"
     case "authorized":
-      return "shell"
+      return pathname === "/projects" ? "catalog" : "shell"
   }
 }

@@ -3,6 +3,7 @@ import assert from "node:assert/strict"
 import {
   deriveSupabaseAccessState,
   synchronizeProjectAccessDisplay,
+  projectIdForAddress,
   resolveActiveProjectAccess,
   sortProjectAccessesForDisplay,
   activeProjectStorageKey,
@@ -128,3 +129,21 @@ assert.equal(
   resolveActiveProjectAccess(createdAtOrderAccesses, null)?.projectId,
   "project-track01",
 )
+
+assert.equal(
+  projectIdForAddress(
+    [
+      { projectId: "a", activityCode: "A-1", projectStatus: "active" },
+      { projectId: "b", activityCode: "B-1", projectStatus: "archived" },
+    ],
+    "?p=A-1&spool=x",
+  ),
+  "a",
+  "a fresh load opens the project its address names",
+)
+assert.equal(
+  projectIdForAddress([{ projectId: "b", activityCode: "B-1", projectStatus: "archived" }], "?p=B-1"),
+  null,
+  "an address never opens a project the user has no active access to",
+)
+assert.equal(projectIdForAddress([{ projectId: "a", activityCode: "A-1" }], ""), null)

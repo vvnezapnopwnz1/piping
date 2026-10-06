@@ -3,17 +3,8 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Search,
-  HelpCircle,
-  Settings,
-  ChevronRight,
-  ChevronDown,
-  LogOut,
-} from "lucide-react";
+import { ChevronDown, FolderOpen, Home, LogOut } from "lucide-react";
 
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -23,11 +14,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Separator } from "@/components/ui/separator";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useSupabaseAuth } from "@/contexts/supabase-auth-context";
 
+import { withProject } from "./project-url";
 import { getTopNavDisplay } from "./top-nav-state";
+import styles from "./workbench-shell.module.css";
 
 const ACCESS_ROLE_LABELS: Record<string, string> = {
   project_admin: "Project Admin",
@@ -62,217 +53,103 @@ function accessLabels(access: {
   ];
 }
 
-// Route labels for breadcrumb
-const routeLabels: Record<string, string> = {
-  admin: "Admin",
-  spooling: "Spooling Module",
-  fabrication: "Fabrication",
-  "weld-progress": "Weld Progress",
-  dashboard: "Dashboard",
-  tracking: "Tracking",
-  nde: "NDE Module",
-  reports: "Reports",
-  settings: "Settings",
-  documentation: "Documentation",
-  testpack: "Testpack",
-  "pressure-test": "Pressure Test",
-  "line-check": "Line Check",
-  "item-clearance": "Item Clearance",
-  blinding: "Blinding",
-  "testing-precomm": "Testing & Pre-comm",
-  reinstatement: "Reinstatement",
-  preparation: "Preparation",
-  progress: "Progress",
-  explorer: "Explorer",
-  flange: "Flange Management",
-  erection: "Erection",
-  "site-weld-progress": "Site Weld Progress",
-};
-
-export function TopNav() {
+/**
+ * The sticky identity of the workspace: which project is open, the way back to its overview,
+ * the way to every other project, and the user. `catalog` is the same bar over the project
+ * list, where no project page tools apply.
+ */
+export function TopNav({ mode: _mode = "workspace" }: { mode?: "workspace" | "catalog" } = {}) {
   const pathname = usePathname();
-  const { access, projectAccesses, selectProject, signOut, user } = useSupabaseAuth();
-
-  const supabaseProjects = React.useMemo(
-    () =>
-      projectAccesses.map((m) => {
-        return {
-          projectId: m.projectId,
-          activityCode: m.activityCode,
-          title: m.title,
-          accessLabels: accessLabels(m),
-        };
-      }),
-    [projectAccesses]
-  );
+  const { access: project, projectAccesses, signOut, user } = useSupabaseAuth();
 
   const topNavDisplay = getTopNavDisplay({
-    access: access
+    access: project
       ? {
-          projectId: access.projectId,
-          activityCode: access.activityCode,
-          title: access.title,
-          accessLabels: accessLabels(access),
+          projectId: project.projectId,
+          activityCode: project.activityCode,
+          title: project.title,
+          accessLabels: accessLabels(project),
         }
       : null,
-    projectAccesses: supabaseProjects,
+    projectAccesses: projectAccesses.map((m) => ({
+      projectId: m.projectId,
+      activityCode: m.activityCode,
+      title: m.title,
+      accessLabels: accessLabels(m),
+    })),
     email: user?.email,
   });
 
-  // Generate breadcrumb from pathname
-  const breadcrumbs = React.useMemo(() => {
-    const segments = pathname.split("/").filter(Boolean);
-    return segments.map((segment, index) => ({
-      label: routeLabels[segment] || segment,
-      href: "/" + segments.slice(0, index + 1).join("/"),
-      isLast: index === segments.length - 1,
-    }));
-  }, [pathname]);
+  const code = project ? topNavDisplay.project.activityCode : null;
+  const overview = withProject("/", code);
 
   return (
-    <header className="flex h-12 shrink-0 items-center border-b border-border bg-background px-4">
-      {/* Left Side */}
-      <div className="flex items-center gap-2">
-        <SidebarTrigger className="-ml-1" />
-
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex size-7 items-center justify-center rounded bg-primary">
-            <span className="text-xs font-bold text-primary-foreground">
-              PQ
-            </span>
-          </div>
-          <span className="text-sm font-semibold text-foreground">PipeQC</span>
-        </Link>
-
-        <Separator orientation="vertical" className="mx-2 h-5" />
-
-        {topNavDisplay.canSwitchProject ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 gap-1 px-2 text-xs"
-              >
-                <span className="font-medium text-foreground">
-                  {topNavDisplay.project.activityCode}
-                </span>
-                <span className="text-muted-foreground">·</span>
-                <span className="max-w-[140px] truncate text-muted-foreground">
-                  {topNavDisplay.project.title}
-                </span>
-                <ChevronDown className="ml-1 size-3 text-muted-foreground" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-[280px]">
-              {topNavDisplay.projects.map((proj) => (
-                <DropdownMenuItem
-                  key={proj.projectId}
-                  onClick={() => selectProject(proj.projectId)}
-                  className={cn(
-                    "flex flex-col items-start gap-0.5",
-                    topNavDisplay.project.projectId === proj.projectId && "bg-accent",
-                  )}
-                >
-                  <div className="flex w-full items-center justify-between">
-                    <span className="text-sm font-medium">{proj.activityCode}</span>
-                    <span className="text-[10px] text-muted-foreground">
-                      {proj.accessLabels.join(" · ")}
-                    </span>
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {proj.title}
-                  </span>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+    <header className={styles.identity} data-identity-bar="">
+      <div className={styles.identityMain}>
+        <span className={styles.brand} aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false">
+            <path d="M3 8h12a3 3 0 0 1 3 3v9" />
+            <path d="M3 12h8" />
+          </svg>
+        </span>
+        {project ? (
+          <Link
+            href={overview}
+            className={styles.ident}
+            aria-label={`Project ${topNavDisplay.project.activityCode} overview`}
+            title={`${topNavDisplay.project.title} — project overview`}
+          >
+            <span className={styles.identCode}>{topNavDisplay.project.activityCode}</span>
+            <span className={styles.identTitle}>{topNavDisplay.project.title}</span>
+          </Link>
         ) : (
-          <div className="flex h-7 items-center gap-1 px-2 text-xs">
-            <span className="font-medium text-foreground">
-              {topNavDisplay.project.activityCode}
-            </span>
-            <span className="text-muted-foreground">·</span>
-            <span className="max-w-[140px] truncate text-muted-foreground">
-              {topNavDisplay.project.title}
-            </span>
-          </div>
-        )}
-
-        {/* Breadcrumb */}
-        {breadcrumbs.length > 0 && (
-          <>
-            <Separator orientation="vertical" className="mx-2 h-5" />
-            <nav className="flex items-center gap-1 text-xs">
-              {breadcrumbs.map((crumb, index) => (
-                <React.Fragment key={crumb.href}>
-                  {index > 0 && (
-                    <ChevronRight className="size-3 text-muted-foreground" />
-                  )}
-                  {crumb.isLast ? (
-                    <span className="font-medium text-foreground">
-                      {crumb.label}
-                    </span>
-                  ) : (
-                    <Link
-                      href={crumb.href}
-                      className="text-muted-foreground hover:text-foreground"
-                    >
-                      {crumb.label}
-                    </Link>
-                  )}
-                </React.Fragment>
-              ))}
-            </nav>
-          </>
+          <span className={styles.ident}>
+            <span className={styles.identCode}>PipeQC</span>
+            <span className={styles.identTitle}>No project open</span>
+          </span>
         )}
       </div>
 
-      {/* Spacer */}
-      <div className="flex-1" />
-
-      {/* Right Side */}
-      <div className="flex items-center gap-1">
-        <Button variant="ghost" size="icon" className="size-8">
-          <Search className="size-4 text-muted-foreground" />
-          <span className="sr-only">Search</span>
-        </Button>
-
-        {/* The notification bell counted unread items in the demo notifications store. A
-            notification feed over durable records is Track 11; an always-empty bell would only
-            claim there is nothing to see. */}
-
-        <Button variant="ghost" size="icon" className="size-8">
-          <HelpCircle className="size-4 text-muted-foreground" />
-          <span className="sr-only">Help</span>
-        </Button>
-
-        <Button variant="ghost" size="icon" className="size-8">
-          <Settings className="size-4 text-muted-foreground" />
-          <span className="sr-only">Settings</span>
-        </Button>
-
-        <Separator orientation="vertical" className="mx-2 h-5" />
+      <nav aria-label="Workspace" className={styles.identityActions}>
+        <Link
+          href="/projects"
+          className={styles.barButton}
+          aria-current={pathname === "/projects" ? "page" : undefined}
+          aria-label="All projects"
+        >
+          <FolderOpen aria-hidden="true" />
+          <span className={styles.hideNarrow}>All projects</span>
+        </Link>
+        {project ? (
+          <Link
+            href={overview}
+            className={styles.barButton}
+            aria-current={pathname === "/" ? "page" : undefined}
+            aria-label={pathname === "/projects" ? `Return to ${topNavDisplay.project.activityCode}` : "Overview"}
+          >
+            <Home aria-hidden="true" />
+            <span className={styles.hideNarrow}>
+              {pathname === "/projects" ? `Return to ${topNavDisplay.project.activityCode}` : "Overview"}
+            </span>
+          </Link>
+        ) : null}
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 gap-2 px-2">
-              <Avatar className="size-6">
+            <button type="button" className={styles.userButton}>
+              <Avatar className="size-7">
                 <AvatarFallback className="text-[10px]">
                   {topNavDisplay.email.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex min-w-0 flex-col items-start">
-                <span className="max-w-[180px] truncate text-xs font-medium leading-none">
-                  {topNavDisplay.email}
-                </span>
-                <span className="text-[10px] leading-none text-muted-foreground">
+              <span className={styles.userText}>
+                <span className={styles.userEmail}>{topNavDisplay.email}</span>
+                <span className={styles.userRole}>
                   {topNavDisplay.accessLabels[0] ?? "Project access"}
                 </span>
-              </div>
-              <ChevronDown className="size-3 text-muted-foreground" />
-            </Button>
+              </span>
+              <ChevronDown aria-hidden="true" className={styles.userChevron} />
+            </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             {topNavDisplay.accessLabels.slice(1).length > 0 ? (
@@ -289,7 +166,7 @@ export function TopNav() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
+      </nav>
     </header>
   );
 }

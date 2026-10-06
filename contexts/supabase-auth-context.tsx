@@ -12,6 +12,7 @@ import {
 import {
   activeProjectStorageKey,
   deriveSupabaseAccessState,
+  projectIdForAddress,
   resolveActiveProjectAccess,
   sortProjectAccessesForDisplay,
   synchronizeProjectAccessDisplay,
@@ -104,7 +105,9 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
       }
 
       const storageKey = activeProjectStorageKey(sessionUser.id)
-      const preferredProjectId = safelyReadLocalStorage(storageKey)
+      const preferredProjectId =
+        projectIdForAddress(projectAccesses, window.location.search) ??
+        safelyReadLocalStorage(storageKey)
       const activeAccess = resolveActiveProjectAccess(
         projectAccesses,
         preferredProjectId

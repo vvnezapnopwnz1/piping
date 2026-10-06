@@ -14,6 +14,7 @@ import {
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
+  SidebarMenuAction,
   SidebarMenuItem,
   SidebarMenuSub,
   SidebarMenuSubButton,
@@ -28,6 +29,14 @@ import {
 import { getVisibleNavigation, type NavItem } from "@/config/navigation";
 import type { Capability } from "@/modules/access/domain/capability";
 import { useAccess } from "@/modules/access/ui/access-context";
+import { canVisit, firstAccessibleDestination } from "./navigation-model";
+
+// Open the destination's ancestors on route changes, without preventing manual collapse.
+function useRouteExpansion(pathname: string, item: NavItem) {
+  const [choice, setChoice] = React.useState({ pathname, open: isPathUnderItem(pathname, item) });
+  const open = choice.pathname === pathname ? choice.open : isPathUnderItem(pathname, item);
+  return [open, (next: boolean) => setChoice({ pathname, open: next })] as const;
+}
 
 // Helper: check if pathname matches this item or any descendant
 function isPathUnderItem(pathname: string, item: NavItem): boolean {
@@ -43,11 +52,12 @@ function isPathUnderItem(pathname: string, item: NavItem): boolean {
 // Recursive tree item renderer supporting arbitrary nesting depth
 function NavTreeItem({ item, depth = 0 }: { item: NavItem; depth?: number }) {
   const pathname = usePathname();
-  const { state } = useSidebar();
+  const { state, setOpenMobile } = useSidebar();
+  const { can } = useAccess();
+  const destination = firstAccessibleDestination(item, can);
   const hasChildren = item.children && item.children.length > 0;
-  const isActive =
-    pathname === item.href || (hasChildren && isPathUnderItem(pathname, item));
-  const [isOpen, setIsOpen] = React.useState(isPathUnderItem(pathname, item));
+  const isActive = isPathUnderItem(pathname, item);
+  const [isOpen, setIsOpen] = useRouteExpansion(pathname, item);
 
   // Collapsed sidebar: render as simple link with tooltip
   if (state === "collapsed") {
@@ -57,7 +67,7 @@ function NavTreeItem({ item, depth = 0 }: { item: NavItem; depth?: number }) {
           <div
             className={cn(
               "absolute inset-y-0 left-0 w-1",
-              isActive ? "bg-primary" : "bg-border dark:bg-foreground",
+              isActive ? "bg-primary" : "bg-transparent",
             )}
           />
         )}
@@ -67,7 +77,7 @@ function NavTreeItem({ item, depth = 0 }: { item: NavItem; depth?: number }) {
           tooltip={item.title}
           className="w-full"
         >
-          <Link href={item.href}>
+          <Link href={destination ?? "/"} onClick={() => setOpenMobile(false)} aria-current={pathname === destination ? "page" : undefined}>
             <item.icon className="size-4" />
             <span>{item.title}</span>
           </Link>
@@ -84,12 +94,12 @@ function NavTreeItem({ item, depth = 0 }: { item: NavItem; depth?: number }) {
           <div
             className={cn(
               "absolute inset-y-0 left-0 w-1",
-              isActive ? "bg-primary" : "bg-border dark:bg-foreground",
+              isActive ? "bg-primary" : "bg-transparent",
             )}
           />
         )}
         <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
-          <Link href={item.href}>
+          <Link href={item.href} onClick={() => setOpenMobile(false)} aria-current={pathname === item.href ? "page" : undefined}>
             <item.icon className="size-4" />
             <span>{item.title}</span>
           </Link>
@@ -106,25 +116,20 @@ function NavTreeItem({ item, depth = 0 }: { item: NavItem; depth?: number }) {
           <div
             className={cn(
               "absolute inset-y-0 left-0 w-1",
-              isActive ? "bg-primary" : "bg-border dark:bg-foreground",
+              isActive ? "bg-primary" : "bg-transparent",
             )}
           />
         )}
-        <CollapsibleTrigger asChild>
-          <SidebarMenuButton
-            isActive={isActive}
-            tooltip={item.title}
-            className="w-full"
-          >
+        {canVisit(item.href, can) ? <SidebarMenuButton asChild isActive={isActive} tooltip={item.title} className="w-full pr-9">
+          <Link href={item.href} onClick={() => setOpenMobile(false)} aria-current={pathname === item.href ? "page" : undefined}>
             <item.icon className="size-4" />
             <span>{item.title}</span>
-            <ChevronRight
-              className={cn(
-                "ml-auto size-4 transition-transform duration-200",
-                isOpen && "rotate-90",
-              )}
-            />
-          </SidebarMenuButton>
+          </Link>
+        </SidebarMenuButton> : <CollapsibleTrigger asChild><SidebarMenuButton isActive={isActive} className="pr-9"><item.icon className="size-4" /><span>{item.title}</span></SidebarMenuButton></CollapsibleTrigger>}
+        <CollapsibleTrigger asChild>
+          <SidebarMenuAction aria-label={`${isOpen ? "Collapse" : "Expand"} ${item.title}`} className="size-7 top-1 right-0.5">
+            <ChevronRight className={cn("transition-transform duration-200 motion-reduce:transition-none", isOpen && "rotate-90")} />
+          </SidebarMenuAction>
         </CollapsibleTrigger>
         <CollapsibleContent>
           <SidebarMenuSub
@@ -151,16 +156,18 @@ function NavTreeSubItem({
   depth?: number;
 }) {
   const pathname = usePathname();
+  const { setOpenMobile } = useSidebar();
+  const { can } = useAccess();
   const hasChildren = item.children && item.children.length > 0;
   const isActive = isPathUnderItem(pathname, item);
-  const [isOpen, setIsOpen] = React.useState(isPathUnderItem(pathname, item));
+  const [isOpen, setIsOpen] = useRouteExpansion(pathname, item);
 
   // Leaf node: simple link
   if (!hasChildren) {
     return (
       <SidebarMenuSubItem>
-        <SidebarMenuSubButton asChild isActive={pathname === item.href}>
-          <Link href={item.href}>
+        <SidebarMenuSubButton asChild isActive={isActive}>
+          <Link href={item.href} onClick={() => setOpenMobile(false)} aria-current={pathname === item.href ? "page" : undefined}>
             <item.icon className="size-4" />
             <span>{item.title}</span>
           </Link>
@@ -173,23 +180,14 @@ function NavTreeSubItem({
   return (
     <SidebarMenuSubItem>
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <CollapsibleTrigger asChild>
-          <SidebarMenuSubButton
-            isActive={isActive}
-            className="w-full justify-between"
-          >
-            <span className="flex items-center gap-2">
-              <item.icon className="size-4" />
-              <span>{item.title}</span>
-            </span>
-            <ChevronRight
-              className={cn(
-                "size-4 transition-transform duration-200",
-                isOpen && "rotate-90",
-              )}
-            />
-          </SidebarMenuSubButton>
-        </CollapsibleTrigger>
+        <div className="flex items-center gap-1">
+          {canVisit(item.href, can) ? <SidebarMenuSubButton asChild isActive={isActive} className="min-w-0 flex-1">
+            <Link href={item.href} onClick={() => setOpenMobile(false)} aria-current={pathname === item.href ? "page" : undefined}><item.icon className="size-4" /><span>{item.title}</span></Link>
+          </SidebarMenuSubButton> : <CollapsibleTrigger asChild><SidebarMenuSubButton isActive={isActive} className="min-w-0 flex-1"><item.icon className="size-4" /><span>{item.title}</span></SidebarMenuSubButton></CollapsibleTrigger>}
+          <CollapsibleTrigger className="flex size-7 shrink-0 items-center justify-center rounded hover:bg-sidebar-accent focus-visible:outline-2" aria-label={`${isOpen ? "Collapse" : "Expand"} ${item.title}`}>
+            <ChevronRight className={cn("size-4 transition-transform duration-200 motion-reduce:transition-none", isOpen && "rotate-90")} />
+          </CollapsibleTrigger>
+        </div>
         <CollapsibleContent>
           <ul
             className={cn(
@@ -213,6 +211,7 @@ function NavigationSidebar({
   can: (capability: Capability) => boolean
 }) {
   const pathname = usePathname();
+  const { setOpenMobile } = useSidebar();
 
   const visibleNavigation = React.useMemo(
     () => getVisibleNavigation(can),
@@ -231,9 +230,9 @@ function NavigationSidebar({
                 isActive={pathname === "/"}
                 tooltip="Home"
               >
-                <Link href="/">
+                <Link href="/" onClick={() => setOpenMobile(false)} aria-current={pathname === "/" ? "page" : undefined}>
                   <Home className="size-4" />
-                  <span>Home</span>
+                  <span>Process overview</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

@@ -25,7 +25,6 @@ export const ROUTE_CAPABILITIES = [
   ["/flange", "flange.view"],
   ["/reports", "reports.view"],
   ["/settings", "settings.view"],
-  ["/documentation", "settings.view"],
 ] as const satisfies readonly (readonly [string, Capability])[]
 
 export function requiredCapabilityForPath(pathname: string): Capability | null {

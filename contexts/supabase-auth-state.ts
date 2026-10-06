@@ -74,6 +74,24 @@ export function resolveActiveProjectAccess<Access extends SupabaseProjectAccessD
     ?? null
 }
 
+/**
+ * The project a page address names with `?p=<code>`, when the user has active access to it. A
+ * fresh load opens that project directly instead of the remembered one, so the page never shows
+ * — or loads data for — another project first.
+ */
+export function projectIdForAddress<
+  Access extends { projectId: string; activityCode: string; projectStatus?: string | null },
+>(accesses: readonly Access[], search: string): string | null {
+  const code = new URLSearchParams(search).get("p")
+  if (!code) return null
+  return (
+    accesses.find(
+      (access) =>
+        access.activityCode === code && (access.projectStatus === undefined || access.projectStatus === "active"),
+    )?.projectId ?? null
+  )
+}
+
 export function activeProjectStorageKey(userId: string): string {
   return `pipeqc.active-project:${userId}`
 }

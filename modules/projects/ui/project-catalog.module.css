@@ -1,0 +1,250 @@
+/* Projects (prototype D): a separate page to choose the project to work in and to return to the
+   open one. Colours follow the global paper theme; these names cover the few it lacks. */
+.catalog {
+  --catalog-paper: var(--card);
+  --catalog-field: #fff9f0;
+  --catalog-ink: var(--foreground);
+  --catalog-muted: var(--muted-foreground);
+  --catalog-line: var(--border);
+  --catalog-line-strong: #bdb19c;
+  --catalog-char: #2e2b25;
+  --catalog-sage: #56633f;
+  --catalog-sage-line: #728157;
+  --catalog-soft: #e3e9d6;
+  --catalog-hover: #efe5d2;
+  --catalog-serif: var(--font-source-serif), Georgia, "Times New Roman", serif;
+  --catalog-mono: var(--font-mono, ui-monospace), ui-monospace, SFMono-Regular, Menlo, monospace;
+  width: 100%;
+  max-width: 1320px;
+  min-width: 0;
+  margin: 0 auto;
+  padding: 16px;
+  color: var(--catalog-ink);
+}
+:global(.dark) .catalog {
+  --catalog-field: #2a2824;
+  --catalog-line-strong: #5a544a;
+  --catalog-char: #e9dfcd;
+  --catalog-sage: #c2d3a2;
+  --catalog-sage-line: #98aa78;
+  --catalog-soft: #333d28;
+  --catalog-hover: #34302a;
+}
+.catalog :global(.catalog-mono) {
+  font-family: var(--catalog-mono);
+}
+.catalog :global(.catalog-heading) {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.catalog h1 {
+  margin: 0;
+  font: 400 clamp(24px, 3vw, 30px) / 1.15 var(--catalog-serif);
+  letter-spacing: -0.01em;
+}
+.catalog :global(.catalog-heading) > p {
+  color: var(--catalog-muted);
+  font-size: 14px;
+}
+.catalog :global(.catalog-count) {
+  color: var(--catalog-muted);
+  font-size: 12px;
+}
+.catalog :global(.catalog-toolbar) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin-bottom: 14px;
+}
+.catalog :global(.catalog-search) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(100%, 470px);
+  padding: 0 12px;
+  border: 1px solid var(--catalog-line-strong);
+  border-radius: 6px;
+  background: var(--catalog-field);
+  color: var(--catalog-muted);
+}
+.catalog input {
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  outline: none;
+  background: transparent;
+  color: var(--catalog-ink);
+  font-size: 13px;
+}
+.catalog :global(.catalog-search):focus-within {
+  outline: 3px solid #c67139;
+  outline-offset: 2px;
+}
+.catalog :global(.catalog-grid) {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: 14px;
+}
+.catalog :global(.catalog-card) {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--catalog-line);
+  border-radius: 6px;
+  background: var(--catalog-paper);
+}
+.catalog :global(.catalog-card)[data-selected="true"] {
+  border-color: var(--catalog-char);
+  box-shadow: inset 0 3px 0 var(--catalog-sage-line);
+}
+.catalog :global(.catalog-card-top) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.catalog :global(.catalog-code) {
+  font: 600 13px var(--catalog-mono);
+  overflow-wrap: anywhere;
+}
+.catalog :global(.catalog-status) {
+  padding: 2px 8px;
+  border: 1px solid var(--catalog-line);
+  border-radius: 999px;
+  background: #ece4d4;
+  color: var(--catalog-muted);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.catalog :global(.catalog-status)[data-current] {
+  border-color: #b8c49c;
+  background: var(--catalog-soft);
+  color: #3f4b2c;
+}
+.catalog h2 {
+  font: 400 20px/1.25 var(--catalog-serif);
+  overflow-wrap: anywhere;
+}
+.catalog :global(.catalog-details) {
+  flex: 1;
+  color: var(--catalog-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.catalog dl {
+  display: grid;
+  gap: 4px;
+}
+.catalog dl > div {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: 12px;
+}
+.catalog dt {
+  color: var(--catalog-muted);
+}
+.catalog dd {
+  color: var(--catalog-ink);
+  overflow-wrap: anywhere;
+}
+.catalog :global(.catalog-access) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  padding-top: 10px;
+  border-top: 1px solid var(--catalog-line);
+  color: var(--catalog-muted);
+  font-size: 12px;
+}
+.catalog :global(.catalog-open) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid var(--catalog-line-strong);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--catalog-ink);
+  font-size: 13px;
+  font-weight: 600;
+  transition: background-color 0.12s, border-color 0.12s;
+}
+.catalog :global(.catalog-open):hover {
+  background: var(--catalog-hover);
+  border-color: var(--catalog-char);
+}
+.catalog :global(.catalog-open)[data-variant="primary"] {
+  border-color: var(--catalog-char);
+  background: var(--catalog-char);
+  color: var(--card);
+}
+.catalog :global(.catalog-open)[data-variant="primary"]:hover {
+  background: #46413a;
+}
+.catalog button:focus-visible {
+  outline: 3px solid #c67139;
+  outline-offset: 2px;
+}
+.catalog button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.catalog :global(.catalog-error) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--catalog-line);
+  border-left: 4px solid #c67139;
+  border-radius: 6px;
+  background: #fbeee3;
+  font-size: 13px;
+}
+.catalog :global(.catalog-error) button,
+.catalog :global(.catalog-empty) button {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.catalog :global(.catalog-empty) {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 18px;
+  border: 1px dashed var(--catalog-line-strong);
+  border-radius: 6px;
+  background: var(--catalog-field);
+  color: var(--catalog-muted);
+}
+.catalog :global(.catalog-empty) h2 {
+  color: var(--catalog-ink);
+}
+.catalog :global(.catalog-empty) p {
+  max-width: 60ch;
+  font-size: 14px;
+  line-height: 1.5;
+}
+@media (max-width: 640px) {
+  .catalog {
+    padding: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .catalog :global(.catalog-open) {
+    transition: none;
+  }
+}

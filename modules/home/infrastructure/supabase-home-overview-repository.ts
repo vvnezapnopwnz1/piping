@@ -51,3 +51,24 @@ export async function loadHomeErectionSummary(
     erectionStages: (erection.data ?? []) as ErectionStageCount[],
   }).erection
 }
+
+export interface HomeTestPackSummary {
+  total: number
+  readyForTest: number
+  blocked: number
+}
+
+/** Counts test packs and their Ready for Test flag from the readiness view the Test Pack screens read. */
+export async function loadHomeTestPackSummary(
+  client: SupabaseClient<Database>,
+  projectId: string,
+): Promise<HomeTestPackSummary> {
+  const { data, error } = await client
+    .from("test_pack_readiness")
+    .select("test_pack_id, is_rft")
+    .eq("project_id", projectId)
+  fail(error)
+  const rows = data ?? []
+  const readyForTest = rows.filter((row) => row.is_rft === true).length
+  return { total: rows.length, readyForTest, blocked: rows.length - readyForTest }
+}

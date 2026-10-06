@@ -20,9 +20,11 @@ const _geistMono = V0_Font_Geist_Mono({
   subsets: ["latin"],
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
 });
-const _sourceSerif_4 = V0_Font_Source_Serif_4({
+// Exposed as a variable: page titles in the workspace are set in this serif.
+const sourceSerif = V0_Font_Source_Serif_4({
   subsets: ["latin"],
   weight: ["200", "300", "400", "500", "600", "700", "800", "900"],
+  variable: "--font-source-serif",
 });
 
 export const metadata: Metadata = {
@@ -55,7 +57,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="bg-background">
+    <html lang="en" className={`bg-background ${sourceSerif.variable}`}>
       <body className="font-sans antialiased">
         <SupabaseAuthProvider>
           <AppShell>{children}</AppShell>
