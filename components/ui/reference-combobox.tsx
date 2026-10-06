@@ -28,13 +28,10 @@ export interface ReferenceComboboxProps {
   options: readonly ReferenceOption[]
   query: string
   loading: boolean
-  loadingMore?: boolean
   error: string | null
   onQueryChange: (query: string) => void
   onChoose: (id: string) => void
   onClear: () => void
-  onLoadMore?: () => void
-  hasMore?: boolean
   onRetry?: () => void
   disabled?: boolean
   emptyMessage?: string
@@ -48,13 +45,10 @@ export function ReferenceCombobox({
   options,
   query,
   loading,
-  loadingMore = false,
   error,
   onQueryChange,
   onChoose,
   onClear,
-  onLoadMore,
-  hasMore = false,
   onRetry,
   disabled = false,
   emptyMessage = "No matching traces",
@@ -145,21 +139,6 @@ export function ReferenceCombobox({
                   </CommandItem>
                 )
               })}
-
-              {hasMore && onLoadMore ? (
-                <div className="p-2 border-t text-center">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={onLoadMore}
-                    disabled={loadingMore}
-                    className="w-full text-xs h-8"
-                  >
-                    {loadingMore ? "Loading more…" : "Load more"}
-                  </Button>
-                </div>
-              ) : null}
             </CommandList>
             {selectedId && !disabled ? (
               <div className="border-t p-1.5 flex justify-end bg-muted/30">

@@ -1,26 +1,14 @@
 "use client"
 
-import * as React from "react"
 import Link from "next/link"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
-import {
-  ReferenceCombobox,
-  type ReferenceOption,
-} from "@/components/ui/reference-combobox"
-import type {
-  BillLine,
-  MaterialCandidate,
-} from "../domain/material-check"
+import { ReferenceCombobox } from "@/components/ui/reference-combobox"
+import type { BillLine, MaterialCandidate } from "../domain/material-check"
 import type { MaterialDraftChoice } from "../application/material-check-draft"
-import { createMaterialRequestOwner } from "../application/material-check-draft"
-import {
-  searchMaterialTraceCandidates,
-  type MaterialCandidateCursor,
-} from "../infrastructure/supabase-material-check-repository"
+import { loadMaterialTraceCandidates } from "../infrastructure/supabase-material-check-repository"
 
 export interface MaterialTracePickerProps {
-  targetKey: string
   line: BillLine
   selectedDraft?: MaterialDraftChoice
   disabled?: boolean
@@ -29,208 +17,54 @@ export interface MaterialTracePickerProps {
   onClear: (spoolRevisionMaterialId: string) => void
 }
 
-export function MaterialTracePicker({
-  targetKey,
-  line,
-  selectedDraft,
-  disabled = false,
-  pmlHref,
-  onChoose,
-  onClear,
-}: MaterialTracePickerProps) {
-  const [query, setQuery] = useState("")
-  const [options, setOptions] = useState<MaterialCandidate[]>([])
-  const [cursor, setCursor] = useState<MaterialCandidateCursor | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [loadingMore, setLoadingMore] = useState(false)
+/** Loads the row's eligible PML records once, when first opened, and filters them locally. */
+export function MaterialTracePicker({ line, selectedDraft, disabled = false, pmlHref, onChoose, onClear }: MaterialTracePickerProps) {
+  const [attempt, setAttempt] = useState(0)
+  const [candidates, setCandidates] = useState<MaterialCandidate[] | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [hasOpened, setHasOpened] = useState(false)
+  const [query, setQuery] = useState("")
 
-  const ownerRef = useRef(createMaterialRequestOwner())
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
-
-  // Map of candidate id -> MaterialCandidate snapshot
-  const candidatesByIdRef = useRef<Map<string, MaterialCandidate>>(new Map())
-
-  // Keep selectedDraft registered in candidates map
   useEffect(() => {
-    if (selectedDraft) {
-      candidatesByIdRef.current.set(selectedDraft.pipingMaterialRecordId, {
-        id: selectedDraft.pipingMaterialRecordId,
-        identCode: selectedDraft.identCode,
-        traceNumber: selectedDraft.traceNumber,
-        mrrNumber: selectedDraft.mrrNumber,
-        status: "active",
-      })
-    }
-  }, [selectedDraft])
-
-  // Invalidate when targetKey or line changes
-  useEffect(() => {
-    ownerRef.current.invalidate()
-    setOptions([])
-    setCursor(null)
-    setLoading(false)
-    setLoadingMore(false)
+    if (attempt === 0) return
+    let ignore = false
     setError(null)
-    setQuery("")
-    setHasOpened(false)
-  }, [targetKey, line.spoolRevisionMaterialId])
+    loadMaterialTraceCandidates(getSupabaseBrowserClient(), line.spoolRevisionMaterialId)
+      .then((rows) => { if (!ignore) setCandidates(rows) })
+      .catch((err: unknown) => { if (!ignore) setError(err instanceof Error ? err.message : "Material traces could not be loaded.") })
+    return () => { ignore = true }
+  }, [attempt, line.spoolRevisionMaterialId])
 
-  const fetchCandidates = useCallback(
-    async (
-      searchText: string,
-      initialCursor: MaterialCandidateCursor | null,
-      isMore: boolean,
-    ) => {
-      const token = ownerRef.current.begin()
-      if (isMore) {
-        setLoadingMore(true)
-      } else {
-        setLoading(true)
-      }
-      setError(null)
-
-      try {
-        const client = getSupabaseBrowserClient()
-        const page = await searchMaterialTraceCandidates(client, {
-          spoolRevisionMaterialId: line.spoolRevisionMaterialId,
-          query: searchText,
-          cursor: initialCursor,
-        })
-
-        if (!ownerRef.current.isCurrent(token)) return
-
-        for (const opt of page.options) {
-          candidatesByIdRef.current.set(opt.id, opt)
-        }
-
-        setOptions((prev) => {
-          if (isMore) {
-            const existingIds = new Set(prev.map((o) => o.id))
-            const newOpts = page.options.filter((o) => !existingIds.has(o.id))
-            return [...prev, ...newOpts]
-          }
-          return page.options
-        })
-        setCursor(page.nextCursor)
-      } catch (err: unknown) {
-        if (!ownerRef.current.isCurrent(token)) return
-        const msg = err instanceof Error ? err.message : "Search failed"
-        if (msg.includes("permission denied") || msg.includes("42501")) {
-          setError("Material reference is unavailable for your access")
-        } else {
-          setError(msg)
-        }
-      } finally {
-        if (ownerRef.current.isCurrent(token)) {
-          setLoading(false)
-          setLoadingMore(false)
-        }
-      }
-    },
-    [line.spoolRevisionMaterialId],
+  const open = () => { if (attempt === 0) setAttempt(1) }
+  const needle = query.trim().toLowerCase()
+  const visible = useMemo(
+    () => (candidates ?? []).filter((c) => !needle || c.traceNumber.toLowerCase().includes(needle) || c.mrrNumber.toLowerCase().includes(needle)),
+    [candidates, needle],
   )
-
-  const handleQueryChange = useCallback(
-    (newQuery: string) => {
-      setQuery(newQuery)
-      setHasOpened(true)
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current)
-      }
-      debounceTimerRef.current = setTimeout(() => {
-        void fetchCandidates(newQuery, null, false)
-      }, 200)
-    },
-    [fetchCandidates],
-  )
-
-  const handleLoadMore = useCallback(() => {
-    if (!cursor || loadingMore || loading) return
-    void fetchCandidates(query, cursor, true)
-  }, [cursor, loadingMore, loading, fetchCandidates, query])
-
-  const handleRetry = useCallback(() => {
-    void fetchCandidates(query, null, false)
-  }, [fetchCandidates, query])
-
-  // Trigger initial fetch when user first interacts
-  const handleInteraction = useCallback(() => {
-    if (!hasOpened) {
-      setHasOpened(true)
-      void fetchCandidates(query, null, false)
-    }
-  }, [hasOpened, fetchCandidates, query])
-
-  const referenceOptions: ReferenceOption[] = useMemo(() => {
-    return options.map((opt) => ({
-      id: opt.id,
-      label: `${opt.traceNumber} · MRR ${opt.mrrNumber} · ${opt.identCode}`,
-    }))
-  }, [options])
-
-  const selectedLabel = useMemo(() => {
-    if (!selectedDraft) return null
-    return `${selectedDraft.traceNumber} (MRR ${selectedDraft.mrrNumber})`
-  }, [selectedDraft])
-
-  const handleChoose = useCallback(
-    (id: string) => {
-      const candidate = candidatesByIdRef.current.get(id)
-      if (candidate) {
-        onChoose(line, candidate)
-      }
-    },
-    [line, onChoose],
-  )
-
-  const handleClear = useCallback(() => {
-    onClear(line.spoolRevisionMaterialId)
-  }, [line.spoolRevisionMaterialId, onClear])
-
-  const emptyMessage = query.trim() === ""
-    ? "No active PML evidence matches this BOM row"
-    : "No matching traces"
-
-  const bomTraceNotice = line.expectedTraceNumber
-    ? `BOM trace: ${line.expectedTraceNumber}`
-    : "BOM does not specify a trace"
 
   return (
-    <div className="flex flex-col gap-1 w-full" onClick={handleInteraction} onFocus={handleInteraction}>
+    <div className="flex flex-col gap-1 w-full" onClick={open} onFocus={open}>
       <div className="flex items-center justify-between text-[11px] text-muted-foreground px-0.5">
-        <span className="truncate">{bomTraceNotice}</span>
+        <span className="truncate">{line.expectedTraceNumber ? `BOM trace: ${line.expectedTraceNumber}` : "BOM does not specify a trace"}</span>
         {pmlHref ? (
-          <Link
-            href={pmlHref}
-            className="shrink-0 text-[10px] uppercase tracking-wider text-primary hover:underline"
-          >
-            Open PML
-          </Link>
+          <Link href={pmlHref} className="shrink-0 text-[10px] uppercase tracking-wider text-primary hover:underline">Open PML</Link>
         ) : (
-          <span className="shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground/70">
-            Source: PML
-          </span>
+          <span className="shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground/70">Source: PML</span>
         )}
       </div>
       <ReferenceCombobox
         label={`Material trace for ${line.identCode}`}
         selectedId={selectedDraft?.pipingMaterialRecordId ?? null}
-        selectedLabel={selectedLabel}
-        options={referenceOptions}
+        selectedLabel={selectedDraft ? `${selectedDraft.traceNumber} (MRR ${selectedDraft.mrrNumber})` : null}
+        options={visible.map((c) => ({ id: c.id, label: `${c.traceNumber} · MRR ${c.mrrNumber}` }))}
         query={query}
-        loading={loading}
-        loadingMore={loadingMore}
+        loading={attempt > 0 && candidates === null && error === null}
         error={error}
-        onQueryChange={handleQueryChange}
-        onChoose={handleChoose}
-        onClear={handleClear}
-        onLoadMore={handleLoadMore}
-        hasMore={Boolean(cursor)}
-        onRetry={handleRetry}
+        onQueryChange={setQuery}
+        onChoose={(id) => { const candidate = candidates?.find((c) => c.id === id); if (candidate) onChoose(line, candidate) }}
+        onClear={() => onClear(line.spoolRevisionMaterialId)}
+        onRetry={() => setAttempt((n) => n + 1)}
         disabled={disabled}
-        emptyMessage={emptyMessage}
+        emptyMessage={needle ? "No matching traces" : "No active PML evidence matches this BOM row"}
         placeholder="Select registered trace"
       />
     </div>

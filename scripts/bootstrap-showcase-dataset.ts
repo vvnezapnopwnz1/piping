@@ -218,7 +218,7 @@ async function seedSpoolBeforeNde(
         target_spool_revision_id: revisionId,
         target_checked_on: spool.materialCheckOn,
         target_items: await materialCheckItemsFor(operator, revisionId),
-        target_idempotency_key: `showcase-material-${spool.spoolNumber}`,,
+        target_idempotency_key: `showcase-material-${spool.spoolNumber}`,
       },
       `${spool.spoolNumber}/material_check`,
     )

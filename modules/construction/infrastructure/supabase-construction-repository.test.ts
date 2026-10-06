@@ -1,7 +1,6 @@
 import assert from "node:assert/strict"
 
 import {
-  toBillLine,
   toFabricationSpoolCursor,
   toReadiness,
   toSpoolStatus,
@@ -95,18 +94,6 @@ const bare = toWeldSummary({
 })
 assert.equal(bare.diameterInch, null)
 assert.deepEqual(bare.welders, [])
-
-const line = toBillLine({
-  id: "line-1",
-  ident_code: "IDN-100",
-  description: "Pipe",
-  quantity: "3",
-  unit: "m",
-  trace_number: "HEAT-100",
-})
-assert.equal(line.spoolRevisionMaterialId, "line-1")
-assert.equal(line.quantity, 3)
-assert.equal(line.expectedTraceNumber, "HEAT-100")
 
 const procedure = toWeldingProcedure({
   id: "wps-1",

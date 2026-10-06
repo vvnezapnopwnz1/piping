@@ -3,6 +3,7 @@ import { join } from "node:path"
 
 import { createClient } from "@supabase/supabase-js"
 import { importSpoolgenDefinition, isLocalhost, signInFixtureOperator } from "./spoolgen-fixture-import"
+import { materialCheckItemsFor } from "./demo/material-check-items"
 
 export { isLocalhost }
 

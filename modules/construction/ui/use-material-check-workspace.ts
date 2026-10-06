@@ -122,26 +122,13 @@ export function useMaterialCheckWorkspace({
   const choose = useCallback(
     (line: BillLine, candidate: MaterialCandidate) => {
       if (!workspace) return
-      const lineExists = workspace.lines.some(
-        (l) => l.spoolRevisionMaterialId === line.spoolRevisionMaterialId,
-      )
-      if (!lineExists) return
-      if (candidate.status !== "active") return
-      if (
-        line.expectedTraceNumber &&
-        line.expectedTraceNumber !== candidate.traceNumber
-      ) {
-        return
-      }
 
       setDrafts((prev) => ({
         ...prev,
         [line.spoolRevisionMaterialId]: {
           spoolRevisionMaterialId: line.spoolRevisionMaterialId,
           pipingMaterialRecordId: candidate.id,
-          identCode: line.identCode,
           traceNumber: candidate.traceNumber,
-          quantity: line.quantity,
           mrrNumber: candidate.mrrNumber,
         },
       }))
@@ -184,9 +171,6 @@ export function useMaterialCheckWorkspace({
       Object.values(drafts).map((choice) => ({
         spoolRevisionMaterialId: choice.spoolRevisionMaterialId,
         pipingMaterialRecordId: choice.pipingMaterialRecordId,
-        identCode: choice.identCode,
-        traceNumber: choice.traceNumber,
-        quantity: choice.quantity,
       })),
     [drafts],
   )

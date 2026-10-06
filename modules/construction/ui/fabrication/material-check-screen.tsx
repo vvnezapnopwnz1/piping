@@ -96,9 +96,8 @@ export function MaterialCheckScreen({
     () => new Map(accepted.map((item) => [item.spoolRevisionMaterialId, item])),
     [accepted],
   )
-  const acceptedLineIds = useMemo(
-    () => accepted.map((item) => item.spoolRevisionMaterialId),
-    [accepted],
+  const isCheckComplete = Boolean(
+    lines.length > 0 && accepted.length >= lines.length,
   )
 
   const recordedQc13Form = workspace?.record?.qc13Form ?? null
@@ -107,16 +106,10 @@ export function MaterialCheckScreen({
     latestQc13Form && recordedQc13Form && latestQc13Form.id !== recordedQc13Form.id,
   )
 
-  const isCheckComplete = Boolean(
-    lines.length > 0 && accepted.length >= lines.length,
-  )
-  const isReconfirmMode = isCheckComplete && entries.length === 0
-
   const gate = describeMaterialCheckGate(
     lines,
     entries,
     spool?.dates.start_fab ?? null,
-    { allowEmptyWhenAllAccepted: true, acceptedLineIds },
   )
 
   const reloadSpool = useCallback(async () => {
@@ -188,16 +181,14 @@ export function MaterialCheckScreen({
   const saveTraces = async () => {
     if (!spool || pendingRef.current || !gate.allowed || loadState !== "ready") return
     pendingRef.current = true
-    const isReconfirm = isReconfirmMode
-    setPendingAction(isReconfirm ? "reconfirm-date" : "record-traces")
+    setPendingAction("record-traces")
     try {
-      const activeQc13Id = latestQc13Form?.id ?? recordedQc13Form?.id ?? null
       await recordMaterialCheck(
         getSupabaseBrowserClient(),
         toMaterialCheckPayload({
           spoolRevisionId: spool.spoolRevisionId,
           checkedOn,
-          qc13FormId: activeQc13Id,
+          qc13FormId: latestQc13Form?.id ?? null,
           entries,
         }),
         crypto.randomUUID(),
@@ -216,11 +207,7 @@ export function MaterialCheckScreen({
       } catch {
         toast.error("Recorded; status could not be refreshed. Retry refresh.")
       }
-      toast.success(
-        isReconfirm
-          ? "Material check date reconfirmed."
-          : "Material traces recorded.",
-      )
+      toast.success("Material traces recorded.")
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "The traces could not be recorded.")
     } finally {
@@ -461,7 +448,6 @@ export function MaterialCheckScreen({
                             </div>
                           ) : (
                             <MaterialTracePicker
-                              targetKey={targetKey}
                               line={line}
                               selectedDraft={draft}
                               disabled={pendingAction !== null}
@@ -495,23 +481,22 @@ export function MaterialCheckScreen({
                 <p className="text-sm text-muted-foreground">{gate.reason}</p>
               ) : null}
 
-              <div className={embedded ? styles.recordActions : undefined}>
-                <Button
-                  type="button"
-                  onClick={() => void saveTraces()}
-                  disabled={
-                    !gate.allowed ||
-                    pendingAction !== null ||
-                    loadState !== "ready"
-                  }
-                  loading={
-                    pendingAction === "record-traces" ||
-                    pendingAction === "reconfirm-date"
-                  }
-                >
-                  {isReconfirmMode ? "Reconfirm check date" : "Record traces"}
-                </Button>
-              </div>
+              {isCheckComplete ? null : (
+                <div className={embedded ? styles.recordActions : undefined}>
+                  <Button
+                    type="button"
+                    onClick={() => void saveTraces()}
+                    disabled={
+                      !gate.allowed ||
+                      pendingAction !== null ||
+                      loadState !== "ready"
+                    }
+                    loading={pendingAction === "record-traces"}
+                  >
+                    Record traces
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs"
 import { fileURLToPath } from "node:url"
 import { dirname, resolve } from "node:path"
 
-// Why this test exists: on 2026-08-02 loadMaterialCheckItems selected ident_code,
+// Why this test exists: on 2026-08-02 a material query selected ident_code,
 // trace_number and quantity from material_check_items, which has none of them. PostgREST
 // answered 400, the material-check screen lost its bill of materials with it, and the
 // whole fabrication golden path was blocked — while every automated check stayed green.
@@ -29,7 +29,7 @@ function readRelationColumns(source: string): Map<string, Set<string>> {
     if (!/^ {8}Row: \{$/.test(lines[index + 1] ?? "")) continue
     const columns = new Set<string>()
     for (let cursor = index + 2; cursor < lines.length; cursor += 1) {
-      if (/^ {8}\}$/.test(lines[cursor])) break
+      if (/^ {8}\};?$/.test(lines[cursor])) break
       const column = /^ {10}(\w+)\??: /.exec(lines[cursor])
       if (column) columns.add(column[1])
     }

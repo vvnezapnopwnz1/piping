@@ -98,10 +98,6 @@ export function FieldMaterialCheckScreen({
     () => new Map(accepted.map((item) => [item.spoolRevisionMaterialId, item])),
     [accepted],
   )
-  const acceptedLineIds = useMemo(
-    () => accepted.map((item) => item.spoolRevisionMaterialId),
-    [accepted],
-  )
 
   const recordedQc13Form = workspace?.record?.qc13Form ?? null
   const latestQc13Form = workspace?.latestQc13Form ?? null
@@ -112,15 +108,12 @@ export function FieldMaterialCheckScreen({
   const isCheckComplete = Boolean(
     lines.length > 0 && accepted.length >= lines.length,
   )
-  const isReconfirmMode = isCheckComplete && entries.length === 0
 
   const gate = describeFieldMaterialCheckGate({
     lines,
     entries,
     toSiteOn: selected?.toSiteOn ?? null,
     canRecord,
-    allowEmptyWhenAllAccepted: true,
-    acceptedLineIds,
   })
 
   const reloadAll = async () => {
@@ -141,15 +134,13 @@ export function FieldMaterialCheckScreen({
 
     await commands.run(async () => {
       setIsSaving(true)
-      const isReconfirm = isReconfirmMode
       try {
-        const activeQc13Id = latestQc13Form?.id ?? recordedQc13Form?.id ?? null
         await recordFieldMaterialCheck(
           getSupabaseBrowserClient(),
           toMaterialCheckPayload({
             spoolRevisionId,
             checkedOn,
-            qc13FormId: activeQc13Id,
+            qc13FormId: latestQc13Form?.id ?? null,
             entries,
           }),
           crypto.randomUUID(),
@@ -171,11 +162,7 @@ export function FieldMaterialCheckScreen({
           toast.error("Recorded; status could not be refreshed. Retry refresh.")
           return
         }
-        toast.success(
-          isReconfirm
-            ? "Field material check date reconfirmed."
-            : "Field material traces recorded.",
-        )
+        toast.success("Field material traces recorded.")
       } catch (error: unknown) {
         toast.error(
           error instanceof Error ? error.message : "The traces could not be recorded.",
@@ -376,7 +363,6 @@ export function FieldMaterialCheckScreen({
                             </div>
                           ) : (
                             <MaterialTracePicker
-                              targetKey={targetKey}
                               line={line}
                               selectedDraft={draft}
                               disabled={isSaving || commands.pending}
@@ -421,22 +407,24 @@ export function FieldMaterialCheckScreen({
                 <p className="text-muted-foreground text-sm">{gate.reason}</p>
               ) : null}
 
-              <div className={embedded ? styles.recordActions : undefined}>
-                <Button
-                  type="button"
-                  onClick={() => void save()}
-                  disabled={
-                    !gate.allowed ||
-                    isSaving ||
-                    commands.pending ||
-                    !dataCurrent ||
-                    loadState !== "ready"
-                  }
-                  loading={isSaving}
-                >
-                  {isReconfirmMode ? "Reconfirm check date" : "Record field traces"}
-                </Button>
-              </div>
+              {isCheckComplete ? null : (
+                <div className={embedded ? styles.recordActions : undefined}>
+                  <Button
+                    type="button"
+                    onClick={() => void save()}
+                    disabled={
+                      !gate.allowed ||
+                      isSaving ||
+                      commands.pending ||
+                      !dataCurrent ||
+                      loadState !== "ready"
+                    }
+                    loading={isSaving}
+                  >
+                    Record field traces
+                  </Button>
+                </div>
+              )}
 
               <p className="text-muted-foreground text-xs">
                 Material Check is derived, not entered: it appears on the ledger under the

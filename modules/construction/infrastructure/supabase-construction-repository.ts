@@ -2,30 +2,13 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 
 import type { Database } from "@/lib/supabase/database.types"
 import type { ConstructionStage, StageDates } from "../domain/construction-phase"
-import type { BillLine, AcceptedMaterialEvidence } from "../domain/material-check"
 import type { NdtMethod } from "../domain/nde-obligation"
 import type { FabricationReadiness } from "../domain/quality-release"
 import type { WelderQualification, WeldingProcedure } from "../domain/weld-progress"
 import type { MaterialCheckPayload } from "../application/record-material-check"
 import type { WeldProgressPayload } from "../application/record-weld-progress"
 import { mapSupabaseConstructionError } from "./supabase-construction-errors"
-import {
-  loadMaterialCheckWorkspace,
-  searchMaterialTraceCandidates,
-  type MaterialCheckWorkspace,
-  type MaterialQc13Form,
-  type MaterialCandidateCursor,
-  type MaterialCandidatePage,
-} from "./supabase-material-check-repository"
 
-export {
-  loadMaterialCheckWorkspace,
-  searchMaterialTraceCandidates,
-  type MaterialCheckWorkspace,
-  type MaterialQc13Form,
-  type MaterialCandidateCursor,
-  type MaterialCandidatePage,
-}
 
 type Row = Record<string, any>
 
@@ -159,16 +142,6 @@ export function toWeldSummary(row: Row): WeldSummary {
   }
 }
 
-export function toBillLine(row: Row): BillLine {
-  return {
-    spoolRevisionMaterialId: row.id,
-    identCode: row.ident_code,
-    description: row.description ?? null,
-    quantity: toNumber(row.quantity),
-    unit: row.unit ?? null,
-    expectedTraceNumber: row.trace_number ?? null,
-  }
-}
 
 export function toWeldingProcedure(row: Row): WeldingProcedure {
   return {
@@ -354,21 +327,9 @@ export async function loadReadiness(
   return toReadiness(required(data))
 }
 
-export async function loadBillOfMaterials(
-  client: SupabaseClient<Database>,
-  spoolRevisionId: string,
-): Promise<BillLine[]> {
-  const workspace = await loadMaterialCheckWorkspace(client, spoolRevisionId)
-  return workspace.lines
-}
 
-export async function loadMaterialCheckItems(
-  client: SupabaseClient<Database>,
-  spoolRevisionId: string,
-): Promise<AcceptedMaterialEvidence[]> {
-  const workspace = await loadMaterialCheckWorkspace(client, spoolRevisionId)
-  return workspace.accepted
-}
+
+
 
 /**
  * `weldLocation` narrows the joints to one phase's work — `field` for the erection screens,
