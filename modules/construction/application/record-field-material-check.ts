@@ -11,8 +11,10 @@ export function describeFieldMaterialCheckGate(input: {
   entries: readonly TraceEntry[]
   toSiteOn: string | null
   canRecord: boolean
+  allowEmptyWhenAllAccepted?: boolean
+  acceptedLineIds?: readonly string[]
 }): Gate {
-  const { lines, entries, toSiteOn, canRecord } = input
+  const { lines, entries, toSiteOn, canRecord, allowEmptyWhenAllAccepted, acceptedLineIds } = input
 
   if (!canRecord) {
     return {
@@ -27,14 +29,17 @@ export function describeFieldMaterialCheckGate(input: {
     return { allowed: false, reason: "Record To Site before checking field material." }
   }
   if (entries.length === 0) {
-    return { allowed: false, reason: "Enter at least one material trace." }
+    if (allowEmptyWhenAllAccepted && acceptedLineIds && acceptedLineIds.length >= lines.length) {
+      return { allowed: true, reason: null }
+    }
+    return { allowed: false, reason: "Select at least one registered material trace." }
   }
 
-  const reconciliation = reconcileMaterialCheck(lines, entries)
-  if (reconciliation.unknownIdentCodes.length > 0) {
+  const reconciliation = reconcileMaterialCheck(lines, entries, acceptedLineIds)
+  if (reconciliation.invalidEntries.length > 0) {
     return {
       allowed: false,
-      reason: `${reconciliation.unknownIdentCodes[0]} is not on this spool revision bill of materials.`,
+      reason: reconciliation.invalidEntries[0].reason,
     }
   }
 

@@ -77,7 +77,7 @@ const relations = readRelationColumns(typesSource)
 const selects = readSelects(repositorySource)
 
 assert.ok(relations.size > 20, `expected many relations in the generated types, got ${relations.size}`)
-assert.ok(selects.length >= 13, `expected at least 13 selects, found ${selects.length}`)
+assert.ok(selects.length >= 11, `expected at least 11 selects, found ${selects.length}`)
 
 // The parser must be able to see the exact defect of 2026-08-02.
 const materialCheckItems = relations.get("material_check_items")

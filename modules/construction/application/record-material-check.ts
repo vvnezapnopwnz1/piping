@@ -1,5 +1,4 @@
 import {
-  normalizeTrace,
   reconcileMaterialCheck,
   type BillLine,
   type TraceEntry,
@@ -17,10 +16,18 @@ export interface Gate {
   reason: string | null
 }
 
+export type MaterialCheckItemPayload = {
+  spool_revision_material_id: string
+  piping_material_record_id: string
+  ident_code: string
+  trace_number: string
+  quantity: number | null
+}
+
 export interface MaterialCheckPayload {
   target_spool_revision_id: string
   checked_on: string
-  items: { ident_code: string; trace_number: string; quantity: number | null }[]
+  items: MaterialCheckItemPayload[]
   qc13_form_id: string | null
 }
 
@@ -28,6 +35,7 @@ export function describeMaterialCheckGate(
   lines: readonly BillLine[],
   entries: readonly TraceEntry[],
   startFabOn: string | null,
+  options?: { allowEmptyWhenAllAccepted?: boolean; acceptedLineIds?: readonly string[] },
 ): Gate {
   if (lines.length === 0) {
     return { allowed: false, reason: "This spool revision has no bill of materials to check." }
@@ -36,14 +44,21 @@ export function describeMaterialCheckGate(
     return { allowed: false, reason: "Record Start Fab before recording material traces." }
   }
   if (entries.length === 0) {
-    return { allowed: false, reason: "Enter at least one material trace." }
+    if (
+      options?.allowEmptyWhenAllAccepted &&
+      options.acceptedLineIds &&
+      options.acceptedLineIds.length >= lines.length
+    ) {
+      return { allowed: true, reason: null }
+    }
+    return { allowed: false, reason: "Select at least one registered material trace." }
   }
 
-  const reconciliation = reconcileMaterialCheck(lines, entries)
-  if (reconciliation.unknownIdentCodes.length > 0) {
+  const reconciliation = reconcileMaterialCheck(lines, entries, options?.acceptedLineIds)
+  if (reconciliation.invalidEntries.length > 0) {
     return {
       allowed: false,
-      reason: `${reconciliation.unknownIdentCodes[0]} is not on this spool revision bill of materials.`,
+      reason: reconciliation.invalidEntries[0].reason,
     }
   }
 
@@ -55,8 +70,10 @@ export function toMaterialCheckPayload(draft: MaterialCheckDraft): MaterialCheck
     target_spool_revision_id: draft.spoolRevisionId,
     checked_on: draft.checkedOn,
     items: draft.entries.map((entry) => ({
-      ident_code: normalizeTrace(entry.identCode),
-      trace_number: normalizeTrace(entry.traceNumber),
+      spool_revision_material_id: entry.spoolRevisionMaterialId,
+      piping_material_record_id: entry.pipingMaterialRecordId,
+      ident_code: entry.identCode.trim(),
+      trace_number: entry.traceNumber.trim(),
       quantity: entry.quantity,
     })),
     qc13_form_id: draft.qc13FormId,

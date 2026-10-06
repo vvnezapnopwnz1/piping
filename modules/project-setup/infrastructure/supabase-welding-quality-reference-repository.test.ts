@@ -25,8 +25,19 @@ function createFakeWeldingClient(_projectId = "proj-1") {
               queries.push(`eq:${col}:${val}`)
               return this
             },
+            gt(col: string, val: string) {
+              queries.push(`gt:${col}:${val}`)
+              return this
+            },
             order(_col: string) {
-              return Promise.resolve({ data: [], error: null })
+              const res = Promise.resolve({ data: [], error: null })
+              return {
+                limit(_val: number) {
+                  return res
+                },
+                then: (resolve: any, reject: any) => res.then(resolve, reject),
+                catch: (reject: any) => res.catch(reject),
+              }
             },
           }
         },

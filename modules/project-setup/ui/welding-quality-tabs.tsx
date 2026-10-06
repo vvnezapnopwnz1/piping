@@ -15,6 +15,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { AlertCircle, AlertTriangle, Plus, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 
@@ -67,21 +68,42 @@ import {
 } from "../domain/welding-quality-reference"
 import { ReferenceStatusBadge } from "./reference-status-badge"
 
-type WeldingQualityTab = 
+export type WeldingQualityTab = 
     "service-classes" | "weld-types" | "welders" | "nde" | "thickness" | "pml" | "rework" | "joint-categories"
   
 
 export function WeldingQualityTabs({
   projectId,
   canManage,
+  value,
+  onValueChange,
 }: {
   projectId: string
   canManage: boolean
+  value?: WeldingQualityTab
+  onValueChange?: (tab: WeldingQualityTab) => void
 }) {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+  const identFilter = searchParams.get("ident")?.trim() || null
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<LoadedWeldingQualityReferences | null>(null)
-  const [activeTab, setActiveTab] = useState<WeldingQualityTab>("service-classes")
+  const [internalTab, setInternalTab] = useState<WeldingQualityTab>("service-classes")
+  const activeTab = value ?? internalTab
+
+  const handleTabChange = useCallback(
+    (nextTab: string) => {
+      const typed = nextTab as WeldingQualityTab
+      if (value === undefined) {
+        setInternalTab(typed)
+      }
+      onValueChange?.(typed)
+    },
+    [value, onValueChange],
+  )
 
   // Add Service Class Dialog
   const [isAddScOpen, setIsAddScOpen] = useState(false)
@@ -170,7 +192,7 @@ export function WeldingQualityTabs({
 
     try {
       const client = getSupabaseBrowserClient()
-      const result = await loadWeldingQualityReferences(client, projectId)
+      const result = await loadWeldingQualityReferences(client, projectId, identFilter)
 
       if (currentVersion === requestVersionRef.current) {
         setData(result)
@@ -182,11 +204,18 @@ export function WeldingQualityTabs({
         setLoading(false)
       }
     }
-  }, [projectId])
+  }, [projectId, identFilter])
 
   useEffect(() => {
     fetchReferences()
   }, [fetchReferences])
+
+  const handleClearIdentFilter = useCallback(() => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete("ident")
+    const query = params.toString()
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+  }, [pathname, router, searchParams])
 
   const handleCreateServiceClass = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -458,14 +487,16 @@ export function WeldingQualityTabs({
     try {
       const client = getSupabaseBrowserClient()
       const newRecord = await createPipingMaterialRecord(client, projectId, validation.value)
-      setData((prev) =>
-        prev
-          ? {
-              ...prev,
-              pipingMaterialRecords: [...prev.pipingMaterialRecords, newRecord],
-            }
-          : null
-      )
+      setData((prev) => {
+        if (!prev) return null
+        if (identFilter !== null && newRecord.identCode !== identFilter) {
+          return prev
+        }
+        return {
+          ...prev,
+          pipingMaterialRecords: [newRecord, ...prev.pipingMaterialRecords],
+        }
+      })
       setIsAddPmlOpen(false)
       setPmlMrr("")
       setPmlIdent("")
@@ -547,7 +578,7 @@ export function WeldingQualityTabs({
   return (
     <Tabs
       value={activeTab}
-      onValueChange={(value) => setActiveTab(value as WeldingQualityTab)}
+      onValueChange={handleTabChange}
       variant="underline"
       className="space-y-4"
     >
@@ -900,7 +931,19 @@ export function WeldingQualityTabs({
               </Button>
             )}
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            {identFilter && (
+              <div className="flex items-center justify-between rounded-md border border-sky-200 bg-sky-50 dark:border-sky-900 dark:bg-sky-950/50 p-3 text-sm text-sky-900 dark:text-sky-200">
+                <div className="flex items-center gap-2">
+                  <span>
+                    Filtered by Ident: <span className="font-mono font-semibold">{identFilter}</span>
+                  </span>
+                </div>
+                <Button size="sm" variant="outline" onClick={handleClearIdentFilter}>
+                  Clear filter
+                </Button>
+              </div>
+            )}
             <div className="rounded-md border overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 border-b text-left">
@@ -915,7 +958,9 @@ export function WeldingQualityTabs({
                   {(data?.pipingMaterialRecords ?? []).length === 0 ? (
                     <tr>
                       <td colSpan={4} className="p-4 text-center text-muted-foreground">
-                        No piping material records defined.
+                        {identFilter
+                          ? `No piping material records found matching Ident "${identFilter}".`
+                          : "No piping material records defined."}
                       </td>
                     </tr>
                   ) : (

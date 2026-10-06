@@ -10315,6 +10315,16 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      assert_material_check_read_target: {
+        Args: { target_spool_revision_id: string }
+        Returns: Database["public"]["CompositeTypes"]["spool_context"]
+        SetofOptions: {
+          from: "*"
+          to: "spool_context"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       assign_blinding: {
         Args: {
           target_assigned_on: string
@@ -11341,6 +11351,14 @@ export type Database = {
           requires_decision: boolean
         }[]
       }
+      read_material_check_workspace: {
+        Args: {
+          after_id?: string
+          page_size?: number
+          target_spool_revision_id: string
+        }
+        Returns: Json
+      }
       recompute_erection_spool_projection: {
         Args: { target_spool_revision_id: string }
         Returns: undefined
@@ -12231,6 +12249,22 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      search_material_trace_candidates: {
+        Args: {
+          after_id?: string
+          after_trace?: string
+          page_size?: number
+          search_text?: string
+          target_spool_revision_material_id: string
+        }
+        Returns: {
+          id: string
+          ident_code: string
+          mrr_number: string
+          status: Database["public"]["Enums"]["project_reference_status"]
+          trace_number: string
+        }[]
       }
       set_project_member_active: {
         Args: { requested_active: boolean; target_membership_id: string }

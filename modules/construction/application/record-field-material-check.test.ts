@@ -12,11 +12,18 @@ const line = (identCode: string): BillLine => ({
   expectedTraceNumber: null,
 })
 
-const entry = (identCode: string): TraceEntry => ({ identCode, traceNumber: "H-1", quantity: 1 })
+const entry = (identCode: string, overrides: Partial<TraceEntry> = {}): TraceEntry => ({
+  spoolRevisionMaterialId: `srm-${identCode}`,
+  pipingMaterialRecordId: `pml-${identCode}`,
+  identCode,
+  traceNumber: "H-1",
+  quantity: 1,
+  ...overrides,
+})
 
 const LINES = [line("ID-100"), line("ID-200")]
 
-// A reader is told why rather than shown a control that the RPC will refuse.
+// 1. A reader is told why rather than shown a control that the RPC will refuse.
 assert.deepEqual(
   describeFieldMaterialCheckGate({
     lines: LINES,
@@ -30,6 +37,7 @@ assert.deepEqual(
   },
 )
 
+// 2. Empty BOM
 assert.deepEqual(
   describeFieldMaterialCheckGate({
     lines: [],
@@ -40,8 +48,7 @@ assert.deepEqual(
   { allowed: false, reason: "This spool revision has no bill of materials to check." },
 )
 
-// The field precondition is To Site (PQC54), not Start Fab — this is the one rule that
-// differs from the shop gate.
+// 3. The field precondition is To Site (PQC54), not Start Fab
 assert.deepEqual(
   describeFieldMaterialCheckGate({
     lines: LINES,
@@ -52,6 +59,7 @@ assert.deepEqual(
   { allowed: false, reason: "Record To Site before checking field material." },
 )
 
+// 4. Empty entries
 assert.deepEqual(
   describeFieldMaterialCheckGate({
     lines: LINES,
@@ -59,20 +67,29 @@ assert.deepEqual(
     toSiteOn: "2026-08-01",
     canRecord: true,
   }),
-  { allowed: false, reason: "Enter at least one material trace." },
+  { allowed: false, reason: "Select at least one registered material trace." },
 )
 
+// 5. Stale or foreign row
 assert.deepEqual(
   describeFieldMaterialCheckGate({
     lines: LINES,
-    entries: [entry("ID-999")],
+    entries: [
+      {
+        spoolRevisionMaterialId: "srm-999",
+        pipingMaterialRecordId: "pml-999",
+        identCode: "ID-999",
+        traceNumber: "H-999",
+        quantity: 1,
+      },
+    ],
     toSiteOn: "2026-08-01",
     canRecord: true,
   }),
-  { allowed: false, reason: "ID-999 is not on this spool revision bill of materials." },
+  { allowed: false, reason: "The material row is not in this spool revision BOM." },
 )
 
-// A partial check is allowed: Material Check stays underived until every line carries a
+// 6. A partial check is allowed: Material Check stays underived until every line carries a
 // trace, which is the database's rule, not the screen's.
 assert.deepEqual(
   describeFieldMaterialCheckGate({

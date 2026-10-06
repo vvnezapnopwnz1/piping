@@ -2,13 +2,30 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 
 import type { Database } from "@/lib/supabase/database.types"
 import type { ConstructionStage, StageDates } from "../domain/construction-phase"
-import type { BillLine } from "../domain/material-check"
+import type { BillLine, AcceptedMaterialEvidence } from "../domain/material-check"
 import type { NdtMethod } from "../domain/nde-obligation"
 import type { FabricationReadiness } from "../domain/quality-release"
 import type { WelderQualification, WeldingProcedure } from "../domain/weld-progress"
 import type { MaterialCheckPayload } from "../application/record-material-check"
 import type { WeldProgressPayload } from "../application/record-weld-progress"
 import { mapSupabaseConstructionError } from "./supabase-construction-errors"
+import {
+  loadMaterialCheckWorkspace,
+  searchMaterialTraceCandidates,
+  type MaterialCheckWorkspace,
+  type MaterialQc13Form,
+  type MaterialCandidateCursor,
+  type MaterialCandidatePage,
+} from "./supabase-material-check-repository"
+
+export {
+  loadMaterialCheckWorkspace,
+  searchMaterialTraceCandidates,
+  type MaterialCheckWorkspace,
+  type MaterialQc13Form,
+  type MaterialCandidateCursor,
+  type MaterialCandidatePage,
+}
 
 type Row = Record<string, any>
 
@@ -341,35 +358,16 @@ export async function loadBillOfMaterials(
   client: SupabaseClient<Database>,
   spoolRevisionId: string,
 ): Promise<BillLine[]> {
-  const { data, error } = await client
-    .from("spool_revision_materials")
-    .select("id, ident_code, description, quantity, unit, trace_number")
-    .eq("spool_revision_id", spoolRevisionId)
-    .order("ident_code")
-  fail(error)
-  return (data ?? []).map(toBillLine)
+  const workspace = await loadMaterialCheckWorkspace(client, spoolRevisionId)
+  return workspace.lines
 }
 
 export async function loadMaterialCheckItems(
   client: SupabaseClient<Database>,
   spoolRevisionId: string,
-): Promise<{ identCode: string; traceNumber: string; quantity: number | null }[]> {
-  // material_check_items records a link, not a description: the ident code lives on the
-  // bill-of-materials line and the accepted trace number on the PML record. Selecting
-  // ident_code/trace_number/quantity from this table answers 400 and takes the whole
-  // material-check screen down with it.
-  const { data, error } = await client
-    .from("material_check_items")
-    .select(
-      "checked_quantity, spool_revision_materials!inner(ident_code, spool_revision_id), piping_material_records!inner(trace_number)",
-    )
-    .eq("spool_revision_materials.spool_revision_id", spoolRevisionId)
-  fail(error)
-  return (data ?? []).map((row: Row) => ({
-    identCode: row.spool_revision_materials?.ident_code ?? "",
-    traceNumber: row.piping_material_records?.trace_number ?? "",
-    quantity: toNumber(row.checked_quantity),
-  }))
+): Promise<AcceptedMaterialEvidence[]> {
+  const workspace = await loadMaterialCheckWorkspace(client, spoolRevisionId)
+  return workspace.accepted
 }
 
 /**

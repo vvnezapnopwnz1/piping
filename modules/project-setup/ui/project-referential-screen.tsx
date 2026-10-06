@@ -50,6 +50,32 @@ export function ProjectReferentialScreen({
     [pathname, router, searchParams],
   )
 
+  const VALID_REFERENCES = [
+    "service-classes",
+    "weld-types",
+    "welders",
+    "nde",
+    "thickness",
+    "pml",
+    "rework",
+    "joint-categories",
+  ]
+  const rawReference = searchParams.get("reference")
+  const activeReference = VALID_REFERENCES.includes(rawReference ?? "")
+    ? (rawReference as any)
+    : undefined
+
+  const setActiveReference = useCallback(
+    (ref: string) => {
+      const params = new URLSearchParams(searchParams.toString())
+      if (ref === "service-classes") params.delete("reference")
+      else params.set("reference", ref)
+      const query = params.toString()
+      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+    },
+    [pathname, router, searchParams],
+  )
+
   const fetchReadiness = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -110,7 +136,12 @@ export function ProjectReferentialScreen({
         </TabsContent>
 
         <TabsContent value="fabrication" className="mt-6 space-y-6">
-          <WeldingQualityTabs projectId={projectId} canManage={canManage} />
+          <WeldingQualityTabs
+            projectId={projectId}
+            canManage={canManage}
+            value={activeReference}
+            onValueChange={setActiveReference}
+          />
           {/* WPS is a range qualification with its own optimistic-concurrency contract, so it
               keeps its own editor rather than joining the generic referential tabs above. */}
           <Card>

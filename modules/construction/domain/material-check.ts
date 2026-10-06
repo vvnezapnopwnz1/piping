@@ -8,10 +8,30 @@ export interface BillLine {
   expectedTraceNumber: string | null
 }
 
-/** One heat/trace transcribed from a returned QC-13. */
+/** One heat/trace transcribed from a returned QC-13 and selected from registered PML. */
 export interface TraceEntry {
+  spoolRevisionMaterialId: string
+  pipingMaterialRecordId: string
   identCode: string
   traceNumber: string
+  quantity: number | null
+}
+
+export interface MaterialCandidate {
+  id: string
+  identCode: string
+  traceNumber: string
+  mrrNumber: string
+  status: "active"
+}
+
+export interface AcceptedMaterialEvidence {
+  materialCheckItemId: string
+  spoolRevisionMaterialId: string
+  pipingMaterialRecordId: string
+  traceNumber: string | null
+  mrrNumber: string | null
+  status: "active" | "inactive" | "archived" | null
   quantity: number | null
 }
 
@@ -20,42 +40,58 @@ export interface MaterialCheckReconciliation {
   checkedCount: number
   isComplete: boolean
   outstanding: BillLine[]
-  unknownIdentCodes: string[]
+  invalidEntries: { spoolRevisionMaterialId: string; reason: string }[]
 }
 
-export function normalizeTrace(value: string): string {
-  return value.trim().toUpperCase()
-}
-
-/**
- * Dossier 16.4: Material Check is derived from valid traces, not entered as a date.
- * A line counts as checked as soon as one trace names its ident code — a single line may be
- * satisfied by several heats.
- */
 export function reconcileMaterialCheck(
   lines: readonly BillLine[],
   entries: readonly TraceEntry[],
+  acceptedLineIds: readonly string[] = [],
 ): MaterialCheckReconciliation {
-  const byIdentCode = new Map(lines.map((line) => [normalizeTrace(line.identCode), line]))
-  const satisfied = new Set<string>()
-  const unknown = new Set<string>()
+  const byId = new Map(lines.map((line) => [line.spoolRevisionMaterialId, line]))
+  const satisfied = new Set(acceptedLineIds.filter((id) => byId.has(id)))
+  const submitted = new Set<string>()
+  const invalidEntries: MaterialCheckReconciliation["invalidEntries"] = []
 
   for (const entry of entries) {
-    const identCode = normalizeTrace(entry.identCode)
-    if (byIdentCode.has(identCode)) {
-      satisfied.add(identCode)
+    const id = entry.spoolRevisionMaterialId
+    const line = byId.get(id)
+    let reason: string | null = null
+    if (!line) {
+      reason = "The material row is not in this spool revision BOM."
+    } else if (submitted.has(id)) {
+      reason = "Select one trace per BOM row."
+    } else if (!entry.pipingMaterialRecordId || !entry.traceNumber.trim()) {
+      reason = "Select a registered PML trace."
+    } else if (entry.identCode.trim() !== line.identCode) {
+      reason = "The selected trace belongs to a different Ident code."
+    } else if (
+      line.expectedTraceNumber !== null &&
+      entry.traceNumber.trim() !== line.expectedTraceNumber
+    ) {
+      reason = "The selected trace does not match the BOM trace."
+    } else if (
+      entry.quantity !== null &&
+      (!Number.isFinite(entry.quantity) || entry.quantity < 0)
+    ) {
+      reason = "Material quantity must be a non-negative finite number."
+    }
+
+    submitted.add(id)
+    if (reason) {
+      invalidEntries.push({ spoolRevisionMaterialId: id, reason })
     } else {
-      unknown.add(entry.identCode.trim())
+      satisfied.add(id)
     }
   }
 
-  const outstanding = lines.filter((line) => !satisfied.has(normalizeTrace(line.identCode)))
+  const outstanding = lines.filter((line) => !satisfied.has(line.spoolRevisionMaterialId))
 
   return {
     lineTotal: lines.length,
     checkedCount: satisfied.size,
-    isComplete: lines.length > 0 && outstanding.length === 0,
+    isComplete: lines.length > 0 && outstanding.length === 0 && invalidEntries.length === 0,
     outstanding,
-    unknownIdentCodes: [...unknown],
+    invalidEntries,
   }
 }

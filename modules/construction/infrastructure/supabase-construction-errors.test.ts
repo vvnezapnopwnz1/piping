@@ -10,6 +10,7 @@ const erectionMessages = new Map([
   ["PQC55", "RFT is derived automatically after all erection quality gates are closed."],
   ["PQC56", "This field material check is not available for the selected spool."],
   ["PQC57", "This support progress record is not available for the selected spool."],
+  ["PQC58", "More than one BOM row matches this material. Reload and select the specific material row."],
 ])
 
 for (const [code, expected] of erectionMessages) {

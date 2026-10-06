@@ -42,11 +42,40 @@ export interface LoadedWeldingQualityReferences {
   jointCategories: JointCategory[]
 }
 
+export async function loadPipingMaterialRecordRows(
+  client: SupabaseClient<Database>,
+  projectId: string,
+  identCode: string | null = null,
+): Promise<Database["public"]["Tables"]["piping_material_records"]["Row"][]> {
+  const result: Database["public"]["Tables"]["piping_material_records"]["Row"][] = []
+  const pageSize = 200
+  let afterId: string | null = null
+  for (;;) {
+    let query = client
+      .from("piping_material_records")
+      .select("*")
+      .eq("project_id", projectId)
+      .order("id")
+      .limit(pageSize)
+    if (identCode !== null) query = query.eq("ident_code", identCode)
+    if (afterId !== null) query = query.gt("id", afterId)
+    const { data, error } = await query
+    if (error) throw new Error(mapSupabaseReferenceError(error))
+    const rows = data ?? []
+    result.push(...rows)
+    if (rows.length < pageSize) return result
+    const nextId = rows.at(-1)!.id
+    if (nextId === afterId) throw new Error("PML pagination did not advance.")
+    afterId = nextId
+  }
+}
+
 export async function loadWeldingQualityReferences(
   client: SupabaseClient<Database>,
-  projectId: string
+  projectId: string,
+  pmlIdentCode: string | null = null,
 ): Promise<LoadedWeldingQualityReferences> {
-  const [mtRes, subRes, wpsRes, scRes, wtRes, weldersRes, linksRes, ndeRes, thickRes, pmlRes, reworkRes, jcRes] = await Promise.all([
+  const [mtRes, subRes, wpsRes, scRes, wtRes, weldersRes, linksRes, ndeRes, thickRes, pmlRows, reworkRes, jcRes] = await Promise.all([
     client
       .from("system_reference_entries")
       .select("id, code, description")
@@ -93,11 +122,7 @@ export async function loadWeldingQualityReferences(
       .select("id, project_id, service_class_id, diameter_inch, thickness_mm, flange_rating, status, project_service_classes(code)")
       .eq("project_id", projectId)
       .order("diameter_inch", { ascending: true }),
-    client
-      .from("piping_material_records")
-      .select("id, project_id, mrr_number, ident_code, trace_number, status")
-      .eq("project_id", projectId)
-      .order("mrr_number", { ascending: true }),
+    loadPipingMaterialRecordRows(client, projectId, pmlIdentCode),
     client
       .from("project_rework_codes")
       .select("id, project_id, code, description, status")
@@ -119,7 +144,6 @@ export async function loadWeldingQualityReferences(
   if (linksRes.error) throw new Error(mapSupabaseReferenceError(linksRes.error))
   if (ndeRes.error) throw new Error(mapSupabaseReferenceError(ndeRes.error))
   if (thickRes.error) throw new Error(mapSupabaseReferenceError(thickRes.error))
-  if (pmlRes.error) throw new Error(mapSupabaseReferenceError(pmlRes.error))
   if (reworkRes.error) throw new Error(mapSupabaseReferenceError(reworkRes.error))
   if (jcRes.error) throw new Error(mapSupabaseReferenceError(jcRes.error))
 
@@ -193,7 +217,7 @@ export async function loadWeldingQualityReferences(
     status: row.status,
   }))
 
-  const pipingMaterialRecords: PipingMaterialRecord[] = (pmlRes.data ?? []).map((row) => ({
+  const pipingMaterialRecords: PipingMaterialRecord[] = pmlRows.map((row) => ({
     id: row.id,
     projectId: row.project_id,
     mrrNumber: row.mrr_number,
