@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PipeQC Prototype C</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="top-banner">
+    <div>UX prototype · Illustrative data · Not connected to Supabase</div>
+    <a href="../review/index.html">Compare with other concepts</a>
+  </div>
+  <header class="app-header">
+    <div class="logo">
+       PipeQC 
+       <span class="project-code" id="current-project-code">P-104</span>
+       <span id="current-project-title" style="font-size: 13px; font-weight: normal; margin-left: 8px; color: #ccc;"></span>
+    </div>
+    <nav class="global-nav">
+      <button data-action="overview">Overview</button>
+      <button data-action="fabrication">Spools</button>
+      <button data-action="testpack">Test Packs</button>
+      <button data-action="nde">Quality</button>
+    </nav>
+    <div class="header-actions">
+      <select id="role-selector" aria-label="Role">
+        <option value="QC Engineer">QC Engineer</option>
+        <option value="Reader">Reader</option>
+      </select>
+      <button data-action="projects">Projects</button>
+      <button data-action="help" class="help-toggle">Help</button>
+    </div>
+  </header>
+
+  <main id="app-root" data-view="overview">
+    <!-- View: Projects -->
+    <section class="view-section" id="view-projects"></section>
+    
+    <!-- View: Overview -->
+    <section class="view-section" id="view-overview"></section>
+
+    <!-- Workbench (Shared for fabrication, material, nde, rft) -->
+    <section class="view-section workbench" id="view-workbench">
+       <div class="sidebar">
+          <div class="search-bar">
+            <input type="text" placeholder="Search spools..." aria-label="Search spools" id="spool-search">
+            <button class="btn btn-icon" id="clear-search" aria-label="Clear search" style="display:none;">&times;</button>
+          </div>
+          <ul class="object-list" id="spool-list"></ul>
+       </div>
+       <div class="center-panel">
+          <div class="object-header">
+            <h2></h2>
+            <div class="meta"></div>
+          </div>
+          <nav class="ops-tabs">
+            <button data-action="fabrication">Fabrication</button>
+            <button data-action="material">Material</button>
+            <button data-action="nde">NDE</button>
+            <button data-action="rft">RFT</button>
+          </nav>
+          <div class="ops-content" id="ops-content-container">
+             <!-- Dynamic content injected here based on tab -->
+          </div>
+       </div>
+       <div class="right-panel timeline-panel">
+          <h3>Criteria & Evidence</h3>
+          <div class="timeline" id="spool-timeline"></div>
+       </div>
+    </section>
+
+    <!-- Workbench for Testpack -->
+    <section class="view-section workbench" id="view-testpack-workbench">
+       <div class="sidebar">
+          <div class="search-bar">
+            <input type="text" placeholder="Search test packs..." aria-label="Search test packs" id="tp-search">
+            <button class="btn btn-icon" id="clear-tp-search" aria-label="Clear search" style="display:none;">&times;</button>
+          </div>
+          <ul class="object-list" id="tp-list"></ul>
+       </div>
+       <div class="center-panel">
+          <div class="object-header">
+            <h2 id="tp-header-id"></h2>
+            <div class="meta">Test Pack Explorer</div>
+          </div>
+          <div class="ops-content" id="tp-content">
+          </div>
+       </div>
+       <div class="right-panel timeline-panel">
+          <h3>Test Pack Timeline</h3>
+          <div class="timeline" id="tp-timeline"></div>
+       </div>
+    </section>
+  </main>
+
+  <div id="coach-mark" class="coach-mark hidden">
+    <h4>Title</h4>
+    <p>Text</p>
+    <div style="display:flex; gap:12px; margin-top:12px; align-items:center;">
+      <button class="btn btn-primary" data-action="close-help">Close</button>
+      <button class="btn" style="font-size:11px; padding:4px 8px;" data-action="disable-help">Don't suggest again</button>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
+

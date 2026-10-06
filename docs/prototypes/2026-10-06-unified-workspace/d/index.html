@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PipeQC · Prototype D</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#screen">Skip to content</a>
+
+<div class="banner" id="banner" role="note">
+  <span class="banner-main">
+    <svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 3h6"/><path d="M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/></svg>
+    <strong>UX prototype</strong> · Illustrative data · Not connected to Supabase
+  </span>
+  <span class="banner-side">
+    <span class="banner-persist">Prototype only — no project data was saved.</span>
+    <a class="banner-link" href="../review/index.html">Compare options</a>
+    <button type="button" class="link-btn" data-action="reset-demo">Reset demo data</button>
+  </span>
+</div>
+
+<header class="top" id="top">
+  <div class="top-id">
+    <span class="brand" aria-hidden="true">
+      <svg class="ic" viewBox="0 0 24 24" focusable="false"><path d="M3 8h12a3 3 0 0 1 3 3v9"/><path d="M3 12h8"/></svg>
+    </span>
+    <div class="ident" id="ident"></div>
+  </div>
+  <div class="top-actions">
+    <button type="button" class="btn btn-quiet" id="btn-projects" data-action="projects">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h6l2 2h10v11H3z"/></svg>
+      <span>All projects</span>
+    </button>
+    <button type="button" class="btn btn-quiet" id="btn-overview" data-action="overview">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+      <span>Overview</span>
+    </button>
+    <label class="role" for="role">
+      <span>Role</span>
+      <select id="role" data-field="role">
+        <option value="QC Engineer">QC Engineer</option>
+        <option value="Reader">Reader</option>
+      </select>
+    </label>
+    <button type="button" class="btn btn-help" id="btn-help" data-action="help" aria-expanded="false" aria-controls="coach">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg>
+      <span>Help</span>
+      <span class="help-dot" id="help-dot" hidden></span>
+    </button>
+  </div>
+</header>
+
+<nav class="rail" id="rail" aria-label="Process stages"></nav>
+
+<div class="feedback-wrap">
+  <div id="feedback" role="status" aria-live="polite"></div>
+</div>
+
+<main id="screen" data-view="overview" tabindex="-1"></main>
+
+<div class="coach" id="coach" role="dialog" aria-labelledby="coach-title" aria-describedby="coach-body" hidden>
+  <span class="coach-caret" id="coach-caret" aria-hidden="true"></span>
+  <h2 id="coach-title"></h2>
+  <p id="coach-body"></p>
+  <div class="coach-actions">
+    <button type="button" class="btn btn-small" data-action="close-help" aria-label="Close help">Close</button>
+    <button type="button" class="link-btn" data-action="help-never">Don’t suggest again</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
+

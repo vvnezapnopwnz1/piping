@@ -1,0 +1,349 @@
+{
+  "capturedAt": "2026-10-06T12:42:56.168Z",
+  "note": "Read-only source snapshot; hashes detect later drift. JSX declarations are not unique rendered business fields.",
+  "jsxDeclarationCount": 192,
+  "jsxFileCount": 30,
+  "files": {
+    "modules/access/ui/access-member-dialog.tsx": {
+      "sha256": "52200deb96439056c75f03d3629f41bd5b46f1fbfdd1456b45cbe832d6007a27",
+      "mtime": "2026-08-13T08:40:56.220Z"
+    },
+    "modules/construction/ui/erection/erection-stage-card.tsx": {
+      "sha256": "aac23d091074461f954ddfa02169a298e7c1d246d9f1823f232e8256339dc9f6",
+      "mtime": "2026-10-06T11:33:36.901Z"
+    },
+    "modules/construction/ui/erection/field-material-check-screen.tsx": {
+      "sha256": "f3dde09090fb1c4cf2ca75aa28216a070cdd6f051612cb39b2cfac8570ad2065",
+      "mtime": "2026-10-06T11:39:07.046Z"
+    },
+    "modules/construction/ui/erection/field-support-progress-screen.tsx": {
+      "sha256": "dd91856c6bfa947eaac82e275744b50c1e844c878723237da8b9f4b26a855673",
+      "mtime": "2026-10-06T11:39:19.574Z"
+    },
+    "modules/construction/ui/erection/field-weld-progress-screen.tsx": {
+      "sha256": "34737192d1fd73855e06e2330c36085b230b2eda3dafd70bfdeb6edbdac5a4ec",
+      "mtime": "2026-10-06T11:39:29.162Z"
+    },
+    "modules/construction/ui/fabrication/material-check-screen.tsx": {
+      "sha256": "20ac116a0af2e423225926c3cf0626a9c2a13cde6ac1ed34681b26bc4708e909",
+      "mtime": "2026-10-06T10:16:03.058Z"
+    },
+    "modules/construction/ui/fabrication/paint-laydown-screen.tsx": {
+      "sha256": "aba0289323c80ba3f163cadca2d2ff9a7012cb5dcef482a410f1b3be3d1853d2",
+      "mtime": "2026-10-06T10:19:26.450Z"
+    },
+    "modules/construction/ui/fabrication/qc-release-screen.tsx": {
+      "sha256": "dd6f2bf5db2fb3c5a99026dca79bc3e6926f02d5f0587f1ff737d67c23ad92ab",
+      "mtime": "2026-10-06T10:18:28.079Z"
+    },
+    "modules/construction/ui/fabrication/weld-progress-screen.tsx": {
+      "sha256": "ede90a63331446498ee96ee05289c0be0d153cc7c77e2c057fb807e6154f4c22",
+      "mtime": "2026-10-06T10:18:55.086Z"
+    },
+    "modules/engineering/ui/revision-decision-table.tsx": {
+      "sha256": "013bfdbd19f7c2554693a06718189eb6378e2910bf540df2937ff3195ca2ffe3",
+      "mtime": "2026-08-13T08:40:56.230Z"
+    },
+    "modules/engineering/ui/spooling-import-screen.tsx": {
+      "sha256": "49a8f6a7a7cca1222d67c018e2135e87447bd1b34075548f478a91b84e7c75ff",
+      "mtime": "2026-08-13T08:40:56.231Z"
+    },
+    "modules/flange/ui/flange-management-screen.tsx": {
+      "sha256": "63a8abcad03fca4b04882d10668c5598210acde65ecd21c0f49a3a07eb6b0091",
+      "mtime": "2026-08-13T08:40:56.232Z"
+    },
+    "modules/imports/ui/import-workbench.tsx": {
+      "sha256": "d12f631c524edc0c4e99319e1638932e83ae1f81ad7e1ecddd13df4ff3e448cf",
+      "mtime": "2026-08-13T08:40:56.233Z"
+    },
+    "modules/pressure-test/ui/pressure-test-progress-screen.tsx": {
+      "sha256": "996d0aa31d0c7f7d2b693baf44a251f7013c6663a0e73cdf76d604a1195f1648",
+      "mtime": "2026-10-06T12:31:57.640Z"
+    },
+    "modules/pressure-test/ui/request-preparation-screen.tsx": {
+      "sha256": "c1a1ba8e8bed44b4ab6ff6d616f0d8d15ceae10893e458c1ad85ecf058db3e7f",
+      "mtime": "2026-10-06T12:30:26.498Z"
+    },
+    "modules/pressure-test/ui/test-pack-builder-parts.tsx": {
+      "sha256": "3db113b75f599f5a0213e2521b2864d0784c1211efcea5639e77a3c8364ddc49",
+      "mtime": "2026-08-13T08:40:56.235Z"
+    },
+    "modules/pressure-test/ui/test-pack-builder-screen.tsx": {
+      "sha256": "4e90bd35fc31f18042e84e74fbbab8eb829ad3851a33a488dd4d01d3cbb25951",
+      "mtime": "2026-10-06T12:40:33.697Z",
+      "previousObservedSha256": "c75d9458878993495b4394f9b9b9f6df2798a80af3c98016efcb9da9f2789062"
+    },
+    "modules/pressure-test/ui/test-pack-dashboard.tsx": {
+      "sha256": "2cbf60385b673a14b5e36f3a890f52d23aeda28ac9b1346eca69f3ce3bd9ccfc",
+      "mtime": "2026-10-06T12:39:07.903Z"
+    },
+    "modules/pressure-test/ui/test-pack-definition-editor.tsx": {
+      "sha256": "fa65200d39a40b524eff5bba5281b0167ab77057f5debd96fa4e1dddf434edbd",
+      "mtime": "2026-10-06T12:28:25.282Z"
+    },
+    "modules/project-setup/ui/execution-reference-tabs.tsx": {
+      "sha256": "0d58c1b2a72b3efa97b834f300f8f9c2e21223e60ed78e86e91eca7530298fbd",
+      "mtime": "2026-08-13T08:40:56.237Z"
+    },
+    "modules/project-setup/ui/extended-reference-tabs.tsx": {
+      "sha256": "f89ed7c6b031e7c9cc93da0a9bf3757ffe5a19f6236e367a95cd8c244780f51f",
+      "mtime": "2026-08-13T08:40:56.238Z"
+    },
+    "modules/project-setup/ui/progress-weights-screen.tsx": {
+      "sha256": "77a03f3abceaa16024a7939520094d5449d1d4bf035a27950531ba4f1e6ca338",
+      "mtime": "2026-08-13T08:40:56.239Z"
+    },
+    "modules/project-setup/ui/project-geography-tabs.tsx": {
+      "sha256": "87666e94d7871d2d15b080331f9c48bb32f7509ab13a4c3d7ce740b0a921e656",
+      "mtime": "2026-08-13T08:40:56.240Z"
+    },
+    "modules/project-setup/ui/system-referential-screen.tsx": {
+      "sha256": "d94f74deddfa0614c00087697ef76be79f77bb4c2895b786f5a80200fca2b8b2",
+      "mtime": "2026-08-13T08:40:56.241Z"
+    },
+    "modules/project-setup/ui/welding-quality-tabs.tsx": {
+      "sha256": "54008e066cbf3fdf64f384869c0247e913fa5cd1d955b09e8f81bce099e0fee2",
+      "mtime": "2026-08-13T08:40:56.242Z"
+    },
+    "modules/projects/ui/project-catalog-view.tsx": {
+      "sha256": "c26a60a97b243abd2ed44feb62b61ff406f8c9da1023f58f22e8b335851e363e",
+      "mtime": "2026-10-06T08:24:05.757Z"
+    },
+    "modules/quality/ui/nde-batch-screen.tsx": {
+      "sha256": "bf4ff6ecc26a791ad12ab710799eea7389e9408e359022f41698baa7009faddd",
+      "mtime": "2026-10-06T08:06:07.477Z"
+    },
+    "modules/tracking/ui/tracking-barcode-screen.tsx": {
+      "sha256": "f157621c6f314d87bcf91902675e8e07695f8788d5a21fafb21071cea04dd161",
+      "mtime": "2026-08-13T08:40:56.243Z"
+    },
+    "modules/tracking/ui/tracking-data-analysis-screen.tsx": {
+      "sha256": "5f612fb0d3d91ce6164194ff3bf29dece5f3704a0c63dfabbfc8402fae8dbd8f",
+      "mtime": "2026-08-13T08:40:56.243Z"
+    },
+    "components/admin/supabase-wps-tab.tsx": {
+      "sha256": "5ace52789377b91e5852180383b0fbe12279f22c3a87c95f175c693fd18915c2",
+      "mtime": "2026-08-13T08:40:56.202Z"
+    },
+    "modules/construction/infrastructure/supabase-construction-repository.ts": {
+      "sha256": "fd8a082dbd1821ed62de1d70549e8adc20c3abbe6db6354f62035d3129fa65b4",
+      "mtime": "2026-08-14T11:39:49.566Z"
+    },
+    "supabase/migrations/20260810093000_erection_progress_commands.sql": {
+      "sha256": "eb3b14b6a3fbd96848c8c985d1950b8a1ea15fd9373aac1c844bc1c889b140f9",
+      "mtime": "2026-08-04T13:29:38.563Z"
+    },
+    "supabase/migrations/20260727145210_project_settings_and_referentials.sql": {
+      "sha256": "8aa35cdbb67210bd3bd1da26dff84386aa77b3d35166c842ef2e0d1612ade107",
+      "mtime": "2026-07-27T14:59:30.608Z"
+    },
+    "modules/imports/domain/import-type.ts": {
+      "sha256": "b4ea3bcc127c02cc7dca538ec055dde044367616f3814190d19d8299bfe30925",
+      "mtime": "2026-08-09T11:19:11.510Z"
+    },
+    "modules/project-setup/domain/welding-quality-reference.ts": {
+      "sha256": "c0569bf758248a23f1fecef71a6b1001a064d68e93863cdcee6d4d20c04ac0c0",
+      "mtime": "2026-07-30T20:27:48.685Z"
+    },
+    "modules/project-setup/infrastructure/supabase-welding-quality-reference-repository.ts": {
+      "sha256": "4f46441943749723ce5cba4169de2a271cb9e31b225c7f4e193921f9c9fb17cd",
+      "mtime": "2026-08-05T07:52:48.975Z"
+    },
+    "supabase/migrations/20260801091000_referential_invariants.sql": {
+      "sha256": "e5a6b1bdf3ed33b36529fc9da472515912797947eacf4b79182669cc3508997a",
+      "mtime": "2026-07-30T16:24:01.543Z"
+    },
+    "supabase/migrations/20260801095000_security_and_policy_cleanup.sql": {
+      "sha256": "66afb467aa2c3ba776d43f982b7753bc0cbb0029773d1fe33bcfb5b244969e22",
+      "mtime": "2026-07-31T14:44:36.160Z"
+    },
+    "supabase/migrations/20260731090000_access_capability_catalog.sql": {
+      "sha256": "defdac1060f2d8e4b5cc480d345585d8e4aa646384f9f2beeb703f2d90b950d9",
+      "mtime": "2026-07-29T20:55:10.538Z"
+    },
+    "supabase/migrations/20260809092000_nde_repair_supersedes_parent.sql": {
+      "sha256": "48a1b832529002afe06de4f015506ed943ccf81db250b140525c292f9d18a73b",
+      "mtime": "2026-08-03T20:55:10.973Z"
+    },
+    "supabase/migrations/20260803090000_engineering_entities.sql": {
+      "sha256": "cd918b7c13768d2626d899e75b6841c7425e5fe9e2140e4812c5d0a9eb3f98bc",
+      "mtime": "2026-08-01T05:46:14.263Z"
+    },
+    "modules/construction/domain/material-check.ts": {
+      "sha256": "df271d8d9285b24759bb31f134568a596d57b79a3f861cb37c91680861dc32cd",
+      "mtime": "2026-08-01T16:08:54.202Z"
+    },
+    "modules/construction/application/record-material-check.ts": {
+      "sha256": "41b4cb91a4e08f3e89ca3dc7fe50fa73145b08ca22d0047868c0ae6d24a8bc5b",
+      "mtime": "2026-08-01T16:11:26.667Z"
+    },
+    "modules/construction/domain/weld-progress.ts": {
+      "sha256": "5c900fcbb46f42379fe18ea5561a84e42f719090dda81c2895f905c24155a7df",
+      "mtime": "2026-08-05T07:52:48.957Z"
+    },
+    "supabase/migrations/20260804092100_record_weld_progress.sql": {
+      "sha256": "524c9692844254d99808f7c20ed0d79efc087775cfd3e3548ec8d58b62fe6404",
+      "mtime": "2026-08-01T15:28:48.861Z"
+    },
+    "modules/construction/ui/erection/erection-rft-panel.tsx": {
+      "sha256": "6dd545c05eaf68d109d3ed0886198cd82a75fc9771c37fb02473059d4678618c",
+      "mtime": "2026-10-06T11:32:34.066Z"
+    },
+    "components/pipeqc/workspace-model.ts": {
+      "sha256": "eaadb6d94611418b4b0defce18e5ced723bdf7fee0e2f9765bddeb3a2a554338",
+      "mtime": "2026-10-06T07:54:45.951Z"
+    },
+    "modules/quality/infrastructure/supabase-quality-repository.ts": {
+      "sha256": "0132b8acedf1491c434533572e7e923e6cef9e9293398ed1ba53133c8cfb4968",
+      "mtime": "2026-08-14T11:39:49.575Z"
+    },
+    "modules/flange/infrastructure/supabase-flange-repository.ts": {
+      "sha256": "b22188fcc8455d654c7049f024237ff9903ef8f53c96b0ef76361454c9fee42d",
+      "mtime": "2026-08-05T09:04:44.390Z"
+    },
+    "supabase/migrations/20260812092000_flange_progress_commands.sql": {
+      "sha256": "ee483899985ff71896446889b7e70cdb698b1bf9ee9406900269271714407c2f",
+      "mtime": "2026-08-05T08:49:37.252Z"
+    },
+    "modules/flange/domain/flange-progress.ts": {
+      "sha256": "08f2f823768c11db1ed27d917c534d7d76048c626c145355db8d09258a03e43f",
+      "mtime": "2026-08-05T08:32:52.619Z"
+    },
+    "modules/tracking/infrastructure/supabase-tracking-repository.ts": {
+      "sha256": "0e9a7d091bd2acf4810b8a14ca05578cdf755118e907bc81d6178622cedc569e",
+      "mtime": "2026-08-12T13:23:57.239Z"
+    },
+    "supabase/migrations/20260814093000_tracking_read_models.sql": {
+      "sha256": "99b3a07d0c4218e8d469cbaa5ba7268d0ceb77eef528f2a2348b29b4898bd673",
+      "mtime": "2026-08-09T11:17:45.759Z"
+    },
+    "supabase/migrations/20260814095200_tracking_active_occupancy.sql": {
+      "sha256": "2106939071b032b5cddbb8c4b37f333a9a8259c099be0bc55f157d9df9e85d5e",
+      "mtime": "2026-08-09T11:42:32.758Z"
+    },
+    "components/pipeqc/work-context.tsx": {
+      "sha256": "6f108500744c09c8b2519a915e86d7d5c4eebe9ccc70aebd4e384ba9f2af3616",
+      "mtime": "2026-10-06T12:26:11.918Z"
+    },
+    "modules/pressure-test/ui/test-pack-explorer-screen.tsx": {
+      "sha256": "d080849b8d7053cb488acb4111cb4fb1887f15ea22238196be86c7a65ebfaa05",
+      "mtime": "2026-10-06T12:39:13.488Z"
+    },
+    "app/testpack/explorer/page.tsx": {
+      "sha256": "0f8093231b96d86af0cb693374b9024c0f12b8e3a4f089ad5a75992566725c0a",
+      "mtime": "2026-08-05T13:24:27.622Z"
+    },
+    "modules/pressure-test/infrastructure/supabase-pressure-test-repository.ts": {
+      "sha256": "22672a572bb055273d4d810c88caafc32e7395f5316645de000947c2b40e2147",
+      "mtime": "2026-10-06T12:19:23.396Z"
+    },
+    "modules/pressure-test/ui/test-pack-workspace-loader.ts": {
+      "sha256": "80400e4d9f2ada92f9a964d6579aa73ff6335210414c4b77a5e96997465c4314",
+      "mtime": "2026-10-06T12:20:31.535Z"
+    },
+    "modules/pressure-test/ui/test-pack-builder-model.ts": {
+      "sha256": "1402e69a8754f72e876ffd0b799c2a53254d597b6d0497e60e6f55da70b67e0c",
+      "mtime": "2026-10-06T12:27:54.006Z"
+    },
+    "app/testpack/builder/page.tsx": {
+      "sha256": "40d3fb42cffcb02494087dfe091f92b531f51258a5221150ea97bad48a555a4a",
+      "mtime": "2026-10-06T12:39:21.663Z"
+    },
+    "supabase/migrations/20260813091000_test_pack_core.sql": {
+      "sha256": "01424297599f142150b9a92b3489b7340cbffa77d7025c0b7bb2f7229add5dfa",
+      "mtime": "2026-08-05T12:55:51.709Z"
+    },
+    "modules/pressure-test/ui/pressure-test-home-screen.tsx": {
+      "sha256": "0521d80254ac52dcab91a29b824e0acc796bef21a144704ba622c5ef9c877d29",
+      "mtime": "2026-10-06T12:32:42.464Z"
+    },
+    "modules/project-setup/domain/execution-reference.ts": {
+      "sha256": "1ed90c702a9414bf955eb2f54482243a77fc78f736c4d7a97b1b85d476b95dab",
+      "mtime": "2026-08-09T11:01:08.197Z"
+    },
+    "modules/project-setup/domain/progress-weights.ts": {
+      "sha256": "35813627755674b230e0ca879eb4690484cc4fd01bfd97eb8956dc1dc54f9871",
+      "mtime": "2026-07-30T16:24:29.213Z"
+    },
+    "modules/project-setup/infrastructure/supabase-project-geography-repository.ts": {
+      "sha256": "2df1b147d38f1a3616d6507b9886a5ec4816c414cd7b501957b4ee8fffa4beb4",
+      "mtime": "2026-08-11T14:12:48.855Z"
+    },
+    "modules/project-setup/ui/project-referential-screen.tsx": {
+      "sha256": "d3fb67f76bb442d5fef715bf815dcfd8e222c9464cf5dc7cf79c2abfd9f07adc",
+      "mtime": "2026-08-14T11:39:49.573Z"
+    },
+    "modules/project-setup/ui/setup-readiness-panel.tsx": {
+      "sha256": "b6bed1612ab243a9c2278641b66a7794a82c71d839716402f8eb9042d526b651",
+      "mtime": "2026-08-14T11:39:49.574Z"
+    },
+    "modules/engineering/ui/engineering-browser.tsx": {
+      "sha256": "6c24b4cdbea12505437fe6f093323336abb9e76f0e0db7f0e63444690ddf7b94",
+      "mtime": "2026-08-13T08:40:56.229Z"
+    },
+    "modules/engineering/domain/diff.ts": {
+      "sha256": "c32ef3e5b144c916874fb83a04cab04c44bab5cc8a0242523ff907c030d6faae",
+      "mtime": "2026-08-01T07:07:04.258Z"
+    },
+    "modules/imports/ui/import-issue-list.tsx": {
+      "sha256": "161b4030cf023bfee343fd77a6a7dd331367c98c541f2155905f0bee4e94254b",
+      "mtime": "2026-08-13T08:40:56.232Z"
+    },
+    "components/ui/command.tsx": {
+      "sha256": "803aa420db4170238043ca1b9f1fd88f285f1b83f3ff2c0c5abff217df316896",
+      "mtime": "2026-05-13T21:17:17.000Z"
+    },
+    "components/ui/select.tsx": {
+      "sha256": "e2b4198bbf3968eae76d71fd04074b43f802357d997dbd01a1721a96e5895383",
+      "mtime": "2026-05-13T21:17:17.000Z"
+    },
+    "components/ui/data-table/record-select-table.tsx": {
+      "sha256": "7267365e7e3a3b1ef10a95aa6348ebd9332dd40687af293126d57e4c8ed10c90",
+      "mtime": "2026-08-14T11:39:49.557Z"
+    },
+    "components/pipeqc/page-finder.tsx": {
+      "sha256": "e362f9f220846c7ff22e51bff53b50cd31d5545df9b4a2c7bdd215efcdd31af8",
+      "mtime": "2026-10-05T19:09:09.748Z"
+    },
+    "supabase/config.toml": {
+      "sha256": "4f1f101cb8ab5e95bbd7229dcded540e8bd727ae11932da3c45e1d8b70ae490d",
+      "mtime": "2026-07-27T14:59:42.905Z"
+    },
+    "components/pipeqc/unsaved-input-guard.tsx": {
+      "sha256": "a560ed536bcc64e381b7a1c24a8d279eb387874520d5935752a4cfc3ce1c715f",
+      "mtime": "2026-10-06T12:25:27.432Z"
+    },
+    "components/pipeqc/app-shell.tsx": {
+      "sha256": "adbbbf0937d170a08bff040abd2f200f9ebdcbafece0e08cb859b55e9b331601",
+      "mtime": "2026-10-06T12:25:39.179Z"
+    },
+    "modules/documents/domain/report.ts": {
+      "sha256": "034e69e30459255b851d527e69f08ec839157ddfb117865294e88e0961b3c635",
+      "mtime": "2026-08-09T19:30:29.710Z"
+    },
+    "/Users/vvnezapnopwnz/Documents/Files/files/roms/ui/src/shared/ui/hook-form/RHFAutocompleteWithAsyncOptions.tsx": {
+      "sha256": "117093e2891f81f847942bde28b5870c244aebd96cf45b5b744eb8a7d83d8d06",
+      "mtime": "2026-09-23T12:42:43.160Z"
+    },
+    "/Users/vvnezapnopwnz/Documents/Files/files/roms/ui/src/entities/roms/Projects/ui/ProjectAutocomplete.tsx": {
+      "sha256": "374fa260c31b3b486d8bc0b3fc636229fdd0f637ef617308cb96b067b0a2418f",
+      "mtime": "2026-07-14T13:05:04.156Z"
+    },
+    "/Users/vvnezapnopwnz/Documents/Files/files/roms/ui/src/entities/User/ui/UserAutocomplete.tsx": {
+      "sha256": "6795d54be85ad44ba31cb21963f8f3f351ce74e34e53f33af63c11763f000dda",
+      "mtime": "2026-07-14T13:05:04.150Z"
+    },
+    "/Users/vvnezapnopwnz/Documents/Files/files/roms/ui/src/entities/roms/RO/ui/RiskAutocomplete.tsx": {
+      "sha256": "741ba8c087b29e67a69f216387b2d4014bd0d67e272e349d7285ee25977ef3e5",
+      "mtime": "2026-09-23T12:42:43.152Z"
+    },
+    "supabase/migrations/20260731091000_access_capability_security.sql": {
+      "sha256": "e1744bc3403851ddb09baf5098373d9c19a539a6d0dd096bf2d8e3bded2f2f92",
+      "mtime": "2026-07-29T21:02:12.808648+00:00"
+    }
+  },
+  "previousCapturedAt": "2026-10-06T12:39:37.327Z",
+  "changesObservedDuringAudit": [
+    "modules/pressure-test/ui/test-pack-builder-screen.tsx"
+  ]
+}

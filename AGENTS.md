@@ -18,7 +18,7 @@ Rules:
   stop and ask — do not pick one. A made-up password silently overwrites every account's password
   in `auth.users` and locks the operator out of their own stand.
 - **Never** pass `TRACK01_FIXTURE_PASSWORD=…` or `SUPABASE_SERVICE_ROLE_KEY=…` inline on a command
-  line. Inline values land in shell history and in `.Codex/settings.local.json` permission entries.
+  line. Inline values can be saved in shell history and persisted command permission entries.
 - Shell exports still win over `.env.local`, which is what the hosted flow relies on
   (`set -a; . ~/.pipeqc-hosted.env; set +a`) — so never export local values before a `:hosted` command.
 - Never print, echo, or write a secret value into a file, doc, screenshot, or commit.
