@@ -98,7 +98,8 @@
 - Modify: `modules/pressure-test/ui/test-pack-workbench.tsx:398,413`
 - Modify: `modules/construction/application/describe-erection-readiness.ts` — add a display helper
 - Modify: every place that renders a fabrication or erection stage code with `StatusBadge` (`grep -rn "StatusBadge" modules/construction/ui`)
-- Test: `modules/construction/application/describe-erection-readiness.test.ts`, created if absent
+- Test: `modules/construction/application/describe-erection-readiness.test.ts` (exists — append the new test, keep the existing ones)
+- Callers of `currentErectionStageLabel` to switch to the label: `modules/construction/ui/erection/erection-readiness-screen.tsx:128-132`, `modules/construction/ui/erection/field-spool-picker.tsx:59-63`, `modules/construction/ui/erection/erection-workbench.tsx:156`. In list columns `value:` (used by search and filters) returns the label too, so filters show operator words.
 
 **Interfaces:**
 - Produces: `export function erectionStageDisplay(facts: ErectionReadinessFacts): { code: string; label: string }`. Codes stay as they are today (`"rft"`, `"supported"`, `"welded/bolted"`, `"erected"`, `"to site"`, `"not started"`). Labels are `"Ready for Test"`, `"Supported"`, `"Welded / Bolted"`, `"Erected"`, `"To site"`, `"Not started"`.
