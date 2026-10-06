@@ -55,6 +55,31 @@ npm run demo:showcase   # seeds SHOWCASE-1; demo:check stays green afterwards
 
 The hosted stand is separate and holds curated acceptance data. Never re-seed it unprompted.
 
+## Backend: keep one rule in one place
+
+The backend is meant to be simple to read and change. Check every new function, view, policy and
+loader against these rules. The reasoning and the open findings are in
+`docs/audits/2026-10-06-backend-simplification.md`.
+
+1. **Reads are plain selects.** Read from tables, or from views declared
+   `with (security_invoker = true)`, so that RLS applies and `database.types.ts` types the result.
+   RPCs are only for commands that write.
+2. **Access lives only in RLS policies.** Narrowing checks go in policies declared `as restrictive`
+   (see below). Do not add a `SECURITY DEFINER` function that returns data to the user. It bypasses
+   every policy and gives a second answer to "who can read this".
+3. **A command takes IDs and derives the rest.** The server reads Ident, trace and the like from the
+   rows those IDs point to. Each command has one payload format. When the format changes, update
+   every caller (app, scripts, tests) in the same change. Do not keep a legacy fallback.
+4. **The server owns the rule and the reason.** The SQL command or projection computes readiness and
+   eligibility and returns reason codes. The client maps codes to labels. It never re-derives the
+   rule in TypeScript.
+5. **A screen about one object reads one view, or a few.** Do not join a dozen queries on the
+   client.
+6. **No pagination or cursors without a measured need.** Data scoped to one spool or one test pack
+   is read in a single query.
+
+When a plan touches `supabase/`, load the `supabase-postgres-best-practices` skill first.
+
 ## RLS: a narrowing check must be RESTRICTIVE
 
 PERMISSIVE policies combine with **OR**. A row filter that is meant to narrow access
