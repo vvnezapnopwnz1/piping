@@ -1,5 +1,5 @@
 begin;
-select plan(13);
+select plan(30);
 
 select has_view('public', 'material_check_lines', 'material_check_lines view exists');
 select has_view('public', 'material_trace_candidates', 'material_trace_candidates view exists');
@@ -129,6 +129,74 @@ select is((select count(*)::int from public.material_trace_candidates where spoo
   'a user scoped to another PDS area sees no candidates for this spool');
 select is((select count(*)::int from public.material_check_lines where spool_revision_id = '36000000-0000-0000-0000-000000000108'), 0,
   'a user scoped to another PDS area reads no BOM rows of this spool');
+
+-- Commands, as the QC engineer
+select pg_temp.act_as('10000000-0000-0000-0000-000000000109');
+select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000108', '2026-10-02',
+  '[{"spool_revision_material_id":"50000000-0000-0000-0000-000000000001","piping_material_record_id":"60000000-0000-0000-0000-000000000003"}]'::jsonb)$$,
+  'PQC33', null, 'HEAT-AB12 is not eligible for a row that expects Heat-ab12');
+select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000108', '2026-10-02',
+  '[{"spool_revision_material_id":"50000000-0000-0000-0000-000000000003","piping_material_record_id":"60000000-0000-0000-0000-000000000005"}]'::jsonb)$$,
+  'PQC33', null, 'an inactive PML record is not eligible');
+select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000108', '2026-10-02',
+  '[{"spool_revision_material_id":"50000000-0000-0000-0000-000000000004","piping_material_record_id":"60000000-0000-0000-0000-000000000004"}]'::jsonb)$$,
+  'PQC33', null, 'a PML record of another Ident is not eligible');
+select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000108', '2026-10-02',
+  '[{"spool_revision_material_id":"50000000-0000-0000-0000-000000000099","piping_material_record_id":"60000000-0000-0000-0000-000000000001"}]'::jsonb)$$,
+  'PQC30', null, 'a BOM row outside this spool revision is rejected');
+select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000108', '2026-10-02',
+  '[{"spool_revision_material_id":"50000000-0000-0000-0000-000000000001"}]'::jsonb)$$,
+  '23514', null, 'an item without a PML record id is rejected');
+select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000108', '2026-10-02',
+  '[{"spool_revision_material_id":"not-a-uuid","piping_material_record_id":"60000000-0000-0000-0000-000000000001"}]'::jsonb)$$,
+  '23514', null, 'a non-UUID reference is rejected');
+select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000108', '2026-10-02',
+  '[{"spool_revision_material_id":"50000000-0000-0000-0000-000000000001","piping_material_record_id":"60000000-0000-0000-0000-000000000001"},
+    {"spool_revision_material_id":"50000000-0000-0000-0000-000000000001","piping_material_record_id":"60000000-0000-0000-0000-000000000001"}]'::jsonb)$$,
+  '23514', null, 'a BOM row may appear only once per command');
+
+select lives_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000108', '2026-10-02',
+  '[{"spool_revision_material_id":"50000000-0000-0000-0000-000000000001","piping_material_record_id":"60000000-0000-0000-0000-000000000001"},
+    {"spool_revision_material_id":"50000000-0000-0000-0000-000000000002","piping_material_record_id":"60000000-0000-0000-0000-000000000002"}]'::jsonb,
+  '70000000-0000-0000-0000-000000000001', 'mc108-first')$$,
+  'two BOM rows with the same Ident are recorded separately in one command');
+select is((select count(*)::int from public.material_check_lines
+  where spool_revision_id = '36000000-0000-0000-0000-000000000108' and accepted_piping_material_record_id is not null), 2,
+  'both ID-1 rows show accepted evidence');
+select is((select checked_quantity::numeric from public.material_check_items
+  where spool_revision_material_id = '50000000-0000-0000-0000-000000000003'), null::numeric,
+  'an unrecorded row has no item');
+select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000108', '2026-10-02',
+  '[{"spool_revision_material_id":"50000000-0000-0000-0000-000000000001","piping_material_record_id":"60000000-0000-0000-0000-000000000003"}]'::jsonb)$$,
+  '23514', null, 'accepted evidence cannot switch to another PML record');
+select lives_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000108', '2026-10-03',
+  '[{"spool_revision_material_id":"50000000-0000-0000-0000-000000000001","piping_material_record_id":"60000000-0000-0000-0000-000000000001"}]'::jsonb)$$,
+  'resubmitting an accepted row with its own PML record is accepted');
+
+reset role;
+insert into public.qc13_progress_forms (id, project_id, spool_revision_id, form_number, requested_on)
+values ('70000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000108', '36000000-0000-0000-0000-000000000108', 'QC13-108-B', '2026-10-04');
+set local role authenticated;
+select pg_temp.act_as('10000000-0000-0000-0000-000000000109');
+select lives_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000108', '2026-10-04',
+  '[{"spool_revision_material_id":"50000000-0000-0000-0000-000000000003","piping_material_record_id":"60000000-0000-0000-0000-000000000004"},
+    {"spool_revision_material_id":"50000000-0000-0000-0000-000000000004","piping_material_record_id":"60000000-0000-0000-0000-000000000006"}]'::jsonb,
+  '70000000-0000-0000-0000-000000000002', 'mc108-rest')$$,
+  'the remaining rows are recorded against a newer QC-13');
+select is((select qc13_form_id from public.material_check_records where spool_revision_id = '36000000-0000-0000-0000-000000000108'),
+  '70000000-0000-0000-0000-000000000001'::uuid,
+  'the material check keeps the QC-13 it was first recorded with');
+select is((select checked_quantity::numeric from public.material_check_items
+  where spool_revision_material_id = '50000000-0000-0000-0000-000000000003'), 2::numeric,
+  'checked quantity is taken from the BOM row');
+select is((select count(*)::int from public.construction_progress_events
+  where spool_revision_id = '36000000-0000-0000-0000-000000000108' and stage = 'material_check'), 1,
+  'completing every BOM row derives Material Check exactly once');
+
+select pg_temp.act_as('10000000-0000-0000-0000-000000000111');
+select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000108', '2026-10-04',
+  '[{"spool_revision_material_id":"50000000-0000-0000-0000-000000000003","piping_material_record_id":"60000000-0000-0000-0000-000000000004"}]'::jsonb)$$,
+  '42501', null, 'a user without project access cannot record');
 
 select * from finish();
 rollback;

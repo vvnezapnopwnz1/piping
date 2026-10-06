@@ -159,7 +159,7 @@ select is(
 
 select public.record_material_check(
   '43000000-0000-0000-0000-000000000531', date '2026-08-05',
-  '[{"ident_code":"IDN-100","trace_number":"HEAT-100","quantity":3}]'::jsonb);
+  '[{"spool_revision_material_id":"44000000-0000-0000-0000-000000000531","piping_material_record_id":"45000000-0000-0000-0000-000000000531"}]'::jsonb);
 select public.record_weld_progress(
   '47000000-0000-0000-0000-000000000531',
   '50000000-0000-0000-0000-000000000531',

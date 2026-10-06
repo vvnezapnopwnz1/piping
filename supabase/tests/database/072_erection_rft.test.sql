@@ -74,7 +74,7 @@ select throws_ok(
 select lives_ok(
   $$select public.record_field_material_check(
     '36000000-0000-0000-0000-000000000721', date '2026-08-12',
-    '[{"ident_code":"IDN-07","trace_number":"HEAT-07","quantity":1}]'::jsonb, null, 'field-material')$$,
+    '[{"spool_revision_material_id":"44000000-0000-0000-0000-000000000721","piping_material_record_id":"45000000-0000-0000-0000-000000000721"}]'::jsonb, null, 'field-material')$$,
   'field material check reuses PML evidence validation without a fabrication start'
 );
 select is(

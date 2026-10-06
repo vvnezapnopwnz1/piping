@@ -126,7 +126,7 @@ select public.record_construction_progress(
 
 select public.record_material_check(
   '43000000-0000-0000-0000-000000000631', date '2026-08-02',
-  '[{"ident_code":"IDN-PWHT","trace_number":"HT-PWHT","quantity":1}]'::jsonb);
+  '[{"spool_revision_material_id":"44000000-0000-0000-0000-000000000631","piping_material_record_id":"45000000-0000-0000-0000-000000000631"}]'::jsonb);
 
 select public.record_weld_progress(
   '47000000-0000-0000-0000-000000000631',

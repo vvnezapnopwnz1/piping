@@ -1,5 +1,5 @@
 begin;
-select plan(86);
+select plan(83);
 
 select has_table('public', 'command_receipts', 'shared command receipts exist');
 select has_table('public', 'construction_progress_events', 'construction progress is an event ledger');
@@ -118,7 +118,7 @@ insert into public.piping_material_records (id, project_id, mrr_number, ident_co
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000501', true);
 select set_config('request.jwt.claims', '{"sub":"10000000-0000-0000-0000-000000000501","role":"authenticated"}', true);
-select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000501', current_date, '[{"ident_code":"MAT-05-A","trace_number":"TRACE-05-A"}]'::jsonb, null, null)$$,
+select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000501', current_date, '[{"spool_revision_material_id":"39000000-0000-0000-0000-000000000501","piping_material_record_id":"3a000000-0000-0000-0000-000000000501"}]'::jsonb, null, null)$$,
   'PQC32', null, 'material checking requires fabrication start');
 reset role;
 insert into public.construction_progress_events (project_id, spool_revision_id, phase, stage, occurred_on)
@@ -126,13 +126,13 @@ values ('30000000-0000-0000-0000-000000000501', '36000000-0000-0000-0000-0000000
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000501', true);
 select set_config('request.jwt.claims', '{"sub":"10000000-0000-0000-0000-000000000501","role":"authenticated"}', true);
-select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000501', current_date, '{"ident_code":"MAT-05-A"}'::jsonb, null, null)$$,
+select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000501', current_date, '{"spool_revision_material_id":"39000000-0000-0000-0000-000000000501"}'::jsonb, null, null)$$,
   '23514', null, 'material-check items must be a JSON array');
-select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000501', current_date, '[{"ident_code":"UNKNOWN","trace_number":"TRACE-X"}]'::jsonb, null, null)$$,
+select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000501', current_date, '[{"spool_revision_material_id":"39000000-0000-0000-0000-000000000599","piping_material_record_id":"3a000000-0000-0000-0000-000000000501"}]'::jsonb, null, null)$$,
   'PQC30', null, 'an ident outside the revision BOM is rejected');
-select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000501', current_date, '[{"ident_code":"MAT-05-A","trace_number":"TRACE-WRONG"}]'::jsonb, null, null)$$,
+select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000501', current_date, '[{"spool_revision_material_id":"39000000-0000-0000-0000-000000000501","piping_material_record_id":"3a000000-0000-0000-0000-000000000502"}]'::jsonb, null, null)$$,
   'PQC33', null, 'an inactive or missing PML trace is rejected');
-select lives_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000501', current_date, '[{"ident_code":"MAT-05-A","trace_number":"TRACE-05-A","quantity":1}]'::jsonb, (select id from public.qc13_progress_forms where form_number = 'QC13-TEST-01'), 'material-partial')$$,
+select lives_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000501', current_date, '[{"spool_revision_material_id":"39000000-0000-0000-0000-000000000501","piping_material_record_id":"3a000000-0000-0000-0000-000000000501"}]'::jsonb, (select id from public.qc13_progress_forms where form_number = 'QC13-TEST-01'), 'material-partial')$$,
   'partial BOM evidence is recorded');
 reset role;
 select is((select count(*)::int from public.construction_progress_events where spool_revision_id = '36000000-0000-0000-0000-000000000501' and stage = 'material_check'), 0,
@@ -140,7 +140,7 @@ select is((select count(*)::int from public.construction_progress_events where s
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000501', true);
 select set_config('request.jwt.claims', '{"sub":"10000000-0000-0000-0000-000000000501","role":"authenticated"}', true);
-select lives_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000501', current_date, '[{"ident_code":"MAT-05-B","trace_number":"TRACE-05-B","quantity":2}]'::jsonb, null, 'material-full')$$,
+select lives_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000501', current_date, '[{"spool_revision_material_id":"39000000-0000-0000-0000-000000000502","piping_material_record_id":"3a000000-0000-0000-0000-000000000502"}]'::jsonb, null, 'material-full')$$,
   'full BOM evidence completes the material check');
 reset role;
 select is((select count(*)::int from public.construction_progress_events where spool_revision_id = '36000000-0000-0000-0000-000000000501' and stage = 'material_check'), 1,
@@ -150,14 +150,14 @@ select is((select source::text from public.construction_progress_events where sp
 select ok((select count(*) = 2 and bool_and(spool_revision_material_id is not null and piping_material_record_id is not null)
   from public.material_check_items), 'material checks retain non-null BOM and PML evidence FKs');
 select ok((
-  select after_state @> '{"submitted_items":[{"ident_code":"MAT-05-A","trace_number":"TRACE-05-A","quantity":1}],"evidence":{"items":[{"ident_code":"MAT-05-A","trace_number":"TRACE-05-A"}]}}'::jsonb
+  select after_state @> '{"submitted_items":[{"spool_revision_material_id":"39000000-0000-0000-0000-000000000501","piping_material_record_id":"3a000000-0000-0000-0000-000000000501"}],"evidence":{"items":[{"spool_revision_material_id":"39000000-0000-0000-0000-000000000501","piping_material_record_id":"3a000000-0000-0000-0000-000000000501"}]}}'::jsonb
   from public.audit_events
   where entity_type = 'material_check_records' and action = 'record_material_check'
   order by created_at, id limit 1
 ), 'the initial material-check audit preserves submitted and accepted ident-trace evidence');
 select ok((
-  select before_state @> '{"evidence":{"items":[{"ident_code":"MAT-05-A","trace_number":"TRACE-05-A"}]}}'::jsonb
-     and after_state @> '{"evidence":{"items":[{"ident_code":"MAT-05-A","trace_number":"TRACE-05-A"},{"ident_code":"MAT-05-B","trace_number":"TRACE-05-B"}]}}'::jsonb
+  select before_state @> '{"evidence":{"items":[{"spool_revision_material_id":"39000000-0000-0000-0000-000000000501","piping_material_record_id":"3a000000-0000-0000-0000-000000000501"}]}}'::jsonb
+     and after_state @> '{"evidence":{"items":[{"spool_revision_material_id":"39000000-0000-0000-0000-000000000501","piping_material_record_id":"3a000000-0000-0000-0000-000000000501"},{"spool_revision_material_id":"39000000-0000-0000-0000-000000000502","piping_material_record_id":"3a000000-0000-0000-0000-000000000502"}]}}'::jsonb
   from public.audit_events
   where entity_type = 'material_check_records' and action = 'record_material_check'
   order by created_at desc, id desc limit 1
@@ -165,9 +165,9 @@ select ok((
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000501', true);
 select set_config('request.jwt.claims', '{"sub":"10000000-0000-0000-0000-000000000501","role":"authenticated"}', true);
-select is((public.record_material_check('36000000-0000-0000-0000-000000000501', current_date, '[{"ident_code":"MAT-05-A","trace_number":"TRACE-05-A","quantity":1}]'::jsonb, null, 'material-partial')).id,
+select is((public.record_material_check('36000000-0000-0000-0000-000000000501', current_date, '[{"spool_revision_material_id":"39000000-0000-0000-0000-000000000501","piping_material_record_id":"3a000000-0000-0000-0000-000000000501"}]'::jsonb, null, 'material-partial')).id,
   (select id from public.material_check_records), 'an idempotency replay returns the original material check');
-select lives_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000501', current_date, '[{"ident_code":"MAT-05-A","trace_number":"TRACE-05-A"}]'::jsonb, null, 'material-complete-retry')$$,
+select lives_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000501', current_date, '[{"spool_revision_material_id":"39000000-0000-0000-0000-000000000501","piping_material_record_id":"3a000000-0000-0000-0000-000000000501"}]'::jsonb, null, 'material-complete-retry')$$,
   'a completed material check can be retried under a new idempotency key');
 select is((select count(*)::int from public.construction_progress_events where spool_revision_id = '36000000-0000-0000-0000-000000000501' and stage = 'material_check'), 1,
   'a completed material-check retry does not duplicate derived progress');
@@ -177,8 +177,6 @@ select is((select count(*)::int from public.audit_events where entity_type = 'ma
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000501', true);
 select set_config('request.jwt.claims', '{"sub":"10000000-0000-0000-0000-000000000501","role":"authenticated"}', true);
-select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000501', current_date, '[{"ident_code":"MAT-05-A","trace_number":"TRACE-05-A","quantity":2}]'::jsonb, null, 'material-quantity-rewrite')$$,
-  '23514', null, 'accepted material quantity cannot be rewritten');
 reset role;
 insert into public.piping_material_records (id, project_id, mrr_number, ident_code, trace_number)
 values ('3a000000-0000-0000-0000-000000000503', '30000000-0000-0000-0000-000000000501', 'MRR-05-A2', 'MAT-05-A', 'TRACE-05-A2');
@@ -187,10 +185,10 @@ select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000501
 select set_config('request.jwt.claims', '{"sub":"10000000-0000-0000-0000-000000000501","role":"authenticated"}', true);
 select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000501', current_date, null, null, null)$$,
   '23514', null, 'material-check items cannot be SQL NULL');
-select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000501', current_date, '[{"ident_code":"MAT-05-A","trace_number":"TRACE-05-A2","quantity":1}]'::jsonb, null, 'material-evidence-rewrite')$$,
+select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000501', current_date, '[{"spool_revision_material_id":"39000000-0000-0000-0000-000000000501","piping_material_record_id":"3a000000-0000-0000-0000-000000000503"}]'::jsonb, null, 'material-evidence-rewrite')$$,
   '23514', null, 'accepted material evidence cannot be rewritten');
-select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000501', current_date, '[{"ident_code":"MAT-05-A","trace_number":"TRACE-05-A","quantity":1},{"ident_code":"MAT-05-A","trace_number":"TRACE-05-A","quantity":1}]'::jsonb, null, 'material-duplicate-ident')$$,
-  '23514', null, 'a material-check command cannot repeat an ident code');
+select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000501', current_date, '[{"spool_revision_material_id":"39000000-0000-0000-0000-000000000501","piping_material_record_id":"3a000000-0000-0000-0000-000000000501"},{"spool_revision_material_id":"39000000-0000-0000-0000-000000000501","piping_material_record_id":"3a000000-0000-0000-0000-000000000501"}]'::jsonb, null, 'material-duplicate-ident')$$,
+  '23514', null, 'a material-check command cannot repeat a BOM row');
 reset role;
 insert into public.spools (id, project_id, spool_number)
 values ('35000000-0000-0000-0000-000000000503', '30000000-0000-0000-0000-000000000501', 'SP-05-EMPTY');
@@ -206,23 +204,9 @@ select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-
 reset role;
 select is((select count(*)::int from public.construction_progress_events where spool_revision_id = '36000000-0000-0000-0000-000000000504' and stage = 'material_check'), 0,
   'an empty BOM has no derived material-check event');
-insert into public.spools (id, project_id, spool_number)
-values ('35000000-0000-0000-0000-000000000504', '30000000-0000-0000-0000-000000000501', 'SP-05-NAN');
-insert into public.spool_revisions (id, spool_id, isometric_revision_id, sequence_number)
-values ('36000000-0000-0000-0000-000000000505', '35000000-0000-0000-0000-000000000504', '34000000-0000-0000-0000-000000000501', 1);
-insert into public.spool_revision_materials (id, spool_revision_id, ident_code, quantity, unit)
-values ('39000000-0000-0000-0000-000000000503', '36000000-0000-0000-0000-000000000505', 'MAT-05-NAN', 1, 'ea');
-insert into public.piping_material_records (id, project_id, mrr_number, ident_code, trace_number)
-values ('3a000000-0000-0000-0000-000000000504', '30000000-0000-0000-0000-000000000501', 'MRR-05-NAN', 'MAT-05-NAN', 'TRACE-05-NAN');
-insert into public.construction_progress_events (project_id, spool_revision_id, phase, stage, occurred_on)
-values ('30000000-0000-0000-0000-000000000501', '36000000-0000-0000-0000-000000000505', 'fabrication', 'start_fab', current_date);
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000501', true);
 select set_config('request.jwt.claims', '{"sub":"10000000-0000-0000-0000-000000000501","role":"authenticated"}', true);
-select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000505', current_date, '[{"ident_code":"MAT-05-NAN","trace_number":"TRACE-05-NAN","quantity":"NaN"}]'::jsonb, null, null)$$,
-  '23514', null, 'material quantity cannot be numeric NaN');
-select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000505', current_date, '[{"ident_code":"MAT-05-NAN","trace_number":"TRACE-05-NAN","quantity":"Infinity"}]'::jsonb, null, null)$$,
-  '23514', null, 'material quantity cannot be numeric infinity');
 reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000502', true);
@@ -319,7 +303,7 @@ values ('30000000-0000-0000-0000-000000000501', '36000000-0000-0000-0000-0000000
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000501', true);
 select set_config('request.jwt.claims', '{"sub":"10000000-0000-0000-0000-000000000501","role":"authenticated"}', true);
-select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000501', current_date, '[{"ident_code":"MAT-05-A","trace_number":"TRACE-05-A"}]'::jsonb, (select id from public.qc13_progress_forms where form_number = 'QC13-OTHER-SPOOL'), null)$$,
+select throws_ok($$select public.record_material_check('36000000-0000-0000-0000-000000000501', current_date, '[{"spool_revision_material_id":"39000000-0000-0000-0000-000000000501","piping_material_record_id":"3a000000-0000-0000-0000-000000000501"}]'::jsonb, (select id from public.qc13_progress_forms where form_number = 'QC13-OTHER-SPOOL'), null)$$,
   'PQC30', null, 'a QC-13 form for another spool revision is rejected');
 reset role;
 update public.spool_revisions set is_removed = true where id = '36000000-0000-0000-0000-000000000501';

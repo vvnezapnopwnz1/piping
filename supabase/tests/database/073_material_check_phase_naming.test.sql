@@ -58,7 +58,7 @@ select lives_ok(
 select lives_ok(
   $$select public.record_field_material_check(
     '36000000-0000-0000-0000-000000000731', date '2026-08-12',
-    '[{"ident_code":"IDN-07M","trace_number":"HEAT-07M","quantity":1}]'::jsonb, null, 'matph-field')$$,
+    '[{"spool_revision_material_id":"44000000-0000-0000-0000-000000000731","piping_material_record_id":"45000000-0000-0000-0000-000000000731"}]'::jsonb, null, 'matph-field')$$,
   'the field material check is accepted'
 );
 select is(
@@ -80,7 +80,7 @@ select lives_ok(
 select lives_ok(
   $$select public.record_material_check(
     '36000000-0000-0000-0000-000000000731', date '2026-08-20',
-    '[{"ident_code":"IDN-07M","trace_number":"HEAT-07M","quantity":1}]'::jsonb, null, 'matph-shop')$$,
+    '[{"spool_revision_material_id":"44000000-0000-0000-0000-000000000731","piping_material_record_id":"45000000-0000-0000-0000-000000000731"}]'::jsonb, null, 'matph-shop')$$,
   'the shop material check is accepted on a spool already checked in the field'
 );
 select is(
