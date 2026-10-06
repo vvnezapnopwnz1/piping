@@ -6,7 +6,6 @@ const BASE_URL = "http://localhost:3000"
 const EMAIL = "track01.platform-admin@example.test"
 const PASSWORD = process.env.TRACK01_FIXTURE_PASSWORD || ""
 const SCREENSHOTS_DIR = path.join(process.cwd(), "docs", "superpowers", "specs", "screenshots")
-const ARTIFACT_DIR = "/Users/vvnezapnopwnz/.gemini/antigravity-cli/brain/92e3a4d0-0e97-4699-8d85-c9c103445061"
 
 if (!PASSWORD) {
   console.error("TRACK01_FIXTURE_PASSWORD is missing in environment!")
@@ -14,13 +13,10 @@ if (!PASSWORD) {
 }
 
 fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true })
-fs.mkdirSync(ARTIFACT_DIR, { recursive: true })
 
 function saveEvidence(filename: string, buffer: Buffer) {
   const diskPath = path.join(SCREENSHOTS_DIR, filename)
-  const artifactPath = path.join(ARTIFACT_DIR, filename)
   fs.writeFileSync(diskPath, buffer)
-  fs.writeFileSync(artifactPath, buffer)
   console.log(`[Evidence] Saved ${filename}`)
 }
 
@@ -123,6 +119,14 @@ async function run() {
 
         const selectedScreenshot = await page.screenshot()
         saveEvidence("04-material-choice-dirty.png", selectedScreenshot)
+      }
+      
+      console.log("Clearing the chosen trace...")
+      const clearChoiceBtn = page.locator('button[aria-label^="Clear "]').first()
+      if (await clearChoiceBtn.isVisible().catch(() => false)) {
+        await clearChoiceBtn.click()
+        await page.waitForTimeout(800)
+        console.log("Trace choice cleared.")
       }
     }
 

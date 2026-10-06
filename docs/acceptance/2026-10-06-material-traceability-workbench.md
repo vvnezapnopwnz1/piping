@@ -153,3 +153,27 @@ Implementation of Phase 1 from the Module Connections & Field Sources audit (M01
 ## 8. Open Issues
 
 - None. All functional and contract requirements met and verified.
+
+## Simplification (2026-10-06)
+
+**Commits:**
+- `521d17b` (Task 1: Guard test)
+- `91911fc` (Task 2: RLS views)
+- `f565cd5` (Task 3: ID-only command)
+- `f084f14` (Task 4: Domain updates & fixtures)
+- `ee5e82f` (Task 5: UI & hooks)
+
+**Line delta:**
+`26 files changed, 535 insertions(+), 1654 deletions(-)`
+
+**Replaced acceptance rows:**
+- **A08**: «Load more» removed — one query per row, filtered locally.
+- **A14**: Reconfirm removed; it was failing with 23514 because it sent an empty item list.
+- **A24**: No pagination.
+- **PQC58**: Removed.
+
+**Command outputs:**
+- `npm run lint && npm run typecheck && npm run test:unit`: exit 0
+- `bash tasks/material-check/pgtap.sh check`: `OK   pgTAP suite: no failures beyond the 13 known environment ones`
+- `npx supabase migration up --local`: spools = 16, material_checks = 15, new_view = true, old_reads_gone = true
+- Browser check (`verify-material-traceability-workbench.ts`): exit 0, spools = 16, material_checks = 15
