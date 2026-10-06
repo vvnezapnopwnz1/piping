@@ -4,7 +4,8 @@
 
 **Goal:** Перевести Material Check на простой бэкенд: чтение — обычными `select` из view через RLS, команда — только ID строки BOM и записи PML, без постраничной загрузки, без ручного разбора JSON и без копии правил в TypeScript.
 
-**Architecture:** Миграция `20261006120000_material_check_workbench.sql` переписывается на месте:
+**Architecture:** Новая миграция `20261007090000_material_check_simplify.sql` ложится поверх `20261006120000_material_check_workbench.sql`. Старую не трогаем. Новая миграция содержит:
+- удаление трёх функций чтения из старой миграции;
 - одна вспомогательная функция для политики: возвращает проект спула, если вызывающий может его читать;
 - политика чтения BOM для пользователей Construction;
 - политика чтения QC-13 на том же правиле;
@@ -23,15 +24,19 @@
 
 ## Global Constraints
 
-- Миграцию `supabase/migrations/20261006120000_material_check_workbench.sql` **переписать на месте** (решение владельца от 2026-10-06; на hosted её нет). Другие миграции не трогать.
+- **Живой локальный стенд (порты 543xx, SHOWCASE-1) не сбрасывать и не заполнять заново.** Это требование владельца от 2026-10-06.
+  - Запрещены `demo:prepare`, `demo:showcase`, `supabase db reset` без `--workdir` и `npm run verify`: он запускает pgTAP на живом стенде.
+  - Новая миграция применяется к живому стенду один раз, в Task 6, командой `npx supabase migration up --local`, без сброса.
+- **pgTAP — только на изолированном стеке** `.pgtap-stack`: проект `pipe-qc-pgtap`, порты 554xx, те же образы, что у живого стенда.
+  - `bash tasks/material-check/pgtap.sh test <files…>` — свежая тестовая база и указанные файлы.
+  - `bash tasks/material-check/pgtap.sh check` — свежая тестовая база и весь набор. Красный при любом падении, которого нет в `tasks/material-check/pgtap-known-failures.txt`.
+  - В этом списке 13 тестов прав из 001 и 050. На свежесозданном стеке они падают уже до этой работы; это отдельная проблема, чинить её здесь нельзя.
+- Новая миграция: `supabase/migrations/20261007090000_material_check_simplify.sql`. Файл `20261006120000_material_check_workbench.sql` и другие миграции не меняются.
+- Где ниже в задачах написано «переписать миграцию 20261006120000», «`npm run demo:prepare -- --confirm-local-reset`», «`npx supabase test db …`» или «`npm run test:db`», вместо этого действуют правила из этого раздела.
 - Новых npm-зависимостей нет.
 - Работать в текущей ветке `feat/unified-workspace`. Коммит — после каждой задачи, с сообщением из задачи. Не делать push, PR, новых веток и worktree.
 - Секреты: следовать `AGENTS.md`. Скрипты сами читают `.env.local`. Пароли и ключи не выдумывать, не печатать и не передавать в командной строке.
-- Локальный стенд: pgTAP требует пустых engineering-таблиц. Порядок такой:
-  1. `npm run demo:prepare -- --confirm-local-reset`;
-  2. тесты;
-  3. в конце `npm run demo:showcase`.
-  Hosted-команды не запускать.
+- Hosted-команды не запускать.
 - Не трогать `modules/pressure-test/**`, оболочку (`components/pipeqc/**`), `components/ui/record-drawer*`.
 - Тексты интерфейса — на английском.
 - Коды ошибок и их сообщения сохраняются: PQC30, PQC31, PQC32, PQC33, PQC50, PQC54, 23514, 42501. На них опирается `mapSupabaseConstructionError`. Код PQC58 удаляется.
@@ -58,7 +63,7 @@
 
 | Действие | Файл | Ответственность |
 |---|---|---|
-| Rewrite | `supabase/migrations/20261006120000_material_check_workbench.sql` | helper, 2 политики, 2 view, команда |
+| Create | `supabase/migrations/20261007090000_material_check_simplify.sql` | удалить 3 старые функции чтения; helper, 2 политики, 2 view, команда |
 | Create | `supabase/tests/database/109_no_definer_reads.test.sql` | Защита от новых читающих `SECURITY DEFINER`-функций |
 | Rewrite | `supabase/tests/database/108_material_check_workbench.test.sql` | Доступ через view, допустимость, команда по ID |
 | Modify | `supabase/tests/database/050_material_traceability.test.sql`, `052_…`, `053_…`, `063_…`, `072_…`, `073_…` | Payload только из ID |
@@ -82,6 +87,8 @@
 ---
 
 ### Task 1: Guard test — no new data-returning SECURITY DEFINER functions
+
+> **Done** — commit `521d17b` (executed before the live-stand constraint; the steps below are kept for the record).
 
 **Files:**
 - Create: `supabase/tests/database/109_no_definer_reads.test.sql`
@@ -158,7 +165,7 @@ The suite stays red until Task 2. That is expected.
 ### Task 2: Read path — helper, policies and views
 
 **Files:**
-- Rewrite: `supabase/migrations/20261006120000_material_check_workbench.sql`. In this task, write only the parts below and keep the current `record_material_check` body untouched. Task 3 replaces it.
+- Create: `supabase/migrations/20261007090000_material_check_simplify.sql`, with the drops and read parts below. `record_material_check` is added to it in Task 3. Do not edit `20261006120000_material_check_workbench.sql`.
 - Rewrite: `supabase/tests/database/108_material_check_workbench.test.sql`, read part.
 
 **Interfaces:**
@@ -251,20 +258,25 @@ rollback;
 
 - [ ] **Step 2: Run it and see it fail**
 
-Run: `npx supabase test db supabase/tests/database/108_material_check_workbench.test.sql`
+Run: `bash tasks/material-check/pgtap.sh test supabase/tests/database/108_material_check_workbench.test.sql`
 Expected: FAIL, because the views do not exist.
 
-- [ ] **Step 3: Rewrite the read part of the migration**
+- [ ] **Step 3: Create the new migration with the read part**
 
-In `20261006120000_material_check_workbench.sql`:
-1. Delete the functions `assert_material_check_read_target`, `read_material_check_workspace` and `search_material_trace_candidates`, together with their `revoke` and `grant` lines.
-2. Change the header comment to:
+Create `supabase/migrations/20261007090000_material_check_simplify.sql` with this content:
+
 ```sql
--- Migration: material_check_workbench
+-- Migration: material_check_simplify
 -- Material Check works on BOM rows. Reads go through RLS (one policy helper, two policies and two
--- security_invoker views); record_material_check takes BOM-row and PML-record IDs only.
+-- security_invoker views) instead of the SECURITY DEFINER reads of 20261006120000;
+-- record_material_check takes BOM-row and PML-record IDs only (added below the views).
+
+drop function if exists public.search_material_trace_candidates(uuid, text, text, uuid, integer);
+drop function if exists public.read_material_check_workspace(uuid, uuid, integer);
+drop function if exists public.assert_material_check_read_target(uuid);
 ```
-3. Keep the existing `record_material_check` for now, and append:
+
+Then append:
 
 ```sql
 -- The project of a spool revision, returned only to a caller who may read that spool as a
@@ -333,14 +345,10 @@ revoke all on public.material_check_lines, public.material_trace_candidates from
 grant select on public.material_check_lines, public.material_trace_candidates to authenticated;
 ```
 
-- [ ] **Step 4: Apply the migration and run the tests**
+- [ ] **Step 4: Apply the migration on the isolated stack and run the tests**
 
-Run:
-```zsh
-npm run demo:prepare -- --confirm-local-reset
-npx supabase test db supabase/tests/database/108_material_check_workbench.test.sql supabase/tests/database/109_no_definer_reads.test.sql
-```
-Expected: both PASS.
+Run: `bash tasks/material-check/pgtap.sh test supabase/tests/database/108_material_check_workbench.test.sql supabase/tests/database/109_no_definer_reads.test.sql`
+Expected: both PASS. This re-creates only the `.pgtap-stack` test DB; the live stand is untouched.
 
 If the PDS-scope assertion fails because user 112 still sees rows, check the access path first:
 `select public.current_user_has_capability('30000000-0000-0000-0000-000000000108', 'spooling.view')` as that user.
@@ -350,7 +358,7 @@ If the PDS-scope assertion fails because user 112 still sees rows, check the acc
 - [ ] **Step 5: Commit**
 
 ```bash
-git add supabase/migrations/20261006120000_material_check_workbench.sql supabase/tests/database/108_material_check_workbench.test.sql
+git add supabase/migrations/20261007090000_material_check_simplify.sql supabase/tests/database/108_material_check_workbench.test.sql
 git commit -m "refactor(material-check): read BOM and PML candidates through RLS views"
 ```
 
@@ -359,7 +367,7 @@ git commit -m "refactor(material-check): read BOM and PML candidates through RLS
 ### Task 3: Command — IDs only, eligibility from the view, first QC-13 kept
 
 **Files:**
-- Modify: `supabase/migrations/20261006120000_material_check_workbench.sql`, `record_material_check` only.
+- Modify: `supabase/migrations/20261007090000_material_check_simplify.sql` — add `record_material_check` after the views.
 - Modify: `supabase/tests/database/108_material_check_workbench.test.sql` (append), `050_material_traceability.test.sql`, `052_fabrication_release.test.sql`, `053_construction_projections.test.sql`, `063_pwht_release.test.sql`, `072_erection_rft.test.sql`, `073_material_check_phase_naming.test.sql`.
 - Regenerate: `lib/supabase/database.types.ts`.
 
@@ -445,12 +453,12 @@ Count check: 13 read assertions plus 17 command assertions make 30. The command 
 
 - [ ] **Step 2: Run it and see it fail**
 
-Run: `npx supabase test db supabase/tests/database/108_material_check_workbench.test.sql`
+Run: `bash tasks/material-check/pgtap.sh test supabase/tests/database/108_material_check_workbench.test.sql`
 Expected: FAIL. The old body still requires `ident_code`/`trace_number` (23514 on the first `lives_ok`) and overwrites the QC-13 link.
 
 - [ ] **Step 3: Replace `record_material_check`**
 
-In the migration, replace the whole `create or replace function public.record_material_check(...)` with the version below. Notes:
+Append the version below to `20261007090000_material_check_simplify.sql`, after the two views. The `-- [unchanged]` parts are copied from the current function in `20261006120000_material_check_workbench.sql`, which itself is not edited. Notes:
 - the prologue, the evidence snapshots, the derived event, the audit and the receipt are taken from the current body **without changes**;
 - the item loop is new;
 - `on conflict` keeps the first QC-13;
@@ -583,14 +591,13 @@ In `050_material_traceability`, BOM `39000000-0000-0000-0000-00000000050N` and P
 
 Run:
 ```zsh
-npm run demo:prepare -- --confirm-local-reset
-npm run test:db
+bash tasks/material-check/pgtap.sh check
 ```
-Expected: all files PASS, including 109.
+Expected: `OK   pgTAP suite: no failures beyond the 13 known environment ones` — 108, 109 and every converted file pass.
 
 - [ ] **Step 6: Regenerate types**
 
-Run: `npx supabase gen types typescript --local > lib/supabase/database.types.ts`
+Run: `npx supabase gen types typescript --local --workdir .pgtap-stack > lib/supabase/database.types.ts` (the isolated stack has the new migration; the live stand gets it only in Task 6)
 Expected:
 - the diff removes `read_material_check_workspace` / `search_material_trace_candidates` / `assert_material_check_read_target`;
 - it adds `material_check_lines`, `material_trace_candidates` and `construction_spool_project_id`;
@@ -601,7 +608,7 @@ TypeScript does not compile until Task 4 and Task 5. That is expected.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add supabase/migrations/20261006120000_material_check_workbench.sql supabase/tests/database/*.test.sql lib/supabase/database.types.ts
+git add supabase/migrations/20261007090000_material_check_simplify.sql supabase/tests/database/*.test.sql lib/supabase/database.types.ts
 git commit -m "refactor(material-check): command takes BOM and PML ids only; first QC-13 kept"
 ```
 
@@ -1064,63 +1071,64 @@ git commit -m "refactor(material-check): typed view reads, one-query picker, dro
 
 ---
 
-### Task 6: Verify end to end, rebuild the stand, report
+### Task 6: Verify end to end, update the live stand without a reset, report
 
 **Files:**
-- Modify: `scripts/verify-material-traceability-workbench.ts`. Remove `ARTIFACT_DIR` and its writes. Evidence goes only to `docs/superpowers/specs/screenshots/`.
+- Modify: `scripts/verify-material-traceability-workbench.ts`. Remove `ARTIFACT_DIR` and its writes; evidence goes only to `docs/superpowers/specs/screenshots/`. The scenario must be **read-only**: it never presses `Record traces` / `Record field traces`, because SHOWCASE-1 is the owner's live demo data.
 - Modify: `docs/acceptance/2026-10-06-material-traceability-workbench.md`, `docs/audits/2026-10-06-backend-simplification.md`
 
-- [ ] **Step 1: Full verify on an empty stand**
+- [ ] **Step 1: Checks that do not touch any database**
 
-Run:
+Run: `npm run lint && npm run typecheck && npm run test:unit`
+Expected: exit 0 (lint may print warnings, no errors).
+
+- [ ] **Step 2: pgTAP on the isolated stack**
+
+Run: `bash tasks/material-check/pgtap.sh check`
+Expected: `OK   pgTAP suite: no failures beyond the 13 known environment ones`.
+
+- [ ] **Step 3: Apply the new migration to the live stand — no reset**
+
+Run: `npx supabase migration up --local`
+Expected: it applies exactly `20261007090000_material_check_simplify.sql`, and SHOWCASE-1 keeps its data:
 ```zsh
-npm run demo:prepare -- --confirm-local-reset
-npm run verify
+npx supabase db query --local "select (select count(*) from public.spools) spools, (select count(*) from public.material_check_records) material_checks, to_regclass('public.material_check_lines') is not null new_view, to_regprocedure('public.read_material_check_workspace(uuid,uuid,integer)') is null old_reads_gone"
 ```
-Expected: exit 0 (lint, typecheck, unit, pgTAP including 108 and 109).
+shows `spools` = 16, `material_checks` = 15, `new_view` = true, `old_reads_gone` = true.
+Then `npm run demo:check` → exit 0.
 
-- [ ] **Step 2: Rebuild the showcase and the contract check**
+- [ ] **Step 4: Browser check (read-only)**
 
-Run:
-```zsh
-npm run demo:showcase
-npm run demo:check
-```
-Expected: both exit 0. If `demo:showcase` fails at a `material_check` step, the seed helper from Task 4 is the first suspect.
+The dev server is already running on http://127.0.0.1:3000 — do not stop it. Log in as `track01.platform-admin@example.test`; the password comes from `.env.local` through the verify script, never typed into a command. On `SHOWCASE-1`:
+1. Fabrication → a spool with Start Fab recorded and Material not complete (for example `SP-1008-B`) → Material operation: BOM rows are listed; recorded rows show trace and MRR.
+2. Open one unrecorded row's trace picker: only eligible records are listed; typing filters the list without a network request per keystroke.
+3. Choose a trace: the row shows it as a draft and the record button becomes enabled. **Do not press it.** Clear the choice again (the clear action of the picker).
+4. Erection → the same spool → Field material: rows and the QC-13 form are visible.
 
-- [ ] **Step 3: Browser check**
-
-Start `npm run dev` if it is not running. Log in as `track01.platform-admin@example.test`; the password comes from `.env.local` through the verify script, never typed into a command. On `SHOWCASE-1`:
-1. Open Fabrication, then a spool with Start Fab recorded and Material not complete. Open the Material operation.
-2. Open one row's trace picker. The list shows only eligible records. Typing filters it without a network request per keystroke (check the Network panel).
-3. Choose traces for all rows and press `Record traces`. The record button disappears, the rows show `Recorded` with trace and MRR, and the Material stage turns complete.
-4. Open the same spool from Erection, then Field material. Rows and QC-13 are visible.
-5. Find a BOM row whose Ident has no active PML record (or deactivate one PML record of an unrecorded row in Project Setup). The picker shows `No active PML evidence matches this BOM row`.
-
-Update `scripts/verify-material-traceability-workbench.ts` so it covers steps 1–4, then run it:
+Update `scripts/verify-material-traceability-workbench.ts` to cover 1–4 exactly like this (no click on a Record button), then run:
 `npx tsx --env-file-if-exists=.env.local scripts/verify-material-traceability-workbench.ts`
-Expected: exit 0, with screenshots saved.
+Expected: exit 0, screenshots saved. Afterwards the counts from Step 3 are unchanged.
 
-- [ ] **Step 4: Measure the simplification**
+- [ ] **Step 5: Measure the simplification**
 
 Run: `git diff --shortstat f52cd03..HEAD -- supabase/migrations modules components lib scripts ':!lib/supabase/database.types.ts'`
 Record the insertions and deletions. Expected: net negative.
 
-- [ ] **Step 5: Update the documents**
+- [ ] **Step 6: Update the documents**
 
 In the acceptance document, add a section `## Simplification (2026-10-06)` with:
 - the commit list;
-- the line delta from Step 4;
+- the line delta from Step 5;
 - the replaced acceptance rows:
   - A08: «Load more» removed — one query per row, filtered locally;
   - A14: Reconfirm removed; it was failing with 23514 because it sent an empty item list;
   - A24: no pagination;
   - PQC58 removed.
-- the command outputs from Steps 1–3.
+- the command outputs from Steps 1–4.
 
 In the audit document, mark B1, B2, B3, B4 and B8 as done with the commit hashes.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add scripts/verify-material-traceability-workbench.ts docs/acceptance/2026-10-06-material-traceability-workbench.md docs/audits/2026-10-06-backend-simplification.md docs/superpowers/specs/screenshots
@@ -1144,7 +1152,7 @@ git commit -m "docs(material-check): record the simplification and its verificat
   - item 2 → Task 2 (no membership, other PDS area);
   - item 3 → Task 3 (resubmit, switch, case);
   - item 4 → Task 3 (QC-13 kept);
-  - item 5 → Task 6, Step 3.5.
+  - item 5 → Task 6, Step 4 (picker empty state; checked in the browser on a row whose Ident has no active PML, if SHOWCASE-1 has one — otherwise covered by the `emptyMessage` code path).
 - **Types:**
   - `TraceEntry`, `MaterialCandidate` and `AcceptedMaterialEvidence` are defined once in Task 4 and used unchanged in Task 5.
   - `loadMaterialTraceCandidates` (Task 5) replaces `searchMaterialTraceCandidates` everywhere.
