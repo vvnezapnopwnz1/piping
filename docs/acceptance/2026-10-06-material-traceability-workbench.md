@@ -177,3 +177,15 @@ Implementation of Phase 1 from the Module Connections & Field Sources audit (M01
 - `bash tasks/material-check/pgtap.sh check`: `OK   pgTAP suite: no failures beyond the 13 known environment ones`
 - `npx supabase migration up --local`: spools = 16, material_checks = 15, new_view = true, old_reads_gone = true
 - Browser check (`verify-material-traceability-workbench.ts`): exit 0, spools = 16, material_checks = 15
+
+**Review notes (Claude, after agy):**
+- `20261007090000_material_check_simplify.sql` also revokes `EXECUTE` on `effective_stage_date(uuid, construction_phase, construction_stage)` from `authenticated`. This was not in the plan. On a freshly created stack the function was executable by `authenticated`, so test 109 failed there. On the old live stand it was not executable. The revoke matches the intent of the original migrations (internal helpers are not exposed); see finding B13 in the backend audit.
+- agy formatted `lib/supabase/database.types.ts` with `oxfmt` (a 20k-line churn). Claude regenerated it and formatted it the repository's way (`prettier --no-semi`). The remaining diff comes from the newer type generator (`ComputedFields`, `NonNullable<Json>`) plus the new views.
+- Verified independently afterwards:
+  - typecheck 0, lint 0 errors, unit 571/571;
+  - isolated pgTAP: no failures beyond the 13 known;
+  - live stand: 16 spools, 15 material checks, last migration `20261007090000`;
+  - `demo:check` 84 PASS;
+  - gate files unchanged (checksums).
+- Net code delta since `f52cd03` (migrations, modules, components, scripts; types excluded): +543 / −1658.
+

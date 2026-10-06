@@ -42,8 +42,8 @@ import { ErectionStageTimeline } from "./erection-stage-view"
 import { useErectionReadiness } from "./use-erection-readiness"
 
 /**
- * Field material check. Every ident code is selected by the user from registered PML;
- * supports exact identity reconciliation, PML deep links, and reconfirming check dates.
+ * Field material check. Each BOM row takes a trace the user selects from the eligible PML
+ * records the server offers; recorded rows are read-only.
  *
  * One record per spool revision (T07-D2): if this spool was already material-checked in the
  * shop, recording here re-confirms that same record and takes over its date. The screen says
