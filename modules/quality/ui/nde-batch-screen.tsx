@@ -19,6 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { useNameWorkContext, useWorkContextParam } from "@/components/pipeqc/work-context"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import {
   allocateNdeBatchCandidates,
@@ -195,7 +196,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
         value: () => "",
         cell: (ob: NdeObligation) =>
           ob.disposition === "issued" ? (
-            <Button size="sm" variant="outline" onClick={() => void openResultDialog(ob)}>
+            <Button size="sm" variant="outline" data-help="nde-record" onClick={() => void openResultDialog(ob)}>
               Record Result
             </Button>
           ) : null,
@@ -209,6 +210,14 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
   )
   const rejectionNeedsDefectCode = outcome === "rejected" && defectReworkCodeId === ""
   const selectedObligation = obligations.find((ob) => ob.id === selectedObligationId) ?? null
+  // A spool handed over by a blocker link narrows the worklist to its obligations; the chip in the
+  // page head clears it again.
+  const [spoolContext] = useWorkContextParam("spool")
+  const visibleObligations = useMemo(
+    () => (spoolContext ? obligations.filter((ob) => ob.spoolRevisionId === spoolContext) : obligations),
+    [obligations, spoolContext],
+  )
+  useNameWorkContext("spool", spoolContext, visibleObligations[0]?.spoolNumber)
   const escalatedBatches = batches.filter((b) => b.escalatedAt !== null)
 
   const handleCreateBatch = async () => {
@@ -332,10 +341,10 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
   if (loading) return <Skeleton className="h-64 w-full" />
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold tracking-tight">NDE Batch Management</h2>
+          <h1 className="text-2xl tracking-tight">NDE Batch Management</h1>
           <p className="text-sm text-muted-foreground">
             Manage NDE inspection batches, allocate candidate joints, and record test results.
           </p>
@@ -423,7 +432,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
         </div>
       )}
 
-      <div className="grid gap-6">
+      <div className="grid grid-cols-1 gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Batches ({batches.length})</CardTitle>
@@ -519,19 +528,26 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
 
         <Card>
           <CardHeader>
-            <CardTitle>NDE Obligations ({obligations.length})</CardTitle>
+            <CardTitle>
+              NDE Obligations (
+              {spoolContext ? `${visibleObligations.length} of ${obligations.length} · selected spool` : obligations.length})
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <DataTable
               columns={obligationColumns}
-              rows={obligations}
+              rows={visibleObligations}
               state={obligationTable}
               onStateChange={setObligationTable}
               rowId={(ob) => ob.id}
               loading={loading}
               searchPlaceholder="Search joint, spool or batch…"
-              emptyTitle="No NDE obligations found."
-              emptyDescription="Obligations appear once a weld with an NDE requirement is recorded."
+              emptyTitle={spoolContext ? "No NDE obligation for the selected spool." : "No NDE obligations found."}
+              emptyDescription={
+                spoolContext
+                  ? "Clear the selected spool in the page head to see every obligation."
+                  : "Obligations appear once a weld with an NDE requirement is recorded."
+              }
             />
           </CardContent>
         </Card>

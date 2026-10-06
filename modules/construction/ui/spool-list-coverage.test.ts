@@ -92,7 +92,9 @@ test("the spool picker folds away once a spool is chosen", () => {
   )
 })
 
-test("browsing for another spool hides everything that belongs to the old one", () => {
+// Standalone screens replace their selected spool when browsing. The fabrication workbench
+// keeps the list beside a drawer, so browsing and working on the selected spool coexist there.
+test("standalone spool screens hide the previous spool's form while browsing", () => {
   const screens = [
     "modules/construction/ui/fabrication/weld-progress-screen.tsx",
     "modules/construction/ui/fabrication/qc-release-screen.tsx",
@@ -134,10 +136,15 @@ test("no worklist opens with a record the operator did not choose", () => {
       /(next|nextRows)\[0\]\?\./,
       `${file} must keep the current selection or clear it, never pick a row on its own`,
     )
-    assert.match(
-      source,
-      /\? current : null/,
-      `${file} keeps a selection that survived the reload and clears anything else`,
-    )
   }
+
+  const flangeSource = readFileSync(
+    repoRoot + "modules/flange/ui/flange-management-screen.tsx",
+    "utf8",
+  )
+  assert.match(
+    flangeSource,
+    /\? current : null/,
+    "flange-management-screen.tsx keeps a selection that survived the reload and clears anything else",
+  )
 })

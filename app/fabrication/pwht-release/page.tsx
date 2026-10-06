@@ -1,15 +1,8 @@
 "use client"
 
-import { useOptionalAccess } from "@/modules/access/ui/access-context"
-import { QcReleaseScreen } from "@/modules/construction/ui/fabrication/qc-release-screen"
+import { FabricationWorkbenchRoute } from "@/modules/construction/ui/fabrication/fabrication-workbench"
 
-export default function PWHTReleasePage() {
-  const access = useOptionalAccess()
-  const projectId = access?.access.projectId ?? null
-
-  if (!projectId) {
-    return <p className="text-muted-foreground text-sm">Select a project to review PWHT.</p>
-  }
-
-  return <QcReleaseScreen projectId={projectId} />
+// Fabrication is one spool workbench; this address opens it on its shop operation.
+export default function FabricationOperationPage() {
+  return <FabricationWorkbenchRoute />
 }

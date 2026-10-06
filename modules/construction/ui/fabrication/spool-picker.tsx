@@ -15,6 +15,11 @@ import { FABRICATION_SPOOL_COLUMNS } from "./spool-columns"
 interface SpoolPickerProps {
   projectId: string
   value: string | null
+  /**
+   * The selected spool's status when the screen already has it. A spool handed over by a link
+   * may sit beyond the loaded page; listing it keeps the picker folded on it.
+   */
+  selected?: SpoolStatus | null
   onChange: (status: SpoolStatus) => void
   /** True while the operator is back in the list; see `SpoolSelectTable`. */
   browsing: boolean
@@ -25,6 +30,7 @@ interface SpoolPickerProps {
 export function SpoolPicker({
   projectId,
   value,
+  selected = null,
   onChange,
   browsing,
   onBrowsingChange,
@@ -92,7 +98,11 @@ export function SpoolPicker({
     <RecordSelectTable
       title="Spools"
       columns={FABRICATION_SPOOL_COLUMNS}
-      rows={statuses}
+      rows={
+        selected && selected.spoolRevisionId === value && !statuses.some((row) => row.spoolRevisionId === value)
+          ? [selected, ...statuses]
+          : statuses
+      }
       rowId={(spool) => spool.spoolRevisionId}
       selectedId={value}
       onSelect={onChange}

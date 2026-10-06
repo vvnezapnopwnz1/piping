@@ -1,0 +1,65 @@
+"use client"
+
+import { useCallback, useEffect, useState } from "react"
+import { toast } from "sonner"
+
+import { useNameWorkContext, useWorkContextParam } from "@/components/pipeqc/work-context"
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
+import { loadSpoolStatus, type SpoolStatus } from "../../infrastructure/supabase-construction-repository"
+
+/**
+ * The spool a fabrication screen works on, kept in the address bar as `?spool=<revision id>`.
+ * A spool chosen on one shop step is already chosen on the next, a blocker link can hand one
+ * over, and Back or reload restore it. The status is read for that revision directly, so a
+ * spool beyond the first page of the picker still opens; a revision of another project is
+ * ignored rather than shown under this one.
+ */
+export function useContextSpool(
+  projectId: string,
+  { enabled = true }: { enabled?: boolean } = {},
+): [SpoolStatus | null, (status: SpoolStatus | null, options?: { push?: boolean; extra?: Record<string, string | null> }) => void] {
+  const [param, setParam] = useWorkContextParam("spool")
+  const [loaded, setLoaded] = useState<SpoolStatus | null>(null)
+  const spool = loaded && loaded.spoolRevisionId === param && loaded.projectId === projectId ? loaded : null
+
+  useEffect(() => {
+    if (!enabled || !param || (loaded?.spoolRevisionId === param && loaded.projectId === projectId)) return
+    let cancelled = false
+    void loadSpoolStatus(getSupabaseBrowserClient(), param)
+      .then((status) => {
+        if (!cancelled && status.projectId === projectId) setLoaded(status)
+      })
+      .catch((error: unknown) => {
+        if (!cancelled)
+          toast.error(error instanceof Error ? error.message : "The selected spool could not be loaded.")
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [enabled, loaded, param, projectId])
+
+  useNameWorkContext("spool", spool?.spoolRevisionId, spool?.spoolNumber)
+
+  const select = useCallback(
+    (status: SpoolStatus | null, options?: { push?: boolean; extra?: Record<string, string | null> }) => {
+      setLoaded(status)
+      setParam(status?.spoolRevisionId ?? null, options)
+    },
+    [setParam],
+  )
+
+  return [spool, select]
+}
+
+import type { FabricationOperationId } from "./fabrication-operations"
+
+/**
+ * A screen rendered inside the fabrication workbench gets its spool from there, and reports a
+ * re-read status back so the workbench's stage timeline moves with what was just recorded.
+ */
+export interface EmbeddedSpool {
+  spool: SpoolStatus
+  onSpoolChange: (status: SpoolStatus | null) => void
+  onOpenOperation?: (id: FabricationOperationId) => void
+  canOpenOperation?: (id: FabricationOperationId) => boolean
+}

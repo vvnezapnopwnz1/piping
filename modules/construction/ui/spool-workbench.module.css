@@ -1,0 +1,911 @@
+/* Full-width spool list with an overlay drawer, a persistent process and a separate operation. */
+.split {
+  --wb-field: #fff9f0;
+  --wb-line: var(--border);
+  --wb-line-strong: #bdb19c;
+  --wb-char: #2e2b25;
+  --wb-sage: #728157;
+  --wb-sage-strong: #56633f;
+  --wb-sage-soft: #e3e9d6;
+  --wb-terra: #c67139;
+  --wb-terra-strong: #9a4f1f;
+  --wb-terra-soft: #fbeee3;
+  --wb-hover: #efe5d2;
+  --wb-serif: var(--font-source-serif), Georgia, "Times New Roman", serif;
+  --wb-mono: var(--font-mono, ui-monospace), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.listPane {
+  min-width: 0;
+}
+
+/* Drawer */
+.drawer {
+  position: fixed;
+  inset: 0 0 0 auto;
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 70vw;
+  height: 100dvh;
+  overflow: hidden;
+  border-left: 1px solid var(--wb-line-strong);
+  border-radius: 0;
+  background: var(--card);
+  box-shadow: -20px 0 60px -20px rgb(32 30 29 / 0.3);
+  animation: drawer-in 0.18s ease-out;
+  overscroll-behavior: contain;
+}
+
+.drawerBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 44;
+  background: rgb(32 30 29 / 0.22);
+}
+
+.drawer[data-expanded] {
+  inset: 0;
+  width: 100vw;
+  border-left: 0;
+}
+
+@keyframes drawer-in {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+.drawerHead {
+  flex: none;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--wb-line);
+  background: var(--card);
+}
+
+.drawerBack {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 4px 10px;
+  border: 1px solid var(--wb-line-strong);
+  border-radius: 6px;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.drawerBack svg {
+  width: 16px;
+  height: 16px;
+}
+
+.drawerIdent {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.drawerKicker {
+  margin: 0;
+  color: var(--muted-foreground);
+  font: 600 10.5px var(--wb-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.drawerTitle {
+  margin: 2px 0 0;
+  font: 600 22px/1.15 var(--wb-mono);
+  outline: none;
+  overflow-wrap: anywhere;
+}
+
+.drawerMeta {
+  margin: 2px 0 0;
+  color: var(--muted-foreground);
+  font-size: 12.5px;
+}
+
+.drawerStatus {
+  align-self: center;
+}
+
+.drawerClose {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted-foreground);
+}
+
+.drawerClose:hover {
+  border-color: var(--wb-line);
+  background: var(--wb-hover);
+  color: var(--foreground);
+}
+
+.drawerClose svg {
+  width: 18px;
+  height: 18px;
+}
+
+.drawerBody {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 12px;
+  padding: 12px;
+}
+
+.stageBadge {
+  padding: 2px 10px;
+  border: 1px solid var(--wb-line-strong);
+  border-radius: 999px;
+  background: var(--wb-field);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Evidence */
+.factsStrip {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  flex: none;
+  gap: 6px;
+  margin: 0;
+}
+
+.factsStrip > div {
+  padding: 6px 8px;
+  border: 1px solid var(--wb-line);
+  border-radius: 6px;
+  background: var(--wb-field);
+}
+
+.factsStrip dt {
+  color: var(--muted-foreground);
+  font-size: 11px;
+}
+
+.factsStrip dd {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.factLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: #bdb19c;
+  text-underline-offset: 2px;
+}
+
+.factLink svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* Timeline: the spool's steps in process order, one line connecting them. */
+.processLayout {
+  display: grid;
+  grid-template-columns: 205px minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+  border: 1px solid var(--wb-line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.processNav {
+  min-height: 0;
+  padding: 10px 8px;
+  border-right: 1px solid var(--wb-line);
+  background: var(--wb-field);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.processLabel {
+  margin: 0 0 10px 8px;
+  color: var(--muted-foreground);
+  font: 600 10px var(--wb-mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tStep {
+  position: relative;
+  padding-bottom: 4px;
+}
+
+.tStep:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  top: 25px;
+  bottom: -12px;
+  left: 16px;
+  border-left: 2px solid var(--wb-line-strong);
+}
+
+.tStep[data-state="done"]:not(:last-child)::before {
+  border-left-color: var(--wb-sage);
+}
+
+.tDot {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  border: 2px solid var(--wb-line-strong);
+  border-radius: 50%;
+  background: var(--card);
+}
+
+.tDot svg {
+  width: 12px;
+  height: 12px;
+}
+
+.tStep[data-state="done"] .tDot {
+  border-color: var(--wb-sage);
+  background: var(--wb-sage);
+  color: white;
+}
+
+.tStep[data-state="next"] .tDot {
+  border-color: var(--wb-terra);
+  box-shadow: inset 0 0 0 4px var(--card), inset 0 0 0 11px var(--wb-terra);
+}
+
+.tMain {
+  min-width: 0;
+}
+
+.tHead {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 7px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.tHeadContent {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.tHead:not(:disabled):hover {
+  border-color: var(--wb-line);
+  background: var(--wb-hover);
+}
+
+.tStep[data-open] .tHead {
+  border-color: var(--wb-char);
+  background: var(--wb-field);
+  box-shadow: inset 3px 0 0 var(--wb-sage);
+  cursor: default;
+}
+
+.tHead:disabled {
+  color: var(--muted-foreground);
+  cursor: not-allowed;
+}
+
+.tTitleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+}
+
+.tTitle {
+  font: 400 17px/1.2 var(--wb-serif);
+}
+
+.tDone {
+  color: var(--wb-sage-strong);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.tDone {
+  display: none;
+}
+
+.tLocked {
+  font-size: 11.5px;
+}
+
+.nextBadge {
+  padding: 1px 8px;
+  border: 1px solid #e1b393;
+  border-radius: 999px;
+  background: var(--wb-terra-soft);
+  color: #7d3f14;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.tLines {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 3px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+
+.tLines > span {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 6px;
+  font-size: 10px;
+}
+
+.tLines .stageDate {
+  font-size: 10px;
+}
+
+.tLines [data-recorded] {
+  color: var(--foreground);
+}
+
+.stageDate {
+  font: 11.5px var(--wb-mono);
+  white-space: nowrap;
+}
+
+.operationPane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  container-type: inline-size;
+}
+
+.operationHead {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--wb-line);
+  background: var(--card);
+}
+
+.operationTitle {
+  margin: 0;
+  font: 400 22px/1.2 var(--wb-serif);
+}
+
+.operationState {
+  margin-left: auto;
+  color: var(--muted-foreground);
+  font-size: 11px;
+}
+
+.operationDates {
+  display: none;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  color: var(--muted-foreground);
+  font-size: 11px;
+}
+
+.operationScroll {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  padding: 14px;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+/* The same forms, with the space appropriate to a work panel instead of a full page. */
+.operationScroll :global([data-slot="card"]) {
+  gap: 14px;
+  padding-block: 16px;
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+.operationScroll :global([data-slot="card-header"]),
+.operationScroll :global([data-slot="card-content"]) {
+  padding-inline: 14px;
+}
+
+.evidenceNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.evidenceNav button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 5px 10px;
+  border: 1px solid var(--wb-line);
+  border-radius: 6px;
+  background: var(--card);
+  font-size: 12px;
+}
+
+.evidenceNav button[aria-pressed="true"] {
+  border-color: var(--wb-sage-strong);
+  background: var(--wb-sage-soft);
+  font-weight: 600;
+}
+
+.evidenceNav button span {
+  font: 11px var(--wb-mono);
+}
+
+.recordActions {
+  position: sticky;
+  bottom: -14px;
+  z-index: 1;
+  margin-top: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--wb-line);
+  background: var(--card);
+}
+
+.weldFields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+@container (min-width: 480px) {
+  .weldFields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container (min-width: 640px) {
+  .weldFields {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+:global(.dark) .split {
+  --wb-field: #2a2824;
+  --wb-line-strong: #5a544a;
+  --wb-char: #e9dfcd;
+  --wb-sage-soft: #343d29;
+  --wb-sage-strong: #c2d3a2;
+  --wb-hover: #34302a;
+}
+
+.notice {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-left: 4px solid #c67139;
+  border-radius: 6px;
+  background: #fbeee3;
+  font-size: 13px;
+}
+
+/* Ready for Test of one spool: each criterion on its own row, the open ones as links. */
+.criteria {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff9f0;
+}
+
+.criteria li {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+}
+
+.criteria li:first-child {
+  border-top: 0;
+}
+
+.criteria svg {
+  width: 18px;
+  height: 18px;
+}
+
+.criteria li[data-met] svg {
+  color: #56633f;
+}
+
+.criteria li:not([data-met]) svg {
+  color: #9a4f1f;
+}
+
+.criterionName {
+  font-weight: 600;
+}
+
+.criterionDetail {
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+
+.verdict {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid #c67139;
+  border-radius: 6px;
+  background: #fbeee3;
+  font-size: 13px;
+}
+
+.verdict[data-ready] {
+  border-color: #728157;
+  background: #edf1e3;
+}
+
+/* Release checks list */
+.checksList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.checksTable {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--wb-line);
+  border-radius: 6px;
+  background: var(--wb-field);
+  overflow: hidden;
+}
+
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--wb-line);
+}
+
+.checkRow:last-child {
+  border-bottom: 0;
+}
+
+.checkIcon {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkInfo {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+
+.checkLabel {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.checkDetail {
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+
+.checkStatus {
+  flex: none;
+  display: flex;
+  align-items: center;
+}
+
+.checkCompleteBadge {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--wb-sage-strong);
+}
+
+.checkActionLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 3px 8px;
+  border: 1px solid var(--wb-line-strong);
+  border-radius: 4px;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.checkActionLink:hover {
+  background: var(--wb-hover);
+  border-color: var(--wb-char);
+}
+
+/* Operation compact summaries */
+.opSummary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 8px 12px;
+  border: 1px solid var(--wb-line);
+  border-radius: 6px;
+  background: var(--wb-field);
+  font-size: 12px;
+}
+
+.opSummaryItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.opSummaryLabel {
+  color: var(--muted-foreground);
+}
+
+.opSummaryValue {
+  font-weight: 600;
+  font-family: var(--wb-mono);
+}
+
+/* Joint facts strip inside weld card */
+.jointFacts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--wb-line);
+  border-radius: 6px;
+  background: var(--wb-field);
+  font-size: 12px;
+}
+
+.jointFactItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.jointFactLabel {
+  color: var(--muted-foreground);
+  font-size: 11px;
+}
+
+.jointFactValue {
+  font-weight: 600;
+  font-family: var(--wb-mono);
+  overflow-wrap: anywhere;
+}
+
+/* Trace status badge */
+.traceStatusBadge {
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* On narrow screens the same overlay fills the window and has an explicit way back. */
+@media (max-width: 1023px) {
+  .drawer {
+    inset: 0;
+    width: 100vw;
+    height: 100dvh;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .drawer[data-expanded] {
+    inset: 0;
+    height: 100dvh;
+  }
+
+  .drawerBack {
+    display: inline-flex;
+  }
+
+  .drawerHead {
+    flex-wrap: wrap;
+  }
+
+  .drawerClose {
+    display: none;
+  }
+}
+
+/* Narrow drawers use a connected compact rail. Dates appear on the selected operation
+   header; the five operation groups stay visible without vertical scrolling. */
+@media (max-width: 1279px), (max-height: 700px) {
+  .processLayout {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .processNav {
+    flex: none;
+    padding: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-right: 0;
+    border-bottom: 1px solid var(--wb-line);
+  }
+
+  .processLabel {
+    display: none;
+  }
+
+  .timeline {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    gap: 2px;
+  }
+
+  .tStep {
+    padding-bottom: 0;
+  }
+
+  .tStep:not(:last-child)::before {
+    top: 17px;
+    left: 50%;
+    right: -50%;
+    bottom: auto;
+    border-left: 0;
+    border-top: 2px solid var(--wb-line-strong);
+  }
+
+  .tStep[data-state="done"]:not(:last-child)::before {
+    border-top-color: var(--wb-sage);
+  }
+
+  .tHead {
+    position: relative;
+    align-items: center;
+    flex-direction: column;
+    height: 100%;
+    padding: 6px 2px;
+    text-align: center;
+    background: var(--wb-field);
+  }
+
+  .tHeadContent {
+    align-items: center;
+  }
+
+  .tTitleRow {
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .tTitle {
+    font: 600 11px/1.25 var(--wb-mono);
+  }
+
+  .tLocked {
+    font-size: 9px;
+  }
+
+  .tLines {
+    display: none;
+  }
+
+  .operationDates {
+    display: flex;
+  }
+
+  .operationPane {
+    flex: 1;
+  }
+}
+
+@media (max-width: 639px) {
+  .drawerHead {
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .drawerBack {
+    padding-inline: 7px;
+  }
+
+  .drawerTitle {
+    font-size: 18px;
+  }
+
+  .drawerStatus {
+    display: none;
+  }
+
+  .drawerBody {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .factsStrip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .factsStrip > div {
+    padding: 4px 6px;
+  }
+
+  .operationHead {
+    padding: 10px;
+  }
+
+  .operationScroll {
+    padding: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer {
+    animation: none;
+  }
+}

@@ -1,13 +1,8 @@
 "use client"
 
-import { FieldWeldProgressScreen } from "@/modules/construction/ui/erection/field-weld-progress-screen"
+import { ErectionWorkbenchRoute } from "@/modules/construction/ui/erection/erection-workbench"
 
-export default function WeldedBoltedPage() {
-  return (
-    <FieldWeldProgressScreen
-      title="Welded / Bolted"
-      description="Field weld completion uses the same rules as shop welds. Record the joints, then the Welded / Bolted milestone that Ready For Test depends on."
-      stage="welded_bolted"
-    />
-  )
+// Erection is one field-spool workbench; this address opens it on its operation.
+export default function ErectionOperationPage() {
+  return <ErectionWorkbenchRoute />
 }

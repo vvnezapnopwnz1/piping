@@ -1,12 +1,8 @@
 "use client"
 
-import { FieldWeldProgressScreen } from "@/modules/construction/ui/erection/field-weld-progress-screen"
+import { ErectionWorkbenchRoute } from "@/modules/construction/ui/erection/erection-workbench"
 
-export default function FieldWeldProgressPage() {
-  return (
-    <FieldWeldProgressScreen
-      title="Field Weld Progress"
-      description="Record field joints through the shared weld and NDE quality context."
-    />
-  )
+// Erection is one field-spool workbench; this address opens it on its operation.
+export default function ErectionOperationPage() {
+  return <ErectionWorkbenchRoute />
 }

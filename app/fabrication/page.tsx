@@ -1,5 +1,8 @@
-import { redirect } from "next/navigation";
+"use client"
 
-export default function FabricationPage() {
-  redirect("/fabrication/dashboard");
+import { FabricationWorkbenchRoute } from "@/modules/construction/ui/fabrication/fabrication-workbench"
+
+// Fabrication is one spool workbench. Without an operation in the address it opens the one the selected spool needs next.
+export default function FabricationOperationPage() {
+  return <FabricationWorkbenchRoute />
 }

@@ -1,20 +1,74 @@
 "use client"
 
+import Link from "next/link"
+import { usePathname, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
+import { ArrowRight } from "lucide-react"
 import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DataTable, useTableUrlState, type DataColumn } from "@/components/ui/data-table"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
+import { canVisit } from "@/components/pipeqc/navigation-model"
+import { useNameWorkContext, useWorkContextParam } from "@/components/pipeqc/work-context"
+import { linkFrom } from "@/components/pipeqc/workspace-model"
+import { useOptionalAccess } from "@/modules/access/ui/access-context"
 import {
   currentErectionStageLabel,
   describeRftShortfall,
+  listRftShortfall,
+  type RftShortfallKind,
 } from "../../application/describe-erection-readiness"
 import type { ErectionReadiness } from "../../infrastructure/supabase-erection-repository"
 import { loadErectionChartData, type ErectionChartData } from "../../infrastructure/supabase-erection-repository"
 import { ErectionChartsPanel } from "./erection-charts-panel"
 import { useErectionReadiness } from "./use-erection-readiness"
+
+/** Where each open RFT criterion is recorded. PWHT results are entered on QC Release. */
+const SHORTFALL_HREF: Record<RftShortfallKind, string> = {
+  welded_bolted: "/erection/welded-bolted",
+  supported: "/erection/supported",
+  nde: "/nde",
+  pwht: "/fabrication/qc-release",
+}
+
+/**
+ * The reason a spool is not ready, as links: each open criterion opens the screen where it is
+ * resolved with this spool already selected, and that screen's Back returns here.
+ */
+function RftShortfall({ row }: { row: ErectionReadiness }) {
+  const pathname = usePathname()
+  const params = useSearchParams()
+  const can = useOptionalAccess()?.can
+  const query = params.toString()
+  const here = query ? `${pathname}?${query}` : pathname
+  const items = listRftShortfall(row)
+  if (!items.length) return <span className="text-muted-foreground text-sm">{describeRftShortfall(row)}</span>
+  return (
+    <ul className="flex flex-col gap-0.5 whitespace-normal">
+      {items.map((item) => {
+        const path = SHORTFALL_HREF[item.kind]
+        return (
+          <li key={item.kind} className="text-sm">
+            {can && canVisit(path, can) ? (
+              <Link
+                href={linkFrom(`${path}?spool=${encodeURIComponent(row.spoolRevisionId)}`, here)}
+                data-help="rft-blocker"
+                className="inline-flex items-center gap-1 underline decoration-[#bdb19c] underline-offset-2 hover:decoration-current"
+              >
+                {item.label}
+                <ArrowRight aria-hidden="true" className="size-3.5" />
+              </Link>
+            ) : (
+              <span className="text-muted-foreground">{item.label}</span>
+            )}
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
 
 /**
  * A count of two numbers is one fact, not two, so the column sorts on how far along the spool is
@@ -85,8 +139,7 @@ const COLUMNS: ReadonlyArray<DataColumn<ErectionReadiness>> = [
     header: "RFT",
     value: (row) => row.isRft,
     filter: "boolean",
-    truncate: true,
-    className: "max-w-72",
+    className: "min-w-64",
     cell: (row) =>
       row.isRft ? (
         <span>
@@ -95,8 +148,8 @@ const COLUMNS: ReadonlyArray<DataColumn<ErectionReadiness>> = [
         </span>
       ) : (
         // The reason a spool is not ready is the single most useful thing on this row, so it is
-        // shown in place rather than left for the operator to work out from the counts.
-        <span className="text-muted-foreground text-sm">{describeRftShortfall(row)}</span>
+        // shown in place — and each reason opens the screen where it is resolved.
+        <RftShortfall row={row} />
       ),
   },
 ]
@@ -118,7 +171,11 @@ export function ErectionReadinessScreen({
   note?: string
   showCharts?: boolean
 }) {
-  const { projectId, isLoading, loadFailed, rows, canView } = useErectionReadiness()
+  const { projectId, isLoading, loadFailed, rows: allRows, canView } = useErectionReadiness()
+  // A spool handed over in the address narrows the table to it; the chip in the page head clears it.
+  const [spool] = useWorkContextParam("spool")
+  const rows = spool ? allRows.filter((row) => row.spoolRevisionId === spool) : allRows
+  useNameWorkContext("spool", spool, rows[0]?.spoolNumber)
   const [charts, setCharts] = useState<ErectionChartData | null>(null)
   const [chartsLoadedProjectId, setChartsLoadedProjectId] = useState<string | null>(null)
   // Namespaced so this table's filters survive alongside anything else the route puts in the URL.
@@ -163,7 +220,7 @@ export function ErectionReadinessScreen({
           : <ErectionChartsPanel data={charts} loading={false} />
       ) : null}
 
-      <Card>
+      <Card data-help="rft-table">
         <CardHeader>
           <CardTitle>
             Field spool readiness
@@ -189,18 +246,20 @@ export function ErectionReadinessScreen({
               rowId={(row) => row.spoolRevisionId}
               loading={isLoading}
               searchPlaceholder="Search ISO or spool…"
-              emptyTitle="No accepted field spool is available on this project."
-              emptyDescription="Field spools appear once an engineering revision is accepted."
+              emptyTitle={
+                spool
+                  ? "The selected spool is not among the field spools you can see."
+                  : "No accepted field spool is available on this project."
+              }
+              emptyDescription={
+                spool
+                  ? "Clear the selected spool in the page head to list every field spool."
+                  : "Field spools appear once an engineering revision is accepted."
+              }
             />
           )}
         </CardContent>
       </Card>
-
-      <p className="text-muted-foreground text-sm">
-        Ready For Test is derived, never stored: it opens once Welded / Bolted and Supported are
-        recorded and no NDE obligation or PWHT requirement is left open. The material columns
-        count evidence from either phase, because a spool revision carries one material check.
-      </p>
     </div>
   )
 }

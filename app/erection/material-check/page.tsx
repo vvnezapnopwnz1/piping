@@ -1,12 +1,8 @@
 "use client"
 
-import { FieldMaterialCheckScreen } from "@/modules/construction/ui/erection/field-material-check-screen"
+import { ErectionWorkbenchRoute } from "@/modules/construction/ui/erection/erection-workbench"
 
-export default function FieldMaterialCheckPage() {
-  return (
-    <FieldMaterialCheckScreen
-      title="Field Material Check"
-      description="Confirm field material traces against the accepted spool bill of materials."
-    />
-  )
+// Erection is one field-spool workbench; this address opens it on its operation.
+export default function ErectionOperationPage() {
+  return <ErectionWorkbenchRoute />
 }

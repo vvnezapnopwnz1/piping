@@ -1,13 +1,19 @@
 "use client"
 
+import { useContext } from "react"
+
 import { Badge } from "@/components/ui/badge"
 import { toStageEvidence } from "../../application/describe-erection-readiness"
 import { erectionStageDate, isRecordableStage } from "../../application/record-erection-progress"
 import { ERECTION_STAGES, erectionStageLabel } from "../../domain/erection-stage"
 import type { ErectionReadiness } from "../../infrastructure/supabase-erection-repository"
+import { ErectionEmbeddedContext } from "./erection-screen-shell"
 
 export function ErectionStageTimeline({ row }: { row: ErectionReadiness }) {
   const evidence = toStageEvidence(row)
+  // The workbench shows this timeline once, as its navigation.
+  const embedded = useContext(ErectionEmbeddedContext)
+  if (embedded) return null
 
   return (
     <ol className="flex flex-wrap items-center gap-2">

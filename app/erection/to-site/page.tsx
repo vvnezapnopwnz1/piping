@@ -1,13 +1,8 @@
 "use client"
 
-import { ErectionStageScreen } from "@/modules/construction/ui/erection/erection-stage-screen"
+import { ErectionWorkbenchRoute } from "@/modules/construction/ui/erection/erection-workbench"
 
-export default function ToSitePage() {
-  return (
-    <ErectionStageScreen
-      stage="to_site"
-      title="To Site"
-      description="Record the field delivery milestone for an accepted spool. Every later erection step depends on it."
-    />
-  )
+// Erection is one field-spool workbench; this address opens it on its operation.
+export default function ErectionOperationPage() {
+  return <ErectionWorkbenchRoute />
 }
