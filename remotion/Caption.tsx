@@ -26,16 +26,23 @@ export function Caption({ events }: { events: TimelineEvent[] }) {
   )
 
   return (
-    <AbsoluteFill style={{ justifyContent: "flex-end", alignItems: "center", pointerEvents: "none" }}>
+    <AbsoluteFill style={{ justifyContent: "flex-end", alignItems: "center", pointerEvents: "none", zIndex: 50 }}>
       <div
         style={{
-          marginBottom: 56,
-          padding: "10px 22px",
-          borderRadius: 8,
-          background: "rgba(11,13,16,0.82)",
-          color: "white",
-          fontFamily: "system-ui, sans-serif",
-          fontSize: 22,
+          marginBottom: 44,
+          maxWidth: "88%",
+          textAlign: "center",
+          padding: "12px 28px",
+          borderRadius: 12,
+          background: "rgba(11, 15, 25, 0.88)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          border: "1px solid rgba(255, 255, 255, 0.14)",
+          boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5)",
+          color: "#f8fafc",
+          fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+          fontSize: 21,
+          lineHeight: 1.4,
           fontWeight: 500,
           opacity,
         }}

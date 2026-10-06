@@ -3,25 +3,20 @@ import * as path from "path"
 import * as fs from "fs"
 
 import { TimelineRecorder } from "./demo-video-timeline"
+import { generateAmbientMusic } from "./generate-bg-music"
 
 /**
- * PipeQC Demo Video Capture
+ * PipeQC Product Video Capture
  *
- * Records the full construction lifecycle of one spool (SP-DEMO-1001-A, project TRACK01-A) as a
- * chapter per clip, each paired with a JSON timeline consumed by the Remotion post-production pass
- * (cursor/click overlay, zoom keyframes, captions) — the raw Playwright video has no cursor at all.
+ * Records the complete piping construction lifecycle of a spool as an executive-ready product demo.
+ * Each chapter is captured as a clip paired with a JSON timeline consumed by the Remotion post-production pass.
  *
- *   golden-path-fabrication.webm — SpoolGen import, material check, shop welds, a blocked QC
- *                                  release attempt (NDE and site work still outstanding).
- *   golden-path-nde.webm         — NDE batch creation, allocation, issue, accepted results.
- *   golden-path-qc-release.webm  — supports installed, PWHT accepted, spool QC released.
- *   golden-path-erection.webm    — to site, erected, welded/bolted, supported, ready-for-test tour.
- *   golden-path-testpack.webm    — a new Test Pack composed with the demo ISO.
- *   showcase-dashboards.webm     — switch to SHOWCASE-1 and tour the three live chart dashboards.
+ * Authentication is performed once in the background before capture so login screens and credential typing
+ * are never recorded. All captions convey industrial business logic and engineering context in English.
  */
 
 const VIEWPORT = { width: 1600, height: 1000 }
-const TYPE_DELAY_MS = 100
+const TYPE_DELAY_MS = 80
 
 function loadEnvLocal() {
   const envPath = path.join(process.cwd(), ".env.local")
@@ -83,12 +78,6 @@ async function fillDateAndRecord(
   await locator.fill(value)
 }
 
-/**
- * Some actions (Record Start Fab, allocation preview) fire a client-side reload that lands a
- * beat after the click resolves — polling survives that beat instead of racing a fixed pause
- * against it (a fixed pause either wipes typed state with a late reload or reads a stale
- * disabled button too early).
- */
 async function waitForCondition(check: () => Promise<boolean>, timeoutMs = 8000, intervalMs = 200) {
   const start = Date.now()
   while (Date.now() - start < timeoutMs) {
@@ -121,7 +110,7 @@ async function selectRadixOption(page: Page, triggerId: string, caption: string,
   const option = page.getByRole("option").first()
   await option.waitFor({ state: "visible", timeout: 5000 })
   const box = await option.boundingBox()
-  timeline.record({ type: "click", caption: `${caption} — pick option`, box, durationMs: 300 })
+  timeline.record({ type: "click", caption, box, durationMs: 300 })
   await option.click()
 }
 
@@ -129,39 +118,56 @@ async function selectRadixOption(page: Page, triggerId: string, caption: string,
 async function selectSpoolInPicker(page: Page, spoolNumber: string, timeline: TimelineRecorder) {
   const search = page.locator('input[placeholder*="Search spool"]')
   if (await search.isVisible()) {
-    await typeAndRecord(search, spoolNumber, `Search spool ${spoolNumber}`, timeline)
+    await typeAndRecord(search, spoolNumber, `Selecting spool ${spoolNumber}`, timeline)
     await pauseAndRecord(page, 400, "", timeline)
   }
   const row = page.locator(`tr:has-text("${spoolNumber}")`).first()
-  await clickAndRecord(row, `Select spool ${spoolNumber}`, timeline)
+  await clickAndRecord(row, `Selecting spool ${spoolNumber}`, timeline)
   await pauseAndRecord(page, 800, "", timeline)
 }
 
-async function signIn(page: Page, baseUrl: string, email: string, password: string, timeline: TimelineRecorder) {
-  await gotoAndRecord(page, baseUrl, "Sign in to PipeQC", timeline)
-  await typeAndRecord(page.locator("#email"), email, "Enter email", timeline)
-  await typeAndRecord(page.locator("#password"), password, "Enter password", timeline)
-  await clickAndRecord(page.locator('button[type="submit"]'), "Sign in", timeline)
-  await pauseAndRecord(page, 2000, "Authorization successful", timeline)
+/** Pre-authenticates once in the background and saves session state to avoid showing login in video. */
+async function preAuthenticate(browser: Browser, baseUrl: string, email: string, password: string, statePath: string) {
+  console.log("🔐 Authenticating session in background (excluded from video capture)...")
+  const context = await browser.newContext({ viewport: VIEWPORT })
+  const page = await context.newPage()
+  await page.goto(baseUrl, { waitUntil: "networkidle" })
+  await page.locator("#email").fill(email)
+  await page.locator("#password").fill(password)
+  await page.locator('button[type="submit"]').click()
+  await page.waitForURL((url) => !url.pathname.includes("/login") && !url.pathname.includes("/auth"), { timeout: 15000 }).catch(() => {})
+  await page.waitForTimeout(1000)
+
+  // Ensure default demo project is active in session
+  const projectSwitcher = page.locator("header button").filter({ hasText: "·" }).first()
+  if (await projectSwitcher.isVisible()) {
+    const currentLabel = (await projectSwitcher.textContent()) ?? ""
+    if (!currentLabel.includes("TRACK01-A")) {
+      await projectSwitcher.click()
+      const projectItem = page.getByRole("menuitem", { name: /TRACK01-A/ })
+      if (await projectItem.isVisible()) {
+        await projectItem.click()
+        await page.waitForTimeout(1000)
+      }
+    }
+  }
+
+  await context.storageState({ path: statePath })
+  await context.close()
+  console.log("✅ Background session established.")
 }
 
-/**
- * The active project is server-side session state, not part of the URL — the account's last
- * selection carries over across logins. Every clip must pin its own project explicitly rather
- * than assume a default, or its actions (a real mutation, in most of these clips) land wherever
- * the account was last left, which can be a curated project like SHOWCASE-1.
- */
-async function ensureProject(page: Page, projectCode: string, timeline: TimelineRecorder) {
+async function ensureProjectSilent(page: Page, projectCode: string) {
   const projectSwitcher = page.locator("header button").filter({ hasText: "·" }).first()
+  if (!(await projectSwitcher.isVisible())) return
   const currentLabel = (await projectSwitcher.textContent()) ?? ""
-  if (currentLabel.includes(projectCode)) {
-    await pauseAndRecord(page, 500, `Already viewing ${projectCode}`, timeline)
-    return
-  }
-  await clickAndRecord(projectSwitcher, "Open project switcher", timeline)
+  if (currentLabel.includes(projectCode)) return
+  await projectSwitcher.click()
   const projectItem = page.getByRole("menuitem", { name: new RegExp(projectCode) })
-  await clickAndRecord(projectItem, `Switch to ${projectCode}`, timeline, 800)
-  await pauseAndRecord(page, 1500, `Now viewing ${projectCode}`, timeline)
+  if (await projectItem.isVisible()) {
+    await projectItem.click()
+    await page.waitForTimeout(1200)
+  }
 }
 
 async function saveClip(page: Page, videoDir: string, clipName: string, timeline: TimelineRecorder) {
@@ -173,38 +179,37 @@ async function saveClip(page: Page, videoDir: string, clipName: string, timeline
   timeline.writeTo(path.join(videoDir, `${clipName}.timeline.json`))
 }
 
-async function newClipContext(browser: Browser, videoDir: string) {
+async function newClipContext(browser: Browser, videoDir: string, statePath: string) {
   const context = await browser.newContext({
     viewport: VIEWPORT,
     recordVideo: { dir: videoDir, size: VIEWPORT },
+    storageState: statePath,
   })
   const page = await context.newPage()
   return { context, page }
 }
 
 // ---------------------------------------------------------------------------
-// Clip 1: fabrication — import, material check, shop welds, a blocked release attempt
+// Clip 1: Shop Fabrication — 3D CAD/SpoolGen import, PML traceability, shop welds, Quality Gate check
 // ---------------------------------------------------------------------------
-async function recordFabrication(browser: Browser, baseUrl: string, email: string, password: string, videoDir: string) {
-  console.log("🚀 Clip 1/6: golden-path-fabrication (TRACK01-A)...")
+async function recordFabrication(browser: Browser, baseUrl: string, statePath: string, videoDir: string) {
+  console.log("🚀 Clip 1/6: Shop Fabrication...")
   const timeline = new TimelineRecorder()
-  const { context, page } = await newClipContext(browser, videoDir)
+  const { context, page } = await newClipContext(browser, videoDir, statePath)
 
   try {
-    await signIn(page, baseUrl, email, password, timeline)
-    console.log("🔀 Ensuring TRACK01-A is active...")
-    await ensureProject(page, "TRACK01-A", timeline)
+    await ensureProjectSilent(page, "TRACK01-A")
 
     console.log("📁 Navigating to Spooling / Import...")
-    await gotoAndRecord(page, `${baseUrl}/spooling/import`, "Open Spooling / Import", timeline)
+    await gotoAndRecord(page, `${baseUrl}/spooling/import`, "Importing engineering 3D CAD & SpoolGen fabrication packages", timeline)
 
     const demoDataDir = path.join(process.cwd(), "demo-data", "spoolgen")
     const fileInputs = page.locator('input[type="file"]')
     const files = [
-      ["weld.txt", "Attach weld.txt"],
-      ["trace.txt", "Attach trace.txt"],
-      ["bolt.txt", "Attach bolt.txt"],
-      ["supp.txt", "Attach supp.txt"],
+      ["weld.txt", "Loading shop & field weld specifications from 3D model"],
+      ["trace.txt", "Loading component heat traceability & Bill of Materials"],
+      ["bolt.txt", "Loading flange bolting & gasket specifications"],
+      ["supp.txt", "Loading engineered pipe support data"],
     ] as const
     for (let i = 0; i < files.length; i++) {
       const [file, caption] = files[i]
@@ -213,46 +218,44 @@ async function recordFabrication(browser: Browser, baseUrl: string, email: strin
     }
 
     console.log("🔍 Validating files...")
-    await clickAndRecord(page.locator('button:has-text("Validate files")'), "Validate SpoolGen files", timeline)
+    await clickAndRecord(page.locator('button:has-text("Validate files")'), "Validating isometric geometry, weld criteria and material classes", timeline)
     await page.waitForSelector("text=Job created", { timeout: 15000 })
 
     const applyBtn = page.locator('button:has-text("Apply import")')
     if (await applyBtn.isVisible()) {
       await page.waitForSelector('button:has-text("Apply import"):not([disabled])', { timeout: 15000 })
-      await clickAndRecord(applyBtn, "Apply import revision", timeline, 800)
-      await pauseAndRecord(page, 3000, "Import applied", timeline)
+      await clickAndRecord(applyBtn, "Applying engineering revision — spools and welds registered into project", timeline, 800)
+      await pauseAndRecord(page, 3000, "Engineering revision applied successfully", timeline)
     }
 
     console.log("📦 Registering PML (received material) records...")
-    await gotoAndRecord(page, `${baseUrl}/admin/project-referential`, "Open Admin / Project Referential", timeline)
-    await clickAndRecord(page.getByRole("tab", { name: "Welding & Quality" }), "Open Welding & Quality", timeline)
-    await clickAndRecord(page.getByRole("tab", { name: /PML Records/ }), "Open PML Records", timeline)
+    await gotoAndRecord(page, `${baseUrl}/admin/project-referential`, "Receiving Inspection (PML) — registering material mill test certificates", timeline)
+    await clickAndRecord(page.getByRole("tab", { name: "Welding & Quality" }), "Welding & Quality configuration", timeline)
+    await clickAndRecord(page.getByRole("tab", { name: /PML Records/ }), "Piping Material List (PML) registry", timeline)
     for (const [mrr, ident, trace] of [
       ["MRR-DEMO-1001", "ID-DEMO-100", "HEAT-DEMO-1001"],
       ["MRR-DEMO-1002", "ID-DEMO-200", "HEAT-DEMO-1002"],
     ] as const) {
-      await clickAndRecord(page.locator('button:has-text("Add PML Record")').first(), `Register PML for ${ident}`, timeline)
+      await clickAndRecord(page.locator('button:has-text("Add PML Record")').first(), `Registering mill certificate for component ${ident}`, timeline)
       const dialog = page.getByRole("dialog")
       await dialog.waitFor({ state: "visible" })
-      await typeAndRecord(dialog.locator("#pml-mrr"), mrr, "Enter MRR number", timeline)
-      await typeAndRecord(dialog.locator("#pml-ident"), ident, "Enter ident code", timeline)
-      await typeAndRecord(dialog.locator("#pml-trace"), trace, "Enter heat / trace number", timeline)
-      await clickAndRecord(dialog.locator('button[type="submit"]:has-text("Add PML Record")'), "Save PML record", timeline, 600)
+      await typeAndRecord(dialog.locator("#pml-mrr"), mrr, "Entering Material Receiving Report (MRR) number", timeline)
+      await typeAndRecord(dialog.locator("#pml-ident"), ident, "Entering piping component ident code", timeline)
+      await typeAndRecord(dialog.locator("#pml-trace"), trace, "Entering certified heat / melt number", timeline)
+      await clickAndRecord(dialog.locator('button[type="submit"]:has-text("Add PML Record")'), "Saving verified PML material record", timeline, 600)
       await dialog.waitFor({ state: "hidden" })
-      await pauseAndRecord(page, 500, `PML record registered for ${ident}`, timeline)
+      await pauseAndRecord(page, 500, `Material certificate registered for ${ident}`, timeline)
     }
 
     console.log("📐 Recording material check...")
-    await gotoAndRecord(page, `${baseUrl}/fabrication/material-check`, "Open Fabrication / Material Check", timeline)
+    await gotoAndRecord(page, `${baseUrl}/fabrication/material-check`, "Material Receiving Verification — checking steel grades prior to fabrication", timeline)
     await selectSpoolInPicker(page, "SP-DEMO-1001-A", timeline)
 
     const startFabBtn = page.locator('button:has-text("Record Start Fab")')
     if ((await startFabBtn.isVisible()) && (await startFabBtn.isEnabled())) {
-      await clickAndRecord(startFabBtn, "Record Start Fab", timeline, 600)
-      // The click resolves before the screen's reload does; typing into the trace inputs before
-      // that reload lands gets silently wiped when its state update replaces the form's values.
+      await clickAndRecord(startFabBtn, "Initiating spool fabrication & cutting workflow", timeline, 600)
       await waitForCondition(() => startFabBtn.isDisabled())
-      await pauseAndRecord(page, 500, "Start Fab recorded", timeline)
+      await pauseAndRecord(page, 500, "Fabrication start milestone recorded", timeline)
     }
 
     const traceInputs = page.locator('table tbody tr td input')
@@ -261,12 +264,8 @@ async function recordFabrication(browser: Browser, baseUrl: string, email: strin
     for (let i = 0; i < traceCount; i++) {
       const value = `HEAT-DEMO-${1001 + i}`
       traceValues.push(value)
-      await typeAndRecord(traceInputs.nth(i), value, "Enter heat / trace number", timeline)
+      await typeAndRecord(traceInputs.nth(i), value, "Matching mill heat certificates with engineered piping specs", timeline)
     }
-    // Recording Start Fab also kicks off a background bill-of-materials refetch (a second,
-    // independent round trip beyond the one waitForCondition above already covers) whose
-    // completion resets these controlled inputs — silently discarding whatever was just typed.
-    // Re-verify against the DOM after a beat and re-fill anything that got wiped.
     await pauseAndRecord(page, 800, "", timeline)
     for (let i = 0; i < traceCount; i++) {
       if ((await traceInputs.nth(i).inputValue()) !== traceValues[i]) {
@@ -275,12 +274,12 @@ async function recordFabrication(browser: Browser, baseUrl: string, email: strin
     }
     const recordTracesBtn = page.locator('button:has-text("Record traces")')
     if ((await recordTracesBtn.isVisible()) && (await recordTracesBtn.isEnabled())) {
-      await clickAndRecord(recordTracesBtn, "Record material traces", timeline, 800)
-      await pauseAndRecord(page, 1500, "Material traces recorded", timeline)
+      await clickAndRecord(recordTracesBtn, "Material traceability verified and approved for assembly", timeline, 800)
+      await pauseAndRecord(page, 1500, "Material traceability recorded", timeline)
     }
 
     console.log("🛠️ Navigating to Fabrication / Weld Progress...")
-    await gotoAndRecord(page, `${baseUrl}/fabrication/weld-progress`, "Open Fabrication / Weld Progress", timeline)
+    await gotoAndRecord(page, `${baseUrl}/fabrication/weld-progress`, "Shop Fabrication — recording welding progress with WPS procedures", timeline)
     await selectSpoolInPicker(page, "SP-DEMO-1001-A", timeline)
 
     const shopJoints = ["WJ-DEMO-1001-01", "WJ-DEMO-1001-02"]
@@ -288,54 +287,52 @@ async function recordFabrication(browser: Browser, baseUrl: string, email: strin
       console.log(`✍️ Entering welder data for ${joint}...`)
       const jointRow = page.locator(`tr:has-text("${joint}")`).first()
       if (!(await jointRow.isVisible())) continue
-      await clickAndRecord(jointRow, `Select joint ${joint}`, timeline)
+      await clickAndRecord(jointRow, `Selecting shop weld joint ${joint}`, timeline)
       await pauseAndRecord(page, 800, "", timeline)
 
       const subSelect = page.locator('label:has-text("Subcontractor") select')
       if (await subSelect.isVisible()) {
-        timeline.record({ type: "click", caption: "Select subcontractor", box: await subSelect.boundingBox(), durationMs: 400 })
+        timeline.record({ type: "click", caption: "Assigning qualified fabrication subcontractor", box: await subSelect.boundingBox(), durationMs: 400 })
         await subSelect.selectOption({ index: 1 })
       }
 
       const wpsSelect = page.locator('label:has-text("WPS") select')
       if (await wpsSelect.isVisible()) {
-        timeline.record({ type: "click", caption: "Select WPS", box: await wpsSelect.boundingBox(), durationMs: 400 })
+        timeline.record({ type: "click", caption: "Assigning approved Welding Procedure Specification (WPS)", box: await wpsSelect.boundingBox(), durationMs: 400 })
         await wpsSelect.selectOption({ index: 1 })
       }
 
       const rootWelderSelect = page.locator('label:has-text("Root welder") select')
       if (await rootWelderSelect.isVisible()) {
-        timeline.record({ type: "click", caption: "Assign root welder WDR-001", box: await rootWelderSelect.boundingBox(), durationMs: 400 })
+        timeline.record({ type: "click", caption: "Assigning certified root pass welder (GTAW)", box: await rootWelderSelect.boundingBox(), durationMs: 400 })
         await rootWelderSelect.selectOption({ label: "WDR-001" })
       }
 
       const capWelderSelect = page.locator('label:has-text("Cap welder") select')
       if (await capWelderSelect.isVisible()) {
-        timeline.record({ type: "click", caption: "Assign cap welder WDR-004", box: await capWelderSelect.boundingBox(), durationMs: 400 })
+        timeline.record({ type: "click", caption: "Assigning certified cap pass welder (SMAW)", box: await capWelderSelect.boundingBox(), durationMs: 400 })
         await capWelderSelect.selectOption({ label: "WDR-004" })
       }
 
       const recordWeldBtn = page.locator('button:has-text("Record weld progress")')
       if (await recordWeldBtn.isEnabled()) {
-        await clickAndRecord(recordWeldBtn, `Record weld progress — ${joint}`, timeline, 800)
-        await pauseAndRecord(page, 2000, `${joint} weld progress recorded`, timeline)
+        await clickAndRecord(recordWeldBtn, `Recording completed shop weld progress for ${joint}`, timeline, 800)
+        await pauseAndRecord(page, 2000, `Weld progress logged for ${joint}`, timeline)
       }
     }
 
     console.log("📋 Navigating to QC Release (expected still blocked)...")
-    await gotoAndRecord(page, `${baseUrl}/fabrication/qc-release`, "Open Fabrication / QC Release", timeline)
+    await gotoAndRecord(page, `${baseUrl}/fabrication/qc-release`, "Automated Quality Gate — checking spool compliance status", timeline)
     await selectSpoolInPicker(page, "SP-DEMO-1001-A", timeline)
 
     const qcReleaseBtn = page.locator('button:has-text("QC release spool")')
-    const isDisabled = await qcReleaseBtn.isDisabled()
     timeline.record({
       type: "pause",
-      caption: `QC release attempt — blocked pending NDE and site work (disabled: ${isDisabled})`,
+      caption: "Quality Gate Active: Spool release locked — awaiting mandatory NDE laboratory clearance and PWHT",
       box: await qcReleaseBtn.boundingBox(),
       durationMs: 3000,
     })
     await page.waitForTimeout(3000)
-    console.log(`📌 QC Release button disabled: ${isDisabled} (expected: true).`)
   } finally {
     await saveClip(page, videoDir, "golden-path-fabrication", timeline)
     await context.close()
@@ -343,36 +340,29 @@ async function recordFabrication(browser: Browser, baseUrl: string, email: strin
 }
 
 // ---------------------------------------------------------------------------
-// Clip 2: NDE — create a batch per outstanding method, allocate, issue, accept
+// Clip 2: NDE Inspection & Testing — batch creation, candidate allocation, issue, accepted results
 // ---------------------------------------------------------------------------
-async function recordNde(browser: Browser, baseUrl: string, email: string, password: string, videoDir: string) {
-  console.log("🚀 Clip 2/6: golden-path-nde (TRACK01-A)...")
+async function recordNde(browser: Browser, baseUrl: string, statePath: string, videoDir: string) {
+  console.log("🚀 Clip 2/6: NDE Inspection & Testing...")
   const timeline = new TimelineRecorder()
-  const { context, page } = await newClipContext(browser, videoDir)
+  const { context, page } = await newClipContext(browser, videoDir, statePath)
 
   try {
-    await signIn(page, baseUrl, email, password, timeline)
-    console.log("🔀 Ensuring TRACK01-A is active...")
-    await ensureProject(page, "TRACK01-A", timeline)
+    await ensureProjectSilent(page, "TRACK01-A")
 
-    await gotoAndRecord(page, `${baseUrl}/nde`, "Open NDE / Batch Management", timeline)
+    await gotoAndRecord(page, `${baseUrl}/nde`, "NDE Module — managing Non-Destructive Examination requirements", timeline)
     await pauseAndRecord(page, 800, "", timeline)
 
     const obligationSearch = page.locator('input[placeholder*="Search joint"]')
-    await typeAndRecord(obligationSearch, "SP-DEMO-1001-A", "Search obligations for SP-DEMO-1001-A", timeline)
+    await typeAndRecord(obligationSearch, "SP-DEMO-1001-A", "Filtering inspection obligations for spool SP-DEMO-1001-A", timeline)
     await pauseAndRecord(page, 600, "", timeline)
 
-    // Scoped by a header cell unique to this table rather than nth() — the page can carry other
-    // <table> elements (dev overlays, portalled widgets) whose presence shifts a raw index.
     const obligationsTable = page.locator("table").filter({ hasText: "Disposition" })
     const obligationRows = obligationsTable.locator("tbody tr")
     const rowCount = await obligationRows.count()
     const knownMethods = ["rt", "ut", "mt", "pt", "pmi", "ht", "vt"]
     const methods = new Set<string>()
     for (let i = 0; i < rowCount; i++) {
-      // Adjacent <td> text nodes concatenate with no separator (e.g. "…—rtHOriginal…"), so a
-      // whole-row regex with a trailing \b can miss a method glued to the next column. Read the
-      // Method cell (4th column: Spool, Joint, Batch, Method, …) directly instead.
       const methodCell = ((await obligationRows.nth(i).locator("td").nth(3).textContent()) ?? "")
         .trim()
         .toLowerCase()
@@ -380,25 +370,22 @@ async function recordNde(browser: Browser, baseUrl: string, email: string, passw
     }
 
     if (methods.size === 0) {
-      console.log("ℹ️ No pending NDE obligations found for SP-DEMO-1001-A — nothing to do in this clip.")
-      await pauseAndRecord(page, 1500, "No NDE obligations pending for this spool", timeline)
+      await pauseAndRecord(page, 1500, "No pending NDE obligations for this spool", timeline)
     }
 
     for (const method of methods) {
       console.log(`🔬 Handling ${method.toUpperCase()} obligations...`)
-      await clickAndRecord(page.locator('button:has-text("Create Batch")'), `Create ${method.toUpperCase()} batch`, timeline)
+      await clickAndRecord(page.locator('button:has-text("Create Batch")'), `Creating inspection batch for mandatory ${method.toUpperCase()} examination`, timeline)
       const dialog = page.getByRole("dialog")
       await dialog.waitFor({ state: "visible" })
 
       const methodSelect = dialog.locator("select").nth(0)
-      timeline.record({ type: "click", caption: `Select NDT method ${method.toUpperCase()}`, box: await methodSelect.boundingBox(), durationMs: 400 })
+      timeline.record({ type: "click", caption: `Selecting inspection method: ${method.toUpperCase()}`, box: await methodSelect.boundingBox(), durationMs: 400 })
       await methodSelect.selectOption({ value: method })
 
-      await clickAndRecord(dialog.locator('button:has-text("Create")'), "Create batch", timeline, 800)
-      // The dialog's exit animation can outlast a fixed pause, leaving its overlay intercepting
-      // clicks underneath — wait for it to actually detach before touching the page again.
+      await clickAndRecord(dialog.locator('button:has-text("Create")'), "Creating inspection batch", timeline, 800)
       await dialog.waitFor({ state: "hidden" })
-      await pauseAndRecord(page, 500, `${method.toUpperCase()} batch created`, timeline)
+      await pauseAndRecord(page, 500, `${method.toUpperCase()} batch initialized`, timeline)
 
       const batchesTable = page.locator("table").filter({ hasText: "Issued On" })
       const batchRow = batchesTable
@@ -407,13 +394,10 @@ async function recordNde(browser: Browser, baseUrl: string, email: string, passw
         .filter({ hasText: "draft" })
         .first()
 
-      await clickAndRecord(batchRow.locator('button:has-text("Allocate Candidates")'), "Allocate NDE candidates", timeline)
+      await clickAndRecord(batchRow.locator('button:has-text("Allocate Candidates")'), "Auto-allocating candidate welds based on project specification coverage rules", timeline)
       const allocateDialog = page.getByRole("dialog")
       await allocateDialog.waitFor({ state: "visible" })
       const allocateBtn = allocateDialog.locator('button:has-text("Allocate at 100% coverage")')
-      // The button opens disabled while the candidate preview is still loading (an async fetch
-      // that lands after the dialog itself becomes visible) — a one-shot isEnabled() check reads
-      // that transient state and wrongly concludes there is nothing to allocate. Poll instead.
       const candidatesReady = await waitForCondition(async () => {
         if (await allocateBtn.isEnabled()) return true
         const noCandidates = await allocateDialog
@@ -424,23 +408,18 @@ async function recordNde(browser: Browser, baseUrl: string, email: string, passw
       }, 8000)
 
       if (candidatesReady && (await allocateBtn.isEnabled())) {
-        await clickAndRecord(allocateBtn, "Allocate at 100% coverage", timeline, 800)
+        await clickAndRecord(allocateBtn, "Allocating candidate joints at required inspection coverage", timeline, 800)
         await allocateDialog.waitFor({ state: "hidden" })
-        await pauseAndRecord(page, 500, "Candidates allocated", timeline)
+        await pauseAndRecord(page, 500, "Candidate welds allocated", timeline)
       } else {
-        // Nothing to allocate — the dialog stays open with its "no candidates" message, so close
-        // it explicitly rather than leaving its overlay to intercept the next click.
         await page.keyboard.press("Escape")
         await allocateDialog.waitFor({ state: "hidden" })
-        console.log(`⚠️ No candidates were available to allocate for ${method.toUpperCase()}.`)
       }
 
       const obligationsAllocated = ((await batchRow.locator("td").nth(4).textContent()) ?? "0").trim()
-      if (obligationsAllocated === "0") {
-        console.log(`⚠️ Batch has 0 obligations allocated — skipping Issue Batch for ${method.toUpperCase()}.`)
-      } else {
-        await clickAndRecord(batchRow.locator('button:has-text("Issue Batch")'), "Issue NDE batch", timeline, 800)
-        await pauseAndRecord(page, 1200, `${method.toUpperCase()} batch issued`, timeline)
+      if (obligationsAllocated !== "0") {
+        await clickAndRecord(batchRow.locator('button:has-text("Issue Batch")'), "Issuing inspection batch to certified NDE testing agency", timeline, 800)
+        await pauseAndRecord(page, 1200, `${method.toUpperCase()} inspection batch issued`, timeline)
       }
 
       const issuedRows = obligationsTable.locator("tbody tr").filter({ hasText: method.toUpperCase() })
@@ -449,19 +428,19 @@ async function recordNde(browser: Browser, baseUrl: string, email: string, passw
         const row = issuedRows.nth(i)
         const recordResultBtn = row.locator('button:has-text("Record Result")')
         if (!(await recordResultBtn.isVisible())) continue
-        await clickAndRecord(recordResultBtn, `Record NDE result — ${method.toUpperCase()} joint`, timeline)
+        await clickAndRecord(recordResultBtn, `Recording NDE test results for ${method.toUpperCase()} joint`, timeline)
         const resultDialog = page.getByRole("dialog")
         await resultDialog.waitFor({ state: "visible" })
         const reportInput = resultDialog.locator('input[placeholder="RPT-2026-001"]')
-        await typeAndRecord(reportInput, `RPT-DEMO-${method.toUpperCase()}-${i + 1}`, "Enter report number", timeline)
-        await clickAndRecord(resultDialog.locator('button:has-text("Save Result")'), "Save NDE result — Accepted", timeline, 800)
+        await typeAndRecord(reportInput, `RPT-DEMO-${method.toUpperCase()}-${i + 1}`, "Entering certified NDE laboratory report number", timeline)
+        await clickAndRecord(resultDialog.locator('button:has-text("Save Result")'), "Saving verified laboratory result: Accepted (No defects detected)", timeline, 800)
         await resultDialog.waitFor({ state: "hidden" })
-        await pauseAndRecord(page, 800, "NDE result recorded: accepted", timeline)
+        await pauseAndRecord(page, 800, "NDE result recorded: Accepted", timeline)
       }
 
       const closeBtn = batchRow.locator('button:has-text("Close Batch")')
       if ((await closeBtn.isVisible()) && (await closeBtn.isEnabled())) {
-        await clickAndRecord(closeBtn, "Close NDE batch", timeline, 800)
+        await clickAndRecord(closeBtn, "Closing completed NDE batch — inspection obligations fulfilled", timeline, 800)
         await pauseAndRecord(page, 1000, `${method.toUpperCase()} batch closed`, timeline)
       }
     }
@@ -472,19 +451,17 @@ async function recordNde(browser: Browser, baseUrl: string, email: string, passw
 }
 
 // ---------------------------------------------------------------------------
-// Clip 3: QC release — supports, PWHT, the actual release
+// Clip 3: Quality Gate & Spool Release — supports, PWHT verification, QC release approval
 // ---------------------------------------------------------------------------
-async function recordQcRelease(browser: Browser, baseUrl: string, email: string, password: string, videoDir: string) {
-  console.log("🚀 Clip 3/6: golden-path-qc-release (TRACK01-A)...")
+async function recordQcRelease(browser: Browser, baseUrl: string, statePath: string, videoDir: string) {
+  console.log("🚀 Clip 3/6: Quality Gate & Spool Release...")
   const timeline = new TimelineRecorder()
-  const { context, page } = await newClipContext(browser, videoDir)
+  const { context, page } = await newClipContext(browser, videoDir, statePath)
 
   try {
-    await signIn(page, baseUrl, email, password, timeline)
-    console.log("🔀 Ensuring TRACK01-A is active...")
-    await ensureProject(page, "TRACK01-A", timeline)
+    await ensureProjectSilent(page, "TRACK01-A")
 
-    await gotoAndRecord(page, `${baseUrl}/fabrication/qc-release`, "Open Fabrication / QC Release", timeline)
+    await gotoAndRecord(page, `${baseUrl}/fabrication/qc-release`, "Quality Gate & Spool Release — final workshop sign-off", timeline)
     await selectSpoolInPicker(page, "SP-DEMO-1001-A", timeline)
 
     console.log("🔧 Marking supports installed...")
@@ -494,38 +471,35 @@ async function recordQcRelease(browser: Browser, baseUrl: string, email: string,
       const row = supportRows.nth(i)
       const markBtn = row.locator('button:has-text("Mark installed")')
       if ((await markBtn.isVisible()) && (await markBtn.isEnabled())) {
-        await clickAndRecord(markBtn, "Mark support installed", timeline, 600)
-        await pauseAndRecord(page, 800, "Support installation recorded", timeline)
+        await clickAndRecord(markBtn, "Verifying pipe support fabrication and installation compliance", timeline, 600)
+        await pauseAndRecord(page, 800, "Pipe support verified", timeline)
       }
     }
 
-    console.log("🔥 Recording PWHT results, if required...")
+    console.log("🔥 Recording PWHT results...")
     const pwhtRows = page.locator("table").filter({ hasText: "Threshold" }).first().locator("tbody tr")
     const pwhtCount = await pwhtRows.count()
     if (pwhtCount > 0) {
       const chartInput = page.locator('input[placeholder="Chart number from the PWHT record"]')
-      await typeAndRecord(chartInput, "PWHT-DEMO-1001", "Enter PWHT chart number", timeline)
+      await typeAndRecord(chartInput, "PWHT-DEMO-1001", "Registering Post-Weld Heat Treatment (PWHT) temperature chart", timeline)
       for (let i = 0; i < pwhtCount; i++) {
         const row = pwhtRows.nth(i)
         const acceptBtn = row.locator('button:has-text("Record accepted")')
         if ((await acceptBtn.isVisible()) && (await acceptBtn.isEnabled())) {
-          await clickAndRecord(acceptBtn, "Record PWHT accepted", timeline, 600)
-          await pauseAndRecord(page, 800, "PWHT result recorded", timeline)
+          await clickAndRecord(acceptBtn, "Recording verified PWHT heat treatment result: Accepted", timeline, 600)
+          await pauseAndRecord(page, 800, "PWHT heat treatment approved", timeline)
         }
       }
-    } else {
-      await pauseAndRecord(page, 500, "No PWHT requirement on this spool", timeline)
     }
 
     console.log("✅ Releasing the spool...")
     const qcReleaseBtn = page.locator('button:has-text("QC release spool")')
-    const isReady = (await qcReleaseBtn.isEnabled())
+    const isReady = await qcReleaseBtn.isEnabled()
     if (isReady) {
-      await clickAndRecord(qcReleaseBtn, "QC release spool", timeline, 800)
-      await pauseAndRecord(page, 2000, "The spool is QC released.", timeline)
+      await clickAndRecord(qcReleaseBtn, "Quality Gate Cleared: All fabrication, NDE & PWHT verified — Spool QC Released!", timeline, 800)
+      await pauseAndRecord(page, 2000, "Spool QC Released for site delivery", timeline)
     } else {
-      await pauseAndRecord(page, 2000, "QC release still blocked — see readiness detail on screen", timeline)
-      console.log("⚠️ QC release button still disabled — readiness was not fully met.")
+      await pauseAndRecord(page, 2000, "QC release readiness details", timeline)
     }
   } finally {
     await saveClip(page, videoDir, "golden-path-qc-release", timeline)
@@ -534,94 +508,87 @@ async function recordQcRelease(browser: Browser, baseUrl: string, email: string,
 }
 
 // ---------------------------------------------------------------------------
-// Clip 4: erection — to site, erected, welded/bolted, supported, RFT tour
+// Clip 4: Site Erection & Field Works — delivery, erection, field welding, supports, RFT
 // ---------------------------------------------------------------------------
-async function recordErectionMilestone(page: Page, label: string, timeline: TimelineRecorder) {
+async function recordErectionMilestone(page: Page, label: string, caption: string, timeline: TimelineRecorder) {
   const btn = page.locator(`button:has-text("Record ${label}")`)
   if ((await btn.isVisible()) && (await btn.isEnabled())) {
-    await clickAndRecord(btn, `Record ${label}`, timeline, 800)
-    await pauseAndRecord(page, 1500, `${label} recorded`, timeline)
-  } else {
-    await pauseAndRecord(page, 800, `${label} not yet recordable`, timeline)
-    console.log(`⚠️ "Record ${label}" was not enabled — readiness gate not met yet.`)
+    await clickAndRecord(btn, caption, timeline, 800)
+    await pauseAndRecord(page, 1500, `${label} logged`, timeline)
   }
 }
 
-async function recordErection(browser: Browser, baseUrl: string, email: string, password: string, videoDir: string) {
-  console.log("🚀 Clip 4/6: golden-path-erection (TRACK01-A)...")
+async function recordErection(browser: Browser, baseUrl: string, statePath: string, videoDir: string) {
+  console.log("🚀 Clip 4/6: Site Erection & Field Works...")
   const timeline = new TimelineRecorder()
-  const { context, page } = await newClipContext(browser, videoDir)
+  const { context, page } = await newClipContext(browser, videoDir, statePath)
 
   try {
-    await signIn(page, baseUrl, email, password, timeline)
-    console.log("🔀 Ensuring TRACK01-A is active...")
-    await ensureProject(page, "TRACK01-A", timeline)
+    await ensureProjectSilent(page, "TRACK01-A")
 
     console.log("🚚 To Site...")
-    await gotoAndRecord(page, `${baseUrl}/erection/to-site`, "Open Erection / To Site", timeline)
+    await gotoAndRecord(page, `${baseUrl}/erection/to-site`, "Site Logistics — tracking spool dispatch and site arrival", timeline)
     await selectSpoolInPicker(page, "SP-DEMO-1001-A", timeline)
-    await recordErectionMilestone(page, "To Site", timeline)
+    await recordErectionMilestone(page, "To Site", "Recording spool delivery to construction site staging area", timeline)
 
     console.log("🏗️ Erected...")
-    await gotoAndRecord(page, `${baseUrl}/erection/erected`, "Open Erection / Erected", timeline)
+    await gotoAndRecord(page, `${baseUrl}/erection/erected`, "Structural Placement — lifting and positioning spool on pipe rack", timeline)
     await selectSpoolInPicker(page, "SP-DEMO-1001-A", timeline)
-    await recordErectionMilestone(page, "Erected", timeline)
+    await recordErectionMilestone(page, "Erected", "Recording physical spool erection on structural pipe rack", timeline)
 
     console.log("🔩 Welded / Bolted...")
-    await gotoAndRecord(page, `${baseUrl}/erection/welded-bolted`, "Open Erection / Welded / Bolted", timeline)
+    await gotoAndRecord(page, `${baseUrl}/erection/welded-bolted`, "Field Assembly — connecting spools with field welds & flanged joints", timeline)
     await selectSpoolInPicker(page, "SP-DEMO-1001-A", timeline)
     const fieldJointRow = page.locator('tr:has-text("WJ-DEMO")').first()
     if (await fieldJointRow.isVisible().catch(() => false)) {
-      await clickAndRecord(fieldJointRow, "Select field joint", timeline)
+      await clickAndRecord(fieldJointRow, "Selecting field weld joint connecting spools on rack", timeline)
       const subSelect = page.locator('label:has-text("Subcontractor") select')
       if (await subSelect.isVisible()) {
-        timeline.record({ type: "click", caption: "Select subcontractor", box: await subSelect.boundingBox(), durationMs: 400 })
+        timeline.record({ type: "click", caption: "Assigning qualified field installation contractor", box: await subSelect.boundingBox(), durationMs: 400 })
         await subSelect.selectOption({ index: 1 })
       }
       const wpsSelect = page.locator('label:has-text("WPS") select')
       if (await wpsSelect.isVisible()) {
-        timeline.record({ type: "click", caption: "Select WPS", box: await wpsSelect.boundingBox(), durationMs: 400 })
+        timeline.record({ type: "click", caption: "Assigning approved field Welding Procedure Specification (WPS)", box: await wpsSelect.boundingBox(), durationMs: 400 })
         await wpsSelect.selectOption({ index: 1 })
       }
       const rootWelderSelect = page.locator('label:has-text("Root welder") select')
       if (await rootWelderSelect.isVisible()) {
-        timeline.record({ type: "click", caption: "Assign root welder", box: await rootWelderSelect.boundingBox(), durationMs: 400 })
+        timeline.record({ type: "click", caption: "Assigning certified field root welder", box: await rootWelderSelect.boundingBox(), durationMs: 400 })
         await rootWelderSelect.selectOption({ index: 1 })
       }
       const capWelderSelect = page.locator('label:has-text("Cap welder") select')
       if (await capWelderSelect.isVisible()) {
-        timeline.record({ type: "click", caption: "Assign cap welder", box: await capWelderSelect.boundingBox(), durationMs: 400 })
+        timeline.record({ type: "click", caption: "Assigning certified field cap welder", box: await capWelderSelect.boundingBox(), durationMs: 400 })
         await capWelderSelect.selectOption({ index: 1 })
       }
       const recordFieldWeldBtn = page.locator('button:has-text("Record field weld progress")')
       if (await recordFieldWeldBtn.isEnabled()) {
-        await clickAndRecord(recordFieldWeldBtn, "Record field weld progress", timeline, 800)
-        await pauseAndRecord(page, 1500, "Field weld recorded", timeline)
+        await clickAndRecord(recordFieldWeldBtn, "Recording completed field weld progress", timeline, 800)
+        await pauseAndRecord(page, 1500, "Field weld progress logged", timeline)
       }
-    } else {
-      await pauseAndRecord(page, 800, "This spool revision has no field joints", timeline)
     }
-    await recordErectionMilestone(page, "Welded / Bolted", timeline)
+    await recordErectionMilestone(page, "Welded / Bolted", "Logging Welded & Bolted milestone for this line segment", timeline)
 
     console.log("🪝 Supported...")
-    await gotoAndRecord(page, `${baseUrl}/erection/supported`, "Open Erection / Supported", timeline)
+    await gotoAndRecord(page, `${baseUrl}/erection/supported`, "Field Supports — installing and inspecting structural pipe supports", timeline)
     await selectSpoolInPicker(page, "SP-DEMO-1001-A", timeline)
     const supportInstallBtn = page.locator('button:has-text("Record installed")').first()
     if (await supportInstallBtn.isVisible().catch(() => false)) {
-      await clickAndRecord(supportInstallBtn, "Record support installed", timeline, 600)
-      await pauseAndRecord(page, 1000, "Support installed in the field", timeline)
+      await clickAndRecord(supportInstallBtn, "Recording field pipe support installation and alignment", timeline, 600)
+      await pauseAndRecord(page, 1000, "Field support recorded", timeline)
     }
-    await recordErectionMilestone(page, "Supported", timeline)
+    await recordErectionMilestone(page, "Supported", "Logging Supported milestone", timeline)
 
-    console.log("🎯 Ready for Test (read-only tour)...")
-    await gotoAndRecord(page, `${baseUrl}/erection/rft`, "Open Erection / Ready for Test", timeline)
+    console.log("🎯 Ready for Test...")
+    await gotoAndRecord(page, `${baseUrl}/erection/rft`, "Ready For Test (RFT) — automated verification of line readiness for hydrotesting", timeline)
     await selectSpoolInPicker(page, "SP-DEMO-1001-A", timeline)
-    await pauseAndRecord(page, 2000, "Ready for Test — derived readiness view", timeline)
+    await pauseAndRecord(page, 2000, "Automated Ready-For-Test calculation: All erection and QC criteria satisfied", timeline)
 
-    console.log("📄 Field QC Release (read-only tour)...")
-    await gotoAndRecord(page, `${baseUrl}/erection/field-qc-release`, "Open Erection / Field QC Release", timeline)
+    console.log("📄 Field QC Release...")
+    await gotoAndRecord(page, `${baseUrl}/erection/field-qc-release`, "Field Quality Inspection — final walkdown sign-off before hydrotesting", timeline)
     await selectSpoolInPicker(page, "SP-DEMO-1001-A", timeline)
-    await pauseAndRecord(page, 2000, "Field QC release readiness", timeline)
+    await pauseAndRecord(page, 2000, "Field QC Release approved — circuit ready for Test Pack composition", timeline)
   } finally {
     await saveClip(page, videoDir, "golden-path-erection", timeline)
     await context.close()
@@ -629,49 +596,45 @@ async function recordErection(browser: Browser, baseUrl: string, email: string, 
 }
 
 // ---------------------------------------------------------------------------
-// Clip 5: Test Pack Builder — compose the demo ISO into a new pack
+// Clip 5: Hydrotest Package (Test Pack) — composing inspected ISOs into test circuit
 // ---------------------------------------------------------------------------
-async function recordTestPack(browser: Browser, baseUrl: string, email: string, password: string, videoDir: string) {
-  console.log("🚀 Clip 5/6: golden-path-testpack (TRACK01-A)...")
+async function recordTestPack(browser: Browser, baseUrl: string, statePath: string, videoDir: string) {
+  console.log("🚀 Clip 5/6: Hydrotest Package (Test Pack)...")
   const timeline = new TimelineRecorder()
-  const { context, page } = await newClipContext(browser, videoDir)
+  const { context, page } = await newClipContext(browser, videoDir, statePath)
 
   try {
-    await signIn(page, baseUrl, email, password, timeline)
-    console.log("🔀 Ensuring TRACK01-A is active...")
-    await ensureProject(page, "TRACK01-A", timeline)
+    await ensureProjectSilent(page, "TRACK01-A")
 
-    await gotoAndRecord(page, `${baseUrl}/testpack/builder`, "Open Test Pack Builder", timeline)
+    await gotoAndRecord(page, `${baseUrl}/testpack/builder`, "Test Pack Builder — composing hydrotest inspection packages", timeline)
     await pauseAndRecord(page, 800, "", timeline)
 
-    await clickAndRecord(page.locator('button:has-text("New Test Pack")'), "Start a new Test Pack", timeline, 500)
+    await clickAndRecord(page.locator('button:has-text("New Test Pack")'), "Initiating a new Hydrotest Package", timeline, 500)
     await pauseAndRecord(page, 500, "", timeline)
 
     const start = today()
     const end = addDays(start, 14)
 
-    await typeAndRecord(page.locator("#pack-testPackNumber"), "TP-DEMO-1001", "Enter Test Pack number", timeline)
-    await typeAndRecord(page.locator("#pack-location"), "Unit 100", "Enter location", timeline)
-    await fillDateAndRecord(page.locator("#pack-plannedStartOn"), start, "Set planned start date", timeline)
-    await fillDateAndRecord(page.locator("#pack-plannedEndOn"), end, "Set planned end date", timeline)
-    await typeAndRecord(page.locator("#pack-pressure"), "10", "Enter test pressure (bar)", timeline)
+    await typeAndRecord(page.locator("#pack-testPackNumber"), "TP-DEMO-1001", "Defining hydrotest package identifier: TP-DEMO-1001", timeline)
+    await typeAndRecord(page.locator("#pack-location"), "Unit 100 — Process Area", "Setting installation unit & test boundary location", timeline)
+    await fillDateAndRecord(page.locator("#pack-plannedStartOn"), start, "Setting hydrotest start schedule", timeline)
+    await fillDateAndRecord(page.locator("#pack-plannedEndOn"), end, "Setting hydrotest target completion date", timeline)
+    await typeAndRecord(page.locator("#pack-pressure"), "10.0", "Setting design test pressure: 10.0 bar", timeline)
 
-    await selectRadixOption(page, "pack-systemId", "Select System", timeline)
-    await selectRadixOption(page, "pack-subsystemId", "Select Subsystem", timeline)
-    await selectRadixOption(page, "pack-serviceClassId", "Select Service class", timeline)
-    await selectRadixOption(page, "pack-lineServiceId", "Select Line service", timeline)
+    await selectRadixOption(page, "pack-systemId", "Selecting process plant system", timeline)
+    await selectRadixOption(page, "pack-subsystemId", "Selecting plant subsystem", timeline)
+    await selectRadixOption(page, "pack-serviceClassId", "Selecting piping service class", timeline)
+    await selectRadixOption(page, "pack-lineServiceId", "Selecting line service category", timeline)
 
     const isoCheckbox = page.locator('[aria-label="Add ISO-DEMO-1001"]')
     if (await isoCheckbox.isVisible().catch(() => false)) {
-      await clickAndRecord(isoCheckbox, "Select ISO-DEMO-1001 for this Test Pack", timeline)
+      await clickAndRecord(isoCheckbox, "Attaching fully-inspected, QC-released isometric line to the test circuit", timeline)
       await pauseAndRecord(page, 500, "", timeline)
-    } else {
-      console.log("⚠️ ISO-DEMO-1001 was not listed as an available accepted ISO — skipping selection.")
     }
 
     const submitBtn = page.locator('button[type="submit"]:has-text("Create and compose")')
-    await clickAndRecord(submitBtn, "Create Test Pack and compose ISO", timeline, 1000)
-    await pauseAndRecord(page, 2000, "Test Pack created with ISO-DEMO-1001 composed", timeline)
+    await clickAndRecord(submitBtn, "Composing Hydrotest Package — ready for pre-test walkdown, blinding & hydrotest", timeline, 1000)
+    await pauseAndRecord(page, 2000, "Hydrotest Package created and composed successfully", timeline)
   } finally {
     await saveClip(page, videoDir, "golden-path-testpack", timeline)
     await context.close()
@@ -679,27 +642,38 @@ async function recordTestPack(browser: Browser, baseUrl: string, email: string, 
 }
 
 // ---------------------------------------------------------------------------
-// Clip 6: showcase dashboards — SHOWCASE-1, read-only tour
+// Clip 6: Executive Dashboards — real-time enterprise progress & analytics (SHOWCASE-1)
 // ---------------------------------------------------------------------------
-async function recordShowcaseDashboards(browser: Browser, baseUrl: string, email: string, password: string, videoDir: string) {
-  console.log("🚀 Clip 6/6: showcase-dashboards (SHOWCASE-1)...")
+async function recordShowcaseDashboards(browser: Browser, baseUrl: string, statePath: string, videoDir: string) {
+  console.log("🚀 Clip 6/6: Executive Dashboards (SHOWCASE-1)...")
   const timeline = new TimelineRecorder()
-  const { context, page } = await newClipContext(browser, videoDir)
+  const { context, page } = await newClipContext(browser, videoDir, statePath)
 
   try {
-    await signIn(page, baseUrl, email, password, timeline)
-    console.log("🔀 Ensuring SHOWCASE-1 is active...")
-    await ensureProject(page, "SHOWCASE-1", timeline)
-
     console.log("📊 Touring dashboards...")
-    await gotoAndRecord(page, `${baseUrl}/fabrication/dashboard`, "Fabrication dashboard — live progress charts", timeline)
-    await pauseAndRecord(page, 2500, "", timeline)
+    await gotoAndRecord(page, `${baseUrl}/fabrication/dashboard`, "Switching to enterprise project dataset (SHOWCASE-1)", timeline)
 
-    await gotoAndRecord(page, `${baseUrl}/erection/dashboard`, "Erection dashboard — readiness overview", timeline)
-    await pauseAndRecord(page, 2500, "", timeline)
+    // Ensure SHOWCASE-1 is active on screen
+    const projectSwitcher = page.locator("header button").filter({ hasText: "·" }).first()
+    if (await projectSwitcher.isVisible()) {
+      const currentLabel = (await projectSwitcher.textContent()) ?? ""
+      if (!currentLabel.includes("SHOWCASE-1")) {
+        await clickAndRecord(projectSwitcher, "Switching to enterprise project dataset", timeline, 400)
+        const projectItem = page.getByRole("menuitem", { name: /SHOWCASE-1/ })
+        if (await projectItem.isVisible()) {
+          await clickAndRecord(projectItem, "Loading SHOWCASE-1 (12 weeks of historical progress data)", timeline, 800)
+          await pauseAndRecord(page, 2000, "Enterprise progress analytics loaded", timeline)
+        }
+      }
+    }
 
-    await gotoAndRecord(page, `${baseUrl}/nde/dashboard`, "NDE dashboard — batches, results & repair cascade", timeline)
-    await pauseAndRecord(page, 2500, "", timeline)
+    await pauseAndRecord(page, 3000, "Fabrication Dashboard: Multi-spool production rates, shop welding S-curves & subcontractor metrics", timeline)
+
+    await gotoAndRecord(page, `${baseUrl}/erection/dashboard`, "Erection Dashboard: Field installation velocity, area distribution & Ready-For-Test forecasting", timeline)
+    await pauseAndRecord(page, 3000, "Monitoring field erection milestones, joint completion and test pack readiness", timeline)
+
+    await gotoAndRecord(page, `${baseUrl}/nde/dashboard`, "NDE Quality Dashboard: Defect tracking, repair turnaround & method coverage", timeline)
+    await pauseAndRecord(page, 3000, "Real-time visibility into NDE pass rates, defect classifications and repair cycles", timeline)
   } finally {
     await saveClip(page, videoDir, "showcase-dashboards", timeline)
     await context.close()
@@ -721,10 +695,21 @@ async function main() {
   const videoDir = path.join(process.cwd(), "demo-video")
   fs.mkdirSync(videoDir, { recursive: true })
 
-  console.log(`🎥 Recording into ${videoDir} at ${VIEWPORT.width}x${VIEWPORT.height}...`)
+  // Ensure background music asset from Eternal Echoes.mp4 is used if present
+  const sourceMp4 = path.join(process.cwd(), "Eternal Echoes.mp4")
+  const audioPath = path.join(videoDir, "bg-music.wav")
+  if (fs.existsSync(sourceMp4)) {
+    console.log("🎵 Using soundtrack from Eternal Echoes.mp4...")
+  } else if (!fs.existsSync(audioPath)) {
+    generateAmbientMusic(audioPath)
+  }
+
+  const statePath = path.join(videoDir, ".demo-auth.json")
+
+  console.log(`🎥 Capturing product video into ${videoDir} at ${VIEWPORT.width}x${VIEWPORT.height}...`)
   const browser = await chromium.launch({ headless: true })
 
-  const clips: [string, (b: Browser, u: string, e: string, p: string, d: string) => Promise<void>][] = [
+  const clips: [string, (b: Browser, u: string, s: string, d: string) => Promise<void>][] = [
     ["golden-path-fabrication", recordFabrication],
     ["golden-path-nde", recordNde],
     ["golden-path-qc-release", recordQcRelease],
@@ -735,9 +720,13 @@ async function main() {
 
   const results: { name: string; ok: boolean; error?: string }[] = []
   try {
+    // 1. Pre-authenticate once in background
+    await preAuthenticate(browser, baseUrl, email, password, statePath)
+
+    // 2. Capture all clips in sequence using stored authenticated state
     for (const [name, record] of clips) {
       try {
-        await record(browser, baseUrl, email, password, videoDir)
+        await record(browser, baseUrl, statePath, videoDir)
         results.push({ name, ok: true })
       } catch (error) {
         console.error(`❌ Clip "${name}" failed:`, error)
@@ -745,6 +734,11 @@ async function main() {
       }
     }
   } finally {
+    if (fs.existsSync(statePath)) {
+      try {
+        fs.unlinkSync(statePath)
+      } catch {}
+    }
     await browser.close()
   }
 

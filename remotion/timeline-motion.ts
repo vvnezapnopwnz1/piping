@@ -2,8 +2,8 @@ import type { TimelineEvent } from "./timeline-types"
 
 /** How far ahead of an event's tMs the cursor/camera starts moving toward it. */
 export const APPROACH_MS = 350
-/** Ken Burns zoom level when the camera is pushed in on an active element. */
-export const MAX_SCALE = 1.32
+/** Ken Burns zoom level disabled (fixed 1.0 full frame view). */
+export const MAX_SCALE = 1.0
 
 export function easeInOutCubic(t: number) {
   const c = Math.min(1, Math.max(0, t))

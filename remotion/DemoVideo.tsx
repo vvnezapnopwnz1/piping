@@ -1,4 +1,4 @@
-import { Series } from "remotion"
+import { Audio, interpolate, Series, staticFile, useCurrentFrame, useVideoConfig } from "remotion"
 
 import type { TimelineEvent } from "./timeline-types"
 import { ClipComposition } from "./ClipComposition"
@@ -24,29 +24,46 @@ export function DemoVideo({
   height: number
   clips: ClipSpec[]
 }) {
+  const frame = useCurrentFrame()
+  const { durationInFrames } = useVideoConfig()
+
+  // Smooth audio volume envelope: gentle fade-in and fade-out
+  const volume = interpolate(
+    frame,
+    [0, 30, Math.max(31, durationInFrames - 45), durationInFrames],
+    [0, 0.18, 0.18, 0],
+    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+  )
+
   return (
-    <Series>
-      <Series.Sequence durationInFrames={TITLE_CARD_FRAMES}>
-        <TitleCard
-          title="PipeQC"
-          subtitle="Industrial piping construction & quality control — golden path walkthrough"
-        />
-      </Series.Sequence>
-      {clips.map((clip) => (
-        <Series.Sequence key={clip.name} durationInFrames={TITLE_CARD_FRAMES + clip.durationInFrames}>
-          <Series>
-            <Series.Sequence durationInFrames={TITLE_CARD_FRAMES}>
-              <TitleCard title={clip.title} subtitle={clip.subtitle} />
-            </Series.Sequence>
-            <Series.Sequence durationInFrames={clip.durationInFrames}>
-              <ClipComposition clipName={clip.name} events={clip.events} width={width} height={height} />
-            </Series.Sequence>
-          </Series>
+    <>
+      <Audio src={staticFile("bg-music.wav")} volume={volume} loop />
+      <Series>
+        <Series.Sequence durationInFrames={TITLE_CARD_FRAMES}>
+          <TitleCard
+            title="PipeQC"
+            subtitle="Industrial Piping Quality Control & Construction Execution Platform"
+          />
         </Series.Sequence>
-      ))}
-      <Series.Sequence durationInFrames={TITLE_CARD_FRAMES}>
-        <TitleCard title="PipeQC" subtitle="Every screen reads its own figures from the database." />
-      </Series.Sequence>
-    </Series>
+        {clips.map((clip) => (
+          <Series.Sequence key={clip.name} durationInFrames={TITLE_CARD_FRAMES + clip.durationInFrames}>
+            <Series>
+              <Series.Sequence durationInFrames={TITLE_CARD_FRAMES}>
+                <TitleCard title={clip.title} subtitle={clip.subtitle} />
+              </Series.Sequence>
+              <Series.Sequence durationInFrames={clip.durationInFrames}>
+                <ClipComposition clipName={clip.name} events={clip.events} width={width} height={height} />
+              </Series.Sequence>
+            </Series>
+          </Series.Sequence>
+        ))}
+        <Series.Sequence durationInFrames={TITLE_CARD_FRAMES}>
+          <TitleCard
+            title="PipeQC"
+            subtitle="Complete digital traceability from 3D CAD design to hydrotest handover"
+          />
+        </Series.Sequence>
+      </Series>
+    </>
   )
 }

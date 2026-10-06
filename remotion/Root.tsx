@@ -16,33 +16,33 @@ const MISSING_CLIP_HINT =
 const CLIP_PLAN: { name: string; title: string; subtitle: string }[] = [
   {
     name: "golden-path-fabrication",
-    title: "Fabrication",
-    subtitle: "TRACK01-A — SpoolGen import, material check, shop welds",
+    title: "Shop Fabrication",
+    subtitle: "3D CAD / SpoolGen import, PML heat traceability & qualified shop welding",
   },
   {
     name: "golden-path-nde",
-    title: "NDE",
-    subtitle: "TRACK01-A — inspection batches, allocation, accepted results",
+    title: "NDE Inspection & Testing",
+    subtitle: "Automatic candidate allocation, batch issuing & certified laboratory results",
   },
   {
     name: "golden-path-qc-release",
-    title: "QC Release",
-    subtitle: "TRACK01-A — supports, PWHT, spool release",
+    title: "Quality Gate & Spool Release",
+    subtitle: "Support verification, PWHT heat treatment & automated release gate",
   },
   {
     name: "golden-path-erection",
-    title: "Erection",
-    subtitle: "TRACK01-A — to site, erected, welded/bolted, supported, ready for test",
+    title: "Site Erection & Field Works",
+    subtitle: "Delivery to site, piping alignment, field welding & Ready-For-Test status",
   },
   {
     name: "golden-path-testpack",
-    title: "Test Pack",
-    subtitle: "TRACK01-A — composing an accepted ISO into a Test Pack",
+    title: "Hydrotest Package (Test Pack)",
+    subtitle: "Composing fully-inspected ISOs into a pressurized test package",
   },
   {
     name: "showcase-dashboards",
-    title: "Live dashboards",
-    subtitle: "SHOWCASE-1 — twelve weeks of seeded progress",
+    title: "Executive Analytics & Dashboards",
+    subtitle: "Enterprise Project (SHOWCASE-1) — 12 weeks of construction progress & analytics",
   },
 ]
 
