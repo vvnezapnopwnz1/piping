@@ -1,6 +1,7 @@
 import type { TraceEntry } from "../domain/material-check"
 
 export interface MaterialDraftChoice extends TraceEntry {
+  traceNumber: string
   mrrNumber: string
 }
 
@@ -15,10 +16,7 @@ export function clearSavedMaterialDrafts(
     const value = next[sent.spoolRevisionMaterialId]
     if (
       value &&
-      value.pipingMaterialRecordId === sent.pipingMaterialRecordId &&
-      value.identCode === sent.identCode &&
-      value.traceNumber === sent.traceNumber &&
-      value.quantity === sent.quantity
+      value.pipingMaterialRecordId === sent.pipingMaterialRecordId
     ) {
       delete next[sent.spoolRevisionMaterialId]
     }

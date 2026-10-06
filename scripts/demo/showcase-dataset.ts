@@ -32,7 +32,7 @@ const MATERIAL_CLASS = "CS150"
 
 /**
  * Bill-of-materials lines, keyed to receipts the manifest already seeds into
- * `piping_material_records`. `record_material_check` matches on ident code **and** trace number,
+ * `piping_material_records`. `record_material_check` takes the first eligible PML record per BOM row,
  * so both must exist in the PML or the check is refused with "Active piping material evidence is
  * missing".
  */
@@ -279,7 +279,7 @@ export function buildShowcaseSpoolgenFiles(isoNumber: string): {
     }
 
     // Material lines must resolve against the project's PML: `record_material_check` looks up
-    // `piping_material_records` by ident code AND trace number, and refuses the item when no
+    // `piping_material_records` by taking the first eligible PML record per BOM row, and refuses the item when no
     // active row matches. So these reuse the manifest's seeded receipts rather than inventing
     // codes. Unlike `demo-data/spoolgen/trace.txt`, the trace column is filled in — that file
     // leaves it blank for an operator to type during the live walkthrough.

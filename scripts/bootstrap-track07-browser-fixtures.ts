@@ -116,8 +116,7 @@ async function run(): Promise<void> {
     if (seedable.length === 0) throw new Error(`The ${TRACK07_WALK_SPOOL} fixture spool was not imported.`)
     for (const spool of seedable) {
       await imported.rpc("record_erection_progress", { target_spool_revision_id: spool.id, target_stage: "to_site", target_occurred_on: new Date().toISOString(), target_idempotency_key: `track07-to-site-${spool.id}` })
-      const { data: lines } = await imported.from("spool_revision_materials").select("ident_code, quantity, trace_number").eq("spool_revision_id", spool.id)
-      await imported.rpc("record_field_material_check", { target_spool_revision_id: spool.id, target_checked_on: new Date().toISOString(), target_items: (lines ?? []).map((line) => ({ ident_code: line.ident_code, trace_number: line.trace_number, quantity: line.quantity })), target_idempotency_key: `track07-material-${spool.id}` })
+      await imported.rpc("record_field_material_check", { target_spool_revision_id: spool.id, target_checked_on: new Date().toISOString(), target_items: await materialCheckItemsFor(imported, spool.id), target_idempotency_key: `track07-material-${spool.id}` })
     }
     console.log(definition.skipped
       ? `${TRACK07_ISO} already existed; fixture reconciled.`

@@ -12,6 +12,7 @@
  */
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
+import { materialCheckItemsFor } from "./demo/material-check-items"
 
 import { SHOWCASE_PROJECT_CODE } from "./demo/manifest"
 import {
@@ -210,22 +211,14 @@ async function seedSpoolBeforeNde(
   }
 
   if (spool.materialCheckOn) {
-    const { data: lines } = await operator
-      .from("spool_revision_materials")
-      .select("ident_code, quantity, trace_number")
-      .eq("spool_revision_id", revisionId)
     await call(
       operator,
       "record_material_check",
       {
         target_spool_revision_id: revisionId,
         target_checked_on: spool.materialCheckOn,
-        target_items: (lines ?? []).map((line) => ({
-          ident_code: (line as { ident_code: string }).ident_code,
-          trace_number: (line as { trace_number: string | null }).trace_number,
-          quantity: (line as { quantity: number }).quantity,
-        })),
-        target_idempotency_key: `showcase-material-${spool.spoolNumber}`,
+        target_items: await materialCheckItemsFor(operator, revisionId),
+        target_idempotency_key: `showcase-material-${spool.spoolNumber}`,,
       },
       `${spool.spoolNumber}/material_check`,
     )

@@ -179,7 +179,7 @@ test("every weld combination is covered by a seeded NDE matrix rule", () => {
 })
 
 test("every material line resolves against a seeded PML receipt", () => {
-  // record_material_check looks piping_material_records up by ident code AND trace number
+  // record_material_check takes the first eligible PML record per BOM row
   // (20260804091000_material_traceability.sql), so a line the PML does not carry is refused with
   // "Active piping material evidence is missing".
   const receipts = new Set(

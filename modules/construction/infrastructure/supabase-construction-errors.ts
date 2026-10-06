@@ -46,8 +46,6 @@ export function mapSupabaseConstructionError(
       return "This field material check is not available for the selected spool."
     case "PQC57":
       return "This support progress record is not available for the selected spool."
-    case "PQC58":
-      return "More than one BOM row matches this material. Reload and select the specific material row."
     case "42501":
       return "You do not have permission to record this construction work, or the spool is outside your scope."
     case "23505":
