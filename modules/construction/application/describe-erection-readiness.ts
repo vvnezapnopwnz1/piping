@@ -31,6 +31,21 @@ export function currentErectionStageLabel(facts: ErectionReadinessFacts): string
   return "not started"
 }
 
+const ERECTION_STAGE_LABELS: Record<string, string> = {
+  rft: "Ready for Test",
+  supported: "Supported",
+  "welded/bolted": "Welded / Bolted",
+  erected: "Erected",
+  "to site": "To site",
+  "not started": "Not started",
+}
+
+/** The stage code (for the badge tone) and the operator's word for it. */
+export function erectionStageDisplay(facts: ErectionReadinessFacts): { code: string; label: string } {
+  const code = currentErectionStageLabel(facts)
+  return { code, label: ERECTION_STAGE_LABELS[code] ?? code }
+}
+
 export type RftShortfallKind = "welded_bolted" | "supported" | "nde" | "pwht"
 
 export interface RftShortfallItem {

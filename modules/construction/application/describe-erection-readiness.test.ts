@@ -1,8 +1,10 @@
+import { test } from "node:test"
 import assert from "node:assert/strict"
 
 import {
   currentErectionStageLabel,
   describeRftShortfall,
+  erectionStageDisplay,
   toStageEvidence,
   type ErectionReadinessFacts,
 } from "./describe-erection-readiness"
@@ -67,3 +69,9 @@ assert.equal(
   }),
   "RFT is closed but no outstanding evidence is reported; reload the page.",
 )
+
+test("erection stage has an operator label next to its code", () => {
+  assert.deepEqual(erectionStageDisplay({ ...FACTS, isRft: true }), { code: "rft", label: "Ready for Test" })
+  assert.deepEqual(erectionStageDisplay({ ...FACTS, weldedBoltedOn: "2026-08-24" }), { code: "welded/bolted", label: "Welded / Bolted" })
+  assert.deepEqual(erectionStageDisplay(FACTS), { code: "not started", label: "Not started" })
+})

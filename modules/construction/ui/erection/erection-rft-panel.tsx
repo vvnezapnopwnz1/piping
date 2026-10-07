@@ -161,7 +161,7 @@ export function ErectionRftPanel({
       </ul>
       <p className={styles.verdict} data-ready={row.isRft ? "" : undefined}>
         {row.isRft ? (
-          `Ready for Test${row.rftOn ? ` since ${row.rftOn.slice(0, 10)}` : ""}. Derived from the criteria above, never set by hand.`
+          `Ready for Test${row.rftOn ? ` since ${row.rftOn.slice(0, 10)}` : ""}.`
         ) : shortfall.length === 0 ? (
           <span className="flex items-center justify-between gap-2">
             <span>RFT is closed but no outstanding evidence is reported; reload the page.</span>

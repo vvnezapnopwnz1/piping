@@ -249,7 +249,6 @@ function ProjectState({ access }: { access: AccessValue }) {
         state={fabrication}
         measure={(data) => ({ value: data.completed, total: data.total })}
         unit="spools at Laydown"
-        note={() => "Laydown is not QC release."}
         empty="No fabrication records yet."
       />
     ),
@@ -278,9 +277,7 @@ function ProjectState({ access }: { access: AccessValue }) {
         state={nde}
         measure={(data) => ({ value: data.inspected, total: data.total })}
         unit="obligations have a result recorded"
-        note={(data) =>
-          `${data.issued} issued, awaiting a result · a recorded result can be a reject, so this is not an acceptance rate`
-        }
+        note={(data) => `${data.issued} awaiting a result`}
         empty="No NDE obligations yet."
       />
     ),

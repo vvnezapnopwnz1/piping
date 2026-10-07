@@ -251,14 +251,6 @@ export function FieldMaterialCheckScreen({
                 </div>
               </div>
 
-              {row.materialCheckedOn ? (
-                <p className="text-muted-foreground text-xs">
-                  A spool revision carries one material check whichever phase performed it, so
-                  recording here re-confirms the existing record and takes over its date. The
-                  phase of each check stays visible in the progress ledger.
-                </p>
-              ) : null}
-
               {!row.toSiteOn ? (
                 <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
                   <span>To Site is required before checking field material.</span>
@@ -425,11 +417,6 @@ export function FieldMaterialCheckScreen({
                   </Button>
                 </div>
               )}
-
-              <p className="text-muted-foreground text-xs">
-                Material Check is derived, not entered: it appears on the ledger under the
-                erection phase once every ident code carries a trace the PML accepts.
-              </p>
             </CardContent>
           </Card>
         </div>

@@ -1,5 +1,6 @@
 import { StatusBadge } from "@/components/ui/status-badge"
 import type { DataColumn } from "@/components/ui/data-table"
+import { stageLabel } from "../../domain/construction-phase"
 import type { SpoolStatus } from "../../infrastructure/supabase-construction-repository"
 
 /** Sorts on how far along the work is, so "3/12" and "3/400" do not land next to each other. */
@@ -39,9 +40,14 @@ export const FABRICATION_SPOOL_COLUMNS: ReadonlyArray<DataColumn<SpoolStatus>> =
   {
     id: "currentStage",
     header: "Stage",
-    value: (spool) => spool.currentStage ?? "not_started",
+    value: (spool) => (spool.currentStage ? stageLabel(spool.currentStage) : "Not started"),
     filter: "select",
-    cell: (spool) => <StatusBadge status={spool.currentStage ?? "not_started"} />,
+    cell: (spool) => (
+      <StatusBadge
+        status={spool.currentStage ?? "not_started"}
+        label={spool.currentStage ? stageLabel(spool.currentStage) : "Not started"}
+      />
+    ),
   },
   {
     id: "material",

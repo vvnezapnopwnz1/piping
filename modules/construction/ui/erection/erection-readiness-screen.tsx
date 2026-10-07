@@ -15,8 +15,8 @@ import { useNameWorkContext, useWorkContextParam } from "@/components/pipeqc/wor
 import { linkFrom } from "@/components/pipeqc/workspace-model"
 import { useOptionalAccess } from "@/modules/access/ui/access-context"
 import {
-  currentErectionStageLabel,
   describeRftShortfall,
+  erectionStageDisplay,
   listRftShortfall,
   type RftShortfallKind,
 } from "../../application/describe-erection-readiness"
@@ -125,14 +125,18 @@ const COLUMNS: ReadonlyArray<DataColumn<ErectionReadiness>> = [
   {
     id: "stage",
     header: "Stage",
-    value: (row) => currentErectionStageLabel(row),
+    value: (row) => erectionStageDisplay(row).label,
     filter: "select",
-    cell: (row) => (
-      <StatusBadge
-        status={currentErectionStageLabel(row)}
-        tone={row.isRft ? "success" : "info"}
-      />
-    ),
+    cell: (row) => {
+      const display = erectionStageDisplay(row)
+      return (
+        <StatusBadge
+          status={display.code}
+          label={display.label}
+          tone={row.isRft ? "success" : "info"}
+        />
+      )
+    },
   },
   {
     id: "isRft",
@@ -166,7 +170,7 @@ export function ErectionReadinessScreen({
   showCharts = false,
 }: {
   title: string
-  description: string
+  description?: string
   /** An extra sentence for routes whose own module is not built yet. */
   note?: string
   showCharts?: boolean
@@ -210,7 +214,7 @@ export function ErectionReadinessScreen({
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        <p className="text-muted-foreground mt-1 text-sm">{description}</p>
+        {description ? <p className="text-muted-foreground mt-1 text-sm">{description}</p> : null}
         {note ? <p className="text-muted-foreground mt-2 text-sm">{note}</p> : null}
       </div>
 

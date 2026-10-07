@@ -15,7 +15,7 @@ import { linkFrom } from "@/components/pipeqc/workspace-model"
 import { useSupabaseAuth } from "@/contexts/supabase-auth-context"
 import { useOptionalAccess } from "@/modules/access/ui/access-context"
 
-import { currentErectionStageLabel } from "../../application/describe-erection-readiness"
+import { erectionStageDisplay } from "../../application/describe-erection-readiness"
 import type { ErectionReadiness } from "../../infrastructure/supabase-erection-repository"
 import { FactsStrip, SpoolDrawer, SpoolTimeline } from "../spool-drawer"
 import styles from "../spool-workbench.module.css"
@@ -153,7 +153,7 @@ export function ErectionWorkbench({ operation }: { operation: ErectionOperationI
               kicker="Spool in erection"
               title={spool.spoolNumber}
               meta={`rev ${spool.revisionNumber} · ${spool.isoNumber}`}
-              status={<span className={styles.stageBadge}>{currentErectionStageLabel(spool)}</span>}
+              status={<span className={styles.stageBadge}>{erectionStageDisplay(spool).label}</span>}
               onClose={close}
             >
               <FactsStrip

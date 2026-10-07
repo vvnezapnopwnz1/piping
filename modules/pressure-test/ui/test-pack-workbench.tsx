@@ -394,9 +394,6 @@ export function TestPackWorkbench({ projectId, testPackId }: TestPackWorkbenchPr
         <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
           <div>
             <h1 className="text-2xl font-semibold">Test Pack Explorer</h1>
-            <p className="text-sm text-muted-foreground">
-              Select a Test Pack to inspect composition, readiness, and workflow operations.
-            </p>
           </div>
         </div>
 
@@ -410,7 +407,7 @@ export function TestPackWorkbench({ projectId, testPackId }: TestPackWorkbenchPr
           rowId={(row) => row.id}
           loading={loading}
           onRowClick={(row) => handleOpenPack(row.id)}
-          emptyTitle="No Test Packs visible in this project scope."
+          emptyTitle="No test packs yet."
         />
       </div>
 

@@ -345,9 +345,6 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl tracking-tight">NDE Batch Management</h1>
-          <p className="text-sm text-muted-foreground">
-            Manage NDE inspection batches, allocate candidate joints, and record test results.
-          </p>
         </div>
 
         {/*

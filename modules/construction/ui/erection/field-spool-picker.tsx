@@ -2,7 +2,7 @@
 
 import { StatusBadge } from "@/components/ui/status-badge"
 import type { DataColumn } from "@/components/ui/data-table"
-import { currentErectionStageLabel } from "../../application/describe-erection-readiness"
+import { erectionStageDisplay } from "../../application/describe-erection-readiness"
 import type { ErectionReadiness } from "../../infrastructure/supabase-erection-repository"
 import { RecordSelectTable } from "@/components/ui/data-table/record-select-table"
 
@@ -56,14 +56,18 @@ const FIELD_SPOOL_COLUMNS: ReadonlyArray<DataColumn<ErectionReadiness>> = [
   {
     id: "stage",
     header: "Stage",
-    value: (row) => currentErectionStageLabel(row),
+    value: (row) => erectionStageDisplay(row).label,
     filter: "select",
-    cell: (row) => (
-      <StatusBadge
-        status={currentErectionStageLabel(row)}
-        tone={row.isRft ? "success" : "info"}
-      />
-    ),
+    cell: (row) => {
+      const display = erectionStageDisplay(row)
+      return (
+        <StatusBadge
+          status={display.code}
+          label={display.label}
+          tone={row.isRft ? "success" : "info"}
+        />
+      )
+    },
   },
   {
     id: "material",
