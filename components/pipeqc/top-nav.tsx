@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -18,39 +19,25 @@ import { useSupabaseAuth } from "@/contexts/supabase-auth-context";
 
 import { LocaleMenuItems } from "@/components/pipeqc/locale-switch";
 import { withProject } from "./project-url";
+import { codeLabel, type CodesTranslator } from "@/i18n/translator";
+
 import { getTopNavDisplay } from "./top-nav-state";
 import styles from "./workbench-shell.module.css";
 
-const ACCESS_ROLE_LABELS: Record<string, string> = {
-  project_admin: "Project Admin",
-  site_admin: "Site Admin",
-  project_editor: "Project Editor",
-  subcontractor: "Subcontractor",
-  project_reader: "Project Reader",
-};
-
-const FUNCTIONAL_ROLE_LABELS: Record<string, string> = {
-  project_manager: "Project Manager",
-  qc_engineer: "QC Engineer",
-  nde_inspector: "NDE Inspector",
-  spooling_team: "Spooling Team",
-  fabrication_contributor: "Fabrication Contributor",
-  erection_contributor: "Erection Contributor",
-  tracking_operator: "Tracking Operator",
-};
-
-function accessLabels(access: {
-  isPlatformAdmin: boolean;
-  accessRole: string | null;
-  functionalRoles: readonly string[];
-}): string[] {
-  if (access.isPlatformAdmin) return ["System Admin"];
+/** The project access role first, then every functional role, in the operator's words. */
+function accessLabels(
+  access: {
+    isPlatformAdmin: boolean;
+    accessRole: string | null;
+    functionalRoles: readonly string[];
+  },
+  tc: CodesTranslator,
+): string[] {
+  if (access.isPlatformAdmin) return [tc("accessRole.platform_admin")];
 
   return [
-    ...(access.accessRole ? [ACCESS_ROLE_LABELS[access.accessRole] ?? access.accessRole] : []),
-    ...access.functionalRoles.map(
-      (role) => FUNCTIONAL_ROLE_LABELS[role] ?? role,
-    ),
+    ...(access.accessRole ? [codeLabel(tc, "accessRole", access.accessRole)] : []),
+    ...access.functionalRoles.map((role) => codeLabel(tc, "functionalRole", role)),
   ];
 }
 
@@ -62,6 +49,7 @@ function accessLabels(access: {
 export function TopNav({ mode: _mode = "workspace" }: { mode?: "workspace" | "catalog" } = {}) {
   const pathname = usePathname();
   const { access: project, projectAccesses, signOut, user } = useSupabaseAuth();
+  const tc = useTranslations("codes");
 
   const topNavDisplay = getTopNavDisplay({
     access: project
@@ -69,14 +57,14 @@ export function TopNav({ mode: _mode = "workspace" }: { mode?: "workspace" | "ca
           projectId: project.projectId,
           activityCode: project.activityCode,
           title: project.title,
-          accessLabels: accessLabels(project),
+          accessLabels: accessLabels(project, tc),
         }
       : null,
     projectAccesses: projectAccesses.map((m) => ({
       projectId: m.projectId,
       activityCode: m.activityCode,
       title: m.title,
-      accessLabels: accessLabels(m),
+      accessLabels: accessLabels(m, tc),
     })),
     email: user?.email,
   });

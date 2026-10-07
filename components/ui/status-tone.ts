@@ -59,12 +59,20 @@ const TONE_BY_STATUS: Record<string, StatusTone> = {
  * app, so they are folded together rather than listed three times.
  */
 export function statusTone(status: string | null | undefined): StatusTone {
-  if (!status) return 'neutral'
-  const key = status.trim().toLowerCase().replace(/[\s-]+/g, '_')
-  return TONE_BY_STATUS[key] ?? 'neutral'
+  const key = statusKey(status)
+  return (key && TONE_BY_STATUS[key]) || 'neutral'
 }
 
-/** `not_started` -> `Not started`. Screens should never print a raw enum at the operator. */
+/** Every status word the tone map knows; each has a label in the `codes.status` messages. */
+export const KNOWN_STATUSES: readonly string[] = Object.keys(TONE_BY_STATUS)
+
+/** The database word as one key: "Not Started", "not-started" and "NOT_STARTED" are all `not_started`. */
+export function statusKey(status: string | null | undefined): string | null {
+  if (!status) return null
+  return status.trim().toLowerCase().replace(/[\s-]+/g, '_')
+}
+
+/** `not_started` -> `Not started`: the fallback for a status word that has no label in `codes.status`. */
 export function statusLabel(status: string | null | undefined): string {
   if (!status) return 'Unknown'
   const words = status.trim().replace(/[\s_-]+/g, ' ')

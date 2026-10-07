@@ -6,11 +6,14 @@ import {
   toNdeWorkflowSeries,
 } from "./nde-charts"
 
+const week = (isoDate: string) => `week ${isoDate}`
+const label = (code: string) => `label ${code}`
+
 assert.deepEqual(
   toNdeOutcomeTrendSeries([
     { week_start: "2026-08-03", accepted_count: 6, rejected_count: 1 },
-  ]),
-  [{ weekStart: "2026-08-03", label: "Aug 3", accepted: 6, rejected: 1 }],
+  ], week),
+  [{ weekStart: "2026-08-03", label: "week 2026-08-03", accepted: 6, rejected: 1 }],
 )
 
 assert.deepEqual(
@@ -18,11 +21,11 @@ assert.deepEqual(
     { status: "allocated", status_order: 1, obligation_count: 2 },
     { status: "result_recorded", status_order: 3, obligation_count: 6 },
     { status: "pending", status_order: 0, obligation_count: 4 },
-  ]),
+  ], label),
   [
-    { status: "pending", label: "Pending allocation", count: 4 },
-    { status: "allocated", label: "Allocated", count: 2 },
-    { status: "result_recorded", label: "Inspected", count: 6 },
+    { status: "pending", label: "label pending", count: 4 },
+    { status: "allocated", label: "label allocated", count: 2 },
+    { status: "result_recorded", label: "label result_recorded", count: 6 },
   ],
 )
 

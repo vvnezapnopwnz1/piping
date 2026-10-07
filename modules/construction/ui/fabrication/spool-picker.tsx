@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
@@ -10,7 +11,7 @@ import {
   type SpoolStatus,
 } from "../../infrastructure/supabase-construction-repository"
 import { RecordSelectTable } from "@/components/ui/data-table/record-select-table"
-import { FABRICATION_SPOOL_COLUMNS } from "./spool-columns"
+import { fabricationSpoolColumns } from "./spool-columns"
 
 interface SpoolPickerProps {
   projectId: string
@@ -36,6 +37,8 @@ export function SpoolPicker({
   onBrowsingChange,
   refreshToken = 0,
 }: SpoolPickerProps) {
+  const tc = useTranslations("codes")
+  const columns = useMemo(() => fabricationSpoolColumns(tc), [tc])
   const [statuses, setStatuses] = useState<SpoolStatus[]>([])
   const [navigation, setNavigation] = useState<{
     projectId: string
@@ -97,7 +100,7 @@ export function SpoolPicker({
   return (
     <RecordSelectTable
       title="Spools"
-      columns={FABRICATION_SPOOL_COLUMNS}
+      columns={columns}
       rows={
         selected && selected.spoolRevisionId === value && !statuses.some((row) => row.spoolRevisionId === value)
           ? [selected, ...statuses]

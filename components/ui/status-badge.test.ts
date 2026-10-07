@@ -2,7 +2,9 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import { readFileSync } from "node:fs"
 
-import { statusLabel, statusTone } from "./status-tone"
+import { en } from "@/i18n/messages"
+
+import { KNOWN_STATUSES, statusKey, statusLabel, statusTone } from "./status-tone"
 
 /**
  * Thirty-four badges across the app printed a status inside `variant="outline"`, which is the same
@@ -70,4 +72,14 @@ test("the status badge paints from tokens and always carries an icon", () => {
     "status colours belong to the theme, not to a literal in the component",
   )
   assert.match(source, /icon = true/, "the icon must be opt-out, so colour is never the only cue")
+})
+
+test("every known status has a label in the codes namespace", () => {
+  assert.deepEqual(Object.keys(en.codes.status).sort(), [...KNOWN_STATUSES].sort())
+})
+
+test("status words from the database normalise to one key", () => {
+  assert.equal(statusKey("Not Started"), "not_started")
+  assert.equal(statusKey("not-started"), "not_started")
+  assert.equal(statusKey(null), null)
 })

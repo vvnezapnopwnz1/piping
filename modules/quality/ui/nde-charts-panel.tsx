@@ -1,6 +1,10 @@
 "use client"
 
+import { useLocale, useTranslations } from "next-intl"
 import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, XAxis, YAxis } from "recharts"
+
+import { formatWeekLabel } from "@/i18n/format"
+import { codeLabel } from "@/i18n/translator"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
@@ -51,10 +55,12 @@ export function NdeChartsPanel({
   data: NdeChartData | null
   loading: boolean
 }) {
+  const tc = useTranslations("codes")
+  const locale = useLocale()
   if (loading || !data) return <Skeleton className="h-[38rem] w-full" />
 
-  const outcomes = toNdeOutcomeTrendSeries(data.outcomes)
-  const workflow = toNdeWorkflowSeries(data.workflow)
+  const outcomes = toNdeOutcomeTrendSeries(data.outcomes, (week) => formatWeekLabel(week, locale))
+  const workflow = toNdeWorkflowSeries(data.workflow, (code) => codeLabel(tc, "ndeWorkflow", code))
   const methods = toNdeMethodSeries(data.methods)
   const hasOutcomes = hasNdeChartData(outcomes)
   const hasWorkflow = workflow.some((step) => step.count > 0)

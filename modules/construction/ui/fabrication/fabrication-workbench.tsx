@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { useTranslations } from "next-intl"
 import { usePathname, useSearchParams } from "next/navigation"
 
 import { Skeleton } from "@/components/ui/skeleton"
@@ -9,7 +10,6 @@ import { useRequestLeave } from "@/components/pipeqc/unsaved-input-guard"
 import { useWorkContextParam } from "@/components/pipeqc/work-context"
 import { useOptionalAccess } from "@/modules/access/ui/access-context"
 
-import { stageLabel } from "../../domain/construction-phase"
 import type { SpoolStatus } from "../../infrastructure/supabase-construction-repository"
 import { SpoolDrawer, SpoolTimeline } from "../spool-drawer"
 import styles from "../spool-workbench.module.css"
@@ -63,6 +63,7 @@ export function FabricationWorkbench({
   projectId: string
   operation: FabricationOperationId | null
 }) {
+  const tc = useTranslations("codes")
   const [spool, setSpool] = useContextSpool(projectId)
   const [spoolParam] = useWorkContextParam("spool")
   const [refreshToken, setRefreshToken] = useState(0)
@@ -142,7 +143,7 @@ export function FabricationWorkbench({
                 state: operationState(candidate, spool.dates),
                 locked: !canOpen(candidate.href),
                 lines: candidate.stages.map((stage) => ({
-                  label: stageLabel(stage),
+                  label: tc(`fabricationStage.${stage}`),
                   value: spool.dates[stage] ?? null,
                 })),
               }))}

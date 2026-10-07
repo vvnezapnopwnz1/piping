@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -21,7 +22,6 @@ import {
   type PreviewChangeItem,
 } from "../domain/diff";
 import {
-  decisionLabel,
   REVISION_DECISIONS,
   type RevisionDecision,
 } from "../domain/revision";
@@ -46,6 +46,7 @@ export function RevisionDecisionTable({
   busy: boolean;
   onDecide: (item: PreviewChangeItem, decision: RevisionDecision) => void;
 }) {
+  const tc = useTranslations("codes");
   if (items.length === 0)
     return (
       <p className="text-sm text-muted-foreground">
@@ -100,7 +101,7 @@ export function RevisionDecisionTable({
                   <SelectContent>
                     {REVISION_DECISIONS.map((decision) => (
                       <SelectItem key={decision} value={decision}>
-                        {decisionLabel(decision)}
+                        {tc(`revisionDecision.${decision}`)}
                       </SelectItem>
                     ))}
                   </SelectContent>

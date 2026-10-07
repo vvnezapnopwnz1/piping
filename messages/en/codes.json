@@ -1,0 +1,137 @@
+{
+  "fabricationStage": {
+    "start_fab": "Start Fab",
+    "material_check": "Material Check",
+    "fabricated": "Fabricated",
+    "qc_release": "QC Release",
+    "sent_to_paint": "Sent to Paint",
+    "painted": "Painted",
+    "final_qc": "Final QC",
+    "laydown": "Laydown",
+    "not_started": "Not started"
+  },
+  "erectionStage": {
+    "to_site": "To Site",
+    "erected": "Erected",
+    "welded_bolted": "Welded / Bolted",
+    "supported": "Supported",
+    "rft": "Ready for Test",
+    "not_started": "Not started"
+  },
+  "erectionBlocker": {
+    "welded_bolted": "Welded / Bolted not recorded",
+    "supported": "Support not recorded",
+    "nde": "Open NDE",
+    "pwht": "Open PWHT"
+  },
+  "rftShortfall": {
+    "welded_bolted": "Welded / Bolted is not recorded",
+    "supported": "Supported is not recorded",
+    "nde": "{count, plural, one {# NDE obligation open} other {# NDE obligations open}}",
+    "pwht": "{count, plural, one {# PWHT requirement open} other {# PWHT requirements open}}"
+  },
+  "ndeWorkflow": {
+    "pending": "Pending allocation",
+    "allocated": "Allocated",
+    "issued": "Issued to inspector",
+    "result_recorded": "Inspected"
+  },
+  "ndeMethod": {
+    "rt": "RT (Radiographic Testing)",
+    "ut": "UT (Ultrasonic Testing)",
+    "mt": "MT (Magnetic Particle)",
+    "pt": "PT (Penetrant Testing)",
+    "pmi": "PMI (Positive Material Identification)",
+    "ht": "HT (Hardness Testing)",
+    "vt": "VT (Visual Testing)"
+  },
+  "accessRole": {
+    "platform_admin": "System Admin",
+    "project_admin": "Project Admin",
+    "site_admin": "Site Admin",
+    "project_editor": "Project Editor",
+    "subcontractor": "Subcontractor",
+    "project_reader": "Project Reader"
+  },
+  "functionalRole": {
+    "project_manager": "Project Manager",
+    "qc_engineer": "QC Engineer",
+    "nde_inspector": "NDE Inspector",
+    "spooling_team": "Spooling Team",
+    "fabrication_contributor": "Fabrication Contributor",
+    "erection_contributor": "Erection Contributor",
+    "tracking_operator": "Tracking Operator"
+  },
+  "revisionDecision": {
+    "not_done": "Not Done",
+    "cancelled": "Cancelled",
+    "done_without_modification": "Done without Modification",
+    "rework": "Rework"
+  },
+  "progressPhase": {
+    "prefabrication": "Prefabrication",
+    "painting": "Painting",
+    "assembly": "Assembly",
+    "erection": "Erection"
+  },
+  "teamType": {
+    "line_check": "Line Check",
+    "blinding": "Blinding",
+    "finishing": "Finishing",
+    "reinstatement": "Reinstatement",
+    "jointer": "Jointer"
+  },
+  "spoolgenRole": {
+    "weld": "weld.txt — ISO / spool / weld structure",
+    "trace": "trace.txt — ident codes and material trace",
+    "bolt": "bolt.txt — flange and bolting joints",
+    "supp": "supp.txt — supports"
+  },
+  "spoolgenUpload": {
+    "weld": "Upload weld.txt",
+    "trace": "Upload trace.txt",
+    "bolt": "Upload bolt.txt",
+    "supp": "Upload supp.txt"
+  },
+  "tableDensity": {
+    "compact": "Compact",
+    "default": "Default",
+    "comfortable": "Comfortable"
+  },
+  "status": {
+    "accepted": "Accepted",
+    "active": "Active",
+    "approved": "Approved",
+    "cleared": "Cleared",
+    "complete": "Complete",
+    "completed": "Completed",
+    "done": "Done",
+    "passed": "Passed",
+    "ready": "Ready",
+    "released": "Released",
+    "rft": "Ready for Test",
+    "blocked": "Blocked",
+    "inactive": "Inactive",
+    "on_hold": "On hold",
+    "pending": "Pending",
+    "waiting": "Waiting",
+    "allocated": "Allocated",
+    "in_progress": "In progress",
+    "issued": "Issued",
+    "open": "Open",
+    "partial": "Partial",
+    "submitted": "Submitted",
+    "cancelled": "Cancelled",
+    "escalated": "Escalated",
+    "expired": "Expired",
+    "failed": "Failed",
+    "overdue": "Overdue",
+    "rejected": "Rejected",
+    "archived": "Archived",
+    "draft": "Draft",
+    "not_applicable": "Not applicable",
+    "not_started": "Not started",
+    "superseded": "Superseded",
+    "unknown": "Unknown"
+  }
+}

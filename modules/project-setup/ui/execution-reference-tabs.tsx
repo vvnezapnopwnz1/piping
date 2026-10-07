@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { AlertCircle, Plus, RefreshCw, Search } from "lucide-react"
 import { toast } from "sonner"
@@ -53,13 +54,7 @@ import {
 import { validateReferenceIdentity } from "../domain/reference"
 import { ReferenceStatusBadge } from "./reference-status-badge"
 
-const TEAM_TYPE_LABELS: Record<ProjectTeamType, string> = {
-  line_check: "Line Check",
-  blinding: "Blinding",
-  finishing: "Finishing",
-  reinstatement: "Reinstatement",
-  jointer: "Jointer",
-}
+const TEAM_TYPES: readonly ProjectTeamType[] = ["line_check", "blinding", "finishing", "reinstatement", "jointer"]
 
 export function ExecutionReferenceTabs({
   projectId,
@@ -68,6 +63,7 @@ export function ExecutionReferenceTabs({
   projectId: string
   canManage: boolean
 }) {
+  const tc = useTranslations("codes")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<LoadedExecutionReferences | null>(null)
@@ -471,7 +467,7 @@ export function ExecutionReferenceTabs({
                       <code className="text-xs font-mono bg-muted px-2 py-1 rounded">{team.code}</code>
                       <span className="text-sm">{team.description}</span>
                       <Badge variant="outline" className="text-xs">
-                        {TEAM_TYPE_LABELS[team.teamType]}
+                        {tc(`teamType.${team.teamType}`)}
                       </Badge>
                     </div>
                     <ReferenceStatusBadge status={team.status} />
@@ -813,8 +809,8 @@ export function ExecutionReferenceTabs({
               <Select value={teamType} onValueChange={(v) => setTeamType(v as ProjectTeamType)}>
                 <SelectTrigger id="team-type"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {Object.entries(TEAM_TYPE_LABELS).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>{v}</SelectItem>
+                  {TEAM_TYPES.map((k) => (
+                    <SelectItem key={k} value={k}>{tc(`teamType.${k}`)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

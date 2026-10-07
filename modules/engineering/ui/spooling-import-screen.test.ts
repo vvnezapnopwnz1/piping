@@ -1,9 +1,13 @@
 import assert from "node:assert/strict"
-import { SPOOLGEN_ROLE_LABELS, UPLOAD_BUTTON_LABELS } from "./spooling-import-screen"
 
-assert.match(SPOOLGEN_ROLE_LABELS.weld, /ISO \/ spool \/ weld structure/)
-assert.match(SPOOLGEN_ROLE_LABELS.trace, /material trace/)
-assert.match(SPOOLGEN_ROLE_LABELS.bolt, /flange and bolting/)
-assert.match(SPOOLGEN_ROLE_LABELS.supp, /supports/)
-assert.equal(UPLOAD_BUTTON_LABELS.weld, "Upload weld.txt")
-assert.equal(UPLOAD_BUTTON_LABELS.supp, "Upload supp.txt")
+import { en } from "@/i18n/messages"
+
+const roles = en.codes.spoolgenRole
+const uploads = en.codes.spoolgenUpload
+
+assert.match(roles.weld, /ISO \/ spool \/ weld structure/)
+assert.match(roles.trace, /material trace/)
+assert.match(roles.bolt, /flange and bolting/)
+assert.match(roles.supp, /supports/)
+assert.equal(uploads.weld, "Upload weld.txt")
+assert.equal(uploads.supp, "Upload supp.txt")

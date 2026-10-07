@@ -1,5 +1,7 @@
 "use client"
 
+import { useMemo } from "react"
+import { useTranslations } from "next-intl"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { ArrowRight } from "lucide-react"
@@ -10,11 +12,12 @@ import { StatusBadge } from "@/components/ui/status-badge"
 import type { DataColumn } from "@/components/ui/data-table"
 import { useOptionalAccess } from "@/modules/access/ui/access-context"
 import {
-  describeRftShortfall,
-  erectionStageDisplay,
+  currentErectionStage,
   listRftShortfall,
   type RftShortfallKind,
 } from "../../application/describe-erection-readiness"
+import type { CodesTranslator } from "@/i18n/translator"
+import { useRftShortfallLabel } from "./rft-shortfall-label"
 import type { ErectionReadiness } from "../../infrastructure/supabase-erection-repository"
 import { RecordSelectTable } from "@/components/ui/data-table/record-select-table"
 
@@ -44,6 +47,8 @@ function ReadyForTestCell({ row }: { row: ErectionReadiness }) {
   const can = useOptionalAccess()?.can
   const query = params.toString()
   const here = query ? `${pathname}?${query}` : pathname
+  const t = useTranslations("erection")
+  const shortfallLabel = useRftShortfallLabel()
 
   if (row.isRft) {
     return (
@@ -56,7 +61,7 @@ function ReadyForTestCell({ row }: { row: ErectionReadiness }) {
 
   const items = listRftShortfall(row)
   if (!items.length) {
-    return <span className="text-muted-foreground text-sm">{describeRftShortfall(row)}</span>
+    return <span className="text-muted-foreground text-sm">{t("shared.rftNoEvidence")}</span>
   }
 
   const first = items[0]
@@ -69,11 +74,11 @@ function ReadyForTestCell({ row }: { row: ErectionReadiness }) {
       className="inline-flex items-center gap-1 underline decoration-[#bdb19c] underline-offset-2 hover:decoration-current text-sm"
       onClick={(e) => e.stopPropagation()}
     >
-      {first.label}
+      {shortfallLabel(first)}
       <ArrowRight aria-hidden="true" className="size-3.5" />
     </Link>
   ) : (
-    <span className="text-muted-foreground text-sm">{first.label}</span>
+    <span className="text-muted-foreground text-sm">{shortfallLabel(first)}</span>
   )
 }
 
@@ -86,7 +91,8 @@ function ReadyForTestCell({ row }: { row: ErectionReadiness }) {
  * `material_check_records` row per spool revision) while the `field*` counters are phase-filtered,
  * so they are labelled accordingly rather than sharing a heading.
  */
-const FIELD_SPOOL_COLUMNS: ReadonlyArray<DataColumn<ErectionReadiness>> = [
+function fieldSpoolColumns(tc: CodesTranslator): ReadonlyArray<DataColumn<ErectionReadiness>> {
+  return [
   {
     id: "spoolNumber",
     header: "Spool",
@@ -114,18 +120,15 @@ const FIELD_SPOOL_COLUMNS: ReadonlyArray<DataColumn<ErectionReadiness>> = [
   {
     id: "stage",
     header: "Stage",
-    value: (row) => erectionStageDisplay(row).label,
+    value: (row) => tc(`erectionStage.${currentErectionStage(row)}`),
     filter: "select",
-    cell: (row) => {
-      const display = erectionStageDisplay(row)
-      return (
-        <StatusBadge
-          status={display.code}
-          label={display.label}
-          tone={row.isRft ? "success" : "info"}
-        />
-      )
-    },
+    cell: (row) => (
+      <StatusBadge
+        status={currentErectionStage(row)}
+        label={tc(`erectionStage.${currentErectionStage(row)}`)}
+        tone={row.isRft ? "success" : "info"}
+      />
+    ),
   },
   {
     id: "material",
@@ -159,7 +162,8 @@ const FIELD_SPOOL_COLUMNS: ReadonlyArray<DataColumn<ErectionReadiness>> = [
     className: "min-w-44",
     cell: (row) => <ReadyForTestCell row={row} />,
   },
-]
+  ]
+}
 
 export function FieldSpoolPicker({
   rows,
@@ -169,10 +173,12 @@ export function FieldSpoolPicker({
   onBrowsingChange,
   loading = false,
 }: FieldSpoolPickerProps) {
+  const tc = useTranslations("codes")
+  const columns = useMemo(() => fieldSpoolColumns(tc), [tc])
   return (
     <RecordSelectTable
       title="Field spools"
-      columns={FIELD_SPOOL_COLUMNS}
+      columns={columns}
       rows={rows}
       rowId={(row) => row.spoolRevisionId}
       selectedId={value}

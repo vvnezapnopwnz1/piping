@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import * as React from 'react'
 import { Columns3, Rows3, Search, X } from 'lucide-react'
 
@@ -19,11 +20,7 @@ import type { TableDensity } from '@/components/ui/table'
 import { describeFilter } from './filter-predicate'
 import type { ColumnFilter, DataTableState } from './table-state'
 
-const DENSITY_LABELS: Record<TableDensity, string> = {
-  compact: 'Compact',
-  default: 'Default',
-  comfortable: 'Comfortable',
-}
+const DENSITIES: readonly TableDensity[] = ['compact', 'default', 'comfortable']
 
 /**
  * Everything above the table: the one search box, the chips for what is currently applied, and the
@@ -57,6 +54,7 @@ export function DataTableToolbar({
   /** Screen-specific actions — export, create, refresh — sit on the right of the search row. */
   children?: React.ReactNode
 }) {
+  const tc = useTranslations('codes')
   // The box is typed into letter by letter; the state it feeds is in the URL. Debouncing keeps a
   // ten-character search from writing ten history entries and re-filtering ten times.
   const [draft, setDraft] = React.useState(state.search)
@@ -109,7 +107,7 @@ export function DataTableToolbar({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="h-9">
-                    <Rows3 /> {DENSITY_LABELS[state.density]}
+                    <Rows3 /> {tc(`tableDensity.${state.density}`)}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -118,9 +116,9 @@ export function DataTableToolbar({
                     value={state.density}
                     onValueChange={(value) => onChange({ ...state, density: value as TableDensity })}
                   >
-                    {(Object.keys(DENSITY_LABELS) as TableDensity[]).map((density) => (
+                    {DENSITIES.map((density) => (
                       <DropdownMenuRadioItem key={density} value={density}>
-                        {DENSITY_LABELS[density]}
+                        {tc(`tableDensity.${density}`)}
                       </DropdownMenuRadioItem>
                     ))}
                   </DropdownMenuRadioGroup>

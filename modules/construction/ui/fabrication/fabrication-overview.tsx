@@ -1,14 +1,15 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DataTable, useTableUrlState } from "@/components/ui/data-table"
-import { FABRICATION_SPOOL_COLUMNS } from "./spool-columns"
+import { fabricationSpoolColumns } from "./spool-columns"
 import { FabricationChartsPanel } from "./fabrication-charts-panel"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
-import { CONSTRUCTION_STAGES, stageLabel } from "../../domain/construction-phase"
+import { CONSTRUCTION_STAGES } from "../../domain/construction-phase"
 import {
   loadFabricationSpoolPage,
   loadFabricationChartData,
@@ -23,6 +24,8 @@ import {
  * Neither query scans every spool into the browser.
  */
 export function FabricationOverview({ projectId }: { projectId: string }) {
+  const tc = useTranslations("codes")
+  const columns = useMemo(() => fabricationSpoolColumns(tc), [tc])
   const [statuses, setStatuses] = useState<SpoolStatus[]>([])
   const [counts, setCounts] = useState<Map<string, number>>(new Map())
   const [charts, setCharts] = useState<FabricationChartData | null>(null)
@@ -109,9 +112,7 @@ export function FabricationOverview({ projectId }: { projectId: string }) {
           <Card key={stage}>
             <CardHeader className="pb-2">
               <CardTitle className="text-xs font-medium text-muted-foreground">
-                {stage === "not_started"
-                  ? "Not started"
-                  : stageLabel(stage as (typeof CONSTRUCTION_STAGES)[number])}
+                {tc(`fabricationStage.${stage as (typeof CONSTRUCTION_STAGES)[number] | "not_started"}`)}
               </CardTitle>
             </CardHeader>
             <CardContent className="text-2xl font-semibold">
@@ -132,7 +133,7 @@ export function FabricationOverview({ projectId }: { projectId: string }) {
         </CardHeader>
         <CardContent>
           <DataTable
-            columns={FABRICATION_SPOOL_COLUMNS}
+            columns={columns}
             rows={statuses}
             state={tableState}
             onStateChange={setTableState}

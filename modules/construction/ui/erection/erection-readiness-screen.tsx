@@ -2,7 +2,8 @@
 
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { ArrowRight } from "lucide-react"
 import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,11 +16,12 @@ import { useNameWorkContext, useWorkContextParam } from "@/components/pipeqc/wor
 import { linkFrom } from "@/components/pipeqc/workspace-model"
 import { useOptionalAccess } from "@/modules/access/ui/access-context"
 import {
-  describeRftShortfall,
-  erectionStageDisplay,
+  currentErectionStage,
   listRftShortfall,
   type RftShortfallKind,
 } from "../../application/describe-erection-readiness"
+import type { CodesTranslator } from "@/i18n/translator"
+import { useRftShortfallLabel } from "./rft-shortfall-label"
 import type { ErectionReadiness } from "../../infrastructure/supabase-erection-repository"
 import { loadErectionChartData, type ErectionChartData } from "../../infrastructure/supabase-erection-repository"
 import { ErectionChartsPanel } from "./erection-charts-panel"
@@ -43,8 +45,10 @@ function RftShortfall({ row }: { row: ErectionReadiness }) {
   const can = useOptionalAccess()?.can
   const query = params.toString()
   const here = query ? `${pathname}?${query}` : pathname
+  const t = useTranslations("erection")
+  const shortfallLabel = useRftShortfallLabel()
   const items = listRftShortfall(row)
-  if (!items.length) return <span className="text-muted-foreground text-sm">{describeRftShortfall(row)}</span>
+  if (!items.length) return <span className="text-muted-foreground text-sm">{t("shared.rftNoEvidence")}</span>
   return (
     <ul className="flex flex-col gap-0.5 whitespace-normal">
       {items.map((item) => {
@@ -57,11 +61,11 @@ function RftShortfall({ row }: { row: ErectionReadiness }) {
                 data-help="rft-blocker"
                 className="inline-flex items-center gap-1 underline decoration-[#bdb19c] underline-offset-2 hover:decoration-current"
               >
-                {item.label}
+                {shortfallLabel(item)}
                 <ArrowRight aria-hidden="true" className="size-3.5" />
               </Link>
             ) : (
-              <span className="text-muted-foreground">{item.label}</span>
+              <span className="text-muted-foreground">{shortfallLabel(item)}</span>
             )}
           </li>
         )
@@ -76,7 +80,8 @@ function RftShortfall({ row }: { row: ErectionReadiness }) {
  */
 const ratio = (done: number, total: number) => (total === 0 ? 1 : done / total)
 
-const COLUMNS: ReadonlyArray<DataColumn<ErectionReadiness>> = [
+function readinessColumns(tc: CodesTranslator): ReadonlyArray<DataColumn<ErectionReadiness>> {
+  return [
   {
     id: "isoNumber",
     header: "ISO",
@@ -125,18 +130,15 @@ const COLUMNS: ReadonlyArray<DataColumn<ErectionReadiness>> = [
   {
     id: "stage",
     header: "Stage",
-    value: (row) => erectionStageDisplay(row).label,
+    value: (row) => tc(`erectionStage.${currentErectionStage(row)}`),
     filter: "select",
-    cell: (row) => {
-      const display = erectionStageDisplay(row)
-      return (
-        <StatusBadge
-          status={display.code}
-          label={display.label}
-          tone={row.isRft ? "success" : "info"}
-        />
-      )
-    },
+    cell: (row) => (
+      <StatusBadge
+        status={currentErectionStage(row)}
+        label={tc(`erectionStage.${currentErectionStage(row)}`)}
+        tone={row.isRft ? "success" : "info"}
+      />
+    ),
   },
   {
     id: "isRft",
@@ -156,7 +158,8 @@ const COLUMNS: ReadonlyArray<DataColumn<ErectionReadiness>> = [
         <RftShortfall row={row} />
       ),
   },
-]
+  ]
+}
 
 /**
  * The read-only face of `spool_erection_readiness`, behind the erection dashboard, Ready For
@@ -175,6 +178,8 @@ export function ErectionReadinessScreen({
   note?: string
   showCharts?: boolean
 }) {
+  const tc = useTranslations("codes")
+  const columns = useMemo(() => readinessColumns(tc), [tc])
   const { projectId, isLoading, loadFailed, rows: allRows, canView } = useErectionReadiness()
   // A spool handed over in the address narrows the table to it; the chip in the page head clears it.
   const [spool] = useWorkContextParam("spool")
@@ -243,7 +248,7 @@ export function ErectionReadinessScreen({
             </p>
           ) : (
             <DataTable
-              columns={COLUMNS}
+              columns={columns}
               rows={rows}
               state={tableState}
               onStateChange={setTableState}

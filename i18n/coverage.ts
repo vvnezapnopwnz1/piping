@@ -8,4 +8,4 @@ export const I18N_DONE_PATHS: readonly string[] = [
   "components/pipeqc/locale-switch.tsx",
 ]
 
-export const RU_COMPLETE_NAMESPACES: readonly Namespace[] = ["common"]
+export const RU_COMPLETE_NAMESPACES: readonly Namespace[] = ["common", "codes"]

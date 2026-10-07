@@ -4,8 +4,6 @@ export const REVISION_DECISIONS = ["not_done", "cancelled", "done_without_modifi
 export type RevisionDecision = (typeof REVISION_DECISIONS)[number]
 export const PROGRESS_KINDS = ["fabrication_start", "sent_to_paint", "paint"] as const
 export type ProgressKind = (typeof PROGRESS_KINDS)[number]
-const DECISION_LABELS: Record<RevisionDecision, string> = { not_done: "Not Done", cancelled: "Cancelled", done_without_modification: "Done without Modification", rework: "Rework" }
-export function decisionLabel(decision: RevisionDecision): string { return DECISION_LABELS[decision] }
 export function isRevisionEditable(status: RevisionStatus): boolean { return status !== "superseded" }
 export function progressKindsFor(decision: RevisionDecision): readonly ProgressKind[] { return decision === "done_without_modification" || decision === "rework" ? PROGRESS_KINDS : [] }
 export function keepsEntity(decision: RevisionDecision): boolean { return decision !== "cancelled" }

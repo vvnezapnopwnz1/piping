@@ -1,5 +1,6 @@
 "use client"
  
+import { useTranslations } from "next-intl"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { useCallback, useContext, useEffect, useRef, useState } from "react"
@@ -27,7 +28,7 @@ import {
   firstMissingPredecessor,
   type RecordableErectionStage,
 } from "../../application/record-erection-progress"
-import { erectionStageLabel } from "../../domain/erection-stage"
+import type { ErectionStage } from "../../domain/erection-stage"
 import type { PointAssignment, WeldPointType } from "../../domain/weld-progress"
 import {
   loadWeldFormReferentials,
@@ -85,6 +86,8 @@ export function FieldWeldProgressScreen({
   /** When set, the screen also offers the stage this evidence supports. */
   stage?: RecordableErectionStage
 }) {
+  const tc = useTranslations("codes")
+  const stageName = (stage: ErectionStage) => tc(`erectionStage.${stage}`)
   const state = useErectionReadiness()
   const { selected: currentSpool, projectId, canRecord, dataCurrent, refresh } = state
   const embedded = useContext(ErectionEmbeddedContext)
@@ -309,7 +312,7 @@ export function FieldWeldProgressScreen({
         const evidence = toStageEvidence(row)
         const isDone = Boolean(row.weldedBoltedOn)
         const missing = firstMissingPredecessor(stage, evidence)
-        const blockedBy = !isDone && missing ? erectionStageLabel(missing) : null
+        const blockedBy = !isDone && missing ? stageName(missing) : null
         const mode = panelMode({ allRecorded: isDone, blockedBy })
 
         const targetOp = missing ? operationByStage[missing] : null
@@ -331,7 +334,7 @@ export function FieldWeldProgressScreen({
                 variant="outline"
                 onClick={() => nav.openOperation(targetOp)}
               >
-                Open {erectionStageLabel(missing)}
+                Open {stageName(missing)}
               </Button>
             ) : targetHref && canVisitPredecessor ? (
               <Button asChild size="sm" variant="outline">
@@ -344,7 +347,7 @@ export function FieldWeldProgressScreen({
                     here,
                   )}
                 >
-                  Open {erectionStageLabel(missing)}
+                  Open {stageName(missing)}
                 </Link>
               </Button>
             ) : null
@@ -393,7 +396,7 @@ export function FieldWeldProgressScreen({
               </div>
             ) : mode === "blocked" ? (
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                <span>Record {erectionStageLabel(missing!)} before {erectionStageLabel(stage)}</span>
+                <span>Record {stageName(missing!)} before {stageName(stage)}</span>
                 {predecessorAction}
               </div>
             ) : (

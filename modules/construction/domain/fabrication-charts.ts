@@ -1,4 +1,5 @@
-import { CONSTRUCTION_STAGES, stageLabel } from "./construction-phase"
+/** Chart rows carry codes; the interface passes the words for them (codes namespace, week format). */
+type Label = (code: string) => string
 
 type CurveRow = {
   week_start: string
@@ -38,11 +39,10 @@ export type FabricationCurvePoint = {
   laydown: number
 }
 
-export const toFabricationCurveSeries = (rows: readonly CurveRow[]): FabricationCurvePoint[] =>
+export const toFabricationCurveSeries = (rows: readonly CurveRow[], weekLabel: Label): FabricationCurvePoint[] =>
   rows.map((row) => ({
     weekStart: row.week_start,
-    label: new Intl.DateTimeFormat("en", { month: "short", day: "numeric", timeZone: "UTC" })
-      .format(new Date(`${row.week_start}T00:00:00Z`)),
+    label: weekLabel(row.week_start),
     startFab: Number(row.start_fab_count),
     materialCheck: Number(row.material_check_count),
     fabricated: Number(row.fabricated_count),
@@ -53,14 +53,12 @@ export const toFabricationCurveSeries = (rows: readonly CurveRow[]): Fabrication
     laydown: Number(row.laydown_count),
   }))
 
-export const toStageDistributionSeries = (rows: readonly StageDistributionRow[]) =>
+export const toStageDistributionSeries = (rows: readonly StageDistributionRow[], stageName: Label) =>
   [...rows]
     .sort((left, right) => left.stage_order - right.stage_order)
     .map((row) => ({
       stage: row.stage,
-      label: row.stage === "not_started"
-        ? "Not started"
-        : stageLabel(row.stage as (typeof CONSTRUCTION_STAGES)[number]),
+      label: stageName(row.stage),
       count: Number(row.spool_count),
     }))
 

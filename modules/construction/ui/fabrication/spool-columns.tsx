@@ -1,6 +1,6 @@
 import { StatusBadge } from "@/components/ui/status-badge"
 import type { DataColumn } from "@/components/ui/data-table"
-import { stageLabel } from "../../domain/construction-phase"
+import type { CodesTranslator } from "@/i18n/translator"
 import type { SpoolStatus } from "../../infrastructure/supabase-construction-repository"
 
 /** Sorts on how far along the work is, so "3/12" and "3/400" do not land next to each other. */
@@ -12,7 +12,8 @@ const ratio = (done: number, total: number) => (total === 0 ? 1 : done / total)
  * number and the stage and threw the rest away, which is why "which spools are waiting on NDE"
  * was a question nobody could answer from this screen.
  */
-export const FABRICATION_SPOOL_COLUMNS: ReadonlyArray<DataColumn<SpoolStatus>> = [
+export function fabricationSpoolColumns(tc: CodesTranslator): ReadonlyArray<DataColumn<SpoolStatus>> {
+  return [
   {
     id: "spoolNumber",
     header: "Spool",
@@ -40,12 +41,12 @@ export const FABRICATION_SPOOL_COLUMNS: ReadonlyArray<DataColumn<SpoolStatus>> =
   {
     id: "currentStage",
     header: "Stage",
-    value: (spool) => (spool.currentStage ? stageLabel(spool.currentStage) : "Not started"),
+    value: (spool) => tc(`fabricationStage.${spool.currentStage ?? "not_started"}`),
     filter: "select",
     cell: (spool) => (
       <StatusBadge
         status={spool.currentStage ?? "not_started"}
-        label={spool.currentStage ? stageLabel(spool.currentStage) : "Not started"}
+        label={tc(`fabricationStage.${spool.currentStage ?? "not_started"}`)}
       />
     ),
   },
@@ -80,5 +81,5 @@ export const FABRICATION_SPOOL_COLUMNS: ReadonlyArray<DataColumn<SpoolStatus>> =
     cell: (spool) =>
       spool.isReleasable ? <StatusBadge status="ready" label="Releasable" /> : null,
   },
-]
-
+  ]
+}

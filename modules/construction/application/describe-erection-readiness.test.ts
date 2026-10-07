@@ -2,9 +2,8 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 
 import {
-  currentErectionStageLabel,
-  describeRftShortfall,
-  erectionStageDisplay,
+  currentErectionStage,
+  listRftShortfall,
   toStageEvidence,
   type ErectionReadinessFacts,
 } from "./describe-erection-readiness"
@@ -20,18 +19,18 @@ const FACTS: ErectionReadinessFacts = {
   rftOn: null,
 }
 
-assert.equal(currentErectionStageLabel(FACTS), "not started")
-assert.equal(currentErectionStageLabel({ ...FACTS, toSiteOn: "2026-08-01" }), "to site")
+assert.equal(currentErectionStage(FACTS), "not_started")
+assert.equal(currentErectionStage({ ...FACTS, toSiteOn: "2026-08-01" }), "to_site")
 assert.equal(
-  currentErectionStageLabel({ ...FACTS, toSiteOn: "2026-08-01", erectedOn: "2026-08-02" }),
+  currentErectionStage({ ...FACTS, toSiteOn: "2026-08-01", erectedOn: "2026-08-02" }),
   "erected",
 )
-assert.equal(currentErectionStageLabel({ ...FACTS, weldedBoltedOn: "2026-08-03" }), "welded/bolted")
-assert.equal(currentErectionStageLabel({ ...FACTS, supportedOn: "2026-08-04" }), "supported")
-// RFT wins over every stage label, and it is read from is_rft rather than from rft_on: the
-// view can only produce rft_on when is_rft holds, but the label must not depend on that.
+assert.equal(currentErectionStage({ ...FACTS, weldedBoltedOn: "2026-08-03" }), "welded_bolted")
+assert.equal(currentErectionStage({ ...FACTS, supportedOn: "2026-08-04" }), "supported")
+// RFT wins over every stage, and it is read from is_rft rather than from rft_on: the view can
+// only produce rft_on when is_rft holds, but the stage must not depend on that.
 assert.equal(
-  currentErectionStageLabel({ ...FACTS, supportedOn: "2026-08-04", isRft: true, rftOn: null }),
+  currentErectionStage({ ...FACTS, supportedOn: "2026-08-04", isRft: true, rftOn: null }),
   "rft",
 )
 
@@ -42,36 +41,14 @@ assert.deepEqual(toStageEvidence({ ...FACTS, ndePending: 3, toSiteOn: "2026-08-0
   supportedOn: null,
 })
 
-assert.equal(describeRftShortfall({ ...FACTS, isRft: true }), null)
+test("an RFT spool has nothing outstanding", () => {
+  assert.deepEqual(listRftShortfall({ ...FACTS, isRft: true }), [])
+})
 
-assert.equal(
-  describeRftShortfall(FACTS),
-  "Welded / Bolted is not recorded; Supported is not recorded.",
-)
-assert.equal(
-  describeRftShortfall({
-    ...FACTS,
-    weldedBoltedOn: "2026-08-03",
-    supportedOn: "2026-08-04",
-    ndePending: 2,
-    pwhtPending: 1,
-  }),
-  "2 NDE obligation(s) open; 1 PWHT requirement(s) open.",
-)
-
-// Contradictory input must not render as an empty sentence.
-assert.equal(
-  describeRftShortfall({
-    ...FACTS,
-    weldedBoltedOn: "2026-08-03",
-    supportedOn: "2026-08-04",
-    isRft: false,
-  }),
-  "RFT is closed but no outstanding evidence is reported; reload the page.",
-)
-
-test("erection stage has an operator label next to its code", () => {
-  assert.deepEqual(erectionStageDisplay({ ...FACTS, isRft: true }), { code: "rft", label: "Ready for Test" })
-  assert.deepEqual(erectionStageDisplay({ ...FACTS, weldedBoltedOn: "2026-08-24" }), { code: "welded/bolted", label: "Welded / Bolted" })
-  assert.deepEqual(erectionStageDisplay(FACTS), { code: "not started", label: "Not started" })
+test("missing stages come first, then open NDE and PWHT with their counts", () => {
+  assert.deepEqual(listRftShortfall(FACTS), [{ kind: "welded_bolted" }, { kind: "supported" }])
+  assert.deepEqual(
+    listRftShortfall({ ...FACTS, weldedBoltedOn: "2026-08-03", supportedOn: "2026-08-04", ndePending: 2, pwhtPending: 1 }),
+    [{ kind: "nde", count: 2 }, { kind: "pwht", count: 1 }],
+  )
 })

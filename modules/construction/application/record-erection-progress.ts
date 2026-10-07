@@ -1,10 +1,12 @@
 import {
   ERECTION_STAGES,
-  erectionStageLabel,
   isRecordableErectionStage,
   type ErectionStage,
 } from "../domain/erection-stage"
 import type { Gate } from "./record-material-check"
+
+// Interim: gate reasons are still English sentences; Task 5 of the i18n plan turns them into codes.
+const STAGE_NAMES: Record<ErectionStage, string> = { to_site: "To Site", erected: "Erected", welded_bolted: "Welded / Bolted", supported: "Supported", rft: "Ready for Test" }
 
 export type RecordableErectionStage = Exclude<ErectionStage, "rft">
 
@@ -62,7 +64,7 @@ export function describeErectionStageGate(input: {
   if (!isRecordableStage(stage)) {
     return {
       allowed: false,
-      reason: `${erectionStageLabel(stage)} is derived from field weld, support, NDE and PWHT evidence and cannot be recorded by hand.`,
+      reason: `${STAGE_NAMES[stage]} is derived from field weld, support, NDE and PWHT evidence and cannot be recorded by hand.`,
     }
   }
   if (!canRecord) {
@@ -79,7 +81,7 @@ export function describeErectionStageGate(input: {
   if (missing) {
     return {
       allowed: false,
-      reason: `Record ${erectionStageLabel(missing)} before ${erectionStageLabel(stage)}.`,
+      reason: `Record ${STAGE_NAMES[missing]} before ${STAGE_NAMES[stage]}.`,
     }
   }
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -29,19 +30,6 @@ import {
   uploadSpoolgenFile,
 } from "../infrastructure/supabase-engineering-repository";
 
-export const SPOOLGEN_ROLE_LABELS: Record<SpoolgenFileRole, string> = {
-  weld: "weld.txt — ISO / spool / weld structure",
-  trace: "trace.txt — ident codes and material trace",
-  bolt: "bolt.txt — flange and bolting joints",
-  supp: "supp.txt — supports",
-};
-export const UPLOAD_BUTTON_LABELS: Record<SpoolgenFileRole, string> = {
-  weld: "Upload weld.txt",
-  trace: "Upload trace.txt",
-  bolt: "Upload bolt.txt",
-  supp: "Upload supp.txt",
-};
-
 export function SpoolingImportScreen({
   projectId,
   canManage,
@@ -51,6 +39,7 @@ export function SpoolingImportScreen({
   canManage: boolean;
   onValidated: (jobId: string) => void;
 }) {
+  const tc = useTranslations("codes");
   const fileInputs = useRef<
     Partial<Record<SpoolgenFileRole, HTMLInputElement | null>>
   >({});
@@ -157,7 +146,7 @@ export function SpoolingImportScreen({
           {SPOOLGEN_FILE_ROLES.map((role) => (
             <div key={role} className="flex items-center gap-3 text-sm">
               <span className="w-72 shrink-0">
-                {SPOOLGEN_ROLE_LABELS[role]}
+                {tc(`spoolgenRole.${role}`)}
               </span>
               <input
                 ref={(element) => {
@@ -178,7 +167,7 @@ export function SpoolingImportScreen({
               >
                 {files[role]
                   ? `Replace ${role}.txt`
-                  : UPLOAD_BUTTON_LABELS[role]}
+                  : tc(`spoolgenUpload.${role}`)}
               </Button>
               {files[role] ? (
                 <span className="text-xs text-muted-foreground">

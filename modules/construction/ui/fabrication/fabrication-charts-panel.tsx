@@ -1,6 +1,10 @@
 "use client"
 
+import { useLocale, useTranslations } from "next-intl"
 import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, XAxis, YAxis } from "recharts"
+
+import { formatWeekLabel } from "@/i18n/format"
+import { codeLabel } from "@/i18n/translator"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
@@ -56,12 +60,14 @@ export function FabricationChartsPanel({
   data: FabricationChartData | null
   loading: boolean
 }) {
+  const tc = useTranslations("codes")
+  const locale = useLocale()
   if (loading || !data) {
     return <Skeleton className="h-[38rem] w-full" />
   }
 
-  const curve = toFabricationCurveSeries(data.curve)
-  const stages = toStageDistributionSeries(data.stages)
+  const curve = toFabricationCurveSeries(data.curve, (week) => formatWeekLabel(week, locale))
+  const stages = toStageDistributionSeries(data.stages, (code) => codeLabel(tc, "fabricationStage", code))
   const areas = toPdsAreaProgressSeries(data.pdsAreas)
   const hasCurve = hasFabricationChartData(curve)
   const hasStages = stages.some((stage) => stage.count > 0)

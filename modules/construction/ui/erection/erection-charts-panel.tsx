@@ -4,6 +4,10 @@ import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, XAxis, YAxis } fro
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useLocale, useTranslations } from "next-intl"
+
+import { formatWeekLabel } from "@/i18n/format"
+import { codeLabel } from "@/i18n/translator"
 import { toErectionBlockerSeries, toErectionCurveSeries, toErectionStageSeries } from "../../domain/erection-charts"
 import type { ErectionChartData } from "../../infrastructure/supabase-erection-repository"
 
@@ -13,10 +17,12 @@ const stageColors: Record<string, string> = { not_started: "var(--neutral-fg)", 
 const Empty = ({ detail }: { detail: string }) => <div className="text-muted-foreground flex h-72 items-center justify-center rounded-md border border-dashed px-6 text-center text-sm"><div><p className="font-medium">No erection progress recorded yet.</p><p className="mt-1 text-xs">{detail}</p></div></div>
 
 export function ErectionChartsPanel({ data, loading }: { data: ErectionChartData | null; loading: boolean }) {
+  const tc = useTranslations("codes")
+  const locale = useLocale()
   if (loading || !data) return <Skeleton className="h-[38rem] w-full" />
-  const curve = toErectionCurveSeries(data.curve)
-  const stages = toErectionStageSeries(data.stages)
-  const blockers = toErectionBlockerSeries(data.blockers)
+  const curve = toErectionCurveSeries(data.curve, (week) => formatWeekLabel(week, locale))
+  const stages = toErectionStageSeries(data.stages, (code) => codeLabel(tc, "erectionStage", code))
+  const blockers = toErectionBlockerSeries(data.blockers, (code) => codeLabel(tc, "erectionBlocker", code))
   return <section className="space-y-4" aria-label="Erection progress charts">
     <Card><CardHeader><CardTitle>Cumulative erection progress</CardTitle><CardDescription>Actual spools reaching each field milestone by the end of the ISO week.</CardDescription></CardHeader><CardContent>{curve.length ? <ChartContainer config={curveConfig} className="h-80 w-full"><LineChart data={curve}><CartesianGrid vertical={false}/><XAxis dataKey="label" tickLine={false} axisLine={false}/><YAxis allowDecimals={false} tickLine={false} axisLine={false} width={28}/><ChartTooltip content={<ChartTooltipContent indicator="line"/>}/><ChartLegend content={<ChartLegendContent/>}/><Line dataKey="toSite" stroke="var(--color-toSite)" dot={false}/><Line dataKey="erected" stroke="var(--color-erected)" dot={false}/><Line dataKey="weldedBolted" stroke="var(--color-weldedBolted)" dot={false}/><Line dataKey="supported" stroke="var(--color-supported)" dot={false}/><Line dataKey="rft" stroke="var(--color-rft)" strokeWidth={2.5} dot={false}/></LineChart></ChartContainer> : <Empty detail="Record a To Site event to start the actual curve."/>}</CardContent></Card>
     <div className="grid gap-4 xl:grid-cols-2">

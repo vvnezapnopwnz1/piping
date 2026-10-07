@@ -19,30 +19,25 @@ type MethodRow = {
   rejected_count: number
 }
 
-const WORKFLOW_LABELS: Record<string, string> = {
-  pending: "Pending allocation",
-  allocated: "Allocated",
-  issued: "Issued to inspector",
-  result_recorded: "Inspected",
-}
+/** Chart rows carry codes; the interface passes the words for them (codes namespace, week format). */
+type Label = (code: string) => string
 
 const METHOD_ORDER = ["rt", "ut", "mt", "pt", "pmi", "ht", "vt"]
 
-export const toNdeOutcomeTrendSeries = (rows: readonly OutcomeTrendRow[]) =>
+export const toNdeOutcomeTrendSeries = (rows: readonly OutcomeTrendRow[], weekLabel: Label) =>
   rows.map((row) => ({
     weekStart: row.week_start,
-    label: new Intl.DateTimeFormat("en", { month: "short", day: "numeric", timeZone: "UTC" })
-      .format(new Date(`${row.week_start}T00:00:00Z`)),
+    label: weekLabel(row.week_start),
     accepted: Number(row.accepted_count),
     rejected: Number(row.rejected_count),
   }))
 
-export const toNdeWorkflowSeries = (rows: readonly WorkflowRow[]) =>
+export const toNdeWorkflowSeries = (rows: readonly WorkflowRow[], statusLabel: Label) =>
   [...rows]
     .sort((left, right) => left.status_order - right.status_order)
     .map((row) => ({
       status: row.status,
-      label: WORKFLOW_LABELS[row.status] ?? row.status,
+      label: statusLabel(row.status),
       count: Number(row.obligation_count),
     }))
 

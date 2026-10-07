@@ -10,7 +10,13 @@ import {
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
-import { statusLabel, statusTone, type StatusTone } from './status-tone'
+import { useTranslations } from 'next-intl'
+
+import type { Messages } from '@/i18n/messages'
+
+import { statusKey, statusLabel, statusTone, type StatusTone } from './status-tone'
+
+type StatusCode = keyof Messages['codes']['status']
 
 /**
  * Every tone carries an icon as well as a colour. A worklist is scanned, not read, and colour
@@ -57,7 +63,10 @@ export function StatusBadge({
   /** Drop the icon only where the row already carries the same meaning some other way. */
   icon?: boolean
 }) {
+  const t = useTranslations('codes.status')
   const resolved = tone ?? statusTone(status)
+  const key = statusKey(status) as StatusCode | null
+  const text = label ?? (key && t.has(key) ? t(key) : statusLabel(status))
   const { className: toneClassName, Icon } = TONE_STYLES[resolved]
 
   return (
@@ -73,7 +82,7 @@ export function StatusBadge({
       {...props}
     >
       {icon ? <Icon aria-hidden="true" /> : null}
-      {label ?? statusLabel(status)}
+      {text}
     </span>
   )
 }

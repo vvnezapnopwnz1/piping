@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 
@@ -45,16 +46,6 @@ import {
   type CoverageRegime,
 } from "../domain/nde-batch"
 
-const METHOD_LABELS: Record<NdtMethod, string> = {
-  rt: "RT (Radiographic Testing)",
-  ut: "UT (Ultrasonic Testing)",
-  mt: "MT (Magnetic Particle)",
-  pt: "PT (Penetrant Testing)",
-  pmi: "PMI (Positive Material Identification)",
-  ht: "HT (Hardness Testing)",
-  vt: "VT (Visual Testing)",
-}
-
 /**
  * The inspector's worklist. Method, cycle and disposition are the three things an inspector
  * narrows by — "show me the open RT repairs" — so all three are faceted rather than left to the
@@ -99,6 +90,7 @@ const OBLIGATION_COLUMNS: ReadonlyArray<DataColumn<NdeObligation>> = [
 ]
 
 export function NdeBatchScreen({ projectId }: { projectId: string }) {
+  const tc = useTranslations("codes")
   const [batches, setBatches] = useState<NdeBatch[]>([])
   const [obligationCounts, setObligationCounts] = useState<Record<string, number>>({})
   const [obligations, setObligations] = useState<NdeObligation[]>([])
@@ -379,7 +371,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
                 >
                   {NDT_METHODS.map((value) => (
                     <option key={value} value={value}>
-                      {METHOD_LABELS[value]}
+                      {tc(`ndeMethod.${value}`)}
                     </option>
                   ))}
                 </select>

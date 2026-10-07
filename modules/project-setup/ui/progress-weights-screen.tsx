@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { AlertCircle, AlertTriangle, CheckCircle2, Plus, RefreshCw, Save, ShieldAlert, Trash2 } from "lucide-react"
 import { toast } from "sonner"
@@ -28,14 +29,8 @@ import {
   type ProgressWeightItem,
 } from "../domain/progress-weights"
 
-const PHASE_LABELS: Record<ProgressWeightPhase, string> = {
-  prefabrication: "Prefabrication",
-  painting: "Painting",
-  assembly: "Assembly",
-  erection: "Erection",
-}
-
 export function ProgressWeightsScreen({ projectId, canManage = true }: { projectId: string; canManage?: boolean }) {
+  const tc = useTranslations("codes")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<LoadedProgressWeights | null>(null)
@@ -136,7 +131,7 @@ export function ProgressWeightsScreen({ projectId, canManage = true }: { project
             }
           : null
       )
-      toast.success(`${PHASE_LABELS[activePhase]} progress weights saved successfully`)
+      toast.success(`${tc(`progressPhase.${activePhase}`)} progress weights saved successfully`)
     } catch (err: any) {
       toast.error(err.message || "Failed to save progress weights")
     } finally {
@@ -180,7 +175,7 @@ export function ProgressWeightsScreen({ projectId, canManage = true }: { project
           {(["prefabrication", "painting", "assembly", "erection"] as ProgressWeightPhase[]).map(
             (phase) => (
               <TabsTrigger key={phase} value={phase}>
-                {PHASE_LABELS[phase]}
+                {tc(`progressPhase.${phase}`)}
                 {phase === "assembly" && !data?.assemblyEnabled && (
                   <Badge variant="outline" className="text-warning-fg border-warning-border ml-2 text-xs">
                     Disabled
@@ -202,7 +197,7 @@ export function ProgressWeightsScreen({ projectId, canManage = true }: { project
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <div>
-            <CardTitle>{PHASE_LABELS[activePhase]} Progress Weights</CardTitle>
+            <CardTitle>{tc(`progressPhase.${activePhase}`)} Progress Weights</CardTitle>
             <CardDescription>
               Assign activity progress weight percentages. Total must equal exactly 100%.
             </CardDescription>

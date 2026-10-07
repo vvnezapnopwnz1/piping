@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { useRef, useState } from "react"
@@ -22,7 +23,7 @@ import {
   firstMissingPredecessor,
   type RecordableErectionStage,
 } from "../../application/record-erection-progress"
-import { erectionStageLabel } from "../../domain/erection-stage"
+import type { ErectionStage } from "../../domain/erection-stage"
 import {
   recordErectionProgress,
   type ErectionReadiness,
@@ -66,6 +67,8 @@ export function ErectionStageCard({
   dataCurrent = true,
   onRecorded,
 }: ErectionStageCardProps) {
+  const tc = useTranslations("codes")
+  const stageName = (stage: ErectionStage) => tc(`erectionStage.${stage}`)
   const [occurredOn, setOccurredOn] = useState(today())
   const [isSaving, setIsSaving] = useState(false)
   const dateRef = useRef<HTMLInputElement>(null)
@@ -78,7 +81,7 @@ export function ErectionStageCard({
   const query = useSearchParams().toString()
   const here = query ? `${pathname}?${query}` : pathname
 
-  const label = erectionStageLabel(stage)
+  const label = stageName(stage)
   const evidence = toStageEvidence(row)
   const alreadyOn = erectionStageDate(stage, evidence)
   const gate = describeErectionStageGate({ stage, evidence, occurredOn, canRecord })
@@ -95,7 +98,7 @@ export function ErectionStageCard({
   )
 
   const isDone = Boolean(alreadyOn)
-  const blockedBy = !isDone && missing ? erectionStageLabel(missing) : null
+  const blockedBy = !isDone && missing ? stageName(missing) : null
   const mode = panelMode({ allRecorded: isDone, blockedBy })
 
   const save = async () => {
@@ -135,7 +138,7 @@ export function ErectionStageCard({
           variant="outline"
           onClick={() => nav.openOperation(targetOp)}
         >
-          Open {erectionStageLabel(missing)}
+          Open {stageName(missing)}
         </Button>
       ) : targetHref && canVisitPredecessor ? (
         <Button asChild size="sm" variant="outline">
@@ -148,7 +151,7 @@ export function ErectionStageCard({
               here,
             )}
           >
-            Open {erectionStageLabel(missing)}
+            Open {stageName(missing)}
           </Link>
         </Button>
       ) : null
@@ -165,7 +168,7 @@ export function ErectionStageCard({
   if (mode === "blocked") {
     return (
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-        <span>Record {erectionStageLabel(missing!)} before {label}</span>
+        <span>Record {stageName(missing!)} before {label}</span>
         {predecessorAction}
       </div>
     )

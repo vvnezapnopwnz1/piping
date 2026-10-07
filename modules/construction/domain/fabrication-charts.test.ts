@@ -7,6 +7,9 @@ import {
   toStageDistributionSeries,
 } from "./fabrication-charts"
 
+const week = (isoDate: string) => `week ${isoDate}`
+const label = (code: string) => `label ${code}`
+
 const curve = toFabricationCurveSeries([
   {
     week_start: "2026-08-03",
@@ -19,11 +22,11 @@ const curve = toFabricationCurveSeries([
     final_qc_count: 0,
     laydown_count: 0,
   },
-])
+], week)
 
 assert.deepEqual(curve, [{
   weekStart: "2026-08-03",
-  label: "Aug 3",
+  label: "week 2026-08-03",
   startFab: 3,
   materialCheck: 2,
   fabricated: 2,
@@ -38,10 +41,10 @@ assert.deepEqual(
   toStageDistributionSeries([
     { stage: "painted", stage_order: 6, spool_count: 3 },
     { stage: "not_started", stage_order: 0, spool_count: 1 },
-  ]),
+  ], label),
   [
-    { stage: "not_started", label: "Not started", count: 1 },
-    { stage: "painted", label: "Painted", count: 3 },
+    { stage: "not_started", label: "label not_started", count: 1 },
+    { stage: "painted", label: "label painted", count: 3 },
   ],
 )
 

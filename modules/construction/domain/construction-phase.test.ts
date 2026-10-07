@@ -7,7 +7,6 @@ import {
   isDerivedStage,
   isRecordableStage,
   predecessorOf,
-  stageLabel,
   stageOrdinal,
 } from "./construction-phase"
 
@@ -16,8 +15,6 @@ assert.equal(CONSTRUCTION_STAGES.length, 8)
 assert.equal(CONSTRUCTION_STAGES[0], "start_fab")
 assert.equal(CONSTRUCTION_STAGES[7], "laydown")
 
-assert.equal(stageLabel("start_fab"), "Start Fab")
-assert.equal(stageLabel("qc_release"), "QC Release")
 assert.equal(stageOrdinal("fabricated"), 3)
 assert.ok(stageOrdinal("laydown") > stageOrdinal("final_qc"))
 

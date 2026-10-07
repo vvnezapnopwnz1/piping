@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { useCallback, useContext, useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 import { RotateCw } from "lucide-react"
@@ -23,7 +24,7 @@ import {
   firstMissingPredecessor,
   type RecordableErectionStage,
 } from "../../application/record-erection-progress"
-import { erectionStageLabel } from "../../domain/erection-stage"
+import type { ErectionStage } from "../../domain/erection-stage"
 import {
   loadSupports,
   type SupportRow,
@@ -54,6 +55,8 @@ export function FieldSupportProgressScreen({
   description: string
   stage?: RecordableErectionStage
 }) {
+  const tc = useTranslations("codes")
+  const stageName = (stage: ErectionStage) => tc(`erectionStage.${stage}`)
   const state = useErectionReadiness()
   const { selected: currentSpool, canRecord, dataCurrent, refresh } = state
   const embedded = useContext(ErectionEmbeddedContext)
@@ -145,7 +148,7 @@ export function FieldSupportProgressScreen({
         const evidence = toStageEvidence(row)
         const isDone = Boolean(row.supportedOn)
         const missing = firstMissingPredecessor(stage, evidence)
-        const blockedBy = !isDone && missing ? erectionStageLabel(missing) : null
+        const blockedBy = !isDone && missing ? stageName(missing) : null
         const mode = panelMode({ allRecorded: isDone, blockedBy })
 
         return (

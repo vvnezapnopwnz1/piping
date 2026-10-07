@@ -1,0 +1,137 @@
+{
+  "fabricationStage": {
+    "start_fab": "Начало изготовления",
+    "material_check": "Входной контроль",
+    "fabricated": "Изготовлена",
+    "qc_release": "Приёмка ОТК",
+    "sent_to_paint": "Передана в покраску",
+    "painted": "Окрашена",
+    "final_qc": "Финальный контроль",
+    "laydown": "Площадка хранения",
+    "not_started": "Не начата"
+  },
+  "erectionStage": {
+    "to_site": "Отгружена на объект",
+    "erected": "Смонтирована",
+    "welded_bolted": "Сварена / собрана",
+    "supported": "На опорах",
+    "rft": "Готова к испытанию",
+    "not_started": "Не начата"
+  },
+  "erectionBlocker": {
+    "welded_bolted": "Сварка / сборка не записана",
+    "supported": "Опоры не записаны",
+    "nde": "Открытый NDE",
+    "pwht": "Открытая термообработка"
+  },
+  "rftShortfall": {
+    "welded_bolted": "Сварка / сборка не записана",
+    "supported": "Установка на опоры не записана",
+    "nde": "{count, plural, one {# открытое требование NDE} few {# открытых требования NDE} many {# открытых требований NDE} other {# открытого требования NDE}}",
+    "pwht": "{count, plural, one {# открытое требование термообработки} few {# открытых требования термообработки} many {# открытых требований термообработки} other {# открытого требования термообработки}}"
+  },
+  "ndeWorkflow": {
+    "pending": "Ожидает распределения",
+    "allocated": "Распределён",
+    "issued": "Выдан дефектоскописту",
+    "result_recorded": "Проконтролирован"
+  },
+  "ndeMethod": {
+    "rt": "RT (радиография)",
+    "ut": "UT (ультразвук)",
+    "mt": "MT (магнитопорошковый)",
+    "pt": "PT (капиллярный)",
+    "pmi": "PMI (спектральный анализ)",
+    "ht": "HT (твёрдость)",
+    "vt": "VT (визуальный)"
+  },
+  "accessRole": {
+    "platform_admin": "Системный администратор",
+    "project_admin": "Администратор проекта",
+    "site_admin": "Администратор площадки",
+    "project_editor": "Редактор проекта",
+    "subcontractor": "Субподрядчик",
+    "project_reader": "Просмотр проекта"
+  },
+  "functionalRole": {
+    "project_manager": "Руководитель проекта",
+    "qc_engineer": "Инженер по качеству",
+    "nde_inspector": "Дефектоскопист",
+    "spooling_team": "Группа раскроя",
+    "fabrication_contributor": "Исполнитель в цеху",
+    "erection_contributor": "Исполнитель на монтаже",
+    "tracking_operator": "Оператор перемещений"
+  },
+  "revisionDecision": {
+    "not_done": "Не выполнено",
+    "cancelled": "Отменено",
+    "done_without_modification": "Выполнено без изменений",
+    "rework": "Переделка"
+  },
+  "progressPhase": {
+    "prefabrication": "Изготовление",
+    "painting": "Покраска",
+    "assembly": "Сборка",
+    "erection": "Монтаж"
+  },
+  "teamType": {
+    "line_check": "Обход линии",
+    "blinding": "Установка заглушек",
+    "finishing": "Завершающие работы",
+    "reinstatement": "Обратная сборка",
+    "jointer": "Сборка фланцев"
+  },
+  "spoolgenRole": {
+    "weld": "weld.txt — изометрии, катушки и стыки",
+    "trace": "trace.txt — коды материалов и прослеживаемость",
+    "bolt": "bolt.txt — фланцевые и болтовые соединения",
+    "supp": "supp.txt — опоры"
+  },
+  "spoolgenUpload": {
+    "weld": "Загрузить weld.txt",
+    "trace": "Загрузить trace.txt",
+    "bolt": "Загрузить bolt.txt",
+    "supp": "Загрузить supp.txt"
+  },
+  "tableDensity": {
+    "compact": "Компактно",
+    "default": "Обычно",
+    "comfortable": "Просторно"
+  },
+  "status": {
+    "accepted": "Принят",
+    "active": "Активен",
+    "approved": "Утверждён",
+    "cleared": "Снят",
+    "complete": "Завершён",
+    "completed": "Завершён",
+    "done": "Готово",
+    "passed": "Пройден",
+    "ready": "Готов",
+    "released": "Выпущен",
+    "rft": "Готова к испытанию",
+    "blocked": "Заблокирован",
+    "inactive": "Неактивен",
+    "on_hold": "Приостановлен",
+    "pending": "Ожидает",
+    "waiting": "Ожидает",
+    "allocated": "Распределён",
+    "in_progress": "В работе",
+    "issued": "Выдан",
+    "open": "Открыт",
+    "partial": "Частично",
+    "submitted": "Отправлен",
+    "cancelled": "Отменён",
+    "escalated": "Усиленный контроль",
+    "expired": "Истёк",
+    "failed": "Не пройден",
+    "overdue": "Просрочен",
+    "rejected": "Отклонён",
+    "archived": "В архиве",
+    "draft": "Черновик",
+    "not_applicable": "Не применимо",
+    "not_started": "Не начат",
+    "superseded": "Заменён",
+    "unknown": "Неизвестно"
+  }
+}
