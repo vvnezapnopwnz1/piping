@@ -7,6 +7,7 @@ import { usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { ArrowRight, RotateCw } from "lucide-react"
 
+import { codeLabel } from "@/i18n/translator"
 import { errorDetail } from "@/i18n/format"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -52,6 +53,8 @@ export function MaterialCheckScreen({
 }) {
   const reasonText = useGateReason()
   const t = useTranslations("fabrication.materialCheck")
+  const tf = useTranslations("fabrication")
+  const tc = useTranslations("codes")
   const [ownSpool, setOwnSpool] = useContextSpool(projectId, { enabled: !embedded })
   const spool = embedded ? embedded.spool : ownSpool
   const setSpool = embedded ? embedded.onSpoolChange : setOwnSpool
@@ -458,7 +461,7 @@ export function MaterialCheckScreen({
                                 ) : null}
                               </div>
                               <span className="block text-xs text-muted-foreground">
-                                MRR {acceptedItem.mrrNumber ?? "unavailable"} · {acceptedItem.status ?? "unavailable"}
+                                {tf("shared.mrrStatus", { mrr: acceptedItem.mrrNumber ?? tf("shared.unavailable"), status: acceptedItem.status ? codeLabel(tc, "status", acceptedItem.status) : tf("shared.unavailable") })}
                               </span>
                             </div>
                           ) : isDone ? (

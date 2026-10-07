@@ -123,9 +123,9 @@ export function FabricationWorkbench({
           <Skeleton className="h-96 w-full" />
         ) : spool && current ? (
           <SpoolDrawer
-            kicker="Spool in fabrication"
+            kicker={t("kicker")}
             title={spool.spoolNumber}
-            meta={`rev ${spool.revisionNumber} · ${spool.isoNumber}`}
+            meta={tf("shared.revIso", { rev: spool.revisionNumber, iso: spool.isoNumber })}
             status={
               <span className={styles.stageBadge}>
                 {spool.dates.laydown

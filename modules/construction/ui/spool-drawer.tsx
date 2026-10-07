@@ -27,14 +27,15 @@ export function SpoolDrawer({
   onClose: () => void
   children: ReactNode
 }) {
+  const t = useTranslations("fabrication.shared")
   return (
     <RecordDrawer
       kicker={kicker}
       title={title}
       meta={meta}
       status={status}
-      returnLabel="Spools"
-      closeLabel={`Close spool ${title}`}
+      returnLabel={t("spools")}
+      closeLabel={t("closeSpool", { spool: String(title) })}
       recordKind="spool"
       onClose={onClose}
     >

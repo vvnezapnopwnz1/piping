@@ -342,12 +342,12 @@ export function WeldProgressScreen({
             <div hidden={Boolean(embedded) && browsingJoints}>
               <ChangeHighlight
                 id={selected.weldJointRevisionId}
-                announce={`Now recording shop weld ${selected.weldNumber}`}
+                announce={t("nowRecording", { weld: selected.weldNumber })}
               >
                 <Card>
                   <CardHeader>
                     <IdentityHeadline
-                      kind="Recording shop weld"
+                      kind={t("recordingShopWeld")}
                       identity={selected.weldNumber}
                       action={
                         embedded ? (

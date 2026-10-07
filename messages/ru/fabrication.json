@@ -267,7 +267,9 @@
     "recordWeldProgress": "Записать сварку",
     "weldRecorded": "Стык {weld} записан.",
     "openCount": "Открыто: {count}",
-    "rootCapHint": "Корень и облицовка в сумме всегда 100 %; на облицовку приходится {cap}."
+    "rootCapHint": "Корень и облицовка в сумме всегда 100 %; на облицовку приходится {cap}.",
+    "nowRecording": "Записывается цеховой стык {weld}",
+    "recordingShopWeld": "Запись цехового стыка"
   },
   "charts": {
     "noFabricationProgressRecordedYet": "Изготовление ещё не записывалось.",
@@ -280,7 +282,8 @@
     "thePipelineDistributionAppearsAfter": "Распределение появится после записи первой катушки.",
     "progressByPdsArea": "Ход работ по зонам PDS",
     "completedActiveAndUntouchedSpools": "Завершённые, начатые и не начатые катушки по ответственным зонам.",
-    "areaProgressAppearsAfterA": "Ход по зонам появится, когда катушку добавят в активную зону PDS."
+    "areaProgressAppearsAfterA": "Ход по зонам появится, когда катушку добавят в активную зону PDS.",
+    "spools": "Катушки"
   },
   "workbench": {
     "fabricationSpools": "Катушки цеха",
@@ -289,7 +292,8 @@
     "selectAProjectToWork": "Выберите проект, чтобы работать с цехом.",
     "nextOperation": "Далее: {operation}",
     "shopStagesOf": "Этапы катушки {spool} в цеху",
-    "recordingNotInAccess": "Запись «{operation}» не входит в ваши права в проекте."
+    "recordingNotInAccess": "Запись «{operation}» не входит в ваши права в проекте.",
+    "kicker": "Катушка в цеху"
   },
   "overview": {
     "theOverviewCouldNotBe": "Не удалось загрузить обзор.",
@@ -328,7 +332,12 @@
     "theMaterialCheckWorkspaceCould": "Не удалось загрузить входной контроль.",
     "operationLabel": "Операция «{operation}»",
     "bomTrace": "Плавка по спецификации: {trace}",
-    "materialTraceFor": "Плавка для {ident}"
+    "materialTraceFor": "Плавка для {ident}",
+    "revIso": "рев. {rev} · {iso}",
+    "spools": "Катушки",
+    "closeSpool": "Закрыть катушку {spool}",
+    "mrrStatus": "MRR {mrr}, статус: {status}",
+    "unavailable": "недоступно"
   },
   "dashboardPage": {
     "selectAProjectToSee": "Выберите проект, чтобы увидеть ход изготовления."

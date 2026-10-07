@@ -237,7 +237,9 @@
     "recordWeldProgress": "Record weld progress",
     "weldRecorded": "Weld {weld} recorded.",
     "openCount": "{count} open",
-    "rootCapHint": "Root and Cap always total 100 percent; the cap takes {cap}."
+    "rootCapHint": "Root and Cap always total 100 percent; the cap takes {cap}.",
+    "nowRecording": "Now recording shop weld {weld}",
+    "recordingShopWeld": "Recording shop weld"
   },
   "charts": {
     "noFabricationProgressRecordedYet": "No fabrication progress recorded yet.",
@@ -250,7 +252,8 @@
     "thePipelineDistributionAppearsAfter": "The pipeline distribution appears after the first spool is recorded.",
     "progressByPdsArea": "Progress by PDS area",
     "completedActiveAndUntouchedSpools": "Completed, active and untouched spools by responsible area.",
-    "areaProgressAppearsAfterA": "Area progress appears after a spool is added to an active PDS area."
+    "areaProgressAppearsAfterA": "Area progress appears after a spool is added to an active PDS area.",
+    "spools": "Spools"
   },
   "workbench": {
     "fabricationSpools": "Fabrication spools",
@@ -259,7 +262,8 @@
     "selectAProjectToWork": "Select a project to work on fabrication.",
     "nextOperation": "Next: {operation}",
     "shopStagesOf": "Shop stages of spool {spool}",
-    "recordingNotInAccess": "Recording {operation} is not part of your project access."
+    "recordingNotInAccess": "Recording {operation} is not part of your project access.",
+    "kicker": "Spool in fabrication"
   },
   "overview": {
     "theOverviewCouldNotBe": "The overview could not be loaded.",
@@ -298,7 +302,12 @@
     "theMaterialCheckWorkspaceCould": "The material check workspace could not be loaded.",
     "operationLabel": "{operation} operation",
     "bomTrace": "BOM trace: {trace}",
-    "materialTraceFor": "Material trace for {ident}"
+    "materialTraceFor": "Material trace for {ident}",
+    "revIso": "rev {rev} · {iso}",
+    "spools": "Spools",
+    "closeSpool": "Close spool {spool}",
+    "mrrStatus": "MRR {mrr} · {status}",
+    "unavailable": "unavailable"
   },
   "dashboardPage": {
     "selectAProjectToSee": "Select a project to see fabrication progress."

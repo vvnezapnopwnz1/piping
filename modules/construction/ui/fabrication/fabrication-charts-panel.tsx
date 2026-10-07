@@ -117,7 +117,7 @@ export function FabricationChartsPanel({
           </CardHeader>
           <CardContent>
             {hasStages ? (
-              <ChartContainer config={{ count: { label: "Spools" } }} className="h-80 w-full">
+              <ChartContainer config={{ count: { label: t("spools") } }} className="h-80 w-full">
                 <BarChart data={stages} layout="vertical" margin={{ left: 20, right: 16 }}>
                   <CartesianGrid horizontal={false} />
                   <XAxis type="number" allowDecimals={false} hide />
