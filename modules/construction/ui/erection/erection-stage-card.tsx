@@ -3,7 +3,6 @@
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { useRef, useState } from "react"
-import { ArrowRight } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -28,7 +27,7 @@ import {
   recordErectionProgress,
   type ErectionReadiness,
 } from "../../infrastructure/supabase-erection-repository"
-import styles from "../spool-workbench.module.css"
+import { panelMode } from "../panel-mode"
 import {
   ERECTION_OPERATIONS,
   type ErectionOperationId,
@@ -95,6 +94,10 @@ export function ErectionStageCard({
     targetHref && can && canVisit(targetHref.split("?")[0], can),
   )
 
+  const isDone = Boolean(alreadyOn)
+  const blockedBy = !isDone && missing ? erectionStageLabel(missing) : null
+  const mode = panelMode({ allRecorded: isDone, blockedBy })
+
   const save = async () => {
     if (!dataCurrent || !gate.allowed || commands.pending || isSaving) return
     await commands.run(async () => {
@@ -132,25 +135,41 @@ export function ErectionStageCard({
           variant="outline"
           onClick={() => nav.openOperation(targetOp)}
         >
-          Go to {erectionStageLabel(missing)}{" "}
-          <ArrowRight className="h-3.5 w-3.5 ml-1 inline" aria-hidden="true" />
+          Open {erectionStageLabel(missing)}
         </Button>
       ) : targetHref && canVisitPredecessor ? (
-        <Link
-          href={linkFrom(
-            withProject(
-              `${targetHref}?spool=${encodeURIComponent(row.spoolRevisionId)}`,
-              activityCode,
-            ),
-            here,
-          )}
-          className={styles.checkActionLink}
-        >
-          Go to {erectionStageLabel(missing)}{" "}
-          <ArrowRight className="h-3.5 w-3.5 ml-1 inline" aria-hidden="true" />
-        </Link>
+        <Button asChild size="sm" variant="outline">
+          <Link
+            href={linkFrom(
+              withProject(
+                `${targetHref}?spool=${encodeURIComponent(row.spoolRevisionId)}`,
+                activityCode,
+              ),
+              here,
+            )}
+          >
+            Open {erectionStageLabel(missing)}
+          </Link>
+        </Button>
       ) : null
     ) : null
+
+  if (mode === "done") {
+    return (
+      <p className="text-xs text-muted-foreground">
+        Recorded {alreadyOn?.slice(0, 10)}
+      </p>
+    )
+  }
+
+  if (mode === "blocked") {
+    return (
+      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+        <span>Record {erectionStageLabel(missing!)} before {label}</span>
+        {predecessorAction}
+      </div>
+    )
+  }
 
   return (
     <Card data-explicit-unsaved-commit="true">
@@ -158,24 +177,8 @@ export function ErectionStageCard({
         <CardTitle>Record {label}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className={styles.opSummary}>
-          <div className={styles.opSummaryItem}>
-            <span className={styles.opSummaryLabel}>Current {label} date:</span>
-            <span className={styles.opSummaryValue}>
-              {alreadyOn ? alreadyOn.slice(0, 10) : "Not recorded"}
-            </span>
-          </div>
-        </div>
-
-        {missing ? (
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
-            <span>Record {erectionStageLabel(missing)} before {label}.</span>
-            {predecessorAction}
-          </div>
-        ) : null}
-
         <div className="flex flex-wrap items-end gap-3">
-          <label className="text-sm">
+          <label className="text-sm font-medium">
             Date {label} happened
             <Input
               ref={dateRef}
@@ -183,6 +186,7 @@ export function ErectionStageCard({
               value={occurredOn}
               disabled={isSaving || commands.pending}
               onChange={(event) => setOccurredOn(event.target.value)}
+              className="mt-1"
             />
           </label>
           <Button
@@ -191,21 +195,13 @@ export function ErectionStageCard({
             loading={isSaving}
             disabled={!dataCurrent || !gate.allowed || commands.pending}
           >
-            {alreadyOn ? "Record correction" : `Record ${label}`}
+            Record {label}
           </Button>
         </div>
 
-        {alreadyOn ? (
-          <p className="text-muted-foreground text-sm">
-            {label} is already recorded on{" "}
-            <span className="font-mono">{alreadyOn.slice(0, 10)}</span>. Recording it again files a
-            correcting event and the later date takes effect.
-          </p>
-        ) : null}
-
         {!dataCurrent ? (
           <p className="text-destructive text-sm">Refresh spool status before recording.</p>
-        ) : gate.reason ? (
+        ) : gate.reason && !gate.allowed ? (
           <p className="text-destructive text-sm">{gate.reason}</p>
         ) : null}
       </CardContent>

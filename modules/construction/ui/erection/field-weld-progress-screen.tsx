@@ -1,5 +1,7 @@
 "use client"
-
+ 
+import Link from "next/link"
+import { usePathname, useSearchParams } from "next/navigation"
 import { useCallback, useContext, useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 import { RotateCw } from "lucide-react"
@@ -10,12 +12,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { DataTable, useTableUrlState } from "@/components/ui/data-table"
 import { ChangeHighlight, IdentityHeadline } from "@/components/ui/record-target"
+import { canVisit } from "@/components/pipeqc/navigation-model"
+import { withProject } from "@/components/pipeqc/project-url"
 import { useMarkInputsRecorded, useRequestLeave } from "@/components/pipeqc/unsaved-input-guard"
+import { linkFrom } from "@/components/pipeqc/workspace-model"
+import { useSupabaseAuth } from "@/contexts/supabase-auth-context"
+import { useOptionalAccess } from "@/modules/access/ui/access-context"
 import { WELD_COLUMNS } from "../weld-columns"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { describeFieldWeldProgressGate } from "../../application/record-field-weld-progress"
 import { toWeldProgressPayload } from "../../application/record-weld-progress"
-import type { RecordableErectionStage } from "../../application/record-erection-progress"
+import { toStageEvidence } from "../../application/describe-erection-readiness"
+import {
+  firstMissingPredecessor,
+  type RecordableErectionStage,
+} from "../../application/record-erection-progress"
+import { erectionStageLabel } from "../../domain/erection-stage"
 import type { PointAssignment, WeldPointType } from "../../domain/weld-progress"
 import {
   loadWeldFormReferentials,
@@ -24,17 +36,30 @@ import {
   type WeldSummary,
 } from "../../infrastructure/supabase-construction-repository"
 import { recordFieldWeldProgress } from "../../infrastructure/supabase-erection-repository"
+import { panelMode } from "../panel-mode"
 import styles from "../spool-workbench.module.css"
+import {
+  ERECTION_OPERATIONS,
+  type ErectionOperationId,
+} from "./erection-operations"
 import {
   ErectionEmbeddedContext,
   ErectionScreenShell,
   useErectionCommands,
+  useErectionOperationNavigation,
 } from "./erection-screen-shell"
 import { ErectionStageCard } from "./erection-stage-card"
 import { ErectionStageTimeline } from "./erection-stage-view"
 import { useErectionReadiness } from "./use-erection-readiness"
 
 const today = () => new Date().toISOString().slice(0, 10)
+
+const operationByStage: Record<RecordableErectionStage, ErectionOperationId> = {
+  to_site: "to_site",
+  erected: "erected",
+  welded_bolted: "welded",
+  supported: "supported",
+}
 
 const EMPTY_REFERENTIALS: WeldFormReferentials = {
   subcontractors: [],
@@ -64,13 +89,18 @@ export function FieldWeldProgressScreen({
   const { selected: currentSpool, projectId, canRecord, dataCurrent, refresh } = state
   const embedded = useContext(ErectionEmbeddedContext)
   const commands = useErectionCommands()
+  const nav = useErectionOperationNavigation()
+  const can = useOptionalAccess()?.can
+  const activityCode = useSupabaseAuth().access?.activityCode
+  const pathname = usePathname()
+  const query = useSearchParams().toString()
+  const here = query ? `${pathname}?${query}` : pathname
   const requestLeave = useRequestLeave()
   const markRecorded = useMarkInputsRecorded()
 
   const [welds, setWelds] = useState<WeldSummary[]>([])
   const [selectedWeld, setSelectedWeld] = useState<WeldSummary | null>(null)
   const [browsingJoints, setBrowsingJoints] = useState(false)
-  const [viewMode, setViewMode] = useState<"joints" | "milestone">("joints")
 
   const [referentials, setReferentials] = useState<WeldFormReferentials>(EMPTY_REFERENTIALS)
   const [subcontractorId, setSubcontractorId] = useState("")
@@ -275,39 +305,105 @@ export function FieldWeldProgressScreen({
       state={state}
       commands={commands}
     >
-      {(row) => (
-        <div className="space-y-4" data-explicit-unsaved-commit="true">
-          {embedded ? null : (
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  {row.isoNumber} / {row.spoolNumber} ({row.revisionNumber})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <ErectionStageTimeline row={row} />
-              </CardContent>
-            </Card>
-          )}
+      {(row) => {
+        const evidence = toStageEvidence(row)
+        const isDone = Boolean(row.weldedBoltedOn)
+        const missing = firstMissingPredecessor(stage, evidence)
+        const blockedBy = !isDone && missing ? erectionStageLabel(missing) : null
+        const mode = panelMode({ allRecorded: isDone, blockedBy })
 
-          <div className={styles.evidenceNav} aria-label="Welded / Bolted sections">
-            <button
-              type="button"
-              aria-pressed={viewMode === "joints"}
-              onClick={() => setViewMode("joints")}
-            >
-              Field joints <span>({row.fieldWeldComplete}/{row.fieldWeldTotal})</span>
-            </button>
-            <button
-              type="button"
-              aria-pressed={viewMode === "milestone"}
-              onClick={() => setViewMode("milestone")}
-            >
-              Spool milestone <span>({row.weldedBoltedOn ? "Recorded" : "Not recorded"})</span>
-            </button>
-          </div>
+        const targetOp = missing ? operationByStage[missing] : null
+        const targetCandidate = targetOp
+          ? ERECTION_OPERATIONS.find((op) => op.id === targetOp)
+          : null
+        const targetHref = targetCandidate?.href ?? null
+        const canOpenPredecessor = targetOp && nav ? nav.canOpenOperation(targetOp) : false
+        const canVisitPredecessor = Boolean(
+          targetHref && can && canVisit(targetHref.split("?")[0], can),
+        )
 
-          <div hidden={viewMode !== "joints"} className="space-y-4">
+        const predecessorAction =
+          missing && targetOp ? (
+            nav && canOpenPredecessor ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => nav.openOperation(targetOp)}
+              >
+                Open {erectionStageLabel(missing)}
+              </Button>
+            ) : targetHref && canVisitPredecessor ? (
+              <Button asChild size="sm" variant="outline">
+                <Link
+                  href={linkFrom(
+                    withProject(
+                      `${targetHref}?spool=${encodeURIComponent(row.spoolRevisionId)}`,
+                      activityCode,
+                    ),
+                    here,
+                  )}
+                >
+                  Open {erectionStageLabel(missing)}
+                </Link>
+              </Button>
+            ) : null
+          ) : null
+
+        return (
+          <div className="space-y-4" data-explicit-unsaved-commit="true">
+            {embedded ? null : (
+              <Card>
+                <CardHeader>
+                  <CardTitle>
+                    {row.isoNumber} / {row.spoolNumber} ({row.revisionNumber})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <ErectionStageTimeline row={row} />
+                </CardContent>
+              </Card>
+            )}
+
+            {mode === "done" ? (
+              <div className="space-y-4">
+                <p className="text-xs text-muted-foreground">
+                  Recorded {row.weldedBoltedOn?.slice(0, 10)}
+                </p>
+                <Card>
+                  <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
+                    <CardTitle>Field weld joints</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <DataTable
+                      columns={WELD_COLUMNS}
+                      rows={welds}
+                      state={weldTable}
+                      onStateChange={setWeldTable}
+                      rowId={(weld) => weld.weldJointRevisionId}
+                      onRowClick={undefined}
+                      selectedRowId={null}
+                      searchPlaceholder="Search joint or WPS…"
+                      emptyTitle="This spool revision has no field joints."
+                      containerClassName={embedded ? "max-h-72" : undefined}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+            ) : mode === "blocked" ? (
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <span>Record {erectionStageLabel(missing!)} before {erectionStageLabel(stage)}</span>
+                {predecessorAction}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <ErectionStageCard
+                  row={row}
+                  stage={stage}
+                  canRecord={canRecord}
+                  dataCurrent={state.dataCurrent}
+                  onRecorded={refresh}
+                />
             {embedded && selectedWeld && !browsingJoints ? null : (
               <Card>
                 <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
@@ -582,26 +678,12 @@ export function FieldWeldProgressScreen({
                   </Card>
                 </ChangeHighlight>
               </div>
-            ) : (
-              <Card>
-                <CardContent className="text-muted-foreground py-6 text-sm">
-                  Select a field joint above to record its progress.
-                </CardContent>
-              </Card>
-            )}
+            ) : null}
           </div>
-
-          <div hidden={viewMode !== "milestone"} className="space-y-4">
-            <ErectionStageCard
-              row={row}
-              stage={stage}
-              canRecord={canRecord}
-              dataCurrent={state.dataCurrent}
-              onRecorded={refresh}
-            />
-          </div>
-        </div>
-      )}
+        )}
+      </div>
+    )
+  }}
     </ErectionScreenShell>
   )
 }
