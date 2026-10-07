@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils'
 import { DataTableColumnHeader } from './data-table-column-header'
 import { DataTableToolbar } from './data-table-toolbar'
 import { matchesFilter, matchesSearch } from './filter-predicate'
+import { tableChrome } from './table-chrome'
 import {
   PAGE_SIZES,
   ariaSort,
@@ -94,6 +95,8 @@ export function DataTable<Row>({
   searchPlaceholder,
   emptyTitle = 'Nothing here yet',
   emptyDescription,
+  emptyAction,
+  variant = 'full',
   toolbarActions,
   pagination = true,
   serverPagination,
@@ -111,6 +114,8 @@ export function DataTable<Row>({
   searchPlaceholder?: string
   emptyTitle?: string
   emptyDescription?: string
+  emptyAction?: React.ReactNode
+  variant?: 'full' | 'compact'
   toolbarActions?: React.ReactNode
   /** The caller owns navigation when rows come from a keyset-paged server query. */
   pagination?: boolean
@@ -215,22 +220,35 @@ export function DataTable<Row>({
     state.pinned.includes(column.id) || (column.pinned === true && !state.hidden.includes(column.id))
 
   const filteringActive = state.filters.length > 0 || state.search.trim() !== ''
+  const hasQuery = state.search.trim() !== '' || state.filters.length > 0
+  const chrome = tableChrome({
+    rowCount: rows.length,
+    filteredCount: sorted.length,
+    pageSize: state.pageSize,
+    page: pageIndex,
+    hasQuery,
+    variant,
+  })
 
   return (
     <div className={cn('space-y-3', className)}>
-      <DataTableToolbar
-        state={state}
-        onChange={onStateChange}
-        columnLabels={Object.fromEntries(columns.map((column) => [column.id, column.header]))}
-        hideableColumns={columns
-          .filter((column) => !column.alwaysVisible)
-          .map((column) => ({ id: column.id, label: column.header }))}
-        searchPlaceholder={searchPlaceholder ?? `Search ${searchable.map((c) => c.header.toLowerCase()).join(', ')}…`}
-        rowCount={sorted.length}
-        totalCount={rows.length}
-      >
-        {toolbarActions}
-      </DataTableToolbar>
+      {chrome.showToolbar ? (
+        <DataTableToolbar
+          state={state}
+          onChange={onStateChange}
+          columnLabels={Object.fromEntries(columns.map((column) => [column.id, column.header]))}
+          hideableColumns={columns
+            .filter((column) => !column.alwaysVisible)
+            .map((column) => ({ id: column.id, label: column.header }))}
+          searchPlaceholder={searchPlaceholder ?? `Search ${searchable.map((c) => c.header.toLowerCase()).join(', ')}…`}
+          rowCount={sorted.length}
+          totalCount={rows.length}
+          showSearch={chrome.showSearch}
+          showViewControls={chrome.showViewControls}
+        >
+          {toolbarActions}
+        </DataTableToolbar>
+      ) : null}
 
       <div className="rounded-md border">
         <Table
@@ -238,8 +256,9 @@ export function DataTable<Row>({
           density={state.density}
           containerClassName={cn('max-h-[65vh]', containerClassName)}
         >
-          <TableHeader>
-            <TableRow>
+          {chrome.showHeader ? (
+            <TableHeader>
+              <TableRow>
               {visibleColumns.map((column) => (
                 <TableHead
                   key={column.id}
@@ -299,6 +318,7 @@ export function DataTable<Row>({
               ))}
             </TableRow>
           </TableHeader>
+          ) : null}
 
           <TableBody>
             {loading ? (
@@ -334,6 +354,7 @@ export function DataTable<Row>({
                         <Inbox className="size-6" />
                         <p className="text-sm">{emptyTitle}</p>
                         {emptyDescription ? <p className="text-xs">{emptyDescription}</p> : null}
+                        {emptyAction}
                       </>
                     )}
                   </div>
@@ -419,54 +440,58 @@ export function DataTable<Row>({
             </Button>
           </div>
         </div>
-      ) : pagination ? (
+      ) : pagination && (rows.length > 0 || hasQuery) ? (
       <div className="text-muted-foreground flex flex-wrap items-center justify-between gap-2 text-sm">
         <span className="tabular-nums">
           {sorted.length === 0
             ? 'No rows'
-            : `${pageIndex * state.pageSize + 1}–${Math.min((pageIndex + 1) * state.pageSize, sorted.length)} of ${sorted.length}`}
+            : chrome.showPager
+              ? `${pageIndex * state.pageSize + 1}–${Math.min((pageIndex + 1) * state.pageSize, sorted.length)} of ${sorted.length}`
+              : `${sorted.length} ${sorted.length === 1 ? 'row' : 'rows'}`}
           {filteringActive && rows.length !== sorted.length ? ` (filtered from ${rows.length})` : ''}
         </span>
 
-        <div className="flex items-center gap-2">
-          <label className="flex items-center gap-1">
-            <span className="sr-only sm:not-sr-only">Rows per page</span>
-            <select
-              value={state.pageSize}
-              onChange={(event) => patch({ pageSize: Number(event.target.value), pageIndex: 0 })}
-              aria-label="Rows per page"
-              className="border-input bg-background h-8 rounded-md border px-2 text-sm"
-            >
-              {PAGE_SIZES.map((size) => (
-                <option key={size} value={size}>
-                  {size}
-                </option>
-              ))}
-            </select>
-          </label>
+        {chrome.showPager ? (
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-1">
+              <span className="sr-only sm:not-sr-only">Rows per page</span>
+              <select
+                value={state.pageSize}
+                onChange={(event) => patch({ pageSize: Number(event.target.value), pageIndex: 0 })}
+                aria-label="Rows per page"
+                className="border-input bg-background h-8 rounded-md border px-2 text-sm"
+              >
+                {PAGE_SIZES.map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-          <Button
-            variant="outline"
-            size="icon-sm"
-            aria-label="Previous page"
-            disabled={pageIndex === 0}
-            onClick={() => patch({ pageIndex: pageIndex - 1 })}
-          >
-            <ChevronLeft />
-          </Button>
-          <span className="tabular-nums">
-            Page {pageIndex + 1} of {pageCount}
-          </span>
-          <Button
-            variant="outline"
-            size="icon-sm"
-            aria-label="Next page"
-            disabled={pageIndex >= pageCount - 1}
-            onClick={() => patch({ pageIndex: pageIndex + 1 })}
-          >
-            <ChevronRight />
-          </Button>
-        </div>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              aria-label="Previous page"
+              disabled={pageIndex === 0}
+              onClick={() => patch({ pageIndex: pageIndex - 1 })}
+            >
+              <ChevronLeft />
+            </Button>
+            <span className="tabular-nums">
+              Page {pageIndex + 1} of {pageCount}
+            </span>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              aria-label="Next page"
+              disabled={pageIndex >= pageCount - 1}
+              onClick={() => patch({ pageIndex: pageIndex + 1 })}
+            >
+              <ChevronRight />
+            </Button>
+          </div>
+        ) : null}
       </div>
       ) : null}
     </div>

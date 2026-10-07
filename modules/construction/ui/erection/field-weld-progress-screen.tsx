@@ -386,6 +386,7 @@ export function FieldWeldProgressScreen({
                       searchPlaceholder="Search joint or WPS…"
                       emptyTitle="This spool revision has no field joints."
                       containerClassName={embedded ? "max-h-72" : undefined}
+                      variant="compact"
                     />
                   </CardContent>
                 </Card>
@@ -459,6 +460,7 @@ export function FieldWeldProgressScreen({
                         : "This spool revision has no field joints."
                     }
                     containerClassName={embedded ? "max-h-72" : undefined}
+                    variant="compact"
                   />
                 </CardContent>
               </Card>

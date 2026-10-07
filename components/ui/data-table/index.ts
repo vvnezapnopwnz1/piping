@@ -1,4 +1,5 @@
 export { DataTable, type DataColumn } from './data-table'
+export { tableChrome } from './table-chrome'
 export { RecordSelectTable } from './record-select-table'
 export { DataTableToolbar } from './data-table-toolbar'
 export { DataTableColumnHeader } from './data-table-column-header'

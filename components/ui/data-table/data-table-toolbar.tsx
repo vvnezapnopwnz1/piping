@@ -41,6 +41,8 @@ export function DataTableToolbar({
   searchPlaceholder = 'Search…',
   rowCount,
   totalCount,
+  showSearch = true,
+  showViewControls = true,
   children,
 }: {
   state: DataTableState
@@ -50,6 +52,8 @@ export function DataTableToolbar({
   searchPlaceholder?: string
   rowCount: number
   totalCount: number
+  showSearch?: boolean
+  showViewControls?: boolean
   /** Screen-specific actions — export, create, refresh — sit on the right of the search row. */
   children?: React.ReactNode
 }) {
@@ -72,93 +76,101 @@ export function DataTableToolbar({
 
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-56 flex-1" data-filter-control="">
-          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
-          <Input
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            placeholder={searchPlaceholder}
-            aria-label={searchPlaceholder}
-            className="h-9 pl-8"
-          />
-          {draft ? (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Clear the search"
-              onClick={() => setDraft('')}
-              className="absolute top-1/2 right-1 size-7 -translate-y-1/2"
-            >
-              <X className="size-3.5" />
-            </Button>
+      {showSearch || showViewControls || children ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {showSearch ? (
+            <div className="relative min-w-56 flex-1" data-filter-control="">
+              <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
+              <Input
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                placeholder={searchPlaceholder}
+                aria-label={searchPlaceholder}
+                className="h-9 pl-8"
+              />
+              {draft ? (
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Clear the search"
+                  onClick={() => setDraft('')}
+                  className="absolute top-1/2 right-1 size-7 -translate-y-1/2"
+                >
+                  <X className="size-3.5" />
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
+
+          {children}
+
+          {showViewControls ? (
+            <>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-9">
+                    <Rows3 /> {DENSITY_LABELS[state.density]}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Row height</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup
+                    value={state.density}
+                    onValueChange={(value) => onChange({ ...state, density: value as TableDensity })}
+                  >
+                    {(Object.keys(DENSITY_LABELS) as TableDensity[]).map((density) => (
+                      <DropdownMenuRadioItem key={density} value={density}>
+                        {DENSITY_LABELS[density]}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {hideableColumns.length > 0 ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-9">
+                      <Columns3 /> Columns
+                      {state.hidden.length > 0 ? (
+                        <span className="text-muted-foreground tabular-nums">
+                          ({hideableColumns.length - state.hidden.length}/{hideableColumns.length})
+                        </span>
+                      ) : null}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="max-h-80 w-56 overflow-y-auto">
+                    <DropdownMenuLabel>Visible columns</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {hideableColumns.map((column) => {
+                      const visible = !state.hidden.includes(column.id)
+                      return (
+                        <label
+                          key={column.id}
+                          className="hover:bg-accent hover:text-accent-foreground flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm"
+                        >
+                          <Checkbox
+                            checked={visible}
+                            onCheckedChange={() =>
+                              onChange({
+                                ...state,
+                                hidden: visible
+                                  ? [...state.hidden, column.id]
+                                  : state.hidden.filter((id) => id !== column.id),
+                              })
+                            }
+                          />
+                          <span className="truncate">{column.label}</span>
+                        </label>
+                      )
+                    })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : null}
+            </>
           ) : null}
         </div>
-
-        {children}
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-9">
-              <Rows3 /> {DENSITY_LABELS[state.density]}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Row height</DropdownMenuLabel>
-            <DropdownMenuRadioGroup
-              value={state.density}
-              onValueChange={(value) => onChange({ ...state, density: value as TableDensity })}
-            >
-              {(Object.keys(DENSITY_LABELS) as TableDensity[]).map((density) => (
-                <DropdownMenuRadioItem key={density} value={density}>
-                  {DENSITY_LABELS[density]}
-                </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {hideableColumns.length > 0 ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-9">
-                <Columns3 /> Columns
-                {state.hidden.length > 0 ? (
-                  <span className="text-muted-foreground tabular-nums">
-                    ({hideableColumns.length - state.hidden.length}/{hideableColumns.length})
-                  </span>
-                ) : null}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="max-h-80 w-56 overflow-y-auto">
-              <DropdownMenuLabel>Visible columns</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {hideableColumns.map((column) => {
-                const visible = !state.hidden.includes(column.id)
-                return (
-                  <label
-                    key={column.id}
-                    className="hover:bg-accent hover:text-accent-foreground flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm"
-                  >
-                    <Checkbox
-                      checked={visible}
-                      onCheckedChange={() =>
-                        onChange({
-                          ...state,
-                          hidden: visible
-                            ? [...state.hidden, column.id]
-                            : state.hidden.filter((id) => id !== column.id),
-                        })
-                      }
-                    />
-                    <span className="truncate">{column.label}</span>
-                  </label>
-                )
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : null}
-      </div>
+      ) : null}
 
       {hasAny ? (
         <div className="flex flex-wrap items-center gap-1.5">

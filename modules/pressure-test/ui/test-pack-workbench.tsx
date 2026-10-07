@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { AlertCircle, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -9,8 +10,10 @@ import { DataTable, useTableUrlState, type DataColumn } from "@/components/ui/da
 import { RecordDrawer } from "@/components/ui/record-drawer"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
+import { withProject } from "@/components/pipeqc/project-url"
 import { useNameWorkContext, useWorkContextParam } from "@/components/pipeqc/work-context"
 import { useRequestLeave } from "@/components/pipeqc/unsaved-input-guard"
+import { useSupabaseAuth } from "@/contexts/supabase-auth-context"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { useOptionalAccess } from "@/modules/access/ui/access-context"
 import {
@@ -327,6 +330,8 @@ function WorkbenchDrawerHost({
 }
 
 export function TestPackWorkbench({ projectId, testPackId }: TestPackWorkbenchProps) {
+  const auth = useSupabaseAuth()
+  const activityCode = auth.access?.activityCode
   const [catalogRows, setCatalogRows] = useState<CatalogWithReadiness[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -408,6 +413,13 @@ export function TestPackWorkbench({ projectId, testPackId }: TestPackWorkbenchPr
           loading={loading}
           onRowClick={(row) => handleOpenPack(row.id)}
           emptyTitle="No test packs yet."
+          emptyAction={
+            <Button asChild size="sm">
+              <Link href={withProject("/testpack/builder", activityCode)}>
+                Create test pack
+              </Link>
+            </Button>
+          }
         />
       </div>
 

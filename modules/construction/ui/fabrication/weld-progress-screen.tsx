@@ -325,6 +325,7 @@ export function WeldProgressScreen({
                   searchPlaceholder="Search joint or WPS…"
                   emptyTitle="This spool revision has no shop joints."
                   containerClassName={embedded ? "max-h-72" : undefined}
+                  variant="compact"
                 />
               </CardContent>
             </Card>
