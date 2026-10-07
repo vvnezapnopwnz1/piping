@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import * as React from "react"
 import { usePathname } from "next/navigation"
 import { CircleHelp } from "lucide-react"
@@ -127,6 +128,7 @@ export function HelpProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function HelpButton({ className }: { className?: string }) {
+  const ts = useTranslations("shell.help")
   const help = React.useContext(HelpContext)
   if (!help) return null
   return (
@@ -139,11 +141,11 @@ export function HelpButton({ className }: { className?: string }) {
       onClick={help.toggle}
     >
       <CircleHelp aria-hidden="true" />
-      <span className={styles.hideNarrow}>Help</span>
+      <span className={styles.hideNarrow}>{ts("button")}</span>
       {help.suggest ? (
         <>
           <span className={styles.helpDot} aria-hidden="true" />
-          <span className="sr-only">(a hint is available for this page)</span>
+          <span className="sr-only">{ts("hintAvailable")}</span>
         </>
       ) : null}
     </button>
@@ -159,6 +161,9 @@ function CoachMark({
   onClose: () => void
   onNever: () => void
 }) {
+  const t = useTranslations("help")
+  const ts = useTranslations("shell.help")
+  const tc = useTranslations("common.actions")
   const ref = React.useRef<HTMLDivElement>(null)
   const closeRef = React.useRef<HTMLButtonElement>(null)
   const [placement, setPlacement] = React.useState<ReturnType<typeof placeCoach> | null>(null)
@@ -227,17 +232,17 @@ function CoachMark({
     >
       <span className={styles.coachCaret} style={{ left: placement?.caretLeft ?? 20 }} aria-hidden="true" />
       <h2 id="pipeqc-coach-title" className={styles.coachTitle}>
-        {hint.title}
+        {t(`${hint.key}.title`)}
       </h2>
       <p id="pipeqc-coach-body" className={styles.coachBody}>
-        {hint.body}
+        {t(`${hint.key}.body`)}
       </p>
       <div className={styles.coachActions}>
         <button ref={closeRef} type="button" className={styles.coachClose} onClick={onClose}>
-          Close
+          {tc("close")}
         </button>
         <button type="button" className={styles.coachNever} onClick={onNever}>
-          Don’t suggest again
+          {ts("never")}
         </button>
       </div>
     </div>

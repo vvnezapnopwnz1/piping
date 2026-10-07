@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { Toaster } from "@/components/ui/sonner"
 
 import { HelpProvider } from "./context-help"
@@ -15,10 +16,11 @@ export function ProjectCatalogShell({
 }: {
   children: React.ReactNode
 }) {
+  const t = useTranslations("shell")
   return (
     <div className={styles.shell}>
       <a href="#main-content" className={styles.skip}>
-        Skip to content
+        {t("skipToContent")}
       </a>
       <HelpProvider>
         <TopNav mode="catalog" />

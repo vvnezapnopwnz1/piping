@@ -1,0 +1,68 @@
+{
+  "contextNav": {
+    "breadcrumb": "Навигационная цепочка",
+    "relatedWork": "Связанные разделы"
+  },
+  "pageFinder": {
+    "open": "Найти страницу",
+    "title": "Поиск страницы PipeQC",
+    "description": "Переход внутри текущего проекта. В списке только страницы, доступные вашей роли.",
+    "placeholder": "Найти страницу или модуль…",
+    "inputLabel": "Найти страницу или модуль",
+    "empty": "Подходящих страниц для вашей роли нет.",
+    "hint": "↑ ↓ — выбрать · Enter — открыть · Esc — закрыть. Проект остаётся выбранным."
+  },
+  "processNav": {
+    "stages": "Этапы процесса",
+    "groupStages": "Этапы",
+    "groupServices": "Общие службы",
+    "groupProject": "Проект",
+    "spool": "Катушка",
+    "testPack": "Тест-пакет",
+    "selected": "выбрано",
+    "clearSpool": "Снять выбор катушки {label}",
+    "clearTestPack": "Снять выбор тест-пакета {label}",
+    "modulePages": "Страницы раздела «{module}»",
+    "backTo": "Назад: {page}"
+  },
+  "topNav": {
+    "projectOverviewLabel": "Обзор проекта {code}",
+    "projectOverviewTitle": "{title} — обзор проекта",
+    "noProject": "Проект не открыт",
+    "workspace": "Рабочее пространство",
+    "allProjects": "Все проекты",
+    "returnTo": "Вернуться в {code}",
+    "overview": "Обзор",
+    "projectAccess": "Доступ к проекту",
+    "signOut": "Выйти",
+    "fallbackProject": "Проект",
+    "loadingProject": "Загрузка проекта…",
+    "authenticatedUser": "Пользователь"
+  },
+  "sidebar": {
+    "collapse": "Свернуть «{item}»",
+    "expand": "Развернуть «{item}»"
+  },
+  "skipToContent": "Перейти к содержимому",
+  "loading": "PipeQC загружается…",
+  "placeholder": {
+    "builtIn": "Появится в {track}",
+    "nothingYet": "Здесь пока ничего не записывается. У этого раздела нет реализации на Supabase, а демо-экран из этой ветки убран, чтобы его нельзя было принять за работающую программу. Демо осталось в ветке <code>main</code>."
+  },
+  "projectUrl": {
+    "opened": "Открыт проект {code} из адреса страницы.",
+    "unavailable": "Проект {requested} недоступен вашей учётной записи, поэтому открытым остаётся {current}.",
+    "opening": "Открываем проект {requested}…"
+  },
+  "unsaved": {
+    "title": "Уйти без записи?",
+    "description": "На странице есть незаписанные данные. Если уйти, они пропадут.",
+    "stay": "Остаться",
+    "leave": "Уйти без сохранения"
+  },
+  "help": {
+    "button": "Справка",
+    "hintAvailable": "(для этой страницы есть подсказка)",
+    "never": "Больше не предлагать"
+  }
+}

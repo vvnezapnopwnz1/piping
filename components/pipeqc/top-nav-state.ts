@@ -28,11 +28,13 @@ export function getTopNavDisplay(input: {
   access: TopNavAccessDisplay | null
   projectAccesses: TopNavProjectChoice[]
   email: string | undefined
+  /** What the header says before the access summary arrives, in the current language. */
+  fallback: { activityCode: string; title: string; email: string }
 }): TopNavDisplay {
   const fallbackProject: TopNavAccessDisplay = {
     projectId: "loading",
-    activityCode: "Project",
-    title: "Loading project…",
+    activityCode: input.fallback.activityCode,
+    title: input.fallback.title,
     accessLabels: [],
   }
 
@@ -40,7 +42,7 @@ export function getTopNavDisplay(input: {
     project: input.access ?? fallbackProject,
     projects: input.projectAccesses,
     canSwitchProject: input.projectAccesses.length > 1,
-    email: input.email ?? "Authenticated user",
+    email: input.email ?? input.fallback.email,
     accessLabels: input.access?.accessLabels ?? [],
   }
 }

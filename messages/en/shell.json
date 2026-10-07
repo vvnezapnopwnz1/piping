@@ -1,0 +1,68 @@
+{
+  "contextNav": {
+    "breadcrumb": "Breadcrumb",
+    "relatedWork": "Related work"
+  },
+  "pageFinder": {
+    "open": "Find a page",
+    "title": "Find a PipeQC page",
+    "description": "Navigate within the current project. Only pages available to your role are listed.",
+    "placeholder": "Find a page or module…",
+    "inputLabel": "Find a page or module",
+    "empty": "No matching pages available for your role.",
+    "hint": "↑ ↓ to choose · Enter to open · Esc to close. Project stays selected."
+  },
+  "processNav": {
+    "stages": "Process stages",
+    "groupStages": "Stages",
+    "groupServices": "Shared services",
+    "groupProject": "Project",
+    "spool": "Spool",
+    "testPack": "Test pack",
+    "selected": "selected",
+    "clearSpool": "Clear selected spool {label}",
+    "clearTestPack": "Clear selected test pack {label}",
+    "modulePages": "{module} pages",
+    "backTo": "Back to {page}"
+  },
+  "topNav": {
+    "projectOverviewLabel": "Project {code} overview",
+    "projectOverviewTitle": "{title} — project overview",
+    "noProject": "No project open",
+    "workspace": "Workspace",
+    "allProjects": "All projects",
+    "returnTo": "Return to {code}",
+    "overview": "Overview",
+    "projectAccess": "Project access",
+    "signOut": "Sign out",
+    "fallbackProject": "Project",
+    "loadingProject": "Loading project…",
+    "authenticatedUser": "Authenticated user"
+  },
+  "sidebar": {
+    "collapse": "Collapse {item}",
+    "expand": "Expand {item}"
+  },
+  "skipToContent": "Skip to content",
+  "loading": "Loading PipeQC…",
+  "placeholder": {
+    "builtIn": "Built in {track}",
+    "nothingYet": "Nothing is recorded here yet. This route has no Supabase implementation, and the demo it used to render was removed from this branch so that no screen can be mistaken for working software. The demo remains available on <code>main</code>."
+  },
+  "projectUrl": {
+    "opened": "Opened project {code} from the address.",
+    "unavailable": "Project {requested} is not available to your account, so {current} stays open.",
+    "opening": "Opening project {requested}…"
+  },
+  "unsaved": {
+    "title": "Leave without recording?",
+    "description": "This page has input that has not been recorded yet. Leaving discards it.",
+    "stay": "Stay on this page",
+    "leave": "Leave and discard"
+  },
+  "help": {
+    "button": "Help",
+    "hintAvailable": "(a hint is available for this page)",
+    "never": "Don’t suggest again"
+  }
+}

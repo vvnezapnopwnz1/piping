@@ -65,8 +65,8 @@ export function StatusBadge({
 }) {
   const t = useTranslations('codes.status')
   const resolved = tone ?? statusTone(status)
-  const key = statusKey(status) as StatusCode | null
-  const text = label ?? (key && t.has(key) ? t(key) : statusLabel(status))
+  const key = (statusKey(status) ?? 'unknown') as StatusCode
+  const text = label ?? (t.has(key) ? t(key) : statusLabel(status))
   const { className: toneClassName, Icon } = TONE_STYLES[resolved]
 
   return (

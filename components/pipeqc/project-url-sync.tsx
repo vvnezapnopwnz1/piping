@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import * as React from "react"
 import { usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
@@ -16,6 +17,7 @@ import { PROJECT_PARAM, resolveRequestedProject } from "./project-url"
  * new project's data.
  */
 export function ProjectUrlSync() {
+  const t = useTranslations("shell.projectUrl")
   const { access, projectAccesses, selectProject } = useSupabaseAuth()
   const pathname = usePathname()
   const params = useSearchParams()
@@ -50,13 +52,13 @@ export function ProjectUrlSync() {
     if (decision.kind === "switch") {
       selectProject(decision.project.projectId)
       const code = decision.project.activityCode
-      window.setTimeout(() => toast.info(`Opened project ${code} from the address.`), 0)
+      window.setTimeout(() => toast.info(t("opened", { code })), 0)
       return
     }
     if (decision.kind === "unavailable" && reported.current !== requested) {
       reported.current = requested
       window.setTimeout(
-        () => toast.error(`Project ${requested} is not available to your account, so ${current} stays open.`),
+        () => toast.error(t("unavailable", { requested: requested ?? "", current })),
         0,
       )
     }
@@ -66,7 +68,7 @@ export function ProjectUrlSync() {
     // Next.js keeps native replaceState in step with its router, so useSearchParams sees it
     // without a navigation, and nothing on the page remounts.
     window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`)
-  }, [current, pathname, projectAccesses, requested, selectProject])
+  }, [current, pathname, projectAccesses, requested, selectProject, t])
 
   return null
 }
@@ -77,13 +79,14 @@ export function ProjectUrlSync() {
  * load the old project's records and could drop a selection that belongs to the new one.
  */
 export function ProjectUrlGate({ children }: { children: React.ReactNode }) {
+  const t = useTranslations("shell.projectUrl")
   const { access, projectAccesses } = useSupabaseAuth()
   const requested = useSearchParams().get(PROJECT_PARAM)
   const current = access?.activityCode ?? null
   if (current && resolveRequestedProject(requested, current, projectAccesses).kind === "switch") {
     return (
       <p role="status" className="text-muted-foreground text-sm">
-        Opening project {requested}…
+        {t("opening", { requested: requested ?? "" })}
       </p>
     )
   }

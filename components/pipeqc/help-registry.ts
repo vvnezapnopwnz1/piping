@@ -1,3 +1,7 @@
+import type { Messages } from "@/i18n/messages"
+
+export type HelpKey = keyof Messages["help"]
+
 /**
  * Short, optional help. Each hint points at one real control, marked `data-help="<target>"`;
  * a hint whose control is not on screen (hidden by access, not loaded yet) is skipped rather than
@@ -6,26 +10,23 @@
  */
 export interface HelpHint {
   target: string
-  title: string
-  body: string
+  /** A key of the `help` messages: its `title` and `body`. */
+  key: HelpKey
 }
 
 const STAGE_RAIL: HelpHint = {
   target: "stage-rail",
-  title: "Stages and services",
-  body: "Stages run left to right from spooling to test packs. NDE, Tracking and Flanges serve several stages, so they sit beside them. Your project stays selected wherever you go.",
+  key: "stageRail",
 }
 
 const MODULE_TABS: HelpHint = {
   target: "module-tabs",
-  title: "Pages of this module",
-  body: "Every page of the current module you can open is a tab here. Use the stage rail above to move to another module.",
+  key: "moduleTabs",
 }
 
 const WORK_CONTEXT: HelpHint = {
   target: "work-context",
-  title: "Selected object",
-  body: "The spool or test pack you picked stays selected as you move between pages that work on it. Clear it to see everything again.",
+  key: "workContext",
 }
 
 const FABRICATION_WORKBENCH = [
@@ -54,13 +55,11 @@ const ROUTE_HINTS: ReadonlyArray<{ match: (path: string) => boolean; hints: Help
     hints: [
       {
         target: "attention",
-        title: "Start with what is open",
-        body: "Each row counts open work in this project and opens the list where it is done, already narrowed to it.",
+        key: "attention",
       },
       {
         target: "process-map",
-        title: "One map, one navigation",
-        body: "The cards are the same stages and services you move between inside modules. Open a card to work in it.",
+        key: "processMap",
       },
     ],
   },
@@ -69,13 +68,11 @@ const ROUTE_HINTS: ReadonlyArray<{ match: (path: string) => boolean; hints: Help
     hints: [
       {
         target: "current-project",
-        title: "Open or return",
-        body: "Return keeps the project you are in. Opening another project switches every page to it and drops the previous project's searches and selections.",
+        key: "currentProject",
       },
       {
         target: "project-search",
-        title: "Find a project",
-        body: "Search matches the project code, title, owner, contractor and contract number.",
+        key: "projectSearch",
       },
     ],
   },
@@ -84,13 +81,11 @@ const ROUTE_HINTS: ReadonlyArray<{ match: (path: string) => boolean; hints: Help
     hints: [
       {
         target: "rft-blocker",
-        title: "Open the blocker",
-        body: "Each open item links to the screen where it is resolved, with this spool already selected. Back on that screen returns here.",
+        key: "rftBlocker",
       },
       {
         target: "rft-table",
-        title: "Ready for Test is derived",
-        body: "It opens once Welded / Bolted and Supported are recorded and no NDE obligation or PWHT requirement is open; no screen sets it by hand. Material columns count evidence from either phase.",
+        key: "rftTable",
       },
     ],
   },
@@ -99,8 +94,7 @@ const ROUTE_HINTS: ReadonlyArray<{ match: (path: string) => boolean; hints: Help
     hints: [
       {
         target: "nde-record",
-        title: "Record a result",
-        body: "Only an issued obligation takes a result. A rejected result needs a defect code before it can be recorded.",
+        key: "ndeRecord",
       },
     ],
   },
@@ -109,8 +103,7 @@ const ROUTE_HINTS: ReadonlyArray<{ match: (path: string) => boolean; hints: Help
     hints: [
       {
         target: "trace-input",
-        title: "Heat / trace numbers",
-        body: "Material Check completes once every ident code carries a trace number the PML accepts. Why it cannot be recorded yet is shown under the table.",
+        key: "traceInput",
       },
     ],
   },
@@ -119,13 +112,11 @@ const ROUTE_HINTS: ReadonlyArray<{ match: (path: string) => boolean; hints: Help
     hints: [
       {
         target: "rft-blocker",
-        title: "Resolve an open criterion",
-        body: "Each open criterion links to where it is resolved, with this spool already selected. Ready for Test itself is derived and never set by hand.",
+        key: "rftBlocker2",
       },
       {
         target: "spool-stepper",
-        title: "The spool's own steps",
-        body: "Every step of the selected spool with its dates, in process order. The step it needs next opens by default; open any other to review or record it.",
+        key: "spoolStepper",
       },
     ],
   },
@@ -134,8 +125,7 @@ const ROUTE_HINTS: ReadonlyArray<{ match: (path: string) => boolean; hints: Help
     hints: [
       {
         target: "tp-spool-status",
-        title: "Spools of this pack",
-        body: "A spool that is not Ready for Test links to its readiness and to its open NDE work. Back returns to this pack.",
+        key: "tpSpoolStatus",
       },
     ],
   },

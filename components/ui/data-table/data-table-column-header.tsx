@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import * as React from 'react'
 import {
   ArrowDown,
@@ -69,6 +70,7 @@ export function DataTableColumnHeader({
   onHide: () => void
   className?: string
 }) {
+  const tt = useTranslations('common.table')
   const [filterOpen, setFilterOpen] = React.useState(false)
   const SortIcon = sortDirection === 'asc' ? ArrowUp : sortDirection === 'desc' ? ArrowDown : ArrowDownUp
 
@@ -77,7 +79,7 @@ export function DataTableColumnHeader({
       <button
         type="button"
         onClick={(event) => onSort({ shiftKey: event.shiftKey })}
-        title={`Sort by ${label} — hold Shift to add to the current sort`}
+        title={tt('sortBy', { column: label })}
         className="hover:text-foreground focus-visible:ring-ring -mx-1 flex min-w-0 items-center gap-1 rounded px-1 py-0.5 focus-visible:ring-2 focus-visible:outline-none"
       >
         <span className="truncate">{label}</span>
@@ -98,7 +100,7 @@ export function DataTableColumnHeader({
             <Button
               variant="ghost"
               size="icon-sm"
-              aria-label={filter ? `Edit the ${label} filter` : `Filter by ${label}`}
+              aria-label={filter ? tt('editFilter', { column: label }) : tt('filterBy', { column: label })}
               className={cn('size-6 shrink-0', filter ? 'text-primary' : 'opacity-40')}
             >
               {filter ? <ListFilter className="size-3.5" /> : <Filter className="size-3.5" />}
@@ -117,7 +119,7 @@ export function DataTableColumnHeader({
                     setFilterOpen(false)
                   }}
                 >
-                  <X className="size-3" /> Clear
+                  <X className="size-3" /> {tt('clear')}
                 </Button>
               ) : null}
             </div>
@@ -139,7 +141,7 @@ export function DataTableColumnHeader({
           <Button
             variant="ghost"
             size="icon-sm"
-            aria-label={`${label} column options`}
+            aria-label={tt('columnOptions', { column: label })}
             className="size-6 shrink-0 opacity-40"
           >
             <span aria-hidden="true" className="text-base leading-none">
@@ -149,24 +151,24 @@ export function DataTableColumnHeader({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-48">
           <DropdownMenuItem onClick={() => onSortDirection('asc')}>
-            <ArrowUp /> Sort ascending
+            <ArrowUp /> {tt('sortAscending')}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onSortDirection('desc')}>
-            <ArrowDown /> Sort descending
+            <ArrowDown /> {tt('sortDescending')}
           </DropdownMenuItem>
           {sortDirection ? (
             <DropdownMenuItem onClick={() => onSortDirection(null)}>
-              <X /> Remove sort
+              <X /> {tt('removeSort')}
             </DropdownMenuItem>
           ) : null}
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={onTogglePinned}>
             {pinned ? <PinOff /> : <Pin />}
-            {pinned ? 'Unpin column' : 'Pin to the left'}
+            {pinned ? tt('unpinColumn') : tt('pinLeft')}
           </DropdownMenuItem>
           {canHide ? (
             <DropdownMenuItem onClick={onHide}>
-              <EyeOff /> Hide column
+              <EyeOff /> {tt('hideColumn')}
             </DropdownMenuItem>
           ) : null}
         </DropdownMenuContent>

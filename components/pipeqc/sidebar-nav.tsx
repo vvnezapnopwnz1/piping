@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -27,6 +28,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { getVisibleNavigation, type NavItem } from "@/config/navigation";
+import { useNavName } from "./nav-name";
 import type { Capability } from "@/modules/access/domain/capability";
 import { useAccess } from "@/modules/access/ui/access-context";
 import { canVisit, firstAccessibleDestination } from "./navigation-model";
@@ -51,6 +53,8 @@ function isPathUnderItem(pathname: string, item: NavItem): boolean {
 
 // Recursive tree item renderer supporting arbitrary nesting depth
 function NavTreeItem({ item, depth = 0 }: { item: NavItem; depth?: number }) {
+  const t = useTranslations("shell.sidebar");
+  const name = useNavName();
   const pathname = usePathname();
   const { state, setOpenMobile } = useSidebar();
   const { can } = useAccess();
@@ -74,12 +78,12 @@ function NavTreeItem({ item, depth = 0 }: { item: NavItem; depth?: number }) {
         <SidebarMenuButton
           asChild
           isActive={isActive}
-          tooltip={item.title}
+          tooltip={name(item.title)}
           className="w-full"
         >
           <Link href={destination ?? "/"} onClick={() => setOpenMobile(false)} aria-current={pathname === destination ? "page" : undefined}>
             <item.icon className="size-4" />
-            <span>{item.title}</span>
+            <span>{name(item.title)}</span>
           </Link>
         </SidebarMenuButton>
       </SidebarMenuItem>
@@ -98,10 +102,10 @@ function NavTreeItem({ item, depth = 0 }: { item: NavItem; depth?: number }) {
             )}
           />
         )}
-        <SidebarMenuButton asChild isActive={isActive} tooltip={item.title}>
+        <SidebarMenuButton asChild isActive={isActive} tooltip={name(item.title)}>
           <Link href={item.href} onClick={() => setOpenMobile(false)} aria-current={pathname === item.href ? "page" : undefined}>
             <item.icon className="size-4" />
-            <span>{item.title}</span>
+            <span>{name(item.title)}</span>
           </Link>
         </SidebarMenuButton>
       </SidebarMenuItem>
@@ -120,14 +124,14 @@ function NavTreeItem({ item, depth = 0 }: { item: NavItem; depth?: number }) {
             )}
           />
         )}
-        {canVisit(item.href, can) ? <SidebarMenuButton asChild isActive={isActive} tooltip={item.title} className="w-full pr-9">
+        {canVisit(item.href, can) ? <SidebarMenuButton asChild isActive={isActive} tooltip={name(item.title)} className="w-full pr-9">
           <Link href={item.href} onClick={() => setOpenMobile(false)} aria-current={pathname === item.href ? "page" : undefined}>
             <item.icon className="size-4" />
-            <span>{item.title}</span>
+            <span>{name(item.title)}</span>
           </Link>
-        </SidebarMenuButton> : <CollapsibleTrigger asChild><SidebarMenuButton isActive={isActive} className="pr-9"><item.icon className="size-4" /><span>{item.title}</span></SidebarMenuButton></CollapsibleTrigger>}
+        </SidebarMenuButton> : <CollapsibleTrigger asChild><SidebarMenuButton isActive={isActive} className="pr-9"><item.icon className="size-4" /><span>{name(item.title)}</span></SidebarMenuButton></CollapsibleTrigger>}
         <CollapsibleTrigger asChild>
-          <SidebarMenuAction aria-label={`${isOpen ? "Collapse" : "Expand"} ${item.title}`} className="size-7 top-1 right-0.5">
+          <SidebarMenuAction aria-label={t(isOpen ? "collapse" : "expand", { item: name(item.title) })} className="size-7 top-1 right-0.5">
             <ChevronRight className={cn("transition-transform duration-200 motion-reduce:transition-none", isOpen && "rotate-90")} />
           </SidebarMenuAction>
         </CollapsibleTrigger>
@@ -155,6 +159,8 @@ function NavTreeSubItem({
   item: NavItem;
   depth?: number;
 }) {
+  const t = useTranslations("shell.sidebar");
+  const name = useNavName();
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
   const { can } = useAccess();
@@ -169,7 +175,7 @@ function NavTreeSubItem({
         <SidebarMenuSubButton asChild isActive={isActive}>
           <Link href={item.href} onClick={() => setOpenMobile(false)} aria-current={pathname === item.href ? "page" : undefined}>
             <item.icon className="size-4" />
-            <span>{item.title}</span>
+            <span>{name(item.title)}</span>
           </Link>
         </SidebarMenuSubButton>
       </SidebarMenuSubItem>
@@ -182,9 +188,9 @@ function NavTreeSubItem({
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <div className="flex items-center gap-1">
           {canVisit(item.href, can) ? <SidebarMenuSubButton asChild isActive={isActive} className="min-w-0 flex-1">
-            <Link href={item.href} onClick={() => setOpenMobile(false)} aria-current={pathname === item.href ? "page" : undefined}><item.icon className="size-4" /><span>{item.title}</span></Link>
-          </SidebarMenuSubButton> : <CollapsibleTrigger asChild><SidebarMenuSubButton isActive={isActive} className="min-w-0 flex-1"><item.icon className="size-4" /><span>{item.title}</span></SidebarMenuSubButton></CollapsibleTrigger>}
-          <CollapsibleTrigger className="flex size-7 shrink-0 items-center justify-center rounded hover:bg-sidebar-accent focus-visible:outline-2" aria-label={`${isOpen ? "Collapse" : "Expand"} ${item.title}`}>
+            <Link href={item.href} onClick={() => setOpenMobile(false)} aria-current={pathname === item.href ? "page" : undefined}><item.icon className="size-4" /><span>{name(item.title)}</span></Link>
+          </SidebarMenuSubButton> : <CollapsibleTrigger asChild><SidebarMenuSubButton isActive={isActive} className="min-w-0 flex-1"><item.icon className="size-4" /><span>{name(item.title)}</span></SidebarMenuSubButton></CollapsibleTrigger>}
+          <CollapsibleTrigger className="flex size-7 shrink-0 items-center justify-center rounded hover:bg-sidebar-accent focus-visible:outline-2" aria-label={t(isOpen ? "collapse" : "expand", { item: name(item.title) })}>
             <ChevronRight className={cn("size-4 transition-transform duration-200 motion-reduce:transition-none", isOpen && "rotate-90")} />
           </CollapsibleTrigger>
         </div>
@@ -210,6 +216,7 @@ function NavigationSidebar({
 }: {
   can: (capability: Capability) => boolean
 }) {
+  const name = useNavName();
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
 
@@ -228,11 +235,11 @@ function NavigationSidebar({
               <SidebarMenuButton
                 asChild
                 isActive={pathname === "/"}
-                tooltip="Home"
+                tooltip={name("home")}
               >
                 <Link href="/" onClick={() => setOpenMobile(false)} aria-current={pathname === "/" ? "page" : undefined}>
                   <Home className="size-4" />
-                  <span>Process overview</span>
+                  <span>{name("processOverview")}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -242,7 +249,7 @@ function NavigationSidebar({
         {/* Dynamic Navigation Sections */}
         {visibleNavigation.map((section) => (
           <SidebarGroup key={section.title}>
-            <SidebarGroupLabel>{section.title}</SidebarGroupLabel>
+            <SidebarGroupLabel>{name(section.title)}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {section.items.map((item) => (

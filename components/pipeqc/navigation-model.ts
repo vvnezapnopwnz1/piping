@@ -1,8 +1,10 @@
-import { getVisibleNavigation, type NavItem } from "@/config/navigation"
+import { getVisibleNavigation, type NavItem, type NavKey } from "@/config/navigation"
 import { requiredCapabilityForPath } from "@/config/route-capabilities"
 import type { Capability } from "@/modules/access/domain/capability"
 
 type Can = (capability: Capability) => boolean
+/** The words for a navigation key in the current language (`useNavName()`). */
+export type NavName = (key: NavKey) => string
 export interface PageDestination {
   title: string
   href: string
@@ -26,27 +28,28 @@ export function scorePageQuery(value: string, query: string): number {
 
 // Existing pressure-test screens use local tabs, not additional sidebar nesting.
 const TEST_STEPS = [
-  ["line-check", "Line Check", ["preparation", "progress"]],
-  ["item-clearance", "Item Clearance", ["preparation", "progress"]],
-  ["blinding", "Blinding", ["preparation", "progress"]],
-  ["testing-precomm", "Testing & Pre-commissioning", ["progress"]],
-  ["reinstatement", "Reinstatement", ["preparation", "progress"]],
+  ["line-check", "lineCheck", ["preparation", "progress"]],
+  ["item-clearance", "itemClearance", ["preparation", "progress"]],
+  ["blinding", "blinding", ["preparation", "progress"]],
+  ["testing-precomm", "testingPrecomm", ["progress"]],
+  ["reinstatement", "reinstatement", ["preparation", "progress"]],
 ] as const
 
-const TEST_PAGES: PageDestination[] = TEST_STEPS.flatMap(
-  ([slug, title, tabs]) => {
+function testPages(name: NavName): PageDestination[] {
+  const parent = `${name("testpack")} / ${name("pressureTest")}`
+  return TEST_STEPS.flatMap(([slug, key, tabs]) => {
     const href = `/testpack/pressure-test/${slug}`
     return [
-      { title, href, section: "TESTING", context: "Testpack / Pressure Test" },
+      { title: name(key), href, section: name("sectionTesting"), context: parent },
       ...tabs.map((tab) => ({
-        title: tab === "preparation" ? "Preparation" : "Progress",
+        title: name(tab),
         href: `${href}/${tab}`,
-        section: "TESTING",
-        context: `Testpack / Pressure Test / ${title}`,
+        section: name("sectionTesting"),
+        context: `${parent} / ${name(key)}`,
       })),
     ]
-  },
-)
+  })
+}
 
 export function canVisit(href: string, can: Can): boolean {
   const capability = requiredCapabilityForPath(href)
@@ -66,19 +69,19 @@ export function firstAccessibleDestination(
   return null
 }
 
-export function getPageDestinations(can: Can): PageDestination[] {
+export function getPageDestinations(can: Can, name: NavName): PageDestination[] {
   const pages: PageDestination[] = [
     {
-      title: "Process overview",
+      title: name("processOverview"),
       href: "/",
-      section: "WORKSPACE",
-      context: "Home",
+      section: name("sectionWorkspace"),
+      context: name("home"),
     },
     {
-      title: "All projects",
+      title: name("allProjects"),
       href: "/projects",
-      section: "WORKSPACE",
-      context: "Choose a project",
+      section: name("sectionWorkspace"),
+      context: name("chooseProject"),
     },
   ]
   const seen = new Set(["/", "/projects"])
@@ -93,7 +96,7 @@ export function getPageDestinations(can: Can): PageDestination[] {
     if (href && !seen.has(href)) {
       seen.add(href)
       pages.push({
-        title: item.title,
+        title: name(item.title),
         href,
         section,
         context: ancestors.join(" / "),
@@ -104,37 +107,39 @@ export function getPageDestinations(can: Can): PageDestination[] {
       if (canVisit(alias.href, can) && !seen.has(alias.href)) {
         seen.add(alias.href)
         pages.push({
-          title: alias.title,
+          title: name(alias.title),
           href: alias.href,
           section,
-          context: [...ancestors, item.title].join(" / "),
+          context: [...ancestors, name(item.title)].join(" / "),
         })
       }
     }
     item.children?.forEach((child) =>
-      visit(child, section, [...ancestors, item.title]),
+      visit(child, section, [...ancestors, name(item.title)]),
     )
   }
   getVisibleNavigation(can).forEach((section) =>
-    section.items.forEach((item) => visit(item, section.title, [])),
+    section.items.forEach((item) => visit(item, name(section.title), [])),
   )
-  pages.push(...TEST_PAGES.filter((page) => canVisit(page.href, can)))
+  pages.push(...testPages(name).filter((page) => canVisit(page.href, can)))
   return pages
 }
 
 export function getPageHierarchy(
   pathname: string,
   can: Can,
+  name: NavName,
 ): PageDestination[] {
-  const testPage = TEST_PAGES.find(
+  const tests = testPages(name)
+  const testPage = tests.find(
     (page) => page.href === pathname && canVisit(page.href, can),
   )
   if (testPage) {
-    const parent = TEST_PAGES.find((page) =>
+    const parent = tests.find((page) =>
       testPage.href.startsWith(page.href + "/"),
     )
     return [
-      ...getPageHierarchy("/testpack/pressure-test", can),
+      ...getPageHierarchy("/testpack/pressure-test", can, name),
       ...(parent ? [parent] : []),
       testPage,
     ]
@@ -163,22 +168,22 @@ export function getPageHierarchy(
           return true
         })
         .map((item) => ({
-          title: item.title,
+          title: name(item.title),
           href: item.href,
-          section: section.title,
+          section: name(section.title),
           context: "",
         }))
     }
   }
   // Do not turn UUIDs into breadcrumb links or invent nonexistent ancestor routes.
-  const parent = getPageDestinations(can)
+  const parent = getPageDestinations(can, name)
     .filter((page) => page.href !== "/" && pathname.startsWith(page.href + "/"))
     .sort((a, b) => b.href.length - a.href.length)[0]
   return parent
     ? [
         parent,
         {
-          title: "Record details",
+          title: name("recordDetails"),
           href: pathname,
           section: parent.section,
           context: "",
@@ -190,72 +195,73 @@ export function getPageHierarchy(
 export function getWorkbenchHierarchy(
   pathname: string,
   can: Can,
+  name: NavName,
 ): PageDestination[] {
   return [
     {
-      title: "All projects",
+      title: name("allProjects"),
       href: "/projects",
-      section: "WORKSPACE",
+      section: name("sectionWorkspace"),
       context: "",
     },
-    { title: "Process overview", href: "/", section: "WORKSPACE", context: "" },
-    ...(pathname === "/" ? [] : getPageHierarchy(pathname, can)),
+    { title: name("processOverview"), href: "/", section: name("sectionWorkspace"), context: "" },
+    ...(pathname === "/" ? [] : getPageHierarchy(pathname, can, name)),
   ]
 }
 
 const RELATED: Record<
   string,
-  { title: string; href: string; purpose: string }[]
+  { title: NavKey; href: string; purpose: NavKey }[]
 > = {
   spooling: [
     {
-      title: "Fabrication",
+      title: "fabrication",
       href: "/fabrication",
-      purpose: "Work from imported spools",
+      purpose: "purposeWorkFromImportedSpools",
     },
   ],
   fabrication: [
-    { title: "NDE", href: "/nde", purpose: "Inspection obligations" },
-    { title: "Tracking", href: "/tracking", purpose: "Locate spools" },
-    { title: "Erection", href: "/erection", purpose: "Continue site work" },
+    { title: "nde", href: "/nde", purpose: "purposeInspectionObligations" },
+    { title: "tracking", href: "/tracking", purpose: "purposeLocateSpools" },
+    { title: "erection", href: "/erection", purpose: "purposeContinueSiteWork" },
   ],
   erection: [
-    { title: "NDE", href: "/nde", purpose: "Inspection obligations" },
-    { title: "Flanges", href: "/flange", purpose: "Joint completion" },
+    { title: "nde", href: "/nde", purpose: "purposeInspectionObligations" },
+    { title: "flanges", href: "/flange", purpose: "purposeJointCompletion" },
     {
-      title: "Test packs",
+      title: "relatedTestPacks",
       href: "/testpack",
-      purpose: "Review test readiness",
+      purpose: "purposeReviewTestReadiness",
     },
   ],
   nde: [
-    { title: "Fabrication", href: "/fabrication", purpose: "Shop progress" },
-    { title: "Erection", href: "/erection", purpose: "Site progress" },
+    { title: "fabrication", href: "/fabrication", purpose: "purposeShopProgress" },
+    { title: "erection", href: "/erection", purpose: "purposeSiteProgress" },
   ],
   tracking: [
-    { title: "Fabrication", href: "/fabrication", purpose: "Shop progress" },
-    { title: "Erection", href: "/erection", purpose: "Site progress" },
+    { title: "fabrication", href: "/fabrication", purpose: "purposeShopProgress" },
+    { title: "erection", href: "/erection", purpose: "purposeSiteProgress" },
   ],
   flange: [
-    { title: "Erection", href: "/erection", purpose: "Site progress" },
+    { title: "erection", href: "/erection", purpose: "purposeSiteProgress" },
     {
-      title: "Test packs",
+      title: "relatedTestPacks",
       href: "/testpack",
-      purpose: "Review test readiness",
+      purpose: "purposeReviewTestReadiness",
     },
   ],
   testpack: [
     {
-      title: "Erection RFT",
+      title: "erectionRft",
       href: "/erection/rft",
-      purpose: "Check spool readiness",
+      purpose: "purposeCheckSpoolReadiness",
     },
-    { title: "NDE", href: "/nde", purpose: "Review inspection work" },
+    { title: "nde", href: "/nde", purpose: "purposeReviewInspectionWork" },
   ],
 }
 
-export function getRelatedWork(pathname: string, can: Can) {
-  return (RELATED[pathname.split("/")[1]] ?? []).filter((page) =>
-    canVisit(page.href, can),
-  )
+export function getRelatedWork(pathname: string, can: Can, name: NavName) {
+  return (RELATED[pathname.split("/")[1]] ?? [])
+    .filter((page) => canVisit(page.href, can))
+    .map((page) => ({ title: name(page.title), href: page.href, purpose: name(page.purpose) }))
 }

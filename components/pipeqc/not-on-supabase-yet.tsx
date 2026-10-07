@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 /**
@@ -22,19 +23,18 @@ export function NotOnSupabaseYet({
   /** What the module will do, in the user's terms. */
   summary: string
 }) {
+  const t = useTranslations("shell.placeholder")
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
       <Card className="max-w-2xl">
         <CardHeader>
-          <CardTitle>Built in {track}</CardTitle>
+          <CardTitle>{t("builtIn", { track })}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           <p className="text-muted-foreground">{summary}</p>
           <p className="text-muted-foreground">
-            Nothing is recorded here yet. This route has no Supabase implementation, and the demo
-            it used to render was removed from this branch so that no screen can be mistaken for
-            working software. The demo remains available on <span className="font-mono">main</span>.
+            {t.rich("nothingYet", { code: (chunks) => <span className="font-mono">{chunks}</span> })}
           </p>
         </CardContent>
       </Card>

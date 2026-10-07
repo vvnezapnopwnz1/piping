@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl"
 import { ChevronDown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -24,10 +25,11 @@ export function MultiSelectFilter({
   value,
   options,
   onChange,
-  placeholder = "All",
+  placeholder,
   className,
   id,
 }: MultiSelectFilterProps) {
+  const tu = useTranslations("common.ui")
   const toggle = (option: string) => {
     onChange(
       value.includes(option)
@@ -38,10 +40,10 @@ export function MultiSelectFilter({
 
   const label =
     value.length === 0
-      ? placeholder
+      ? (placeholder ?? tu("all"))
       : value.length === 1
         ? value[0]
-        : `${value.length} selected`;
+        : tu("selectedCount", { count: value.length });
 
   return (
     <Popover>

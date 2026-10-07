@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import * as React from "react"
 import { usePathname } from "next/navigation"
 
@@ -28,12 +29,13 @@ import styles from "./workbench-shell.module.css"
  * stage rail is not drawn there as well.
  */
 function PipeQCShell({ children }: { children: React.ReactNode }) {
+  const t = useTranslations("shell")
   const pathname = usePathname()
   const overview = pathname === "/"
   return (
     <div className={styles.shell}>
       <a href="#main-content" className={styles.skip}>
-        Skip to content
+        {t("skipToContent")}
       </a>
       {/* Mounted before the providers so it is listening when they report on first load. */}
       <Toaster richColors position="top-right" />
@@ -55,9 +57,10 @@ function PipeQCShell({ children }: { children: React.ReactNode }) {
 }
 
 function LoadingScreen() {
+  const t = useTranslations("shell")
   return (
     <main className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
-      <p className="text-sm text-muted-foreground">Loading PipeQC…</p>
+      <p className="text-sm text-muted-foreground">{t("loading")}</p>
     </main>
   )
 }

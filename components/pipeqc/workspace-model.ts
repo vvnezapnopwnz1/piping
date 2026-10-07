@@ -2,6 +2,7 @@ import {
   accessibleHref,
   workspaceAreas,
   type NavItem,
+  type NavKey,
   type WorkContextKey,
   type WorkspaceArea,
 } from "@/config/navigation"
@@ -125,20 +126,20 @@ export function linkFrom(href: string, from: string): string {
 }
 
 /** The name of the page a return path leads to, for "Back to …". */
-export function returnLabel(from: string, areas: readonly VisibleArea[]): string {
+export function returnLabel(from: string, areas: readonly VisibleArea[], name: (key: NavKey) => string): string {
   const path = from.split("?")[0]
-  if (path === "/") return "Overview"
-  if (path === "/projects") return "Projects"
+  if (path === "/") return name("overview")
+  if (path === "/projects") return name("projects")
   const location = locate(path, areas)
-  if (!location) return "previous page"
-  if (!location.page || location.page.href === location.area.href) return location.area.title
+  if (!location) return name("previousPage")
+  if (!location.page || location.page.href === location.area.href) return name(location.area.title)
   return location.area.pages.length > 1
-    ? `${location.area.title} · ${location.page.title}`
-    : location.page.title
+    ? `${name(location.area.title)} · ${name(location.page.title)}`
+    : name(location.page.title)
 }
 
 export interface TabGroup {
-  label: string | null
+  label: NavKey | null
   pages: NavItem[]
 }
 

@@ -74,6 +74,7 @@ export function statusKey(status: string | null | undefined): string | null {
 
 /** `not_started` -> `Not started`: the fallback for a status word that has no label in `codes.status`. */
 export function statusLabel(status: string | null | undefined): string {
+  // i18n-ignore — developer fallback; StatusBadge shows codes.status.unknown for a missing status
   if (!status) return 'Unknown'
   const words = status.trim().replace(/[\s_-]+/g, ' ')
   return words.charAt(0).toUpperCase() + words.slice(1).toLowerCase()

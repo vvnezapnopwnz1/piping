@@ -1,4 +1,6 @@
 import Link from "next/link";
+import type { NavName } from "@/components/pipeqc/navigation-model";
+import { useNavName } from "@/components/pipeqc/nav-name";
 import { Lock } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -9,9 +11,11 @@ import styles from "./home-control-room.module.css";
 
 export type AreaReadouts = Partial<Record<string, ReactNode>>;
 
-const titleOf = (id: string) => workspaceAreas.find((area) => area.id === id)?.title ?? id;
-
-function kicker(area: WorkspaceArea): string {
+function kicker(area: WorkspaceArea, name: NavName): string {
+  const titleOf = (id: string) => {
+    const found = workspaceAreas.find((candidate) => candidate.id === id);
+    return found ? name(found.title) : id;
+  };
   if (area.kind === "stage") return area.step ?? "";
   if (area.kind === "service") return `Serves ${(area.serves ?? []).map(titleOf).join(" · ")}`;
   return "Project";
@@ -30,16 +34,17 @@ function AreaCard({
   readout: ReactNode;
   attention: boolean;
 }) {
+  const name = useNavName();
   const Icon = area.icon;
   if (!visible || !href) {
     return (
       <article className={styles.card} data-kind={area.kind} data-state="locked" aria-labelledby={`map-${area.id}`}>
         <p className={styles.cardTop}>
-          <span>{kicker(area)}</span>
+          <span>{kicker(area, name)}</span>
           <Lock aria-hidden="true" className={styles.cardIcon} />
         </p>
         <h3 id={`map-${area.id}`} className={styles.cardTitle}>
-          {area.title}
+          {name(area.title)}
         </h3>
         <p className={styles.cardSub}>Not part of your project access</p>
       </article>
@@ -53,13 +58,13 @@ function AreaCard({
       aria-labelledby={`map-${area.id}`}
     >
       <p className={styles.cardTop}>
-        <span>{kicker(area)}</span>
+        <span>{kicker(area, name)}</span>
         <Icon aria-hidden="true" className={styles.cardIcon} />
       </p>
       <h3 id={`map-${area.id}`} className={styles.cardTitle}>
         {/* The whole card is the target; the link text is the module's one name. */}
         <Link href={href} className={styles.cardLink}>
-          {area.title}
+          {name(area.title)}
         </Link>
       </h3>
       {readout}
@@ -83,6 +88,7 @@ export function ProcessMap({
   readouts: AreaReadouts;
   attention: ReadonlySet<string>;
 }) {
+  const name = useNavName();
   const visible = new Map(areas.map((area) => [area.id, area]));
   const card = (area: WorkspaceArea) => {
     const open = visible.get(area.id);
@@ -104,7 +110,7 @@ export function ProcessMap({
     .filter((area): area is WorkspaceArea => area !== undefined)
     .map((area) => {
       const open = visible.get(area.id);
-      return open ? { id: area.id, title: area.title, href: hrefFor(open) } : null;
+      return open ? { id: area.id, title: name(area.title), href: hrefFor(open) } : null;
     })
     .filter((item): item is { id: string; title: string; href: string } => item !== null);
 

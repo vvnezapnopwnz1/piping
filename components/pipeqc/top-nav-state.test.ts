@@ -2,6 +2,9 @@ import assert from "node:assert/strict"
 
 import { getTopNavDisplay } from "./top-nav-state"
 
+// The words shown before the access summary arrives come from the caller, in its language.
+const fallback = { activityCode: "Project", title: "Loading project…", email: "Authenticated user" }
+
 const projects = [
   {
     projectId: "project-a",
@@ -25,6 +28,7 @@ assert.deepEqual(
     access: alpha,
     projectAccesses: projects,
     email: "person@example.com",
+    fallback,
   }),
   {
     project: alpha,
@@ -41,6 +45,7 @@ assert.deepEqual(
     access: alpha,
     projectAccesses: [alpha],
     email: "person@example.com",
+    fallback,
   }),
   {
     project: alpha,
@@ -53,15 +58,15 @@ assert.deepEqual(
 
 // Before the access summary arrives the header must still render something honest rather than
 // an empty project name.
-assert.deepEqual(getTopNavDisplay({ access: null, projectAccesses: [], email: undefined }), {
+assert.deepEqual(getTopNavDisplay({ access: null, projectAccesses: [], email: undefined, fallback: { activityCode: "Проект", title: "Загрузка проекта…", email: "Пользователь" } }), {
   project: {
     projectId: "loading",
-    activityCode: "Project",
-    title: "Loading project…",
+    activityCode: "Проект",
+    title: "Загрузка проекта…",
     accessLabels: [],
   },
   projects: [],
   canSwitchProject: false,
-  email: "Authenticated user",
+  email: "Пользователь",
   accessLabels: [],
 })

@@ -114,12 +114,16 @@ test("the search box looks only at the values it was handed", () => {
 })
 
 test("chips name the column, the operator and the value", () => {
-  assert.equal(describeFilter({ id: "s", kind: "text", value: "A-12" }, "Area"), "Area: A-12")
+  // The words come from the caller, in the current language.
+  const words = { selected: (count: number) => `${count} выбрано`, from: "с", until: "по", yes: "Да", no: "Нет" }
+  assert.equal(describeFilter({ id: "s", kind: "text", value: "A-12" }, "Area", words), "Area: A-12")
   assert.equal(
-    describeFilter({ id: "s", kind: "select", values: ["a", "b", "c"] }, "Status"),
-    "Status: 3 selected",
+    describeFilter({ id: "s", kind: "select", values: ["a", "b", "c"] }, "Status", words),
+    "Status: 3 выбрано",
   )
-  assert.equal(describeFilter({ id: "d", kind: "number", min: null, max: 6 }, "Dia"), "Dia ≤ 6")
+  assert.equal(describeFilter({ id: "d", kind: "number", min: null, max: 6 }, "Dia", words), "Dia ≤ 6")
+  assert.equal(describeFilter({ id: "t", kind: "date", from: "2026-08-01", to: null }, "Date", words), "Date с 2026-08-01")
+  assert.equal(describeFilter({ id: "b", kind: "boolean", value: true }, "RFT", words), "RFT: Да")
 })
 
 // -------------------------------------------------------------------------------------------

@@ -50,6 +50,7 @@ export function TopNav({ mode: _mode = "workspace" }: { mode?: "workspace" | "ca
   const pathname = usePathname();
   const { access: project, projectAccesses, signOut, user } = useSupabaseAuth();
   const tc = useTranslations("codes");
+  const t = useTranslations("shell.topNav");
 
   const topNavDisplay = getTopNavDisplay({
     access: project
@@ -67,6 +68,7 @@ export function TopNav({ mode: _mode = "workspace" }: { mode?: "workspace" | "ca
       accessLabels: accessLabels(m, tc),
     })),
     email: user?.email,
+    fallback: { activityCode: t("fallbackProject"), title: t("loadingProject"), email: t("authenticatedUser") },
   });
 
   const code = project ? topNavDisplay.project.activityCode : null;
@@ -85,8 +87,8 @@ export function TopNav({ mode: _mode = "workspace" }: { mode?: "workspace" | "ca
           <Link
             href={overview}
             className={styles.ident}
-            aria-label={`Project ${topNavDisplay.project.activityCode} overview`}
-            title={`${topNavDisplay.project.title} — project overview`}
+            aria-label={t("projectOverviewLabel", { code: topNavDisplay.project.activityCode })}
+            title={t("projectOverviewTitle", { title: topNavDisplay.project.title })}
           >
             <span className={styles.identCode}>{topNavDisplay.project.activityCode}</span>
             <span className={styles.identTitle}>{topNavDisplay.project.title}</span>
@@ -94,31 +96,31 @@ export function TopNav({ mode: _mode = "workspace" }: { mode?: "workspace" | "ca
         ) : (
           <span className={styles.ident}>
             <span className={styles.identCode}>PipeQC</span>
-            <span className={styles.identTitle}>No project open</span>
+            <span className={styles.identTitle}>{t("noProject")}</span>
           </span>
         )}
       </div>
 
-      <nav aria-label="Workspace" className={styles.identityActions}>
+      <nav aria-label={t("workspace")} className={styles.identityActions}>
         <Link
           href="/projects"
           className={styles.barButton}
           aria-current={pathname === "/projects" ? "page" : undefined}
-          aria-label="All projects"
+          aria-label={t("allProjects")}
         >
           <FolderOpen aria-hidden="true" />
-          <span className={styles.hideNarrow}>All projects</span>
+          <span className={styles.hideNarrow}>{t("allProjects")}</span>
         </Link>
         {project ? (
           <Link
             href={overview}
             className={styles.barButton}
             aria-current={pathname === "/" ? "page" : undefined}
-            aria-label={pathname === "/projects" ? `Return to ${topNavDisplay.project.activityCode}` : "Overview"}
+            aria-label={pathname === "/projects" ? t("returnTo", { code: topNavDisplay.project.activityCode }) : t("overview")}
           >
             <Home aria-hidden="true" />
             <span className={styles.hideNarrow}>
-              {pathname === "/projects" ? `Return to ${topNavDisplay.project.activityCode}` : "Overview"}
+              {pathname === "/projects" ? t("returnTo", { code: topNavDisplay.project.activityCode }) : t("overview")}
             </span>
           </Link>
         ) : null}
@@ -134,7 +136,7 @@ export function TopNav({ mode: _mode = "workspace" }: { mode?: "workspace" | "ca
               <span className={styles.userText}>
                 <span className={styles.userEmail}>{topNavDisplay.email}</span>
                 <span className={styles.userRole}>
-                  {topNavDisplay.accessLabels[0] ?? "Project access"}
+                  {topNavDisplay.accessLabels[0] ?? t("projectAccess")}
                 </span>
               </span>
               <ChevronDown aria-hidden="true" className={styles.userChevron} />
@@ -153,7 +155,7 @@ export function TopNav({ mode: _mode = "workspace" }: { mode?: "workspace" | "ca
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => void signOut()}>
               <LogOut className="mr-2 size-4" />
-              Sign out
+              {t("signOut")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

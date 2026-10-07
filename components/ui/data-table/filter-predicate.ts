@@ -78,25 +78,34 @@ export function matchesSearch(
   return values.some((value) => asText(value).toLowerCase().includes(needle))
 }
 
+/** The words a filter chip needs, in the current language. */
+export interface FilterWords {
+  selected: (count: number) => string
+  from: string
+  until: string
+  yes: string
+  no: string
+}
+
 /** Chip text. Says the column, the operator, and the value, in that order and short enough to fit. */
-export function describeFilter(filter: ColumnFilter, columnLabel: string): string {
+export function describeFilter(filter: ColumnFilter, columnLabel: string, words: FilterWords): string {
   switch (filter.kind) {
     case 'text':
       return `${columnLabel}: ${filter.value}`
     case 'select':
       return filter.values.length <= 2
         ? `${columnLabel}: ${filter.values.join(', ')}`
-        : `${columnLabel}: ${filter.values.length} selected`
+        : `${columnLabel}: ${words.selected(filter.values.length)}`
     case 'number':
       if (filter.min !== null && filter.max !== null) return `${columnLabel}: ${filter.min}–${filter.max}`
       if (filter.min !== null) return `${columnLabel} ≥ ${filter.min}`
       return `${columnLabel} ≤ ${filter.max}`
     case 'date':
       if (filter.from && filter.to) return `${columnLabel}: ${filter.from} → ${filter.to}`
-      if (filter.from) return `${columnLabel} from ${filter.from}`
-      return `${columnLabel} until ${filter.to}`
+      if (filter.from) return `${columnLabel} ${words.from} ${filter.from}`
+      return `${columnLabel} ${words.until} ${filter.to}`
     case 'boolean':
-      return `${columnLabel}: ${filter.value ? 'Yes' : 'No'}`
+      return `${columnLabel}: ${filter.value ? words.yes : words.no}`
   }
 }
 

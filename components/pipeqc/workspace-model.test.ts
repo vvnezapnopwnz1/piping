@@ -12,6 +12,10 @@ import {
   returnLabel,
   safeReturnPath,
 } from "./workspace-model"
+import type { NavKey } from "@/config/navigation"
+import { en } from "@/i18n/messages"
+
+const name = (key: NavKey) => en.nav[key]
 
 const all = getVisibleAreas(() => true)
 
@@ -31,16 +35,16 @@ test("planned pages never become tabs", () => {
 })
 
 test("a path belongs to its longest matching page", () => {
-  assert.equal(locate("/testpack/explorer", all)?.page?.title, "Explorer")
-  assert.equal(locate("/testpack", all)?.page?.title, "Dashboard")
-  assert.equal(locate("/testpack/pressure-test/line-check/progress", all)?.page?.title, "Pressure Test")
-  assert.equal(locate("/nde/dashboard", all)?.page?.title, "Dashboard")
+  assert.equal(locate("/testpack/explorer", all)?.page?.title, "explorer")
+  assert.equal(locate("/testpack", all)?.page?.title, "dashboard")
+  assert.equal(locate("/testpack/pressure-test/line-check/progress", all)?.page?.title, "pressureTest")
+  assert.equal(locate("/nde/dashboard", all)?.page?.title, "dashboard")
   assert.equal(locate("/erection/rft", all)?.area.id, "erection")
   // Routes that render the same screen as a step are that step, not a page of their own.
-  assert.equal(locate("/fabrication/pwht-release", all)?.page?.title, "Spools")
-  assert.equal(locate("/fabrication/material-check", all)?.page?.title, "Spools")
-  assert.equal(locate("/fabrication", all)?.page?.title, "Spools")
-  assert.equal(locate("/fabrication/dashboard", all)?.page?.title, "Dashboard")
+  assert.equal(locate("/fabrication/pwht-release", all)?.page?.title, "spools")
+  assert.equal(locate("/fabrication/material-check", all)?.page?.title, "spools")
+  assert.equal(locate("/fabrication", all)?.page?.title, "spools")
+  assert.equal(locate("/fabrication/dashboard", all)?.page?.title, "dashboard")
 
   // A redirecting index route still belongs to its area.
   const index = locate("/spooling", all)
@@ -75,10 +79,10 @@ test("a return address must stay inside the app", () => {
 })
 
 test("Back names the page it returns to", () => {
-  assert.equal(returnLabel("/erection/dashboard", all), "Erection · Dashboard")
-  assert.equal(returnLabel("/testpack/explorer?testPackId=1", all), "Test Packs · Explorer")
-  assert.equal(returnLabel("/reports", all), "Reports")
-  assert.equal(returnLabel("/", all), "Overview")
+  assert.equal(returnLabel("/erection/dashboard", all, name), "Erection · Dashboard")
+  assert.equal(returnLabel("/testpack/explorer?testPackId=1", all, name), "Test Packs · Explorer")
+  assert.equal(returnLabel("/reports", all, name), "Reports")
+  assert.equal(returnLabel("/", all, name), "Overview")
 })
 
 test("module tabs keep registry order and group labels", () => {
@@ -94,8 +98,8 @@ test("fabrication is one spool workbench, not a tab per shop stage", () => {
   assert.deepEqual(
     fabrication.pages.map((page) => [page.title, page.href]),
     [
-      ["Spools", "/fabrication"],
-      ["Dashboard", "/fabrication/dashboard"],
+      ["spools", "/fabrication"],
+      ["dashboard", "/fabrication/dashboard"],
     ],
   )
   // Every operation address still opens, as the workbench on that operation.
@@ -116,10 +120,10 @@ test("erection is a field-spool workbench beside the readiness list, not a tab p
   const erection = all.find((area) => area.id === "erection")!
   assert.deepEqual(
     erection.pages.map((page) => page.title),
-    ["Spools", "Dashboard", "Flange Progress"],
+    ["spools", "dashboard", "flangeProgress"],
   )
-  assert.equal(locate("/erection/supported", all)?.page?.title, "Spools")
-  assert.equal(locate("/erection/weld-progress", all)?.page?.title, "Spools")
-  assert.equal(locate("/erection/rft", all)?.page?.title, "Spools")
-  assert.equal(locate("/erection/field-qc-release", all)?.page?.title, "Spools")
+  assert.equal(locate("/erection/supported", all)?.page?.title, "spools")
+  assert.equal(locate("/erection/weld-progress", all)?.page?.title, "spools")
+  assert.equal(locate("/erection/rft", all)?.page?.title, "spools")
+  assert.equal(locate("/erection/field-qc-release", all)?.page?.title, "spools")
 })

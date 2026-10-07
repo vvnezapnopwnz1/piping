@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import * as React from "react"
 
 import { Button } from "@/components/ui/button"
@@ -7,12 +8,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { LocaleToggle } from "@/components/pipeqc/locale-switch"
+import { errorDetail } from "@/i18n/format"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 
 export function LoginScreen() {
   const [email, setEmail] = React.useState("")
   const [password, setPassword] = React.useState("")
-  const [error, setError] = React.useState<string | null>(null)
+  const t = useTranslations("auth.login")
+  const [error, setError] = React.useState<{ title: string; detail?: string } | null>(null)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -27,12 +30,14 @@ export function LoginScreen() {
       })
 
       if (signInError) {
-        setError(signInError.message)
+        setError(
+          signInError.code === "invalid_credentials"
+            ? { title: t("invalidCredentials") }
+            : { title: t("failed"), detail: errorDetail(signInError) },
+        )
       }
     } catch (signInError) {
-      setError(
-        signInError instanceof Error ? signInError.message : "Unable to sign in"
-      )
+      setError({ title: t("failed"), detail: errorDetail(signInError) })
     } finally {
       setIsSubmitting(false)
     }
@@ -42,15 +47,15 @@ export function LoginScreen() {
     <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-muted/30 p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>Sign in to PipeQC</CardTitle>
+          <CardTitle>{t("title")}</CardTitle>
           <CardDescription>
-            Use the credentials provided by your project administrator.
+            {t("description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("email")}</Label>
               <Input
                 autoComplete="email"
                 id="email"
@@ -61,7 +66,7 @@ export function LoginScreen() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("password")}</Label>
               <Input
                 autoComplete="current-password"
                 id="password"
@@ -73,10 +78,11 @@ export function LoginScreen() {
             </div>
             {error && (
               <p className="text-sm text-destructive" role="alert">
-                {error}
+                {error.title}
+                {error.detail ? <span className="mt-1 block text-xs">{error.detail}</span> : null}
               </p>
             )}
-            <Button className="w-full" loading={isSubmitting} type="submit">Sign in</Button>
+            <Button className="w-full" loading={isSubmitting} type="submit">{t("submit")}</Button>
           </form>
         </CardContent>
       </Card>

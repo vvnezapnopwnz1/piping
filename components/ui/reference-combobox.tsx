@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import * as React from "react"
 import { useId, useState } from "react"
 import { ChevronsUpDown, X, Check } from "lucide-react"
@@ -51,9 +52,10 @@ export function ReferenceCombobox({
   onClear,
   onRetry,
   disabled = false,
-  emptyMessage = "No matching traces",
-  placeholder = "Select registered trace",
+  emptyMessage,
+  placeholder,
 }: ReferenceComboboxProps) {
+  const tu = useTranslations("common.ui")
   const [open, setOpen] = useState(false)
   const listId = useId()
 
@@ -72,7 +74,7 @@ export function ReferenceCombobox({
             className="w-full justify-between font-normal text-left truncate h-9 px-3"
           >
             <span className="truncate">
-              {selectedLabel ?? placeholder}
+              {selectedLabel ?? placeholder ?? tu("selectTrace")}
             </span>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
@@ -83,15 +85,15 @@ export function ReferenceCombobox({
         >
           <Command shouldFilter={false}>
             <CommandInput
-              aria-label={`Search ${label}`}
-              placeholder="Search trace or MRR…"
+              aria-label={tu("searchIn", { label })}
+              placeholder={tu("searchTrace")}
               value={query}
               onValueChange={onQueryChange}
             />
             <CommandList id={listId} aria-label={label} className="max-h-60 overflow-y-auto">
               {loading && options.length === 0 ? (
                 <div role="status" className="p-3 text-sm text-center text-muted-foreground">
-                  Searching registered materials…
+                  {tu("searchingMaterials")}
                 </div>
               ) : null}
 
@@ -106,7 +108,7 @@ export function ReferenceCombobox({
                       onClick={onRetry}
                       className="shrink-0 text-xs h-7 px-2"
                     >
-                      Retry
+                      {tu("retry")}
                     </Button>
                   ) : null}
                 </div>
@@ -114,7 +116,7 @@ export function ReferenceCombobox({
 
               {!loading && !error && options.length === 0 ? (
                 <div className="p-3 text-sm text-center text-muted-foreground">
-                  {emptyMessage}
+                  {emptyMessage ?? tu("noTraces")}
                 </div>
               ) : null}
 
@@ -152,7 +154,7 @@ export function ReferenceCombobox({
                   }}
                   className="text-xs h-7 px-2 text-muted-foreground hover:text-foreground"
                 >
-                  Clear selection
+                  {tu("clearSelection")}
                 </Button>
               </div>
             ) : null}
@@ -165,7 +167,7 @@ export function ReferenceCombobox({
           type="button"
           variant="ghost"
           size="icon"
-          aria-label={`Clear ${label}`}
+          aria-label={tu("clearField", { label })}
           onClick={onClear}
           className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
         >

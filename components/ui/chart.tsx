@@ -82,7 +82,7 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     <style
       dangerouslySetInnerHTML={{
         __html: Object.entries(THEMES)
-          .map(
+          .map( // i18n-ignore — CSS rules, not text
             ([theme, prefix]) => `
 ${prefix} [data-chart=${id}] {
 ${colorConfig
@@ -90,7 +90,7 @@ ${colorConfig
     const color =
       itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
       itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
+    return color ? `  --color-${key}: ${color};` : null // i18n-ignore — CSS custom property
   })
   .join('\n')}
 }

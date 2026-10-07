@@ -106,7 +106,7 @@ for (const service of workspaceAreas.filter((area) => area.kind === "service")) 
 const erectionArea = workspaceAreas.find((area) => area.id === "erection")
 assert.deepEqual(
   erectionArea?.children.map((page) => page.title),
-  ["Spools", "Dashboard", "Flange Progress"],
+  ["spools", "dashboard", "flangeProgress"],
   "Erection module tabs are Spools, Dashboard and Flange Progress",
 )
 

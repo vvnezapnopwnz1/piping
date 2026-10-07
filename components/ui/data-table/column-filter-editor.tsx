@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import * as React from 'react'
 import { Check, Search } from 'lucide-react'
 
@@ -108,6 +109,7 @@ function TextFilter({
   onChange: (value: string) => void
   onDone: () => void
 }) {
+  const tt = useTranslations('common.table')
   return (
     <div className="space-y-2 p-2">
       <Label htmlFor="column-filter-text" className="text-xs">
@@ -119,7 +121,7 @@ function TextFilter({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         onKeyDown={(event) => event.key === 'Enter' && onDone()}
-        placeholder="Type to filter…"
+        placeholder={tt('typeToFilter')}
         className="h-8"
       />
     </div>
@@ -137,6 +139,7 @@ function SelectFilter({
   options: ReadonlyArray<[string, number]>
   onChange: (values: string[]) => void
 }) {
+  const tt = useTranslations('common.table')
   const [query, setQuery] = React.useState('')
 
   // A welder list runs to hundreds of names; without a search inside the facet the operator is
@@ -161,16 +164,16 @@ function SelectFilter({
             autoFocus
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search values…"
+            placeholder={tt('searchValues')}
             className="h-8 pl-8"
-            aria-label="Search filter values"
+            aria-label={tt('searchValuesLabel')}
           />
         </div>
       ) : null}
 
       <div className="max-h-64 space-y-0.5 overflow-y-auto">
         {visible.length === 0 ? (
-          <p className="text-muted-foreground px-2 py-1.5 text-sm">No values match.</p>
+          <p className="text-muted-foreground px-2 py-1.5 text-sm">{tt('noValues')}</p>
         ) : (
           visible.map(([option, count]) => (
             <label
@@ -187,7 +190,7 @@ function SelectFilter({
 
       {value.length > 0 ? (
         <Button variant="ghost" size="sm" className="w-full" onClick={() => onChange([])}>
-          Clear {value.length} selected
+          {tt('clearSelected', { count: value.length })}
         </Button>
       ) : null}
     </div>
@@ -209,33 +212,34 @@ function RangeFilter({
   onChange: (from: string, to: string) => void
   onDone: () => void
 }) {
+  const tt = useTranslations('common.table')
   return (
     <div className="space-y-2 p-2">
-      <p className="text-muted-foreground text-xs">{label} between</p>
+      <p className="text-muted-foreground text-xs">{tt('between', { column: label })}</p>
       <div className="flex items-center gap-2">
         <Input
           autoFocus
           type={type}
           value={from}
-          aria-label={`${label} from`}
+          aria-label={tt('fromLabel', { column: label })}
           onChange={(event) => onChange(event.target.value, to)}
           onKeyDown={(event) => event.key === 'Enter' && onDone()}
           className="h-8"
-          placeholder="From"
+          placeholder={tt('fromPlaceholder')}
         />
         <span className="text-muted-foreground text-xs">–</span>
         <Input
           type={type}
           value={to}
-          aria-label={`${label} to`}
+          aria-label={tt('toLabel', { column: label })}
           onChange={(event) => onChange(from, event.target.value)}
           onKeyDown={(event) => event.key === 'Enter' && onDone()}
           className="h-8"
-          placeholder="To"
+          placeholder={tt('toPlaceholder')}
         />
       </div>
       {/* Either end on its own is a valid filter, so neither is required. */}
-      <p className="text-muted-foreground text-xs">Leave either side empty for an open end.</p>
+      <p className="text-muted-foreground text-xs">{tt('openEnd')}</p>
     </div>
   )
 }
@@ -247,6 +251,7 @@ function BooleanFilter({
   value: boolean | null
   onChange: (value: boolean) => void
 }) {
+  const tt = useTranslations('common.table')
   return (
     <div className="p-1">
       {[true, false].map((option) => (
@@ -259,7 +264,7 @@ function BooleanFilter({
           )}
         >
           <Check className={cn('size-4', value === option ? 'opacity-100' : 'opacity-0')} />
-          {option ? 'Yes' : 'No'}
+          {option ? tt('yes') : tt('no')}
         </button>
       ))}
     </div>

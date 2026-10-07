@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
@@ -19,23 +20,24 @@ export function ForbiddenScreen({
   projectCode: string
   sectionLabel: string
 }) {
+  const t = useTranslations("auth.forbidden")
   return (
     <main className="flex min-h-full items-center justify-center p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>Access denied</CardTitle>
+          <CardTitle>{t("title")}</CardTitle>
           <CardDescription>
-            You do not have access to {sectionLabel} in project {projectCode}.
+            {t("description", { section: sectionLabel, project: projectCode })}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Contact a project administrator if you believe this is incorrect.
+            {t("contact")}
           </p>
         </CardContent>
         <CardFooter>
           <Button asChild>
-            <Link href="/">Go to Home</Link>
+            <Link href="/">{t("goHome")}</Link>
           </Button>
         </CardFooter>
       </Card>

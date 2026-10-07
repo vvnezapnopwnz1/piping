@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import * as React from 'react'
 import { ChevronLeft, ChevronRight, FilterX, Inbox } from 'lucide-react'
 
@@ -93,7 +94,7 @@ export function DataTable<Row>({
   selectedRowId,
   loading = false,
   searchPlaceholder,
-  emptyTitle = 'Nothing here yet',
+  emptyTitle,
   emptyDescription,
   emptyAction,
   variant = 'full',
@@ -124,6 +125,8 @@ export function DataTable<Row>({
   containerClassName?: string
   className?: string
 }) {
+  const tt = useTranslations('common.table')
+  const yesNo = { yes: tt('yes'), no: tt('no') }
   const visibleColumns = React.useMemo(
     () => columns.filter((column) => !state.hidden.includes(column.id)),
     [columns, state.hidden],
@@ -340,19 +343,19 @@ export function DataTable<Row>({
                     {filteringActive ? (
                       <>
                         <FilterX className="size-6" />
-                        <p className="text-sm">No rows match the current filters.</p>
+                        <p className="text-sm">{tt('noMatch')}</p>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => patch({ search: '', filters: [], pageIndex: 0 })}
                         >
-                          Clear filters
+                          {tt('clearFilters')}
                         </Button>
                       </>
                     ) : (
                       <>
                         <Inbox className="size-6" />
-                        <p className="text-sm">{emptyTitle}</p>
+                        <p className="text-sm">{emptyTitle ?? tt('nothingYet')}</p>
                         {emptyDescription ? <p className="text-xs">{emptyDescription}</p> : null}
                         {emptyAction}
                       </>
@@ -382,7 +385,7 @@ export function DataTable<Row>({
                         truncate={column.truncate}
                         className={column.className}
                       >
-                        {column.cell ? column.cell(row) : formatValue(column.value(row))}
+                        {column.cell ? column.cell(row) : formatValue(column.value(row), yesNo)}
                       </TableCell>
                     ))}
                   </TableRow>
@@ -397,18 +400,18 @@ export function DataTable<Row>({
         <div className="text-muted-foreground flex flex-wrap items-center justify-between gap-2 text-sm">
           <span className="tabular-nums">
             {sorted.length === 0
-              ? 'No rows'
-              : `${sorted.length} rows in this page`}
-            {filteringActive && rows.length !== sorted.length ? ` (${sorted.length} matching)` : ''}
+              ? tt('noRows')
+              : tt('rowsInPage', { count: sorted.length })}
+            {filteringActive && rows.length !== sorted.length ? ` ${tt('matching', { count: sorted.length })}` : ''}
           </span>
 
           <div className="flex items-center gap-2">
             <label className="flex items-center gap-1">
-              <span className="sr-only sm:not-sr-only">Rows per page</span>
+              <span className="sr-only sm:not-sr-only">{tt('rowsPerPage')}</span>
               <select
                 value={serverPagination.pageSize}
                 onChange={(event) => serverPagination.onPageSizeChange(Number(event.target.value))}
-                aria-label="Rows per page"
+                aria-label={tt('rowsPerPage')}
                 className="border-input bg-background h-8 rounded-md border px-2 text-sm"
               >
                 {PAGE_SIZES.map((size) => (
@@ -422,17 +425,17 @@ export function DataTable<Row>({
             <Button
               variant="outline"
               size="icon-sm"
-              aria-label="Previous page"
+              aria-label={tt('previousPage')}
               disabled={loading || serverPagination.pageIndex === 0}
               onClick={serverPagination.onPreviousPage}
             >
               <ChevronLeft />
             </Button>
-            <span className="tabular-nums">Page {serverPagination.pageIndex + 1}</span>
+            <span className="tabular-nums">{tt('page', { page: serverPagination.pageIndex + 1 })}</span>
             <Button
               variant="outline"
               size="icon-sm"
-              aria-label="Next page"
+              aria-label={tt('nextPage')}
               disabled={loading || !serverPagination.hasNextPage}
               onClick={serverPagination.onNextPage}
             >
@@ -444,21 +447,21 @@ export function DataTable<Row>({
       <div className="text-muted-foreground flex flex-wrap items-center justify-between gap-2 text-sm">
         <span className="tabular-nums">
           {sorted.length === 0
-            ? 'No rows'
+            ? tt('noRows')
             : chrome.showPager
-              ? `${pageIndex * state.pageSize + 1}–${Math.min((pageIndex + 1) * state.pageSize, sorted.length)} of ${sorted.length}`
-              : `${sorted.length} ${sorted.length === 1 ? 'row' : 'rows'}`}
-          {filteringActive && rows.length !== sorted.length ? ` (filtered from ${rows.length})` : ''}
+              ? tt('range', { from: pageIndex * state.pageSize + 1, to: Math.min((pageIndex + 1) * state.pageSize, sorted.length), total: sorted.length })
+              : tt('rowCount', { count: sorted.length })}
+          {filteringActive && rows.length !== sorted.length ? ` ${tt('filteredFrom', { count: rows.length })}` : ''}
         </span>
 
         {chrome.showPager ? (
           <div className="flex items-center gap-2">
             <label className="flex items-center gap-1">
-              <span className="sr-only sm:not-sr-only">Rows per page</span>
+              <span className="sr-only sm:not-sr-only">{tt('rowsPerPage')}</span>
               <select
                 value={state.pageSize}
                 onChange={(event) => patch({ pageSize: Number(event.target.value), pageIndex: 0 })}
-                aria-label="Rows per page"
+                aria-label={tt('rowsPerPage')}
                 className="border-input bg-background h-8 rounded-md border px-2 text-sm"
               >
                 {PAGE_SIZES.map((size) => (
@@ -472,19 +475,19 @@ export function DataTable<Row>({
             <Button
               variant="outline"
               size="icon-sm"
-              aria-label="Previous page"
+              aria-label={tt('previousPage')}
               disabled={pageIndex === 0}
               onClick={() => patch({ pageIndex: pageIndex - 1 })}
             >
               <ChevronLeft />
             </Button>
             <span className="tabular-nums">
-              Page {pageIndex + 1} of {pageCount}
+              {tt('pageOf', { page: pageIndex + 1, count: pageCount })}
             </span>
             <Button
               variant="outline"
               size="icon-sm"
-              aria-label="Next page"
+              aria-label={tt('nextPage')}
               disabled={pageIndex >= pageCount - 1}
               onClick={() => patch({ pageIndex: pageIndex + 1 })}
             >
@@ -498,9 +501,9 @@ export function DataTable<Row>({
   )
 }
 
-const formatValue = (value: unknown): React.ReactNode => {
+const formatValue = (value: unknown, yesNo: { yes: string; no: string }): React.ReactNode => {
   if (value === null || value === undefined || value === '') return '—'
-  if (typeof value === 'boolean') return value ? 'Yes' : 'No'
+  if (typeof value === 'boolean') return value ? yesNo.yes : yesNo.no
   if (Array.isArray(value)) return value.length ? value.join(', ') : '—'
   return String(value)
 }

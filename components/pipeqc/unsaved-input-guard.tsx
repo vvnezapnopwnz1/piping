@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import * as React from "react"
 import { usePathname, useRouter } from "next/navigation"
 
@@ -61,6 +62,7 @@ export function useRequestLeave(): (proceed: () => void) => void {
 }
 
 export function UnsavedInputGuard({ children }: { children?: React.ReactNode }) {
+  const t = useTranslations("shell.unsaved")
   const pathname = usePathname()
   const router = useRouter()
   const projectId = useSupabaseAuth().access?.projectId ?? null
@@ -195,13 +197,13 @@ export function UnsavedInputGuard({ children }: { children?: React.ReactNode }) 
         <AlertDialog open={pending !== null} onOpenChange={(open) => (open ? null : setPending(null))}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Leave without recording?</AlertDialogTitle>
+            <AlertDialogTitle>{t("title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This page has input that has not been recorded yet. Leaving discards it.
+              {t("description")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Stay on this page</AlertDialogCancel>
+            <AlertDialogCancel>{t("stay")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 const action = pending
@@ -213,7 +215,7 @@ export function UnsavedInputGuard({ children }: { children?: React.ReactNode }) 
                 else action.proceed()
               }}
             >
-              Leave and discard
+              {t("leave")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

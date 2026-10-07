@@ -35,7 +35,7 @@ export function DataTableToolbar({
   onChange,
   columnLabels,
   hideableColumns,
-  searchPlaceholder = 'Search…',
+  searchPlaceholder,
   rowCount,
   totalCount,
   showSearch = true,
@@ -54,6 +54,8 @@ export function DataTableToolbar({
   /** Screen-specific actions — export, create, refresh — sit on the right of the search row. */
   children?: React.ReactNode
 }) {
+  const tt = useTranslations('common.table')
+  const filterWords = { selected: (count: number) => tt('selected', { count }), from: tt('from'), until: tt('until'), yes: tt('yes'), no: tt('no') }
   const tc = useTranslations('codes')
   // The box is typed into letter by letter; the state it feeds is in the URL. Debouncing keeps a
   // ten-character search from writing ten history entries and re-filtering ten times.
@@ -82,7 +84,7 @@ export function DataTableToolbar({
               <Input
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
-                placeholder={searchPlaceholder}
+                placeholder={searchPlaceholder ?? tt('search')}
                 aria-label={searchPlaceholder}
                 className="h-9 pl-8"
               />
@@ -90,7 +92,7 @@ export function DataTableToolbar({
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  aria-label="Clear the search"
+                  aria-label={tt('clearSearch')}
                   onClick={() => setDraft('')}
                   className="absolute top-1/2 right-1 size-7 -translate-y-1/2"
                 >
@@ -111,7 +113,7 @@ export function DataTableToolbar({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Row height</DropdownMenuLabel>
+                  <DropdownMenuLabel>{tt('rowHeight')}</DropdownMenuLabel>
                   <DropdownMenuRadioGroup
                     value={state.density}
                     onValueChange={(value) => onChange({ ...state, density: value as TableDensity })}
@@ -129,7 +131,7 @@ export function DataTableToolbar({
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm" className="h-9">
-                      <Columns3 /> Columns
+                      <Columns3 /> {tt('columns')}
                       {state.hidden.length > 0 ? (
                         <span className="text-muted-foreground tabular-nums">
                           ({hideableColumns.length - state.hidden.length}/{hideableColumns.length})
@@ -138,7 +140,7 @@ export function DataTableToolbar({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="max-h-80 w-56 overflow-y-auto">
-                    <DropdownMenuLabel>Visible columns</DropdownMenuLabel>
+                    <DropdownMenuLabel>{tt('visibleColumns')}</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     {hideableColumns.map((column) => {
                       const visible = !state.hidden.includes(column.id)
@@ -172,25 +174,25 @@ export function DataTableToolbar({
 
       {hasAny ? (
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-muted-foreground text-xs">Filters:</span>
+          <span className="text-muted-foreground text-xs">{tt('filters')}</span>
           {state.search.trim() ? (
             <FilterChip
-              label={`Search: ${state.search}`}
+              label={tt('searchChip', { query: state.search })}
               onRemove={() => onChange({ ...state, search: '', pageIndex: 0 })}
             />
           ) : null}
           {state.filters.map((filter: ColumnFilter) => (
             <FilterChip
               key={filter.id}
-              label={describeFilter(filter, columnLabels[filter.id] ?? filter.id)}
+              label={describeFilter(filter, columnLabels[filter.id] ?? filter.id, filterWords)}
               onRemove={() => clearFilter(filter.id)}
             />
           ))}
           <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={clearAll}>
-            Clear all
+            {tt('clearAll')}
           </Button>
           <span className="text-muted-foreground ml-auto text-xs tabular-nums">
-            {rowCount} of {totalCount} rows
+            {tt('rowsOfTotal', { count: rowCount, total: totalCount })}
           </span>
         </div>
       ) : null}
@@ -199,13 +201,14 @@ export function DataTableToolbar({
 }
 
 function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  const tt = useTranslations('common.table')
   return (
     <span className="bg-secondary text-secondary-foreground inline-flex max-w-64 items-center gap-1 rounded-md px-2 py-0.5 text-xs">
       <span className="truncate">{label}</span>
       <button
         type="button"
         onClick={onRemove}
-        aria-label={`Remove filter ${label}`}
+        aria-label={tt('removeFilter', { filter: label })}
         className="hover:text-foreground focus-visible:ring-ring -mr-0.5 rounded focus-visible:ring-2 focus-visible:outline-none"
       >
         <X className="size-3" />

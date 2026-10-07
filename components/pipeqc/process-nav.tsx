@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -7,6 +8,7 @@ import { ArrowLeft, ArrowRight, FlaskConical, MapPin, X } from "lucide-react"
 
 import { useSupabaseAuth } from "@/contexts/supabase-auth-context"
 
+import { useNavName } from "./nav-name"
 import { withProject } from "./project-url"
 import { useWorkContext } from "./work-context"
 import {
@@ -29,6 +31,7 @@ function RailItem({
   current: boolean
 }) {
   const Icon = area.icon
+  const name = useNavName()
   return (
     <Link
       href={href}
@@ -38,7 +41,7 @@ function RailItem({
     >
       <Icon aria-hidden="true" className={styles.railIcon} />
       <span className={styles.railText}>
-        <span className={styles.railLabel}>{area.title}</span>
+        <span className={styles.railLabel}>{name(area.title)}</span>
       </span>
     </Link>
   )
@@ -49,6 +52,7 @@ function RailItem({
  * map. It is not shown on the overview, where the map itself is the navigation.
  */
 export function StageRail() {
+  const t = useTranslations("shell.processNav")
   const work = useWorkContext()
   const pathname = usePathname()
   const code = useSupabaseAuth().access?.activityCode
@@ -69,7 +73,7 @@ export function StageRail() {
   const kinds = ["stage", "service", "project"] as const
 
   return (
-    <nav aria-label="Process stages" className={styles.rail} data-help="stage-rail">
+    <nav aria-label={t("stages")} className={styles.rail} data-help="stage-rail">
       <div ref={ref} className={styles.railTrack}>
         {kinds.map((kind, index) => {
           const group = areas.filter((area) => area.kind === kind)
@@ -77,7 +81,7 @@ export function StageRail() {
           return (
             <React.Fragment key={kind}>
               {index > 0 ? <span className={styles.railSep} aria-hidden="true" /> : null}
-              <ul className={styles.railGroup} aria-label={kind === "stage" ? "Stages" : kind === "service" ? "Shared services" : "Project"}>
+              <ul className={styles.railGroup} aria-label={t(kind === "stage" ? "groupStages" : kind === "service" ? "groupServices" : "groupProject")}>
                 {group.map((area, position) => (
                   <li key={area.id} className={styles.railCell}>
                     {kind === "stage" && position > 0 ? (
@@ -109,17 +113,18 @@ function ContextChip({
   onClear: () => void
 }) {
   const Icon = kind === "spool" ? MapPin : FlaskConical
-  const noun = kind === "spool" ? "Spool" : "Test pack"
+  const t = useTranslations("shell.processNav")
+  const noun = t(kind === "spool" ? "spool" : "testPack")
   return (
     <span className={styles.chip} data-help="work-context">
       <Icon aria-hidden="true" />
       <span className={styles.chipNoun}>{noun}</span>
-      <span className={styles.chipValue}>{label ?? "selected"}</span>
+      <span className={styles.chipValue}>{label ?? t("selected")}</span>
       <button
         type="button"
         className={styles.chipClear}
         onClick={onClear}
-        aria-label={`Clear selected ${noun.toLowerCase()}${label ? ` ${label}` : ""}`}
+        aria-label={t(kind === "spool" ? "clearSpool" : "clearTestPack", { label: label ?? "" }).trim()}
       >
         <X aria-hidden="true" />
       </button>
@@ -133,6 +138,8 @@ function ContextChip({
  * stage, and both are where you change them.
  */
 export function ModuleHeader() {
+  const t = useTranslations("shell.processNav")
+  const name = useNavName()
   const work = useWorkContext()
   const pathname = usePathname()
   const code = useSupabaseAuth().access?.activityCode ?? null
@@ -152,10 +159,10 @@ export function ModuleHeader() {
     <div className={styles.moduleHead}>
       <div className={styles.headRow}>
         {tabs.length ? (
-          <nav aria-label={`${area!.title} pages`} className={styles.tabs} data-help="module-tabs">
+          <nav aria-label={t("modulePages", { module: name(area!.title) })} className={styles.tabs} data-help="module-tabs">
             {tabs.map((group, index) => (
               <div key={`${group.label ?? "main"}-${index}`} className={styles.tabGroup}>
-                {group.label ? <span className={styles.tabGroupLabel}>{group.label}</span> : null}
+                {group.label ? <span className={styles.tabGroupLabel}>{name(group.label)}</span> : null}
                 <ul>
                   {group.pages.map((tab) => {
                     const active = page?.href === tab.href
@@ -166,7 +173,7 @@ export function ModuleHeader() {
                           className={styles.tab}
                           aria-current={active ? "page" : undefined}
                         >
-                          {tab.title}
+                          {name(tab.title)}
                         </Link>
                       </li>
                     )
@@ -187,7 +194,7 @@ export function ModuleHeader() {
             {from ? (
               <Link href={from} className={styles.backLink}>
                 <ArrowLeft aria-hidden="true" />
-                Back to {returnLabel(from, work.areas)}
+                {t("backTo", { page: returnLabel(from, work.areas, name) })}
               </Link>
             ) : null}
           </div>

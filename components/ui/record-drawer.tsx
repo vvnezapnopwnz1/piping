@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import {
   useEffect,
   useId,
@@ -48,6 +49,7 @@ export function RecordDrawer({
   onClose,
   children,
 }: RecordDrawerProps) {
+  const tu = useTranslations("common.ui")
   const headingId = useId()
   const heading = useRef<HTMLHeadingElement>(null)
   const panel = useRef<HTMLElement>(null)
@@ -140,8 +142,8 @@ export function RecordDrawer({
             type="button"
             className={styles.drawerClose}
             onClick={() => setExpanded((value) => !value)}
-            aria-label={expanded ? "Restore drawer size" : "Expand drawer"}
-            title={expanded ? "Restore size" : "Expand"}
+            aria-label={expanded ? tu("restoreDrawer") : tu("expandDrawer")}
+            title={expanded ? tu("restoreSize") : tu("expand")}
             aria-pressed={expanded}
             hidden={mobile}
           >

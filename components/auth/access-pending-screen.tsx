@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -10,23 +11,24 @@ export function AccessPendingScreen({
   email?: string
   onSignOut: () => Promise<void>
 }) {
+  const t = useTranslations("auth.pending")
   return (
     <main className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>Access pending</CardTitle>
+          <CardTitle>{t("title")}</CardTitle>
           <CardDescription>
-            Your account is signed in but has not been assigned to an active PipeQC project. Contact a system administrator to obtain project access.
+            {t("description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Signed in as <span className="font-medium text-foreground">{email ?? "your account"}</span>
+            {t.rich("signedInAs", { email: email ?? t("yourAccount"), b: (chunks) => <span className="font-medium text-foreground">{chunks}</span> })}
           </p>
         </CardContent>
         <CardFooter>
           <Button onClick={() => void onSignOut()} variant="outline">
-            Sign out
+            {t("signOut")}
           </Button>
         </CardFooter>
       </Card>
