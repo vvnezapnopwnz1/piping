@@ -97,8 +97,16 @@ export function ProcessMap({
     );
   };
   const stages = workspaceAreas.filter((area) => area.kind === "stage");
-  const services = workspaceAreas.filter((area) => area.kind === "service");
-  const project = workspaceAreas.filter((area) => area.kind === "project");
+  const ndeArea = workspaceAreas.find((area) => area.id === "nde");
+  const secondaryIds = ["tracking", "flange", "setup", "reports"];
+  const secondaryAreas = secondaryIds
+    .map((id) => workspaceAreas.find((area) => area.id === id))
+    .filter((area): area is WorkspaceArea => area !== undefined)
+    .map((area) => {
+      const open = visible.get(area.id);
+      return open ? { id: area.id, title: area.title, href: hrefFor(open) } : null;
+    })
+    .filter((item): item is { id: string; title: string; href: string } => item !== null);
 
   return (
     <section className={styles.map} aria-labelledby="map-title" data-help="process-map">
@@ -114,23 +122,32 @@ export function ProcessMap({
       </ol>
       <div className={styles.links} aria-hidden="true">
         {stages.map((area) => (
-          <span key={area.id} data-linked={services.some((service) => service.id === "nde" && service.serves?.includes(area.id)) || undefined} />
+          <span key={area.id} data-linked={Boolean(ndeArea?.serves?.includes(area.id)) || undefined} />
         ))}
       </div>
       <h2 className={`${styles.sectionLabel} ${styles.srOnlyNarrow}`}>Shared services</h2>
       <ul className={styles.services}>
-        {services.map((area) => (
-          <li key={area.id} data-area={area.id}>
-            {card(area)}
+        {ndeArea ? (
+          <li key={ndeArea.id} data-area={ndeArea.id}>
+            {card(ndeArea)}
           </li>
-        ))}
+        ) : null}
       </ul>
-      <h2 className={styles.sectionLabel}>Project</h2>
-      <ul className={styles.project}>
-        {project.map((area) => (
-          <li key={area.id}>{card(area)}</li>
-        ))}
-      </ul>
+      {secondaryAreas.length > 0 ? (
+        <nav
+          className="mt-4 flex flex-wrap items-center justify-center gap-x-2 text-xs text-muted-foreground"
+          aria-label="Secondary areas"
+        >
+          {secondaryAreas.map((item, index) => (
+            <span key={item.id} className="inline-flex items-center gap-2">
+              {index > 0 ? <span aria-hidden="true">·</span> : null}
+              <Link href={item.href} className="hover:text-foreground underline-offset-4 hover:underline">
+                {item.title}
+              </Link>
+            </span>
+          ))}
+        </nav>
+      ) : null}
     </section>
   );
 }

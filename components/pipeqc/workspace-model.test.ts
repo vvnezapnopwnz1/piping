@@ -53,9 +53,9 @@ test("a path belongs to its longest matching page", () => {
 test("the selected object travels only to pages that apply it", () => {
   const context = readWorkContext(new URLSearchParams("spool=rev-1&testPackId=tp-9"))
   const erection = all.find((area) => area.id === "erection")!
-  const rft = erection.pages.find((page) => page.href === "/erection/rft")!
+  const spools = erection.pages.find((page) => page.href === "/erection")!
   const flanges = erection.pages.find((page) => page.href === "/erection/flange-progress")!
-  assert.equal(hrefWithContext(rft, context), "/erection/rft?spool=rev-1")
+  assert.equal(hrefWithContext(spools, context), "/erection?spool=rev-1")
   assert.equal(hrefWithContext(flanges, context), "/erection/flange-progress")
   const testPacks = all.find((area) => area.id === "testpacks")!
   const explorer = testPacks.pages.find((page) => page.href === "/testpack/explorer")!
@@ -75,7 +75,7 @@ test("a return address must stay inside the app", () => {
 })
 
 test("Back names the page it returns to", () => {
-  assert.equal(returnLabel("/erection/rft?spool=1", all), "Erection · Ready for Test")
+  assert.equal(returnLabel("/erection/dashboard", all), "Erection · Dashboard")
   assert.equal(returnLabel("/testpack/explorer?testPackId=1", all), "Test Packs · Explorer")
   assert.equal(returnLabel("/reports", all), "Reports")
   assert.equal(returnLabel("/", all), "Overview")
@@ -85,7 +85,7 @@ test("module tabs keep registry order and group labels", () => {
   const erection = all.find((area) => area.id === "erection")!
   assert.deepEqual(
     groupTabs(erection.pages).map((group) => [group.label, group.pages.length]),
-    [[null, 4]],
+    [[null, 3]],
   )
 })
 
@@ -116,9 +116,10 @@ test("erection is a field-spool workbench beside the readiness list, not a tab p
   const erection = all.find((area) => area.id === "erection")!
   assert.deepEqual(
     erection.pages.map((page) => page.title),
-    ["Spools", "Ready for Test", "Dashboard", "Flange Progress"],
+    ["Spools", "Dashboard", "Flange Progress"],
   )
   assert.equal(locate("/erection/supported", all)?.page?.title, "Spools")
   assert.equal(locate("/erection/weld-progress", all)?.page?.title, "Spools")
-  assert.equal(locate("/erection/field-qc-release", all)?.page?.title, "Ready for Test")
+  assert.equal(locate("/erection/rft", all)?.page?.title, "Spools")
+  assert.equal(locate("/erection/field-qc-release", all)?.page?.title, "Spools")
 })

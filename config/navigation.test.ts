@@ -102,3 +102,11 @@ for (const service of workspaceAreas.filter((area) => area.kind === "service")) 
     assert.equal(stageIds.has(id), true, `${service.id} serves an unknown stage ${id}`)
   }
 }
+
+const erectionArea = workspaceAreas.find((area) => area.id === "erection")
+assert.deepEqual(
+  erectionArea?.children.map((page) => page.title),
+  ["Spools", "Dashboard", "Flange Progress"],
+  "Erection module tabs are Spools, Dashboard and Flange Progress",
+)
+

@@ -39,9 +39,6 @@ function RailItem({
       <Icon aria-hidden="true" className={styles.railIcon} />
       <span className={styles.railText}>
         <span className={styles.railLabel}>{area.title}</span>
-        <span className={styles.railSub}>
-          {area.kind === "stage" ? `Stage ${area.step}` : area.kind === "service" ? "Shared service" : "Project"}
-        </span>
       </span>
     </Link>
   )

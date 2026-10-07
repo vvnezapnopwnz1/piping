@@ -1,11 +1,8 @@
 "use client"
 
-import { ErectionReadinessScreen } from "@/modules/construction/ui/erection/erection-readiness-screen"
+import { ErectionWorkbenchRoute } from "@/modules/construction/ui/erection/erection-workbench"
 
+// Erection is one field-spool workbench; this address opens it on its operation.
 export default function RftPage() {
-  return (
-    <ErectionReadinessScreen
-      title="Ready For Test"
-    />
-  )
+  return <ErectionWorkbenchRoute />
 }

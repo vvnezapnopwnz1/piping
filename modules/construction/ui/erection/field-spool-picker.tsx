@@ -1,8 +1,20 @@
 "use client"
 
+import Link from "next/link"
+import { usePathname, useSearchParams } from "next/navigation"
+import { ArrowRight } from "lucide-react"
+
+import { canVisit } from "@/components/pipeqc/navigation-model"
+import { linkFrom } from "@/components/pipeqc/workspace-model"
 import { StatusBadge } from "@/components/ui/status-badge"
 import type { DataColumn } from "@/components/ui/data-table"
-import { erectionStageDisplay } from "../../application/describe-erection-readiness"
+import { useOptionalAccess } from "@/modules/access/ui/access-context"
+import {
+  describeRftShortfall,
+  erectionStageDisplay,
+  listRftShortfall,
+  type RftShortfallKind,
+} from "../../application/describe-erection-readiness"
 import type { ErectionReadiness } from "../../infrastructure/supabase-erection-repository"
 import { RecordSelectTable } from "@/components/ui/data-table/record-select-table"
 
@@ -18,6 +30,52 @@ interface FieldSpoolPickerProps {
 
 /** Sorts on how far along the work is, so "3/12" and "3/400" do not land next to each other. */
 const ratio = (done: number, total: number) => (total === 0 ? 1 : done / total)
+
+const SHORTFALL_HREF: Record<RftShortfallKind, string> = {
+  welded_bolted: "/erection/welded-bolted",
+  supported: "/erection/supported",
+  nde: "/nde",
+  pwht: "/fabrication/qc-release",
+}
+
+function ReadyForTestCell({ row }: { row: ErectionReadiness }) {
+  const pathname = usePathname()
+  const params = useSearchParams()
+  const can = useOptionalAccess()?.can
+  const query = params.toString()
+  const here = query ? `${pathname}?${query}` : pathname
+
+  if (row.isRft) {
+    return (
+      <span>
+        Ready
+        {row.rftOn ? <span className="ml-2 font-mono text-xs">{row.rftOn.slice(0, 10)}</span> : null}
+      </span>
+    )
+  }
+
+  const items = listRftShortfall(row)
+  if (!items.length) {
+    return <span className="text-muted-foreground text-sm">{describeRftShortfall(row)}</span>
+  }
+
+  const first = items[0]
+  const path = SHORTFALL_HREF[first.kind]
+
+  return can && canVisit(path, can) ? (
+    <Link
+      href={linkFrom(`${path}?spool=${encodeURIComponent(row.spoolRevisionId)}`, here)}
+      data-help="rft-blocker"
+      className="inline-flex items-center gap-1 underline decoration-[#bdb19c] underline-offset-2 hover:decoration-current text-sm"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {first.label}
+      <ArrowRight aria-hidden="true" className="size-3.5" />
+    </Link>
+  ) : (
+    <span className="text-muted-foreground text-sm">{first.label}</span>
+  )
+}
 
 /**
  * The erection counterpart of `fabrication/spool-picker.tsx`. It picks from the readiness rows the
@@ -95,10 +153,11 @@ const FIELD_SPOOL_COLUMNS: ReadonlyArray<DataColumn<ErectionReadiness>> = [
   { id: "toSiteOn", header: "To site", value: (row) => row.toSiteOn, filter: "date" },
   {
     id: "isRft",
-    header: "RFT",
+    header: "Ready for Test",
     value: (row) => row.isRft,
     filter: "boolean",
-    cell: (row) => (row.isRft ? <StatusBadge status="ready" label="Ready" /> : null),
+    className: "min-w-44",
+    cell: (row) => <ReadyForTestCell row={row} />,
   },
 ]
 
