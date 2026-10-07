@@ -10,6 +10,15 @@ export const I18N_DONE_PATHS: readonly string[] = [
   "components/ui",
   "config",
   "contexts",
+  "modules/construction/ui/fabrication",
+  "modules/construction/ui/gate-reason.ts",
+  "modules/construction/ui/material-trace-picker.tsx",
+  "modules/construction/ui/panel-mode.ts",
+  "modules/construction/ui/spool-drawer.tsx",
+  "modules/construction/ui/timeline-lines.ts",
+  "modules/construction/ui/use-material-check-workspace.ts",
+  "modules/construction/ui/weld-columns.tsx",
+  "app/fabrication",
 ]
 
-export const RU_COMPLETE_NAMESPACES: readonly Namespace[] = ["common", "codes", "shell", "nav", "help", "auth"]
+export const RU_COMPLETE_NAMESPACES: readonly Namespace[] = ["common", "codes", "shell", "nav", "help", "auth", "fabrication"]

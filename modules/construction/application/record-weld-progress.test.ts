@@ -73,7 +73,7 @@ const blocked = describeWeldProgressGate({
   phase: "fabrication",
 })
 assert.equal(blocked.allowed, false)
-assert.match(blocked.reason ?? "", /Root and Cap/)
+assert.deepEqual(blocked.reason, { code: "weld_issues", issues: [{ field: "points", code: "root_cap_total", values: { total: 80 } }] })
 
 assert.deepEqual(
   toWeldProgressPayload({

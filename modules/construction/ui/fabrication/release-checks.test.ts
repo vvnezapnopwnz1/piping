@@ -37,5 +37,6 @@ test("checklist agrees with the existing domain gate", () => {
   for (const r of cases) {
     assert.equal(releaseChecks(r).every((c) => c.complete), evaluateReleaseEligibility(r).isReleasable)
   }
-  assert.equal(releaseChecks(cases[1]).find((c) => c.id === "material")?.detail, "No bill of materials")
+  assert.deepEqual(releaseChecks(cases[1]).find((c) => c.id === "material")?.detail, { key: "noBom" })
+  assert.deepEqual(releaseChecks({ ...ready, lineChecked: 1 }).find((c) => c.id === "material")?.detail, { key: "linesTraced", values: { checked: 1, total: 2 } })
 })

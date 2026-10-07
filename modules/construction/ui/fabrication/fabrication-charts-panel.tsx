@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from "next-intl"
 import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, XAxis, YAxis } from "recharts"
 
 import { formatWeekLabel } from "@/i18n/format"
-import { codeLabel } from "@/i18n/translator"
+import { codeLabel, type CodesTranslator } from "@/i18n/translator"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
@@ -17,18 +17,21 @@ import {
 } from "../../domain/fabrication-charts"
 import type { FabricationChartData } from "../../infrastructure/supabase-construction-repository"
 
-const curveConfig = {
-  startFab: { label: "Start Fab", color: "var(--info-fg)" },
-  fabricated: { label: "Fabricated", color: "var(--primary)" },
-  qcRelease: { label: "QC Release", color: "var(--warning-fg)" },
-  laydown: { label: "Laydown", color: "var(--success-fg)" },
-} satisfies ChartConfig
-
-const areaConfig = {
-  complete: { label: "Complete", color: "var(--success-fg)" },
-  inProgress: { label: "In progress", color: "var(--info-fg)" },
-  notStarted: { label: "Not started", color: "var(--neutral-fg)" },
-} satisfies ChartConfig
+/** Series labels in the current language: shop stages and progress words from `codes`. */
+function chartConfigs(tc: CodesTranslator) {
+  const curveConfig = {
+    startFab: { label: tc("fabricationStage.start_fab"), color: "var(--info-fg)" },
+    fabricated: { label: tc("fabricationStage.fabricated"), color: "var(--primary)" },
+    qcRelease: { label: tc("fabricationStage.qc_release"), color: "var(--warning-fg)" },
+    laydown: { label: tc("fabricationStage.laydown"), color: "var(--success-fg)" },
+  } satisfies ChartConfig
+  const areaConfig = {
+    complete: { label: tc("status.complete"), color: "var(--success-fg)" },
+    inProgress: { label: tc("status.in_progress"), color: "var(--info-fg)" },
+    notStarted: { label: tc("status.not_started"), color: "var(--neutral-fg)" },
+  } satisfies ChartConfig
+  return { curveConfig, areaConfig }
+}
 
 const stageColors: Record<string, string> = {
   not_started: "var(--neutral-fg)",
@@ -43,10 +46,11 @@ const stageColors: Record<string, string> = {
 }
 
 function EmptyChart({ detail }: { detail: string }) {
+  const t = useTranslations("fabrication.charts")
   return (
     <div className="text-muted-foreground flex h-72 items-center justify-center rounded-md border border-dashed px-6 text-center text-sm">
       <div>
-        <p className="font-medium">No fabrication progress recorded yet.</p>
+        <p className="font-medium">{t("noFabricationProgressRecordedYet")}</p>
         <p className="mt-1 text-xs">{detail}</p>
       </div>
     </div>
@@ -60,8 +64,10 @@ export function FabricationChartsPanel({
   data: FabricationChartData | null
   loading: boolean
 }) {
+  const t = useTranslations("fabrication.charts")
   const tc = useTranslations("codes")
   const locale = useLocale()
+  const { curveConfig, areaConfig } = chartConfigs(tc)
   if (loading || !data) {
     return <Skeleton className="h-[38rem] w-full" />
   }
@@ -74,12 +80,12 @@ export function FabricationChartsPanel({
   const hasAreas = areas.some((area) => area.complete + area.inProgress + area.notStarted > 0)
 
   return (
-    <section className="space-y-4" aria-label="Fabrication progress charts">
+    <section className="space-y-4" aria-label={t("fabricationProgressCharts")}>
       <Card>
         <CardHeader>
-          <CardTitle>Cumulative fabrication progress</CardTitle>
+          <CardTitle>{t("cumulativeFabricationProgress")}</CardTitle>
           <CardDescription>
-            Actual count of spools that reached each key milestone by the end of the ISO week.
+            {t("actualCountOfSpoolsThat")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -98,7 +104,7 @@ export function FabricationChartsPanel({
               </LineChart>
             </ChartContainer>
           ) : (
-            <EmptyChart detail="Record fabrication activity to see the actual S-curve." />
+            <EmptyChart detail={t("recordFabricationActivityToSee")} />
           )}
         </CardContent>
       </Card>
@@ -106,8 +112,8 @@ export function FabricationChartsPanel({
       <div className="grid gap-4 xl:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Stage distribution</CardTitle>
-            <CardDescription>Current spool position, in fabrication pipeline order.</CardDescription>
+            <CardTitle>{t("stageDistribution")}</CardTitle>
+            <CardDescription>{t("currentSpoolPositionInFabrication")}</CardDescription>
           </CardHeader>
           <CardContent>
             {hasStages ? (
@@ -125,15 +131,15 @@ export function FabricationChartsPanel({
                 </BarChart>
               </ChartContainer>
             ) : (
-              <EmptyChart detail="The pipeline distribution appears after the first spool is recorded." />
+              <EmptyChart detail={t("thePipelineDistributionAppearsAfter")} />
             )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Progress by PDS area</CardTitle>
-            <CardDescription>Completed, active and untouched spools by responsible area.</CardDescription>
+            <CardTitle>{t("progressByPdsArea")}</CardTitle>
+            <CardDescription>{t("completedActiveAndUntouchedSpools")}</CardDescription>
           </CardHeader>
           <CardContent>
             {hasAreas ? (
@@ -150,7 +156,7 @@ export function FabricationChartsPanel({
                 </BarChart>
               </ChartContainer>
             ) : (
-              <EmptyChart detail="Area progress appears after a spool is added to an active PDS area." />
+              <EmptyChart detail={t("areaProgressAppearsAfterA")} />
             )}
           </CardContent>
         </Card>

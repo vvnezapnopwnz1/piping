@@ -4,7 +4,6 @@ export type FabricationOperationId = "material" | "welds" | "release" | "paint" 
 
 export interface FabricationOperation {
   id: FabricationOperationId
-  title: string
   /** The route that records this operation; it opens the workbench on it. */
   href: string
   /** The spool's stages this operation records, in timeline order. */
@@ -17,13 +16,13 @@ export interface FabricationOperation {
  * so the workbench's stepper is the spool timeline itself, not a second numbering of it.
  */
 export const FABRICATION_OPERATIONS: readonly FabricationOperation[] = [
-  { id: "material", title: "Material", href: "/fabrication/material-check", stages: ["start_fab", "material_check"] },
+  { id: "material", href: "/fabrication/material-check", stages: ["start_fab", "material_check"] },
   // Fabricated is never recorded by hand: it is derived once the shop welds are complete.
-  { id: "welds", title: "Shop welds", href: "/fabrication/weld-progress", stages: ["fabricated"] },
+  { id: "welds", href: "/fabrication/weld-progress", stages: ["fabricated"] },
   // QC Release carries the NDE and PWHT gates; PWHT results are entered here.
-  { id: "release", title: "QC release", href: "/fabrication/qc-release", stages: ["qc_release"] },
-  { id: "paint", title: "Paint", href: "/fabrication/paint", stages: ["sent_to_paint", "painted", "final_qc"] },
-  { id: "laydown", title: "Laydown", href: "/fabrication/laydown", stages: ["laydown"] },
+  { id: "release", href: "/fabrication/qc-release", stages: ["qc_release"] },
+  { id: "paint", href: "/fabrication/paint", stages: ["sent_to_paint", "painted", "final_qc"] },
+  { id: "laydown", href: "/fabrication/laydown", stages: ["laydown"] },
 ]
 
 const isOperation = (value: string | null): value is FabricationOperationId =>

@@ -27,19 +27,19 @@ const pendingNde = evaluateReleaseEligibility({ ...ready, ndePending: 2 })
 assert.equal(pendingNde.isFabricated, true)
 assert.equal(pendingNde.isReleasable, false)
 assert.equal(pendingNde.blockers.length, 1)
-assert.match(pendingNde.blockers[0], /2 NDE/)
+assert.deepEqual(pendingNde.blockers[0], { code: "nde_open", values: { count: 2 } })
 
 const pendingPwht = evaluateReleaseEligibility({ ...ready, pwhtPending: 1 })
 assert.equal(pendingPwht.isReleasable, false)
-assert.match(pendingPwht.blockers[0], /PWHT/)
+assert.deepEqual(pendingPwht.blockers[0], { code: "pwht_open", values: { count: 1 } })
 
 const partialMaterial = evaluateReleaseEligibility({ ...ready, lineChecked: 1 })
 assert.equal(partialMaterial.isFabricated, false)
-assert.match(partialMaterial.blockers[0], /1 of 2/)
+assert.deepEqual(partialMaterial.blockers[0], { code: "material_incomplete", values: { checked: 1, total: 2 } })
 
 const partialWelds = evaluateReleaseEligibility({ ...ready, weldComplete: 1 })
 assert.equal(partialWelds.isFabricated, false)
-assert.match(partialWelds.blockers[0], /1 of 3/)
+assert.deepEqual(partialWelds.blockers[0], { code: "welding_incomplete", values: { complete: 1, total: 3 } })
 
 const partialSupports = evaluateReleaseEligibility({ ...ready, supportRecorded: 0 })
 assert.equal(partialSupports.isFabricated, false)
@@ -53,7 +53,7 @@ assert.equal(
 // A superseded revision blocks everything, whatever the counts say.
 const superseded = evaluateReleaseEligibility({ ...ready, revisionStatus: "superseded" })
 assert.equal(superseded.isReleasable, false)
-assert.match(superseded.blockers[0], /revision/)
+assert.deepEqual(superseded.blockers[0], { code: "revision_not_accepted", values: { status: "superseded" } })
 
 // Every blocker is reported, not just the first.
 assert.equal(

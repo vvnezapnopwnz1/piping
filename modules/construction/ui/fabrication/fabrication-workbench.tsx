@@ -63,6 +63,8 @@ export function FabricationWorkbench({
   projectId: string
   operation: FabricationOperationId | null
 }) {
+  const t = useTranslations("fabrication.workbench")
+  const tf = useTranslations("fabrication")
   const tc = useTranslations("codes")
   const [spool, setSpool] = useContextSpool(projectId)
   const [spoolParam] = useWorkContextParam("spool")
@@ -102,7 +104,7 @@ export function FabricationWorkbench({
 
   return (
     <div className="space-y-4">
-      <h1 className="sr-only">Fabrication spools</h1>
+      <h1 className="sr-only">{t("fabricationSpools")}</h1>
       <div className={styles.split} data-open={spoolParam ? "" : undefined}>
         <div className={styles.listPane}>
           <SpoolPicker
@@ -127,19 +129,19 @@ export function FabricationWorkbench({
             status={
               <span className={styles.stageBadge}>
                 {spool.dates.laydown
-                  ? "Fabrication complete"
-                  : `Next: ${FABRICATION_OPERATIONS.find((op) => op.id === nextOperation(spool.dates))?.title ?? "Material"}`}
+                  ? t("fabricationComplete")
+                  : t("nextOperation", { operation: tf(`operation.${nextOperation(spool.dates)}`) })}
               </span>
             }
             onClose={close}
           >
             <SpoolTimeline
-              label={`Shop stages of spool ${spool.spoolNumber}`}
+              label={t("shopStagesOf", { spool: spool.spoolNumber })}
               active={current.id}
               onOpen={openStep}
               steps={FABRICATION_OPERATIONS.map((candidate) => ({
                 id: candidate.id,
-                title: candidate.title,
+                title: tf(`operation.${candidate.id}`),
                 state: operationState(candidate, spool.dates),
                 locked: !canOpen(candidate.href),
                 lines: candidate.stages.map((stage) => ({
@@ -165,7 +167,7 @@ export function FabricationWorkbench({
                 />
               ) : (
                 <p className={styles.notice}>
-                  Recording {current.title.toLowerCase()} is not part of your project access.
+                  {t("recordingNotInAccess", { operation: tf(`operation.${current.id}`).toLowerCase() })}
                 </p>
               )}
             </SpoolTimeline>
@@ -181,11 +183,12 @@ export function FabricationWorkbench({
  * is open, so each existing link and its access rule keep working unchanged.
  */
 export function FabricationWorkbenchRoute() {
+  const t = useTranslations("fabrication.workbench")
   const projectId = useOptionalAccess()?.access.projectId ?? null
   const pathname = usePathname()
   const op = useSearchParams().get("op")
   if (!projectId) {
-    return <p className="text-muted-foreground text-sm">Select a project to work on fabrication.</p>
+    return <p className="text-muted-foreground text-sm">{t("selectAProjectToWork")}</p>
   }
   return <FabricationWorkbench projectId={projectId} operation={operationForPath(pathname, op)} />
 }

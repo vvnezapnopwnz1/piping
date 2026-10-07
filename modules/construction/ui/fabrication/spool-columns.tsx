@@ -1,5 +1,7 @@
 import { StatusBadge } from "@/components/ui/status-badge"
 import type { DataColumn } from "@/components/ui/data-table"
+import type { useTranslations } from "next-intl"
+
 import type { CodesTranslator } from "@/i18n/translator"
 import type { SpoolStatus } from "../../infrastructure/supabase-construction-repository"
 
@@ -12,11 +14,14 @@ const ratio = (done: number, total: number) => (total === 0 ? 1 : done / total)
  * number and the stage and threw the rest away, which is why "which spools are waiting on NDE"
  * was a question nobody could answer from this screen.
  */
-export function fabricationSpoolColumns(tc: CodesTranslator): ReadonlyArray<DataColumn<SpoolStatus>> {
+/** Headers come from `fabrication.columns`, stage labels from `codes`. */
+export type SpoolColumnsTranslator = ReturnType<typeof useTranslations<"fabrication.columns">>
+
+export function fabricationSpoolColumns(t: SpoolColumnsTranslator, tc: CodesTranslator): ReadonlyArray<DataColumn<SpoolStatus>> {
   return [
   {
     id: "spoolNumber",
-    header: "Spool",
+    header: t("spool"),
     value: (spool) => spool.spoolNumber,
     searchable: true,
     filter: "text",
@@ -32,7 +37,7 @@ export function fabricationSpoolColumns(tc: CodesTranslator): ReadonlyArray<Data
   },
   {
     id: "isoNumber",
-    header: "ISO",
+    header: t("iso"),
     value: (spool) => spool.isoNumber,
     searchable: true,
     filter: "text",
@@ -40,7 +45,7 @@ export function fabricationSpoolColumns(tc: CodesTranslator): ReadonlyArray<Data
   },
   {
     id: "currentStage",
-    header: "Stage",
+    header: t("stage"),
     value: (spool) => tc(`fabricationStage.${spool.currentStage ?? "not_started"}`),
     filter: "select",
     cell: (spool) => (
@@ -52,34 +57,34 @@ export function fabricationSpoolColumns(tc: CodesTranslator): ReadonlyArray<Data
   },
   {
     id: "material",
-    header: "Material",
+    header: t("material"),
     numeric: true,
     value: (spool) => ratio(spool.lineChecked, spool.lineTotal),
     cell: (spool) => `${spool.lineChecked}/${spool.lineTotal}`,
   },
   {
     id: "welds",
-    header: "Welds",
+    header: t("welds"),
     numeric: true,
     value: (spool) => ratio(spool.weldComplete, spool.weldTotal),
     cell: (spool) => `${spool.weldComplete}/${spool.weldTotal}`,
   },
   {
     id: "supports",
-    header: "Supports",
+    header: t("supports"),
     numeric: true,
     value: (spool) => ratio(spool.supportRecorded, spool.supportTotal),
     cell: (spool) => `${spool.supportRecorded}/${spool.supportTotal}`,
   },
-  { id: "ndePending", header: "NDE open", numeric: true, value: (spool) => spool.ndePending, filter: "number" },
-  { id: "pwhtPending", header: "PWHT open", numeric: true, value: (spool) => spool.pwhtPending, filter: "number" },
+  { id: "ndePending", header: t("ndeOpen"), numeric: true, value: (spool) => spool.ndePending, filter: "number" },
+  { id: "pwhtPending", header: t("pwhtOpen"), numeric: true, value: (spool) => spool.pwhtPending, filter: "number" },
   {
     id: "isReleasable",
-    header: "Releasable",
+    header: t("releasable"),
     value: (spool) => spool.isReleasable,
     filter: "boolean",
     cell: (spool) =>
-      spool.isReleasable ? <StatusBadge status="ready" label="Releasable" /> : null,
+      spool.isReleasable ? <StatusBadge status="ready" label={t("releasable")} /> : null,
   },
   ]
 }

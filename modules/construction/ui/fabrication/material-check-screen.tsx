@@ -1,11 +1,13 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { useCallback, useMemo, useRef, useState, type ReactNode } from "react"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { ArrowRight, RotateCw } from "lucide-react"
 
+import { errorDetail } from "@/i18n/format"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -39,6 +41,7 @@ import { useContextSpool, type EmbeddedSpool } from "./use-context-spool"
 import { SpoolStageTimeline } from "./spool-stage-timeline"
 import { panelMode } from "../panel-mode"
 import styles from "../spool-workbench.module.css"
+import { useGateReason } from "../gate-reason"
 
 export function MaterialCheckScreen({
   projectId,
@@ -47,6 +50,8 @@ export function MaterialCheckScreen({
   projectId: string
   embedded?: EmbeddedSpool
 }) {
+  const reasonText = useGateReason()
+  const t = useTranslations("fabrication.materialCheck")
   const [ownSpool, setOwnSpool] = useContextSpool(projectId, { enabled: !embedded })
   const spool = embedded ? embedded.spool : ownSpool
   const setSpool = embedded ? embedded.onSpoolChange : setOwnSpool
@@ -141,11 +146,11 @@ export function MaterialCheckScreen({
       try {
         await reloadAll()
       } catch {
-        toast.error("Recorded; status could not be refreshed. Retry refresh.")
+        toast.error(t("recordedStatusCouldNotBe"))
       }
-      toast.success("Start Fab recorded.")
+      toast.success(t("startFabRecorded"))
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Start Fab could not be recorded.")
+      toast.error(t("startFabCouldNotBe"), { description: errorDetail(error) })
     } finally {
       pendingRef.current = false
       setPendingAction(null)
@@ -168,11 +173,11 @@ export function MaterialCheckScreen({
       try {
         await reloadAll()
       } catch {
-        toast.error("Recorded; status could not be refreshed. Retry refresh.")
+        toast.error(t("recordedStatusCouldNotBe"))
       }
-      toast.success(`QC-13 ${form.formNumber} issued.`)
+      toast.success(t("qc13Issued", { form: form.formNumber }))
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "The QC-13 could not be issued.")
+      toast.error(t("theQc13CouldNot"), { description: errorDetail(error) })
     } finally {
       pendingRef.current = false
       setPendingAction(null)
@@ -206,11 +211,11 @@ export function MaterialCheckScreen({
       try {
         await reloadAll()
       } catch {
-        toast.error("Recorded; status could not be refreshed. Retry refresh.")
+        toast.error(t("recordedStatusCouldNotBe"))
       }
-      toast.success("Material traces recorded.")
+      toast.success(t("materialTracesRecorded"))
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "The traces could not be recorded.")
+      toast.error(t("theTracesCouldNotBe"), { description: errorDetail(error) })
     } finally {
       pendingRef.current = false
       setPendingAction(null)
@@ -222,20 +227,20 @@ export function MaterialCheckScreen({
     if (!spool.dates.start_fab) {
       nextActionNode = (
         <span className="text-xs text-amber-800 dark:text-amber-300">
-          Next step: Record Start Fab before recording material traces.
+          {t("nextStepRecordStartFab")}
         </span>
       )
     } else if (!isCheckComplete) {
       nextActionNode = (
         <span className="text-xs text-muted-foreground">
-          Next step: Select registered traces below and Record traces.
+          {t("nextStepSelectRegisteredTraces")}
         </span>
       )
     } else {
       nextActionNode = (
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-            Material check complete: all lines traced.
+            {t("materialCheckCompleteAllLines")}
           </span>
           {embedded ? (
             embedded.canOpenOperation?.("welds") ? (
@@ -245,14 +250,14 @@ export function MaterialCheckScreen({
                 variant="outline"
                 onClick={() => embedded.onOpenOperation?.("welds")}
               >
-                Open Shop welds <ArrowRight className="h-3 w-3 ml-1 inline" aria-hidden="true" />
+                {t("openShopWelds")} <ArrowRight className="h-3 w-3 ml-1 inline" aria-hidden="true" />
               </Button>
             ) : (
-              <span className="text-xs text-muted-foreground">Shop welds not in your access</span>
+              <span className="text-xs text-muted-foreground">{t("shopWeldsNotInYour")}</span>
             )
           ) : weldsHref ? (
             <Link href={weldsHref} className={styles.checkActionLink}>
-              Open Shop welds <ArrowRight className="h-3 w-3 ml-1 inline" aria-hidden="true" />
+              {t("openShopWelds")} <ArrowRight className="h-3 w-3 ml-1 inline" aria-hidden="true" />
             </Link>
           ) : null}
         </div>
@@ -282,13 +287,13 @@ export function MaterialCheckScreen({
         <div className="space-y-4">
           {mode === "done" ? (
             <p className="text-xs text-muted-foreground">
-              Start Fab {spool.dates.start_fab} · Material check {spool.dates.material_check} · QC-13 {recordedQc13Form?.formNumber ?? "—"}
+              {t("doneSummary", { startFab: spool.dates.start_fab ?? "—", materialCheck: spool.dates.material_check ?? "—", qc13: recordedQc13Form?.formNumber ?? "—" })}
             </p>
           ) : (
             <Card>
               <CardHeader>
                 <CardTitle>
-                  {embedded ? "Start Fab and QC-13" : `${spool.isoNumber} / ${spool.spoolNumber} (${spool.revisionNumber})`}
+                  {embedded ? t("startFabAndQc13") : `${spool.isoNumber} / ${spool.spoolNumber} (${spool.revisionNumber})`}
                 </CardTitle>
               </CardHeader>
             <CardContent className="space-y-3">
@@ -297,24 +302,24 @@ export function MaterialCheckScreen({
               {/* Compact summary at top */}
               <div className={styles.opSummary}>
                 <div className={styles.opSummaryItem}>
-                  <span className={styles.opSummaryLabel}>Start Fab:</span>
+                  <span className={styles.opSummaryLabel}>{t("startFab")}</span>
                   <span className={styles.opSummaryValue}>
-                    {spool.dates.start_fab ? spool.dates.start_fab : "Not recorded"}
+                    {spool.dates.start_fab ? spool.dates.start_fab : t("notRecorded")}
                   </span>
                 </div>
                 <div className={styles.opSummaryItem}>
-                  <span className={styles.opSummaryLabel}>Traced lines:</span>
+                  <span className={styles.opSummaryLabel}>{t("tracedLines")}</span>
                   <span className={styles.opSummaryValue}>
                     {accepted.length} of {lines.length}
                   </span>
                 </div>
                 <div className={styles.opSummaryItem}>
-                  <span className={styles.opSummaryLabel}>QC-13 form:</span>
+                  <span className={styles.opSummaryLabel}>{t("qc13Form")}</span>
                   <span className={styles.opSummaryValue}>
-                    {recordedQc13Form?.formNumber ?? "None"}
+                    {recordedQc13Form?.formNumber ?? t("none")}
                     {hasDifferentLatestQc13 && (
                       <span className="block text-xs font-normal text-muted-foreground">
-                        Latest: {latestQc13Form?.formNumber}
+                        {t("latestQc13", { form: latestQc13Form?.formNumber ?? "" })}
                       </span>
                     )}
                   </span>
@@ -325,7 +330,7 @@ export function MaterialCheckScreen({
 
               <div className="flex flex-wrap items-end gap-2 pt-1">
                 <label className="text-sm font-medium">
-                  Recording date
+                  {t("recordingDate")}
                   <Input
                     ref={recordingDateInputRef}
                     type="date"
@@ -346,7 +351,7 @@ export function MaterialCheckScreen({
                   }
                   loading={pendingAction === "start-fab"}
                 >
-                  Record Start Fab
+                  {t("recordStartFab")}
                 </Button>
                 <Button
                   type="button"
@@ -359,7 +364,7 @@ export function MaterialCheckScreen({
                   }
                   loading={pendingAction === "issue-qc13"}
                 >
-                  Issue QC-13
+                  {t("issueQc13")}
                 </Button>
               </div>
             </CardContent>
@@ -368,21 +373,21 @@ export function MaterialCheckScreen({
 
           <Card>
             <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
-              <CardTitle>Material traceability</CardTitle>
+              <CardTitle>{t("materialTraceability")}</CardTitle>
               {loadState === "loading" ? (
                 <Badge variant="outline" className="border-amber-400 bg-amber-50 text-amber-900">
-                  Loading bill of materials…
+                  {t("loadingBillOfMaterials")}
                 </Badge>
               ) : loadState === "error" ? (
                 <div className="flex items-center gap-2">
-                  <Badge variant="destructive">Failed to load BOM</Badge>
+                  <Badge variant="destructive">{t("failedToLoadBom")}</Badge>
                   <Button
                     type="button"
                     size="sm"
                     variant="outline"
                     onClick={() => void reloadAll()}
                   >
-                    <RotateCw className="h-3 w-3 mr-1" aria-hidden="true" /> Retry
+                    <RotateCw className="h-3 w-3 mr-1" aria-hidden="true" /> {t("retry")}
                   </Button>
                 </div>
               ) : null}
@@ -391,11 +396,11 @@ export function MaterialCheckScreen({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Ident code</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Qty</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Heat / trace number</TableHead>
+                    <TableHead>{t("identCode")}</TableHead>
+                    <TableHead>{t("description")}</TableHead>
+                    <TableHead>{t("qty")}</TableHead>
+                    <TableHead>{t("status")}</TableHead>
+                    <TableHead>{t("heatTraceNumber")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -403,10 +408,10 @@ export function MaterialCheckScreen({
                     const acceptedItem = acceptedMap.get(line.spoolRevisionMaterialId)
                     const draft = drafts[line.spoolRevisionMaterialId]
                     const traceState = draft
-                      ? "Edited, not recorded"
+                      ? t("editedNotRecorded")
                       : acceptedItem
-                        ? "Recorded"
-                        : "Not recorded"
+                        ? t("recorded")
+                        : t("notRecorded")
 
                     let statusClass = "text-muted-foreground"
                     if (traceState === "Recorded") {
@@ -441,14 +446,14 @@ export function MaterialCheckScreen({
                             <div>
                               <div className="flex items-center justify-between">
                                 <span className="font-medium text-sm">
-                                  {acceptedItem.traceNumber ?? "Evidence source unavailable"}
+                                  {acceptedItem.traceNumber ?? t("evidenceSourceUnavailable")}
                                 </span>
                                 {pmlHref ? (
                                   <Link
                                     href={pmlHref}
                                     className="shrink-0 text-[10px] uppercase tracking-wider text-primary hover:underline"
                                   >
-                                    Open PML
+                                    {t("openPml")}
                                   </Link>
                                 ) : null}
                               </div>
@@ -478,7 +483,7 @@ export function MaterialCheckScreen({
               {loadState === "error" ? (
                 <div className="flex items-center gap-2 text-destructive text-sm">
                   <p>
-                    {workspaceError ?? "The bill of materials could not be loaded, so nothing is shown above."}
+                    {workspaceError ?? t("theBillOfMaterialsCould")}
                   </p>
                   <Button
                     type="button"
@@ -486,7 +491,7 @@ export function MaterialCheckScreen({
                     variant="outline"
                     onClick={() => void reloadAll()}
                   >
-                    <RotateCw className="h-3 w-3 mr-1" aria-hidden="true" /> Retry
+                    <RotateCw className="h-3 w-3 mr-1" aria-hidden="true" /> {t("retry")}
                   </Button>
                 </div>
               ) : null}
@@ -503,10 +508,10 @@ export function MaterialCheckScreen({
                     }
                     loading={pendingAction === "record-traces"}
                   >
-                    Record traces
+                    {t("recordTraces")}
                   </Button>
                   {gate.reason && !gate.allowed ? (
-                    <span className="text-xs text-muted-foreground">{gate.reason}</span>
+                    <span className="text-xs text-muted-foreground">{gate.reason ? reasonText(gate.reason) : null}</span>
                   ) : null}
                 </div>
               )}
@@ -514,7 +519,7 @@ export function MaterialCheckScreen({
           </Card>
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">Select a spool to record material traces.</p>
+        <p className="text-sm text-muted-foreground">{t("selectASpoolToRecord")}</p>
       )}
     </div>
   )

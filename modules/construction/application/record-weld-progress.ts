@@ -3,7 +3,7 @@ import {
   type PointAssignment,
   type WeldProgressInput,
 } from "../domain/weld-progress"
-import type { Gate } from "./record-material-check"
+import type { FabricationGate } from "./record-material-check"
 
 export interface WeldProgressDates {
   cuttingOn: string | null
@@ -38,11 +38,11 @@ export interface WeldProgressPayload {
   dates: Record<string, string>
 }
 
-export function describeWeldProgressGate(input: WeldProgressInput): Gate {
+export function describeWeldProgressGate(input: WeldProgressInput): FabricationGate {
   const issues = validateWeldProgress(input)
   return issues.length === 0
     ? { allowed: true, reason: null }
-    : { allowed: false, reason: issues.map((issue) => issue.message).join(" ") }
+    : { allowed: false, reason: { code: "weld_issues", issues } }
 }
 
 const DATE_KEYS: readonly (readonly [keyof WeldProgressDates, string])[] = [

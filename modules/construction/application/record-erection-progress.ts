@@ -5,8 +5,14 @@ import {
 } from "../domain/erection-stage"
 import type { Gate } from "./record-material-check"
 
-// Interim: gate reasons are still English sentences; Task 5 of the i18n plan turns them into codes.
-const STAGE_NAMES: Record<ErectionStage, string> = { to_site: "To Site", erected: "Erected", welded_bolted: "Welded / Bolted", supported: "Supported", rft: "Ready for Test" }
+/** Why an erection stage cannot be recorded now (erection.gate in the messages). */
+export type ErectionGateReason =
+  | { code: "derived"; stage: ErectionStage }
+  | { code: "no_access" }
+  | { code: "date_required" }
+  | { code: "record_first"; missing: ErectionStage; stage: ErectionStage }
+
+export type ErectionGate = Gate<ErectionGateReason>
 
 export type RecordableErectionStage = Exclude<ErectionStage, "rft">
 
@@ -58,31 +64,22 @@ export function describeErectionStageGate(input: {
   evidence: ErectionStageEvidence
   occurredOn: string
   canRecord: boolean
-}): Gate {
+}): ErectionGate {
   const { stage, evidence, occurredOn, canRecord } = input
 
   if (!isRecordableStage(stage)) {
-    return {
-      allowed: false,
-      reason: `${STAGE_NAMES[stage]} is derived from field weld, support, NDE and PWHT evidence and cannot be recorded by hand.`,
-    }
+    return { allowed: false, reason: { code: "derived", stage } }
   }
   if (!canRecord) {
-    return {
-      allowed: false,
-      reason: "Recording erection progress needs the erection.progress.record capability.",
-    }
+    return { allowed: false, reason: { code: "no_access" } }
   }
   if (occurredOn.trim() === "") {
-    return { allowed: false, reason: "Enter the date this step happened." }
+    return { allowed: false, reason: { code: "date_required" } }
   }
 
   const missing = firstMissingPredecessor(stage, evidence)
   if (missing) {
-    return {
-      allowed: false,
-      reason: `Record ${STAGE_NAMES[missing]} before ${STAGE_NAMES[stage]}.`,
-    }
+    return { allowed: false, reason: { code: "record_first", missing, stage } }
   }
 
   return { allowed: true, reason: null }

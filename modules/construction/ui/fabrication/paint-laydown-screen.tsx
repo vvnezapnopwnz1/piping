@@ -1,11 +1,13 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { RotateCw } from "lucide-react"
 
+import { errorDetail } from "@/i18n/format"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -31,6 +33,7 @@ import { useContextSpool, type EmbeddedSpool } from "./use-context-spool"
 import { SpoolStageTimeline } from "./spool-stage-timeline"
 import { panelMode } from "../panel-mode"
 import styles from "../spool-workbench.module.css"
+import { useGateReason } from "../gate-reason"
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -43,6 +46,8 @@ export function PaintLaydownScreen({
   mode: "paint" | "laydown"
   embedded?: EmbeddedSpool
 }) {
+  const reasonText = useGateReason()
+  const t = useTranslations("fabrication.paintLaydown")
   const [ownSpool, setOwnSpool] = useContextSpool(projectId, { enabled: !embedded })
   const spool = embedded ? embedded.spool : ownSpool
   const setSpool = embedded ? embedded.onSpoolChange : setOwnSpool
@@ -125,7 +130,7 @@ export function PaintLaydownScreen({
       .catch((error: unknown) => {
         if (cancelled) return
         setFailedKey(key)
-        toast.error(error instanceof Error ? error.message : "Referentials could not be loaded.")
+        toast.error(t("referentialsCouldNotBeLoaded"), { description: errorDetail(error) })
       })
     return () => {
       cancelled = true
@@ -147,10 +152,7 @@ export function PaintLaydownScreen({
         measured,
         w10p,
       )
-    : {
-        allowed: false,
-        reason: "Select the line service so the paint matrix rule can be resolved.",
-      }
+    : ({ allowed: false, reason: { code: "select_line_service" } } as const)
 
   const handleSentToPaint = async () => {
     if (
@@ -174,11 +176,11 @@ export function PaintLaydownScreen({
       try {
         await reload()
       } catch {
-        toast.error("Recorded; status could not be refreshed. Retry refresh.")
+        toast.error(t("recordedStatusCouldNotBe"))
       }
-      toast.success("Sent to Paint recorded.")
+      toast.success(t("sentToPaintRecorded"))
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Sent to Paint could not be recorded.")
+      toast.error(t("sentToPaintCouldNot"), { description: errorDetail(error) })
     } finally {
       pendingRef.current = false
       setPendingAction(null)
@@ -214,11 +216,11 @@ export function PaintLaydownScreen({
       try {
         await reload()
       } catch {
-        toast.error("Recorded; status could not be refreshed. Retry refresh.")
+        toast.error(t("recordedStatusCouldNotBe"))
       }
-      toast.success("Painting recorded.")
+      toast.success(t("paintingRecorded"))
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Painting could not be recorded.")
+      toast.error(t("paintingCouldNotBeRecorded"), { description: errorDetail(error) })
     } finally {
       pendingRef.current = false
       setPendingAction(null)
@@ -250,11 +252,11 @@ export function PaintLaydownScreen({
       try {
         await reload()
       } catch {
-        toast.error("Recorded; status could not be refreshed. Retry refresh.")
+        toast.error(t("recordedStatusCouldNotBe"))
       }
-      toast.success("Laydown recorded.")
+      toast.success(t("laydownRecorded"))
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Laydown could not be recorded.")
+      toast.error(t("laydownCouldNotBeRecorded"), { description: errorDetail(error) })
     } finally {
       pendingRef.current = false
       setPendingAction(null)
@@ -262,11 +264,11 @@ export function PaintLaydownScreen({
   }
 
   const paintDone = Boolean(spool?.dates.sent_to_paint && spool?.dates.painted && spool?.dates.final_qc)
-  const paintBlockedBy = !spool?.dates.qc_release ? "QC release" : null
+  const paintBlockedBy = !spool?.dates.qc_release ? t("qcRelease") : null
   const paintPanelMode = spool ? panelMode({ allRecorded: paintDone, blockedBy: paintBlockedBy }) : "actionable"
 
   const laydownDone = Boolean(spool?.dates.laydown)
-  const laydownBlockedBy = !spool?.dates.painted || !spool?.dates.final_qc ? "Paint" : null
+  const laydownBlockedBy = !spool?.dates.painted || !spool?.dates.final_qc ? t("paint") : null
   const laydownPanelMode = spool ? panelMode({ allRecorded: laydownDone, blockedBy: laydownBlockedBy }) : "actionable"
 
   return (
@@ -302,11 +304,11 @@ export function PaintLaydownScreen({
           {mode === "paint" ? (
             paintPanelMode === "done" ? (
               <p className="text-xs text-muted-foreground">
-                Sent {spool.dates.sent_to_paint} · Painted {spool.dates.painted} · Final QC {spool.dates.final_qc}
+                {t("paintDoneSummary", { sent: spool.dates.sent_to_paint ?? "—", painted: spool.dates.painted ?? "—", finalQc: spool.dates.final_qc ?? "—" })}
               </p>
             ) : paintPanelMode === "blocked" ? (
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                <span>QC release is required before painting</span>
+                <span>{t("qcReleaseIsRequiredBefore")}</span>
                 {embedded ? (
                   embedded.canOpenOperation?.("release") ? (
                     <Button
@@ -315,24 +317,24 @@ export function PaintLaydownScreen({
                       variant="outline"
                       onClick={() => embedded.onOpenOperation?.("release")}
                     >
-                      Open QC release
+                      {t("openQcRelease")}
                     </Button>
                   ) : null
                 ) : releaseHref ? (
                   <Button asChild size="sm" variant="outline">
-                    <Link href={releaseHref}>Open QC release</Link>
+                    <Link href={releaseHref}>{t("openQcRelease")}</Link>
                   </Button>
                 ) : null}
               </div>
             ) : !spool.dates.sent_to_paint ? (
               <Card>
                 <CardHeader>
-                  <CardTitle>Sent to Paint</CardTitle>
+                  <CardTitle>{t("sentToPaint")}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex flex-wrap items-end gap-2 pt-1">
                     <label className="text-sm font-medium">
-                      Sent to Paint on
+                      {t("sentToPaintOn")}
                       <Input
                         ref={sentToPaintOnRef}
                         type="date"
@@ -348,7 +350,7 @@ export function PaintLaydownScreen({
                       loading={pendingAction === "sent-to-paint"}
                       onClick={() => void handleSentToPaint()}
                     >
-                      Record Sent to Paint
+                      {t("recordSentToPaint")}
                     </Button>
                   </div>
                 </CardContent>
@@ -356,25 +358,25 @@ export function PaintLaydownScreen({
             ) : (
               <div className="space-y-4">
                 <p className="text-xs text-muted-foreground">
-                  Sent to paint {spool.dates.sent_to_paint}
+                  {t("sentToPaintOn", { date: spool.dates.sent_to_paint ?? "" })}
                 </p>
                 <Card>
                   <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
-                    <CardTitle>Painting</CardTitle>
+                    <CardTitle>{t("painting")}</CardTitle>
                     {loadState === "loading" ? (
                       <Badge variant="outline" className="border-amber-400 bg-amber-50 text-amber-900">
-                        Loading paint referentials…
+                        {t("loadingPaintReferentials")}
                       </Badge>
                     ) : loadState === "error" ? (
                       <div className="flex items-center gap-2">
-                        <Badge variant="destructive">Failed to load referentials</Badge>
+                        <Badge variant="destructive">{t("failedToLoadReferentials")}</Badge>
                         <Button
                           type="button"
                           size="sm"
                           variant="outline"
                           onClick={() => setRefreshToken((t) => t + 1)}
                         >
-                          <RotateCw className="h-3 w-3 mr-1" aria-hidden="true" /> Retry
+                          <RotateCw className="h-3 w-3 mr-1" aria-hidden="true" /> {t("retry")}
                         </Button>
                       </div>
                     ) : null}
@@ -382,7 +384,7 @@ export function PaintLaydownScreen({
                   <CardContent className="space-y-4">
                     <div className="grid gap-3 sm:grid-cols-2">
                       <label className="text-sm font-medium">
-                        Line service
+                        {t("lineService")}
                         <select
                           ref={lineServiceRef}
                           className="mt-1 w-full rounded border px-2 py-1"
@@ -393,7 +395,7 @@ export function PaintLaydownScreen({
                             setAttemptedSave(false)
                           }}
                         >
-                          <option value="">Select…</option>
+                          <option value="">{t("select")}</option>
                           {paintOptions.map((item) => (
                             <option key={item.lineServiceId} value={item.lineServiceId}>
                               {item.lineServiceCode} — {item.ralCode} ({item.requiredFinalDftMicrons} µm)
@@ -402,7 +404,7 @@ export function PaintLaydownScreen({
                         </select>
                       </label>
                       <label className="text-sm font-medium">
-                        Painted on
+                        {t("paintedOn")}
                         <Input
                           ref={paintedOnRef}
                           type="date"
@@ -413,7 +415,7 @@ export function PaintLaydownScreen({
                         />
                       </label>
                       <label className="text-sm font-medium">
-                        Final QC on (optional)
+                        {t("finalQcOnOptional")}
                         <Input
                           ref={finalQcOnRef}
                           type="date"
@@ -424,7 +426,7 @@ export function PaintLaydownScreen({
                         />
                       </label>
                       <label className="text-sm font-medium">
-                        Measured DFT (µm, optional)
+                        {t("measuredDftMOptional")}
                         <Input
                           ref={measuredDftRef}
                           type="number"
@@ -435,19 +437,19 @@ export function PaintLaydownScreen({
                         />
                       </label>
                       <label className="text-sm font-medium sm:col-span-2">
-                        W10P form number {measured !== null ? "(required with DFT)" : "(optional)"}
+                        {t("w10pFormNumber")} {measured !== null ? t("requiredWithDft") : t("optional")}
                         <Input
                           ref={w10pRef}
                           value={w10p}
                           disabled={pendingAction !== null}
                           onChange={(event) => setW10p(event.target.value)}
-                          placeholder="Required when DFT is entered"
+                          placeholder={t("requiredWhenDftIsEntered")}
                           className="mt-1"
                         />
                       </label>
                     </div>
 
-                    {attemptedSave && gate.reason ? <p className="text-sm text-destructive">{gate.reason}</p> : null}
+                    {attemptedSave && gate.reason ? <p className="text-sm text-destructive">{gate.reason ? reasonText(gate.reason) : null}</p> : null}
 
                     <div className={embedded ? styles.recordActions : undefined}>
                       <Button
@@ -456,7 +458,7 @@ export function PaintLaydownScreen({
                         loading={pendingAction === "record-painting"}
                         onClick={() => void handleRecordPainting()}
                       >
-                        Record painting
+                        {t("recordPainting")}
                       </Button>
                     </div>
                   </CardContent>
@@ -465,11 +467,11 @@ export function PaintLaydownScreen({
             )
           ) : laydownPanelMode === "done" ? (
             <p className="text-xs text-muted-foreground">
-              Placed in laydown {spool.dates.laydown}
+              {t("placedInLaydownOn", { date: spool.dates.laydown ?? "" })}
             </p>
           ) : laydownPanelMode === "blocked" ? (
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <span>Record final QC before moving the spool to laydown</span>
+              <span>{t("recordFinalQcBeforeMoving")}</span>
               {embedded ? (
                 embedded.canOpenOperation?.("paint") ? (
                   <Button
@@ -478,33 +480,33 @@ export function PaintLaydownScreen({
                     variant="outline"
                     onClick={() => embedded.onOpenOperation?.("paint")}
                   >
-                    Open Paint
+                    {t("openPaint")}
                   </Button>
                 ) : null
               ) : paintHref ? (
                 <Button asChild size="sm" variant="outline">
-                  <Link href={paintHref}>Open Paint</Link>
+                  <Link href={paintHref}>{t("openPaint")}</Link>
                 </Button>
               ) : null}
             </div>
           ) : (
             <Card>
               <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
-                <CardTitle>Laydown</CardTitle>
+                <CardTitle>{t("laydown")}</CardTitle>
                 {loadState === "loading" ? (
                   <Badge variant="outline" className="border-amber-400 bg-amber-50 text-amber-900">
-                    Loading locations…
+                    {t("loadingLocations")}
                   </Badge>
                 ) : loadState === "error" ? (
                   <div className="flex items-center gap-2">
-                    <Badge variant="destructive">Failed to load locations</Badge>
+                    <Badge variant="destructive">{t("failedToLoadLocations")}</Badge>
                     <Button
                       type="button"
                       size="sm"
                       variant="outline"
                       onClick={() => setRefreshToken((t) => t + 1)}
                     >
-                      <RotateCw className="h-3 w-3 mr-1" aria-hidden="true" /> Retry
+                      <RotateCw className="h-3 w-3 mr-1" aria-hidden="true" /> {t("retry")}
                     </Button>
                   </div>
                 ) : null}
@@ -512,7 +514,7 @@ export function PaintLaydownScreen({
               <CardContent className="space-y-4">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="text-sm font-medium">
-                    Location
+                    {t("location")}
                     <select
                       ref={locationRef}
                       className="mt-1 w-full rounded border px-2 py-1"
@@ -520,7 +522,7 @@ export function PaintLaydownScreen({
                       disabled={pendingAction !== null}
                       onChange={(event) => setLocationId(event.target.value)}
                     >
-                      <option value="">Select…</option>
+                      <option value="">{t("select")}</option>
                       {locations.map((item) => (
                         <option key={item.id} value={item.id}>
                           {item.code}
@@ -529,7 +531,7 @@ export function PaintLaydownScreen({
                     </select>
                   </label>
                   <label className="text-sm font-medium">
-                    Stored on
+                    {t("storedOn")}
                     <Input
                       ref={storedOnRef}
                       type="date"
@@ -548,7 +550,7 @@ export function PaintLaydownScreen({
                     loading={pendingAction === "record-laydown"}
                     onClick={() => void handleRecordLaydown()}
                   >
-                    Record laydown
+                    {t("recordLaydown")}
                   </Button>
                 </div>
               </CardContent>
@@ -556,7 +558,7 @@ export function PaintLaydownScreen({
           )}
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">Select a spool.</p>
+        <p className="text-sm text-muted-foreground">{t("selectASpool")}</p>
       )}
     </div>
   )

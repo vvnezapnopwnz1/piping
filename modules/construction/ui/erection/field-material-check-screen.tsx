@@ -41,6 +41,7 @@ import {
 } from "./erection-screen-shell"
 import { ErectionStageTimeline } from "./erection-stage-view"
 import { useErectionReadiness } from "./use-erection-readiness"
+import { useGateReason } from "../gate-reason"
 
 /**
  * Field material check. Each BOM row takes a trace the user selects from the eligible PML
@@ -57,6 +58,7 @@ export function FieldMaterialCheckScreen({
   title: string
   description: string
 }) {
+  const reasonText = useGateReason()
   const state = useErectionReadiness()
   const { selected, canRecord, dataCurrent, refresh } = state
   const embedded = useContext(ErectionEmbeddedContext)
@@ -449,7 +451,7 @@ export function FieldMaterialCheckScreen({
                         Record field traces
                       </Button>
                       {gate.reason && !gate.allowed ? (
-                        <span className="text-xs text-muted-foreground">{gate.reason}</span>
+                        <span className="text-xs text-muted-foreground">{gate.reason ? reasonText(gate.reason) : null}</span>
                       ) : null}
                     </div>
                   )}

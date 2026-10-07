@@ -41,11 +41,7 @@ assert.deepEqual(
     occurredOn: "2026-08-04",
     canRecord: true,
   }),
-  {
-    allowed: false,
-    reason:
-      "Ready for Test is derived from field weld, support, NDE and PWHT evidence and cannot be recorded by hand.",
-  },
+  { allowed: false, reason: { code: "derived", stage: "rft" } },
 )
 
 // A reader must be told why, not shown a control that fails server-side.
@@ -56,10 +52,7 @@ assert.deepEqual(
     occurredOn: "2026-08-01",
     canRecord: false,
   }),
-  {
-    allowed: false,
-    reason: "Recording erection progress needs the erection.progress.record capability.",
-  },
+  { allowed: false, reason: { code: "no_access" } },
 )
 
 assert.deepEqual(
@@ -69,7 +62,7 @@ assert.deepEqual(
     occurredOn: "  ",
     canRecord: true,
   }),
-  { allowed: false, reason: "Enter the date this step happened." },
+  { allowed: false, reason: { code: "date_required" } },
 )
 
 assert.deepEqual(
@@ -79,7 +72,7 @@ assert.deepEqual(
     occurredOn: "2026-08-04",
     canRecord: true,
   }),
-  { allowed: false, reason: "Record Welded / Bolted before Supported." },
+  { allowed: false, reason: { code: "record_first", missing: "welded_bolted", stage: "supported" } },
 )
 
 assert.deepEqual(

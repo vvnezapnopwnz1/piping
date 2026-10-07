@@ -4,9 +4,18 @@ import { constructionPhaseForWeldLocation } from "./phase-policy"
 export const WELD_POINT_TYPES = ["root", "hot", "fill", "cap"] as const
 export type WeldPointType = (typeof WELD_POINT_TYPES)[number]
 
+/** Why weld progress cannot be recorded. The interface words it from `code` (fabrication.weldIssue). */
+export type WeldIssueCode =
+  | "points_required" | "root_cap_total" | "hot_fill_total" | "distinct_welders" | "point_once"
+  | "wps_inactive" | "wps_other_subcontractor" | "wps_diameter" | "wps_thickness" | "wps_approved_after"
+  | "welder_inactive" | "welder_other_subcontractor" | "welder_expired" | "welder_not_qualified"
+  | "accepted_nde" | "joint_other_phase" | "assembly_disabled" | "unknown_location"
+  | "no_point_in_definition" | "welder_unregistered"
+
 export interface ValidationIssue {
   field: string
-  message: string
+  code: WeldIssueCode
+  values?: Record<string, string | number>
 }
 
 export interface PointAssignment {
@@ -79,7 +88,7 @@ export function validateAllocation(
   const issues: ValidationIssue[] = []
 
   if (points.length === 0) {
-    issues.push({ field: "points", message: "A welded joint needs at least one weld point." })
+    issues.push({ field: "points", code: "points_required" })
     return issues
   }
 
@@ -87,7 +96,8 @@ export function validateAllocation(
   if (rootCap !== 100) {
     issues.push({
       field: "points",
-      message: `Root and Cap must total 100 percent, not ${rootCap}.`,
+      code: "root_cap_total",
+      values: { total: rootCap },
     })
   }
 
@@ -95,7 +105,8 @@ export function validateAllocation(
   if (hotFill !== 0 && hotFill !== 100) {
     issues.push({
       field: "points",
-      message: `Heat and Fill must total either 0 or 100 percent, not ${hotFill}.`,
+      code: "hot_fill_total",
+      values: { total: hotFill },
     })
   }
 
@@ -103,13 +114,13 @@ export function validateAllocation(
   if (new Set(welderIds).size !== welderIds.length) {
     issues.push({
       field: "points",
-      message: "Each weld point of a joint needs a different welder.",
+      code: "distinct_welders",
     })
   }
 
   const pointTypes = points.map((point) => point.pointType)
   if (new Set(pointTypes).size !== pointTypes.length) {
-    issues.push({ field: "points", message: "A weld point can only be assigned once." })
+    issues.push({ field: "points", code: "point_once" })
   }
 
   return issues
@@ -127,13 +138,15 @@ export function validateProcedure(
   if (procedure.status !== "active") {
     issues.push({
       field: "weldingProcedureId",
-      message: `WPS ${procedure.code} is not active.`,
+      code: "wps_inactive",
+      values: { wps: procedure.code },
     })
   }
   if (procedure.subcontractorId && procedure.subcontractorId !== subcontractorId) {
     issues.push({
       field: "weldingProcedureId",
-      message: `WPS ${procedure.code} is qualified for a different subcontractor.`,
+      code: "wps_other_subcontractor",
+      values: { wps: procedure.code },
     })
   }
   if (
@@ -143,7 +156,8 @@ export function validateProcedure(
   ) {
     issues.push({
       field: "weldingProcedureId",
-      message: `WPS ${procedure.code} does not cover a diameter of ${joint.diameterInch ?? "unknown"}".`,
+      code: "wps_diameter",
+      values: { wps: procedure.code, diameter: joint.diameterInch ?? "—" },
     })
   }
   if (
@@ -153,13 +167,15 @@ export function validateProcedure(
   ) {
     issues.push({
       field: "weldingProcedureId",
-      message: `WPS ${procedure.code} does not cover a thickness of ${joint.thicknessMm ?? "unknown"} mm.`,
+      code: "wps_thickness",
+      values: { wps: procedure.code, thickness: joint.thicknessMm ?? "—" },
     })
   }
   if (weldOn && procedure.approvedOn > weldOn) {
     issues.push({
       field: "weldingProcedureId",
-      message: `WPS ${procedure.code} was approved on ${procedure.approvedOn}, after the weld date.`,
+      code: "wps_approved_after",
+      values: { wps: procedure.code, date: procedure.approvedOn },
     })
   }
 
@@ -178,25 +194,29 @@ export function validateWelder(
   if (welder.status !== "active") {
     issues.push({
       field: "welderQualificationId",
-      message: `Welder ${welder.welderCode} is not active.`,
+      code: "welder_inactive",
+      values: { welder: welder.welderCode },
     })
   }
   if (welder.subcontractorId !== subcontractorId) {
     issues.push({
       field: "welderQualificationId",
-      message: `Welder ${welder.welderCode} belongs to a different subcontractor.`,
+      code: "welder_other_subcontractor",
+      values: { welder: welder.welderCode },
     })
   }
   if (welder.expiresOn < weldedOn) {
     issues.push({
       field: "welderQualificationId",
-      message: `Welder ${welder.welderCode} qualification expired on ${welder.expiresOn}.`,
+      code: "welder_expired",
+      values: { welder: welder.welderCode, date: welder.expiresOn },
     })
   }
   if (!welder.wpsIds.includes(procedure.id)) {
     issues.push({
       field: "welderQualificationId",
-      message: `Welder ${welder.welderCode} is not qualified for WPS ${procedure.code}.`,
+      code: "welder_not_qualified",
+      values: { welder: welder.welderCode, wps: procedure.code },
     })
   }
 
@@ -213,7 +233,7 @@ export function validateWeldProgress(input: WeldProgressInput): ValidationIssue[
   if (input.isLocked) {
     issues.push({
       field: "record",
-      message: "This joint has an accepted NDE result. Use the correction action instead.",
+      code: "accepted_nde",
     })
   }
 
@@ -225,12 +245,11 @@ export function validateWeldProgress(input: WeldProgressInput): ValidationIssue[
   if (jointPhase !== input.phase) {
     issues.push({
       field: "joint",
-      message:
-        jointPhase !== null
-          ? `This is a ${input.joint.weldLocation} weld and belongs to the ${jointPhase} module.`
-          : input.joint.weldLocation === "assembly"
-            ? "Assembly welds cannot be recorded: assembly is not enabled on this project."
-            : `"${input.joint.weldLocation}" is not a weld location this project records.`,
+      ...(jointPhase !== null
+        ? { code: "joint_other_phase" as const, values: { location: input.joint.weldLocation, phase: jointPhase } }
+        : input.joint.weldLocation === "assembly"
+          ? { code: "assembly_disabled" as const }
+          : { code: "unknown_location" as const, values: { location: input.joint.weldLocation } }),
     })
   }
 
@@ -243,13 +262,14 @@ export function validateWeldProgress(input: WeldProgressInput): ValidationIssue[
     if (!input.joint.availablePointTypes.includes(point.pointType)) {
       issues.push({
         field: "points",
-        message: `This joint has no ${point.pointType} weld point in its definition.`,
+        code: "no_point_in_definition",
+        values: { point: point.pointType },
       })
       continue
     }
     const welder = byId.get(point.welderQualificationId)
     if (!welder) {
-      issues.push({ field: "points", message: "That welder is not registered on this project." })
+      issues.push({ field: "points", code: "welder_unregistered" })
       continue
     }
     issues.push(

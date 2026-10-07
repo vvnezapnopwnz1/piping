@@ -11,10 +11,16 @@ export interface FabricationReadiness {
   revisionStatus: string
 }
 
+/** One reason QC release is closed. The interface words it from `code` (fabrication.releaseBlocker). */
+export interface ReleaseBlocker {
+  code: "revision_not_accepted" | "material_incomplete" | "welding_incomplete" | "supports_incomplete" | "nde_open" | "pwht_open"
+  values: Record<string, string | number>
+}
+
 export interface ReleaseEligibility {
   isFabricated: boolean
   isReleasable: boolean
-  blockers: string[]
+  blockers: ReleaseBlocker[]
 }
 
 /**
@@ -24,33 +30,25 @@ export interface ReleaseEligibility {
 export function evaluateReleaseEligibility(
   readiness: FabricationReadiness,
 ): ReleaseEligibility {
-  const blockers: string[] = []
+  const blockers: ReleaseBlocker[] = []
 
   if (readiness.revisionStatus !== "accepted") {
-    blockers.push(
-      `This spool revision is ${readiness.revisionStatus} and no longer accepts progress.`,
-    )
+    blockers.push({ code: "revision_not_accepted", values: { status: readiness.revisionStatus } })
   }
   if (readiness.lineTotal === 0 || readiness.lineChecked < readiness.lineTotal) {
-    blockers.push(
-      `Material check is incomplete: ${readiness.lineChecked} of ${readiness.lineTotal} bill lines traced.`,
-    )
+    blockers.push({ code: "material_incomplete", values: { checked: readiness.lineChecked, total: readiness.lineTotal } })
   }
   if (readiness.weldComplete < readiness.weldTotal) {
-    blockers.push(
-      `Welding is incomplete: ${readiness.weldComplete} of ${readiness.weldTotal} joints welded.`,
-    )
+    blockers.push({ code: "welding_incomplete", values: { complete: readiness.weldComplete, total: readiness.weldTotal } })
   }
   if (readiness.supportRecorded < readiness.supportTotal) {
-    blockers.push(
-      `Supports are incomplete: ${readiness.supportRecorded} of ${readiness.supportTotal} installed.`,
-    )
+    blockers.push({ code: "supports_incomplete", values: { recorded: readiness.supportRecorded, total: readiness.supportTotal } })
   }
   if (readiness.ndePending > 0) {
-    blockers.push(`${readiness.ndePending} NDE obligations are still outstanding.`)
+    blockers.push({ code: "nde_open", values: { count: readiness.ndePending } })
   }
   if (readiness.pwhtPending > 0) {
-    blockers.push(`${readiness.pwhtPending} joints still need an accepted PWHT result.`)
+    blockers.push({ code: "pwht_open", values: { count: readiness.pwhtPending } })
   }
 
   const isFabricated =

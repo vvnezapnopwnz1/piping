@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import type {
@@ -53,6 +54,7 @@ export function useMaterialCheckWorkspace({
   spoolRevisionId,
   defaultCheckedOn,
 }: UseMaterialCheckWorkspaceParams): UseMaterialCheckWorkspaceReturn {
+  const t = useTranslations("fabrication.shared")
   const targetKey = useMemo(
     () => JSON.stringify([projectId ?? null, spoolRevisionId ?? null]),
     [projectId, spoolRevisionId],
@@ -86,7 +88,7 @@ export function useMaterialCheckWorkspace({
         setError(
           err instanceof Error
             ? err.message
-            : "The material check workspace could not be loaded.",
+            : t("theMaterialCheckWorkspaceCould"),
         )
       }
     },

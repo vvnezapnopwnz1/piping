@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
+import { errorDetail } from "@/i18n/format"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DataTable, useTableUrlState } from "@/components/ui/data-table"
 import { fabricationSpoolColumns } from "./spool-columns"
@@ -24,8 +25,10 @@ import {
  * Neither query scans every spool into the browser.
  */
 export function FabricationOverview({ projectId }: { projectId: string }) {
+  const t = useTranslations("fabrication.overview")
   const tc = useTranslations("codes")
-  const columns = useMemo(() => fabricationSpoolColumns(tc), [tc])
+  const tcol = useTranslations("fabrication.columns")
+  const columns = useMemo(() => fabricationSpoolColumns(tcol, tc), [tcol, tc])
   const [statuses, setStatuses] = useState<SpoolStatus[]>([])
   const [counts, setCounts] = useState<Map<string, number>>(new Map())
   const [charts, setCharts] = useState<FabricationChartData | null>(null)
@@ -55,7 +58,7 @@ export function FabricationOverview({ projectId }: { projectId: string }) {
         setNextCursor(page.nextCursor)
       })
       .catch((error: unknown) =>
-        toast.error(error instanceof Error ? error.message : "The overview could not be loaded."),
+        toast.error(t("theOverviewCouldNotBe"), { description: errorDetail(error) }),
       )
       .finally(() => {
         if (!cancelled) setLoadedPageKey(pageKey)
@@ -67,7 +70,7 @@ export function FabricationOverview({ projectId }: { projectId: string }) {
     void loadFabricationSpoolStageCounts(getSupabaseBrowserClient(), projectId)
       .then(setCounts)
       .catch((error: unknown) =>
-        toast.error(error instanceof Error ? error.message : "The fabrication totals could not be loaded."),
+        toast.error(t("theFabricationTotalsCouldNot"), { description: errorDetail(error) }),
       )
   }, [projectId])
 
@@ -78,7 +81,7 @@ export function FabricationOverview({ projectId }: { projectId: string }) {
         if (!cancelled) setCharts(data)
       })
       .catch((error: unknown) =>
-        toast.error(error instanceof Error ? error.message : "The fabrication charts could not be loaded."),
+        toast.error(t("theFabricationChartsCouldNot"), { description: errorDetail(error) }),
       )
       .finally(() => {
         if (!cancelled) setChartsLoadedProjectId(projectId)
@@ -129,7 +132,7 @@ export function FabricationOverview({ projectId }: { projectId: string }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Spools</CardTitle>
+          <CardTitle>{t("spools")}</CardTitle>
         </CardHeader>
         <CardContent>
           <DataTable
@@ -147,9 +150,9 @@ export function FabricationOverview({ projectId }: { projectId: string }) {
               onNextPage: goToNextPage,
               onPageSizeChange: changePageSize,
             }}
-            searchPlaceholder="Search this batch by spool or ISO…"
-            emptyTitle="No spool is available on this project."
-            emptyDescription="Spools appear once an engineering revision carrying them is accepted."
+            searchPlaceholder={t("searchThisBatchBySpool")}
+            emptyTitle={t("noSpoolIsAvailableOn")}
+            emptyDescription={t("spoolsAppearOnceAnEngineering")}
           />
         </CardContent>
       </Card>

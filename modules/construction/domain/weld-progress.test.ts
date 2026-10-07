@@ -161,8 +161,8 @@ assert.deepEqual(
     welders: [welderOne, welderTwo],
     isLocked: false,
     phase: "erection",
-  }).map((issue) => issue.message),
-  ["This is a shop weld and belongs to the fabrication module."],
+  }),
+  [{ field: "joint", code: "joint_other_phase", values: { location: "shop", phase: "fabrication" } }],
 )
 // Assembly is an unenabled extension point, so an assembly joint belongs to no phase.
 assert.deepEqual(
@@ -175,8 +175,8 @@ assert.deepEqual(
     welders: [welderOne, welderTwo],
     isLocked: false,
     phase: "erection",
-  }).map((issue) => issue.message),
-  ["Assembly welds cannot be recorded: assembly is not enabled on this project."],
+  }).map((issue) => issue.code),
+  ["assembly_disabled"],
 )
 // A point the definition does not have.
 assert.equal(

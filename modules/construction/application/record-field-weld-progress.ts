@@ -1,5 +1,5 @@
 import type { WeldProgressInput } from "../domain/weld-progress"
-import type { Gate } from "./record-material-check"
+import type { FabricationGate } from "./record-material-check"
 import { describeWeldProgressGate } from "./record-weld-progress"
 
 /**
@@ -13,15 +13,12 @@ export function describeFieldWeldProgressGate(input: {
   weld: WeldProgressInput
   toSiteOn: string | null
   canRecord: boolean
-}): Gate {
+}): FabricationGate {
   if (!input.canRecord) {
-    return {
-      allowed: false,
-      reason: "Recording a field weld needs the erection.progress.record capability.",
-    }
+    return { allowed: false, reason: { code: "no_access_field_weld" } }
   }
   if (!input.toSiteOn) {
-    return { allowed: false, reason: "Record To Site before recording field welds." }
+    return { allowed: false, reason: { code: "to_site_first_weld" } }
   }
   return describeWeldProgressGate(input.weld)
 }

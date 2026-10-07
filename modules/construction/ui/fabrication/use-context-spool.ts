@@ -1,8 +1,10 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 
+import { errorDetail } from "@/i18n/format"
 import { useNameWorkContext, useWorkContextParam } from "@/components/pipeqc/work-context"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { loadSpoolStatus, type SpoolStatus } from "../../infrastructure/supabase-construction-repository"
@@ -18,6 +20,7 @@ export function useContextSpool(
   projectId: string,
   { enabled = true }: { enabled?: boolean } = {},
 ): [SpoolStatus | null, (status: SpoolStatus | null, options?: { push?: boolean; extra?: Record<string, string | null> }) => void] {
+  const t = useTranslations("fabrication.shared")
   const [param, setParam] = useWorkContextParam("spool")
   const [selectedParam, setSelectedParam] = useState<string | null>(null)
   const [loaded, setLoaded] = useState<SpoolStatus | null>(null)
@@ -37,7 +40,7 @@ export function useContextSpool(
       })
       .catch((error: unknown) => {
         if (!cancelled)
-          toast.error(error instanceof Error ? error.message : "The selected spool could not be loaded.")
+          toast.error(t("theSelectedSpoolCouldNot"), { description: errorDetail(error) })
       })
     return () => {
       cancelled = true

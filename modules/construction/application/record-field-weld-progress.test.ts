@@ -58,16 +58,13 @@ const WELD: WeldProgressInput = {
 // control that the RPC refuses with a 403.
 assert.deepEqual(
   describeFieldWeldProgressGate({ weld: WELD, toSiteOn: "2026-08-10", canRecord: false }),
-  {
-    allowed: false,
-    reason: "Recording a field weld needs the erection.progress.record capability.",
-  },
+  { allowed: false, reason: { code: "no_access_field_weld" } },
 )
 
 // PQC54: a field weld on a spool that has not reached site is refused by the command.
 assert.deepEqual(describeFieldWeldProgressGate({ weld: WELD, toSiteOn: null, canRecord: true }), {
   allowed: false,
-  reason: "Record To Site before recording field welds.",
+  reason: { code: "to_site_first_weld" },
 })
 
 assert.deepEqual(
@@ -83,7 +80,7 @@ const lockedGate = describeFieldWeldProgressGate({
   canRecord: true,
 })
 assert.equal(lockedGate.allowed, false)
-assert.ok(lockedGate.reason && lockedGate.reason.length > 0)
+assert.deepEqual(lockedGate.reason, { code: "weld_issues", issues: [{ field: "record", code: "accepted_nde" }] })
 
 // Root and cap must total 100: 50 + 40 is refused by the shared allocation rule, not by a
 // field-specific one.

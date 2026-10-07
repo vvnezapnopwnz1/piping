@@ -11,6 +11,7 @@ import type { SpoolStatus } from "../../infrastructure/supabase-construction-rep
  * readiness view derives one, which is exactly what this timeline shows.
  */
 export function SpoolStageTimeline({ status }: { status: SpoolStatus }) {
+  const t = useTranslations("fabrication.timeline")
   const tc = useTranslations("codes")
   return (
     <ol className="flex flex-wrap gap-2">
@@ -21,7 +22,7 @@ export function SpoolStageTimeline({ status }: { status: SpoolStatus }) {
           <li key={stage} className="min-w-32 rounded border px-3 py-2">
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs font-medium">{tc(`fabricationStage.${stage}`)}</span>
-              {isCurrent ? <Badge variant="outline">Current</Badge> : null}
+              {isCurrent ? <Badge variant="outline">{t("current")}</Badge> : null}
             </div>
             <p className="mt-1 font-mono text-xs text-muted-foreground">{date ?? "—"}</p>
           </li>

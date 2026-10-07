@@ -2,13 +2,13 @@ import {
   evaluateReleaseEligibility,
   type FabricationReadiness,
 } from "../domain/quality-release"
-import type { Gate } from "./record-material-check"
+import type { FabricationGate } from "./record-material-check"
 
-export function describeReleaseGate(readiness: FabricationReadiness): Gate {
+export function describeReleaseGate(readiness: FabricationReadiness): FabricationGate {
   const eligibility = evaluateReleaseEligibility(readiness)
   return eligibility.isReleasable
     ? { allowed: true, reason: null }
-    : { allowed: false, reason: eligibility.blockers.join(" ") }
+    : { allowed: false, reason: { code: "release_blockers", blockers: eligibility.blockers } }
 }
 
 /** Dossier 16.8: DFT is captured on the W10P and must clear the paint matrix requirement. */
@@ -17,22 +17,16 @@ export function describePaintGate(
   requiredDftMicrons: number,
   measuredDftMicrons: number | null,
   w10pFormNumber: string | null,
-): Gate {
+): FabricationGate {
   if (!sentToPaintOn) {
-    return {
-      allowed: false,
-      reason: "Record Sent to Paint before recording painting activities.",
-    }
+    return { allowed: false, reason: { code: "sent_to_paint_first" } }
   }
   if (measuredDftMicrons !== null) {
     if (measuredDftMicrons < requiredDftMicrons) {
-      return {
-        allowed: false,
-        reason: `The measured DFT of ${measuredDftMicrons} microns is below the required ${requiredDftMicrons} microns.`,
-      }
+      return { allowed: false, reason: { code: "dft_below", measured: measuredDftMicrons, required: requiredDftMicrons } }
     }
     if (!w10pFormNumber || w10pFormNumber.trim() === "") {
-      return { allowed: false, reason: "A DFT measurement requires the W10P form number." }
+      return { allowed: false, reason: { code: "w10p_required" } }
     }
   }
   return { allowed: true, reason: null }

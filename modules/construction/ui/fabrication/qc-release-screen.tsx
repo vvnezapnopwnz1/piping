@@ -1,6 +1,10 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
+
+import { errorDetail } from "@/i18n/format"
+import { codeLabel } from "@/i18n/translator"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
@@ -42,7 +46,7 @@ import {
   type PwhtRow,
   type SupportRow,
 } from "../../infrastructure/supabase-construction-repository"
-import { releaseChecks, type ReleaseCheckId } from "./release-checks"
+import { releaseChecks, type ReleaseCheck, type ReleaseCheckDetail, type ReleaseCheckId } from "./release-checks"
 import { SpoolPicker } from "./spool-picker"
 import { useContextSpool, type EmbeddedSpool } from "./use-context-spool"
 import { SpoolStageTimeline } from "./spool-stage-timeline"
@@ -58,6 +62,12 @@ export function QcReleaseScreen({
   projectId: string
   embedded?: EmbeddedSpool
 }) {
+  const t = useTranslations("fabrication.qcRelease")
+  const tf = useTranslations("fabrication")
+  const tc = useTranslations("codes")
+  const checkLabel = (check: ReleaseCheck) => tf(`releaseCheck.label.${check.id}`)
+  const checkDetail = ({ key, values }: ReleaseCheckDetail) =>
+    key === "revisionStatus" ? codeLabel(tc, "status", String(values?.status ?? "")) : tf(`releaseCheck.detail.${key}`, values)
   const [ownSpool, setOwnSpool] = useContextSpool(projectId, { enabled: !embedded })
   const spool = embedded ? embedded.spool : ownSpool
   const setSpool = embedded ? embedded.onSpoolChange : setOwnSpool
@@ -152,19 +162,17 @@ export function QcReleaseScreen({
       .catch((error: unknown) => {
         if (cancelled) return
         setFailedKey(key)
-        toast.error(error instanceof Error ? error.message : "Release checks could not be loaded.")
+        toast.error(t("releaseChecksCouldNotBe"), { description: errorDetail(error) })
       })
     return () => {
       cancelled = true
     }
   }, [spoolRevisionId, currentKey, setSpool])
 
-  const gate = readiness
-    ? describeReleaseGate(readiness)
-    : { allowed: false, reason: "Release checks could not be loaded." }
+  const gate = readiness ? describeReleaseGate(readiness) : null
 
   const handleRelease = async () => {
-    if (!spool || pendingRef.current || !gate.allowed || spool.dates.qc_release !== null) return
+    if (!spool || pendingRef.current || !gate?.allowed || spool.dates.qc_release !== null) return
     pendingRef.current = true
     setPendingAction("release")
     try {
@@ -179,11 +187,11 @@ export function QcReleaseScreen({
       try {
         await reload()
       } catch {
-        toast.error("Recorded; status could not be refreshed. Retry refresh.")
+        toast.error(t("recordedStatusCouldNotBe"))
       }
-      toast.success("The spool is QC released.")
+      toast.success(t("theSpoolIsQcReleased"))
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "The QC release could not be recorded.")
+      toast.error(t("theQcReleaseCouldNot"), { description: errorDetail(error) })
     } finally {
       pendingRef.current = false
       setPendingAction(null)
@@ -204,11 +212,11 @@ export function QcReleaseScreen({
       try {
         await reload()
       } catch {
-        toast.error("Recorded; status could not be refreshed. Retry refresh.")
+        toast.error(t("recordedStatusCouldNotBe"))
       }
-      toast.success("Support installation recorded.")
+      toast.success(t("supportInstallationRecorded"))
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "The support could not be recorded.")
+      toast.error(t("theSupportCouldNotBe"), { description: errorDetail(error) })
     } finally {
       pendingRef.current = false
       setPendingAction(null)
@@ -232,11 +240,11 @@ export function QcReleaseScreen({
       try {
         await reload()
       } catch {
-        toast.error("Recorded; status could not be refreshed. Retry refresh.")
+        toast.error(t("recordedStatusCouldNotBe"))
       }
-      toast.success("PWHT result recorded.")
+      toast.success(t("pwhtResultRecorded"))
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "The PWHT result could not be recorded.")
+      toast.error(t("thePwhtResultCouldNot"), { description: errorDetail(error) })
     } finally {
       pendingRef.current = false
       setPendingAction(null)
@@ -270,7 +278,7 @@ export function QcReleaseScreen({
   const renderBlockerAction = (checkId: ReleaseCheckId): ReactNode => {
     switch (checkId) {
       case "revision":
-        return <span className="text-xs font-medium text-destructive">Superseded revision</span>
+        return <span className="text-xs font-medium text-destructive">{t("supersededRevision")}</span>
       case "material":
         if (embedded) {
           return embedded.canOpenOperation?.("material") ? (
@@ -280,18 +288,18 @@ export function QcReleaseScreen({
               variant="outline"
               onClick={() => embedded.onOpenOperation?.("material")}
             >
-              Open Material
+              {t("openMaterial")}
             </Button>
           ) : (
-            <span className="text-xs text-muted-foreground">Not available with your project access</span>
+            <span className="text-xs text-muted-foreground">{t("notAvailableWithYourProject")}</span>
           )
         }
         return materialHref ? (
           <Link href={materialHref} className={styles.checkActionLink}>
-            Open Material
+            {t("openMaterial")}
           </Link>
         ) : (
-          <span className="text-xs text-muted-foreground">Not available with your project access</span>
+          <span className="text-xs text-muted-foreground">{t("notAvailableWithYourProject")}</span>
         )
       case "welds":
         if (embedded) {
@@ -302,38 +310,38 @@ export function QcReleaseScreen({
               variant="outline"
               onClick={() => embedded.onOpenOperation?.("welds")}
             >
-              Open Shop welds
+              {t("openShopWelds")}
             </Button>
           ) : (
-            <span className="text-xs text-muted-foreground">Not available with your project access</span>
+            <span className="text-xs text-muted-foreground">{t("notAvailableWithYourProject")}</span>
           )
         }
         return weldsHref ? (
           <Link href={weldsHref} className={styles.checkActionLink}>
-            Open Shop welds
+            {t("openShopWelds")}
           </Link>
         ) : (
-          <span className="text-xs text-muted-foreground">Not available with your project access</span>
+          <span className="text-xs text-muted-foreground">{t("notAvailableWithYourProject")}</span>
         )
       case "supports":
         return (
           <Button type="button" size="sm" variant="outline" onClick={goToSupports}>
-            Resolve in Supports
+            {t("resolveInSupports")}
           </Button>
         )
       case "pwht":
         return (
           <Button type="button" size="sm" variant="outline" onClick={goToPwht}>
-            Resolve in PWHT
+            {t("resolveInPwht")}
           </Button>
         )
       case "nde":
         return ndeHref ? (
           <Link href={ndeHref} className={styles.checkActionLink}>
-            Manage in NDE <ArrowRight className="h-3 w-3 ml-1 inline" aria-hidden="true" />
+            {t("manageInNde")} <ArrowRight className="h-3 w-3 ml-1 inline" aria-hidden="true" />
           </Link>
         ) : (
-          <span className="text-xs text-muted-foreground">Not available with your project access</span>
+          <span className="text-xs text-muted-foreground">{t("notAvailableWithYourProject")}</span>
         )
     }
   }
@@ -345,13 +353,13 @@ export function QcReleaseScreen({
   if (loadState === "loading") {
     statusBadge = (
       <Badge variant="outline" className="border-amber-400 bg-amber-50 text-amber-900 dark:bg-amber-950 dark:text-amber-200">
-        Loading release checks…
+        {t("loadingReleaseChecks")}
       </Badge>
     )
   } else if (loadState === "error") {
     statusBadge = (
       <div className="flex items-center gap-2">
-        <Badge variant="destructive">Release checks could not be loaded</Badge>
+        <Badge variant="destructive">{t("releaseChecksCouldNotBe2")}</Badge>
         <Button
           type="button"
           size="sm"
@@ -359,32 +367,32 @@ export function QcReleaseScreen({
           onClick={() => setRefreshToken((token) => token + 1)}
         >
           <RotateCw className="h-3 w-3 mr-1" aria-hidden="true" />
-          Retry
+          {t("retry")}
         </Button>
       </div>
     )
   } else if (isReleased) {
     statusBadge = (
       <Badge variant="outline" className="border-emerald-600 bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
-        QC released on {spool?.dates.qc_release}
+        {t("qcReleasedOn", { date: spool?.dates.qc_release ?? "" })}
       </Badge>
     )
   } else if (isReleasable) {
     statusBadge = (
       <Badge variant="outline" className="border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-        Ready for QC release
+        {t("readyForQcRelease")}
       </Badge>
     )
   } else {
     statusBadge = (
       <Badge variant="outline" className="border-amber-500 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-        Blocked
+        {t("blocked")}
       </Badge>
     )
   }
 
   const isDone = Boolean(spool?.dates.qc_release)
-  const blockedBy = !isDone && !spool?.dates.fabricated ? "Shop welds" : null
+  const blockedBy = !isDone && !spool?.dates.fabricated ? t("shopWelds") : null
   const mode = spool ? panelMode({ allRecorded: isDone, blockedBy }) : "actionable"
 
   return (
@@ -407,12 +415,12 @@ export function QcReleaseScreen({
           {mode === "done" ? (
             <div className="space-y-3">
               <p className="text-xs text-muted-foreground">
-                QC released {spool.dates.qc_release}
+                {t("qcReleasedDate", { date: spool.dates.qc_release ?? "" })}
               </p>
               {readiness && loadState === "ready" ? (
                 <details className="text-xs text-muted-foreground">
                   <summary className="cursor-pointer font-medium hover:text-foreground">
-                    Readiness checks
+                    {t("readinessChecks")}
                   </summary>
                   <div className="mt-2">
                     <ul className={styles.checksTable}>
@@ -422,11 +430,11 @@ export function QcReleaseScreen({
                             <Check className="h-4 w-4 text-emerald-600" aria-hidden="true" />
                           </div>
                           <div className={styles.checkInfo}>
-                            <span className={styles.checkLabel}>{check.label}</span>
-                            <span className={styles.checkDetail}>{check.detail}</span>
+                            <span className={styles.checkLabel}>{checkLabel(check)}</span>
+                            <span className={styles.checkDetail}>{checkDetail(check.detail)}</span>
                           </div>
                           <div className={styles.checkStatus}>
-                            <span className={styles.checkCompleteBadge}>Complete</span>
+                            <span className={styles.checkCompleteBadge}>{t("complete")}</span>
                           </div>
                         </li>
                       ))}
@@ -437,7 +445,7 @@ export function QcReleaseScreen({
             </div>
           ) : mode === "blocked" ? (
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <span>Shop welds must be complete first</span>
+              <span>{t("shopWeldsMustBeComplete")}</span>
               {embedded ? (
                 embedded.canOpenOperation?.("welds") ? (
                   <Button
@@ -446,12 +454,12 @@ export function QcReleaseScreen({
                     variant="outline"
                     onClick={() => embedded.onOpenOperation?.("welds")}
                   >
-                    Open Shop welds
+                    {t("openShopWelds")}
                   </Button>
                 ) : null
               ) : weldsHref ? (
                 <Button asChild size="sm" variant="outline">
-                  <Link href={weldsHref}>Open Shop welds</Link>
+                  <Link href={weldsHref}>{t("openShopWelds")}</Link>
                 </Button>
               ) : null}
             </div>
@@ -460,7 +468,7 @@ export function QcReleaseScreen({
               <Card>
                 <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
                   <CardTitle>
-                    {embedded ? "Release decision" : `${spool.isoNumber} / ${spool.spoolNumber}`}
+                    {embedded ? t("releaseDecision") : `${spool.isoNumber} / ${spool.spoolNumber}`}
                   </CardTitle>
                   {statusBadge}
                 </CardHeader>
@@ -470,7 +478,7 @@ export function QcReleaseScreen({
                   {readiness && loadState === "ready" ? (
                     <div className={styles.checksList}>
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        Readiness checks
+                        {t("readinessChecks")}
                       </p>
                       <ul className={styles.checksTable}>
                         {releaseChecks(readiness).map((check) => (
@@ -483,12 +491,12 @@ export function QcReleaseScreen({
                               )}
                             </div>
                             <div className={styles.checkInfo}>
-                              <span className={styles.checkLabel}>{check.label}</span>
-                              <span className={styles.checkDetail}>{check.detail}</span>
+                              <span className={styles.checkLabel}>{checkLabel(check)}</span>
+                              <span className={styles.checkDetail}>{checkDetail(check.detail)}</span>
                             </div>
                             <div className={styles.checkStatus}>
                               {check.complete ? (
-                                <span className={styles.checkCompleteBadge}>Complete</span>
+                                <span className={styles.checkCompleteBadge}>{t("complete")}</span>
                               ) : (
                                 renderBlockerAction(check.id)
                               )}
@@ -501,12 +509,12 @@ export function QcReleaseScreen({
 
                   {isReleased ? (
                     <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
-                      This spool was QC released on <span className="font-semibold">{spool.dates.qc_release}</span>.
+                      {t("thisSpoolWasQcReleased")} <span className="font-semibold">{spool.dates.qc_release}</span>.
                     </div>
                   ) : (
                     <div className="flex flex-wrap items-end gap-2 pt-1">
                       <label className="text-sm font-medium">
-                        Release date
+                        {t("releaseDate")}
                         <Input
                           ref={releasedOnInputRef}
                           type="date"
@@ -520,14 +528,14 @@ export function QcReleaseScreen({
                         type="button"
                         disabled={
                           loadState !== "ready" ||
-                          !gate.allowed ||
+                          !gate?.allowed ||
                           spool.dates.qc_release !== null ||
                           pendingAction !== null
                         }
                         loading={pendingAction === "release"}
                         onClick={() => void handleRelease()}
                       >
-                        QC release spool
+                        {t("qcReleaseSpool")}
                       </Button>
                     </div>
                   )}
@@ -537,17 +545,17 @@ export function QcReleaseScreen({
           <Card id="release-supports" hidden={Boolean(embedded) && evidence !== "supports"}>
             <CardHeader>
               <CardTitle ref={supportsHeadingRef} tabIndex={-1} className="outline-none">
-                Supports
+                {t("supports")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Support</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Qty</TableHead>
-                    <TableHead>Installed</TableHead>
+                    <TableHead>{t("support")}</TableHead>
+                    <TableHead>{t("type")}</TableHead>
+                    <TableHead>{t("qty")}</TableHead>
+                    <TableHead>{t("installed")}</TableHead>
                     <TableHead />
                   </TableRow>
                 </TableHeader>
@@ -570,7 +578,7 @@ export function QcReleaseScreen({
                           loading={pendingAction === `support-${support.supportRevisionId}`}
                           onClick={() => void handleInstallSupport(support.supportRevisionId)}
                         >
-                          Mark installed
+                          {t("markInstalled")}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -578,7 +586,7 @@ export function QcReleaseScreen({
                 </TableBody>
               </Table>
               {supports.length === 0 ? (
-                <p className="text-muted-foreground text-sm">No supports on this spool.</p>
+                <p className="text-muted-foreground text-sm">{t("noSupportsOnThisSpool")}</p>
               ) : null}
             </CardContent>
           </Card>
@@ -586,19 +594,19 @@ export function QcReleaseScreen({
           <Card id="release-nde" hidden={Boolean(embedded) && evidence !== "nde"}>
             <CardHeader>
               <CardTitle tabIndex={-1} className="outline-none">
-                NDE obligations
+                {t("ndeObligations")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Joint</TableHead>
-                    <TableHead>Method</TableHead>
-                    <TableHead>Cycle</TableHead>
-                    <TableHead>Coverage</TableHead>
-                    <TableHead>Selection</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>{t("joint")}</TableHead>
+                    <TableHead>{t("method")}</TableHead>
+                    <TableHead>{t("cycle")}</TableHead>
+                    <TableHead>{t("coverage")}</TableHead>
+                    <TableHead>{t("selection")}</TableHead>
+                    <TableHead>{t("status")}</TableHead>
                     <TableHead />
                   </TableRow>
                 </TableHeader>
@@ -610,7 +618,7 @@ export function QcReleaseScreen({
                       <TableCell>
                         <Badge variant="outline">
                           {obligation.cycleKind === "original"
-                            ? "Original"
+                            ? t("original")
                             : `${obligation.cycleKind} (${obligation.cycleKind === "repair" ? "R" : "T"}${obligation.cycleOrdinal})`}
                         </Badge>
                       </TableCell>
@@ -622,10 +630,10 @@ export function QcReleaseScreen({
                       <TableCell>
                         {ndeHref ? (
                           <Link href={ndeHref} className={styles.checkActionLink}>
-                            Manage in NDE
+                            {t("manageInNde")}
                           </Link>
                         ) : (
-                          <span className="text-xs text-muted-foreground">Not in your access</span>
+                          <span className="text-xs text-muted-foreground">{t("notInYourAccess")}</span>
                         )}
                       </TableCell>
                     </TableRow>
@@ -633,10 +641,10 @@ export function QcReleaseScreen({
                 </TableBody>
               </Table>
               {obligations.length === 0 ? (
-                <p className="text-muted-foreground text-sm">No NDE obligations on this spool.</p>
+                <p className="text-muted-foreground text-sm">{t("noNdeObligationsOnThis")}</p>
               ) : null}
               <p className="mt-2 text-xs text-muted-foreground">
-                NDE obligations are managed through NDE inspection batches.
+                {t("ndeObligationsAreManagedThrough")}
               </p>
             </CardContent>
           </Card>
@@ -649,22 +657,22 @@ export function QcReleaseScreen({
             </CardHeader>
             <CardContent className="space-y-3">
               <label className="block text-sm font-medium">
-                Chart number
+                {t("chartNumber")}
                 <Input
                   ref={chartNumberInputRef}
                   value={chartNumber}
                   disabled={pendingAction !== null}
                   onChange={(event) => setChartNumber(event.target.value)}
-                  placeholder="Chart number from the PWHT record"
+                  placeholder={t("chartNumberFromThePwht")}
                   className="mt-1"
                 />
               </label>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Joint</TableHead>
-                    <TableHead>Threshold</TableHead>
-                    <TableHead>Accepted</TableHead>
+                    <TableHead>{t("joint")}</TableHead>
+                    <TableHead>{t("threshold")}</TableHead>
+                    <TableHead>{t("accepted")}</TableHead>
                     <TableHead />
                   </TableRow>
                 </TableHeader>
@@ -687,7 +695,7 @@ export function QcReleaseScreen({
                           loading={pendingAction === `pwht-${requirement.id}`}
                           onClick={() => void handleRecordPwht(requirement.id)}
                         >
-                          Record accepted
+                          {t("recordAccepted")}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -695,7 +703,7 @@ export function QcReleaseScreen({
                 </TableBody>
               </Table>
               {pwht.length === 0 ? (
-                <p className="text-muted-foreground text-sm">No PWHT requirements on this spool.</p>
+                <p className="text-muted-foreground text-sm">{t("noPwhtRequirementsOnThis")}</p>
               ) : null}
             </CardContent>
           </Card>
@@ -703,7 +711,7 @@ export function QcReleaseScreen({
           )}
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">Select a spool to review its QC release.</p>
+        <p className="text-sm text-muted-foreground">{t("selectASpoolToReview")}</p>
       )}
     </div>
   )

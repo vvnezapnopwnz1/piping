@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
+import { errorDetail } from "@/i18n/format"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import {
   loadFabricationSpoolPage,
@@ -37,8 +38,10 @@ export function SpoolPicker({
   onBrowsingChange,
   refreshToken = 0,
 }: SpoolPickerProps) {
+  const t = useTranslations("fabrication.spoolPicker")
   const tc = useTranslations("codes")
-  const columns = useMemo(() => fabricationSpoolColumns(tc), [tc])
+  const tcol = useTranslations("fabrication.columns")
+  const columns = useMemo(() => fabricationSpoolColumns(tcol, tc), [tcol, tc])
   const [statuses, setStatuses] = useState<SpoolStatus[]>([])
   const [navigation, setNavigation] = useState<{
     projectId: string
@@ -68,7 +71,7 @@ export function SpoolPicker({
         setNextCursor(page.nextCursor)
       })
       .catch((error: unknown) =>
-        toast.error(error instanceof Error ? error.message : "Spools could not be loaded."),
+        toast.error(t("spoolsCouldNotBeLoaded"), { description: errorDetail(error) }),
       )
       // Settled, not succeeded: a failed load must stop showing a skeleton it will never replace.
       .finally(() => {
@@ -99,7 +102,7 @@ export function SpoolPicker({
 
   return (
     <RecordSelectTable
-      title="Spools"
+      title={t("spools")}
       columns={columns}
       rows={
         selected && selected.spoolRevisionId === value && !statuses.some((row) => row.spoolRevisionId === value)
@@ -121,14 +124,14 @@ export function SpoolPicker({
         onPageSizeChange: changePageSize,
       }}
       namespace="spool"
-      changeLabel="Change spool"
-      searchPlaceholder="Search spool, ISO or stage…"
-      emptyTitle="No spool is available on this project."
-      emptyDescription="Spools appear once an engineering revision carrying them is accepted."
+      changeLabel={t("changeSpool")}
+      searchPlaceholder={t("searchSpoolIsoOrStage")}
+      emptyTitle={t("noSpoolIsAvailableOn")}
+      emptyDescription={t("spoolsAppearOnceAnEngineering")}
       selectedIdentity={(spool) => spool.spoolNumber}
       // The separator is in the text, not in CSS margin: without it the accessible name
       // concatenates to "AR1ISO-2201-14".
-      selectedMeta={(spool) => `rev ${spool.revisionNumber} · ${spool.isoNumber}`}
+      selectedMeta={(spool) => t("revIso", { rev: spool.revisionNumber, iso: spool.isoNumber })}
     />
   )
 }

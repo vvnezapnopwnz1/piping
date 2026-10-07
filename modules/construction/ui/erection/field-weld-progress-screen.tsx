@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
-import { useCallback, useContext, useEffect, useRef, useState } from "react"
+import { useCallback, useContext, useEffect, useRef, useState, useMemo } from "react"
 import { toast } from "sonner"
 import { RotateCw } from "lucide-react"
 
@@ -19,7 +19,7 @@ import { useMarkInputsRecorded, useRequestLeave } from "@/components/pipeqc/unsa
 import { linkFrom } from "@/components/pipeqc/workspace-model"
 import { useSupabaseAuth } from "@/contexts/supabase-auth-context"
 import { useOptionalAccess } from "@/modules/access/ui/access-context"
-import { WELD_COLUMNS } from "../weld-columns"
+import { weldColumns } from "../weld-columns"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { describeFieldWeldProgressGate } from "../../application/record-field-weld-progress"
 import { toWeldProgressPayload } from "../../application/record-weld-progress"
@@ -52,6 +52,7 @@ import {
 import { ErectionStageCard } from "./erection-stage-card"
 import { ErectionStageTimeline } from "./erection-stage-view"
 import { useErectionReadiness } from "./use-erection-readiness"
+import { useGateReason } from "../gate-reason"
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -86,6 +87,9 @@ export function FieldWeldProgressScreen({
   /** When set, the screen also offers the stage this evidence supports. */
   stage?: RecordableErectionStage
 }) {
+  const twc = useTranslations("fabrication.weldColumns")
+  const weldColumnsList = useMemo(() => weldColumns(twc), [twc])
+  const reasonText = useGateReason()
   const tc = useTranslations("codes")
   const stageName = (stage: ErectionStage) => tc(`erectionStage.${stage}`)
   const state = useErectionReadiness()
@@ -246,7 +250,7 @@ export function FieldWeldProgressScreen({
           toSiteOn: currentSpool?.toSiteOn ?? null,
           canRecord,
         })
-      : { allowed: false, reason: "Select a field joint, a subcontractor and a WPS." }
+      : ({ allowed: false, reason: { code: "select_field_joint_wps" } } as const)
 
   const save = async () => {
     if (!selectedWeld || !gate.allowed || isSaving || commands.pending || !dataCurrent || loadState !== "ready") return
@@ -379,7 +383,7 @@ export function FieldWeldProgressScreen({
                   </CardHeader>
                   <CardContent>
                     <DataTable
-                      columns={WELD_COLUMNS}
+                      columns={weldColumnsList}
                       rows={welds}
                       state={weldTable}
                       onStateChange={setWeldTable}
@@ -432,7 +436,7 @@ export function FieldWeldProgressScreen({
                 </CardHeader>
                 <CardContent>
                   <DataTable
-                    columns={WELD_COLUMNS}
+                    columns={weldColumnsList}
                     rows={welds}
                     state={weldTable}
                     onStateChange={setWeldTable}
@@ -659,7 +663,7 @@ export function FieldWeldProgressScreen({
                       {!dataCurrent ? (
                         <p className="text-destructive text-sm">Refresh spool status before recording.</p>
                       ) : gate.reason && !selectedWeld.isLocked ? (
-                        <p className="text-sm text-destructive">{gate.reason}</p>
+                        <p className="text-sm text-destructive">{gate.reason ? reasonText(gate.reason) : null}</p>
                       ) : null}
 
                       <div className={embedded ? styles.recordActions : undefined}>

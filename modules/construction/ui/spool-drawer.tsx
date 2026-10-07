@@ -1,5 +1,6 @@
 "use client"
  
+import { useTranslations } from "next-intl"
 import { useEffect, useId, useRef, type ReactNode } from "react"
 import { Check } from "lucide-react"
 
@@ -61,7 +62,7 @@ export function SpoolTimeline({
   steps,
   active,
   onOpen,
-  processTitle = "Fabrication process",
+  processTitle,
   children,
 }: {
   label: string
@@ -72,6 +73,7 @@ export function SpoolTimeline({
   /** The open step's operation. */
   children: ReactNode
 }) {
+  const t = useTranslations("fabrication.shared")
   const panelId = useId()
   const current = steps.find((step) => step.id === active)
   const operation = useRef<HTMLDivElement>(null)
@@ -82,7 +84,7 @@ export function SpoolTimeline({
   return (
     <div className={styles.processLayout}>
     <nav className={styles.processNav} aria-label={label} data-help="spool-stepper">
-    <p className={styles.processLabel}>{processTitle}</p>
+    <p className={styles.processLabel}>{processTitle ?? t("fabricationProcess")}</p>
     <ol className={styles.timeline}>
       {steps.map((step) => {
         const open = step.id === active
@@ -105,11 +107,11 @@ export function SpoolTimeline({
                   <span className={styles.tTitle}>{step.title}</span>
                   {singleDate ? <span className={styles.stageDate}>{singleDate}</span> : null}
                   {step.state === "done" ? (
-                    <span className={styles.tDone}>{step.completedLabel ?? "Recorded"}</span>
+                    <span className={styles.tDone}>{step.completedLabel ?? t("recorded")}</span>
                   ) : step.state === "next" ? (
-                    <span className={styles.nextBadge}>Next</span>
+                    <span className={styles.nextBadge}>{t("next")}</span>
                   ) : null}
-                  {step.locked ? <span className={styles.tLocked}>Not in your access</span> : null}
+                  {step.locked ? <span className={styles.tLocked}>{t("notInYourAccess")}</span> : null}
                 </span>
                 {visibleLines.length > 0 ? (
                   <span className={styles.tLines}>
@@ -132,7 +134,7 @@ export function SpoolTimeline({
       <header className={styles.operationHead}>
         <h3 id={`${panelId}-title`} className={styles.operationTitle}>{current?.title}</h3>
       </header>
-      <div ref={operation} className={styles.operationScroll} data-operation-scroll="" tabIndex={0} aria-label={`${current?.title} operation`}>
+      <div ref={operation} className={styles.operationScroll} data-operation-scroll="" tabIndex={0} aria-label={t("operationLabel", { operation: String(current?.title ?? "") })}>
         {children}
       </div>
     </section>

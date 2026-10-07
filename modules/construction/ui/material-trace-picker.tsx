@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
@@ -19,6 +20,7 @@ export interface MaterialTracePickerProps {
 
 /** Loads the row's eligible PML records once, when first opened, and filters them locally. */
 export function MaterialTracePicker({ line, selectedDraft, disabled = false, pmlHref, onChoose, onClear }: MaterialTracePickerProps) {
+  const t = useTranslations("fabrication.shared")
   const [attempt, setAttempt] = useState(0)
   const [candidates, setCandidates] = useState<MaterialCandidate[] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -30,7 +32,7 @@ export function MaterialTracePicker({ line, selectedDraft, disabled = false, pml
     setError(null)
     loadMaterialTraceCandidates(getSupabaseBrowserClient(), line.spoolRevisionMaterialId)
       .then((rows) => { if (!ignore) setCandidates(rows) })
-      .catch((err: unknown) => { if (!ignore) setError(err instanceof Error ? err.message : "Material traces could not be loaded.") })
+      .catch((err: unknown) => { if (!ignore) setError(err instanceof Error ? err.message : t("materialTracesCouldNotBe")) })
     return () => { ignore = true }
   }, [attempt, line.spoolRevisionMaterialId])
 
@@ -44,18 +46,19 @@ export function MaterialTracePicker({ line, selectedDraft, disabled = false, pml
   return (
     <div className="flex flex-col gap-1 w-full" onClick={open} onFocus={open}>
       <div className="flex items-center justify-between text-[11px] text-muted-foreground px-0.5">
-        <span className="truncate">{line.expectedTraceNumber ? `BOM trace: ${line.expectedTraceNumber}` : "BOM does not specify a trace"}</span>
+        <span className="truncate">{line.expectedTraceNumber ? t("bomTrace", { trace: line.expectedTraceNumber }) : t("bomDoesNotSpecifyA")}</span>
         {pmlHref ? (
-          <Link href={pmlHref} className="shrink-0 text-[10px] uppercase tracking-wider text-primary hover:underline">Open PML</Link>
+          <Link href={pmlHref} className="shrink-0 text-[10px] uppercase tracking-wider text-primary hover:underline">{t("openPml")}</Link>
         ) : (
-          <span className="shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground/70">Source: PML</span>
+          <span className="shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground/70">{t("sourcePml")}</span>
         )}
       </div>
       <ReferenceCombobox
-        label={`Material trace for ${line.identCode}`}
+        label={t("materialTraceFor", { ident: line.identCode })}
         selectedId={selectedDraft?.pipingMaterialRecordId ?? null}
         selectedLabel={selectedDraft ? `${selectedDraft.traceNumber} (MRR ${selectedDraft.mrrNumber})` : null}
-        options={visible.map((c) => ({ id: c.id, label: `${c.traceNumber} · MRR ${c.mrrNumber}` }))}
+        // i18n-ignore — trace and MRR numbers; MRR reads the same in Russian
+          options={visible.map((c) => ({ id: c.id, label: `${c.traceNumber} · MRR ${c.mrrNumber}` }))}
         query={query}
         loading={attempt > 0 && candidates === null && error === null}
         error={error}
@@ -64,8 +67,8 @@ export function MaterialTracePicker({ line, selectedDraft, disabled = false, pml
         onClear={() => onClear(line.spoolRevisionMaterialId)}
         onRetry={() => setAttempt((n) => n + 1)}
         disabled={disabled}
-        emptyMessage={needle ? "No matching traces" : "No active PML evidence matches this BOM row"}
-        placeholder="Select registered trace"
+        emptyMessage={needle ? t("noMatchingTraces") : t("noActivePmlEvidenceMatches")}
+        placeholder={t("selectRegisteredTrace")}
       />
     </div>
   )

@@ -1,5 +1,11 @@
 {
   "shared": {
     "rftNoEvidence": "RFT is closed but no outstanding evidence is reported; reload the page."
+  },
+  "gate": {
+    "derived": "{stage} is derived from field weld, support, NDE and PWHT evidence and cannot be recorded by hand.",
+    "no_access": "Recording erection progress needs the erection.progress.record capability.",
+    "date_required": "Enter the date this step happened.",
+    "record_first": "Record {missing} before {stage}."
   }
 }

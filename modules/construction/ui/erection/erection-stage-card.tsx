@@ -37,6 +37,7 @@ import {
   useErectionCommands,
   useErectionOperationNavigation,
 } from "./erection-screen-shell"
+import { useErectionGateReason } from "./erection-gate-reason"
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -67,6 +68,7 @@ export function ErectionStageCard({
   dataCurrent = true,
   onRecorded,
 }: ErectionStageCardProps) {
+  const reasonText = useErectionGateReason()
   const tc = useTranslations("codes")
   const stageName = (stage: ErectionStage) => tc(`erectionStage.${stage}`)
   const [occurredOn, setOccurredOn] = useState(today())
@@ -205,7 +207,7 @@ export function ErectionStageCard({
         {!dataCurrent ? (
           <p className="text-destructive text-sm">Refresh spool status before recording.</p>
         ) : gate.reason && !gate.allowed ? (
-          <p className="text-destructive text-sm">{gate.reason}</p>
+          <p className="text-destructive text-sm">{gate.reason ? reasonText(gate.reason) : null}</p>
         ) : null}
       </CardContent>
     </Card>

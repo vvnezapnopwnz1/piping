@@ -1,9 +1,11 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useTranslations } from "next-intl"
+import { useCallback, useEffect, useRef, useState, useMemo } from "react"
 import { toast } from "sonner"
 import { RotateCw } from "lucide-react"
 
+import { errorDetail } from "@/i18n/format"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,7 +13,7 @@ import { Input } from "@/components/ui/input"
 import { DataTable, useTableUrlState } from "@/components/ui/data-table"
 import { ChangeHighlight, IdentityHeadline } from "@/components/ui/record-target"
 import { useMarkInputsRecorded, useRequestLeave } from "@/components/pipeqc/unsaved-input-guard"
-import { WELD_COLUMNS } from "../weld-columns"
+import { weldColumns } from "../weld-columns"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { describeWeldProgressGate, toWeldProgressPayload } from "../../application/record-weld-progress"
 import type { PointAssignment, WeldPointType } from "../../domain/weld-progress"
@@ -27,6 +29,7 @@ import { SpoolPicker } from "./spool-picker"
 import { useContextSpool, type EmbeddedSpool } from "./use-context-spool"
 import { panelMode } from "../panel-mode"
 import styles from "../spool-workbench.module.css"
+import { useGateReason } from "../gate-reason"
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -44,6 +47,10 @@ export function WeldProgressScreen({
   projectId: string
   embedded?: EmbeddedSpool
 }) {
+  const reasonText = useGateReason()
+  const t = useTranslations("fabrication.weldProgress")
+  const twc = useTranslations("fabrication.weldColumns")
+  const weldColumnsList = useMemo(() => weldColumns(twc), [twc])
   const [ownSpool, setOwnSpool] = useContextSpool(projectId, { enabled: !embedded })
   const spool = embedded ? embedded.spool : ownSpool
   const setSpool = embedded ? embedded.onSpoolChange : setOwnSpool
@@ -107,7 +114,7 @@ export function WeldProgressScreen({
       .catch((error: unknown) => {
         if (!cancelled) {
           toast.error(
-            error instanceof Error ? error.message : "Welding referentials could not be loaded.",
+            t("weldingReferentialsCouldNotBe"), { description: errorDetail(error) },
           )
         }
       })
@@ -149,7 +156,7 @@ export function WeldProgressScreen({
       .catch((error: unknown) => {
         if (cancelled) return
         setFailedKey(key)
-        toast.error(error instanceof Error ? error.message : "Weld joints could not be loaded.")
+        toast.error(t("weldJointsCouldNotBe"), { description: errorDetail(error) })
       })
     return () => {
       cancelled = true
@@ -193,7 +200,7 @@ export function WeldProgressScreen({
           isLocked: selected.isLocked,
           phase: "fabrication",
         })
-      : { allowed: false, reason: "Select a joint, a subcontractor and a WPS." }
+      : ({ allowed: false, reason: { code: "select_joint_wps" } } as const)
 
   const save = async () => {
     if (!selected || !gate.allowed || pendingRef.current || loadState !== "ready") return
@@ -236,11 +243,11 @@ export function WeldProgressScreen({
       try {
         await reloadWelds(targetJointId)
       } catch {
-        toast.error("Recorded; status could not be refreshed. Retry refresh.")
+        toast.error(t("recordedStatusCouldNotBe"))
       }
-      toast.success(`Weld ${selected.weldNumber} recorded.`)
+      toast.success(t("weldRecorded", { weld: selected.weldNumber }))
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "The weld could not be recorded.")
+      toast.error(t("theWeldCouldNotBe"), { description: errorDetail(error) })
     } finally {
       pendingRef.current = false
       setPendingAction(null)
@@ -273,28 +280,28 @@ export function WeldProgressScreen({
           {embedded && selected && !browsingJoints ? null : (
             <Card>
               <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
-                <CardTitle>Shop weld joints</CardTitle>
+                <CardTitle>{t("shopWeldJoints")}</CardTitle>
                 {loadState === "loading" ? (
                   <Badge variant="outline" className="border-amber-400 bg-amber-50 text-amber-900">
-                    Loading joints…
+                    {t("loadingJoints")}
                   </Badge>
                 ) : loadState === "error" ? (
                   <div className="flex items-center gap-2">
-                    <Badge variant="destructive">Failed to load joints</Badge>
+                    <Badge variant="destructive">{t("failedToLoadJoints")}</Badge>
                     <Button
                       type="button"
                       size="sm"
                       variant="outline"
                       onClick={() => setRefreshToken((t) => t + 1)}
                     >
-                      <RotateCw className="h-3 w-3 mr-1" aria-hidden="true" /> Retry
+                      <RotateCw className="h-3 w-3 mr-1" aria-hidden="true" /> {t("retry")}
                     </Button>
                   </div>
                 ) : null}
               </CardHeader>
               <CardContent>
                 <DataTable
-                  columns={WELD_COLUMNS}
+                  columns={weldColumnsList}
                   rows={welds}
                   state={weldTable}
                   onStateChange={setWeldTable}
@@ -322,8 +329,8 @@ export function WeldProgressScreen({
                         }
                   }
                   selectedRowId={mode === "done" ? null : (selected?.weldJointRevisionId ?? null)}
-                  searchPlaceholder="Search joint or WPS…"
-                  emptyTitle="This spool revision has no shop joints."
+                  searchPlaceholder={t("searchJointOrWps")}
+                  emptyTitle={t("thisSpoolRevisionHasNo")}
                   containerClassName={embedded ? "max-h-72" : undefined}
                   variant="compact"
                 />
@@ -350,7 +357,7 @@ export function WeldProgressScreen({
                             variant="outline"
                             onClick={() => setBrowsingJoints(true)}
                           >
-                            Change joint
+                            {t("changeJoint")}
                           </Button>
                         ) : undefined
                       }
@@ -367,41 +374,41 @@ export function WeldProgressScreen({
                     {/* Server facts about this joint */}
                     <div className={styles.jointFacts}>
                       <div className={styles.jointFactItem}>
-                        <span className={styles.jointFactLabel}>Weld number</span>
+                        <span className={styles.jointFactLabel}>{t("weldNumber")}</span>
                         <span className={styles.jointFactValue}>{selected.weldNumber}</span>
                       </div>
                       <div className={styles.jointFactItem}>
-                        <span className={styles.jointFactLabel}>Weld date</span>
+                        <span className={styles.jointFactLabel}>{t("weldDate")}</span>
                         <span className={styles.jointFactValue}>
-                          {selected.weldOn ? selected.weldOn : "Not recorded"}
+                          {selected.weldOn ? selected.weldOn : t("notRecorded")}
                         </span>
                       </div>
                       <div className={styles.jointFactItem}>
                         <span className={styles.jointFactLabel}>WPS</span>
                         <span className={styles.jointFactValue}>
-                          {selected.wpsCode ?? "None"}
+                          {selected.wpsCode ?? t("none")}
                         </span>
                       </div>
                       <div className={styles.jointFactItem}>
-                        <span className={styles.jointFactLabel}>Welders</span>
+                        <span className={styles.jointFactLabel}>{t("welders")}</span>
                         <span className={styles.jointFactValue}>
                           {selected.welders && selected.welders.length > 0
                             ? selected.welders.join(", ")
-                            : "None"}
+                            : t("none")}
                         </span>
                       </div>
                       <div className={styles.jointFactItem}>
-                        <span className={styles.jointFactLabel}>Lock status</span>
+                        <span className={styles.jointFactLabel}>{t("lockStatus")}</span>
                         <span className={styles.jointFactValue}>
-                          {selected.isLocked ? "Locked" : "Open"}
+                          {selected.isLocked ? t("locked") : t("open")}
                         </span>
                       </div>
                       <div className={styles.jointFactItem}>
-                        <span className={styles.jointFactLabel}>NDE obligation</span>
+                        <span className={styles.jointFactLabel}>{t("ndeObligation")}</span>
                         <span className={styles.jointFactValue}>
                           {selected.obligationPending > 0
-                            ? `${selected.obligationPending} open`
-                            : "None"}
+                            ? t("openCount", { count: selected.obligationPending })
+                            : t("none")}
                         </span>
                       </div>
                       <div className={styles.jointFactItem}>
@@ -409,22 +416,22 @@ export function WeldProgressScreen({
                         <span className={styles.jointFactValue}>
                           {selected.pwhtRequired
                             ? selected.pwhtAccepted
-                              ? "Accepted"
-                              : "Required, pending"
-                            : "Not required"}
+                              ? t("accepted")
+                              : t("requiredPending")
+                            : t("notRequired")}
                         </span>
                       </div>
                     </div>
 
                     {selected.isLocked ? (
                       <p className="text-sm font-medium text-destructive">
-                        This weld joint is locked and does not accept progress.
+                        {t("thisWeldJointIsLocked")}
                       </p>
                     ) : null}
 
                     <div className={embedded ? styles.weldFields : "grid gap-3 sm:grid-cols-2"}>
                       <label className="text-sm font-medium">
-                        Subcontractor
+                        {t("subcontractor")}
                         <select
                           ref={subcontractorRef}
                           className="mt-1 w-full rounded border px-2 py-1"
@@ -432,7 +439,7 @@ export function WeldProgressScreen({
                           disabled={pendingAction !== null || selected.isLocked}
                           onChange={(event) => setSubcontractorId(event.target.value)}
                         >
-                          <option value="">Select…</option>
+                          <option value="">{t("select")}</option>
                           {referentials.subcontractors.map((item) => (
                             <option key={item.id} value={item.id}>
                               {item.code} — {item.name}
@@ -449,7 +456,7 @@ export function WeldProgressScreen({
                           disabled={pendingAction !== null || selected.isLocked}
                           onChange={(event) => setProcedureId(event.target.value)}
                         >
-                          <option value="">Select…</option>
+                          <option value="">{t("select")}</option>
                           {referentials.procedures.map((item) => (
                             <option key={item.id} value={item.id}>
                               {item.code}
@@ -458,7 +465,7 @@ export function WeldProgressScreen({
                         </select>
                       </label>
                       <label className="text-sm font-medium">
-                        Root welder
+                        {t("rootWelder")}
                         <select
                           ref={rootWelderRef}
                           className="mt-1 w-full rounded border px-2 py-1"
@@ -466,7 +473,7 @@ export function WeldProgressScreen({
                           disabled={pendingAction !== null || selected.isLocked}
                           onChange={(event) => setRootWelderId(event.target.value)}
                         >
-                          <option value="">Select…</option>
+                          <option value="">{t("select")}</option>
                           {referentials.welders.map((item) => (
                             <option key={item.id} value={item.id}>
                               {item.welderCode}
@@ -475,7 +482,7 @@ export function WeldProgressScreen({
                         </select>
                       </label>
                       <label className="text-sm font-medium">
-                        Cap welder
+                        {t("capWelder")}
                         <select
                           ref={capWelderRef}
                           className="mt-1 w-full rounded border px-2 py-1"
@@ -483,7 +490,7 @@ export function WeldProgressScreen({
                           disabled={pendingAction !== null || selected.isLocked}
                           onChange={(event) => setCapWelderId(event.target.value)}
                         >
-                          <option value="">Select…</option>
+                          <option value="">{t("select")}</option>
                           {referentials.welders.map((item) => (
                             <option key={item.id} value={item.id}>
                               {item.welderCode}
@@ -492,7 +499,7 @@ export function WeldProgressScreen({
                         </select>
                       </label>
                       <label className="text-sm font-medium">
-                        Root percent
+                        {t("rootPercent")}
                         <Input
                           ref={rootPercentRef}
                           type="number"
@@ -505,7 +512,7 @@ export function WeldProgressScreen({
                         />
                       </label>
                       <label className="text-sm font-medium">
-                        Weld date
+                        {t("weldDate")}
                         <Input
                           ref={weldOnRef}
                           type="date"
@@ -518,10 +525,10 @@ export function WeldProgressScreen({
                     </div>
 
                     <p className="text-xs text-muted-foreground">
-                      Root and Cap always total 100 percent; the cap takes {100 - rootPercent}.
+                      {t("rootCapHint", { cap: 100 - rootPercent })}
                     </p>
                     {gate.reason && !selected.isLocked ? (
-                      <p className="text-sm text-destructive">{gate.reason}</p>
+                      <p className="text-sm text-destructive">{gate.reason ? reasonText(gate.reason) : null}</p>
                     ) : null}
                     <div className={embedded ? styles.recordActions : undefined}>
                       <Button
@@ -535,7 +542,7 @@ export function WeldProgressScreen({
                         }
                         loading={pendingAction === "record-weld"}
                       >
-                        Record weld progress
+                        {t("recordWeldProgress")}
                       </Button>
                     </div>
                   </CardContent>

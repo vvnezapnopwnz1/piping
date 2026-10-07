@@ -19,25 +19,24 @@ assert.deepEqual(describeReleaseGate(ready), { allowed: true, reason: null })
 
 const blocked = describeReleaseGate({ ...ready, ndePending: 3 })
 assert.equal(blocked.allowed, false)
-assert.match(blocked.reason ?? "", /3 NDE/)
+assert.deepEqual(blocked.reason, { code: "release_blockers", blockers: [{ code: "nde_open", values: { count: 3 } }] })
 
-// Several blockers collapse into one sentence the user can act on.
+// Every blocker is reported, in the order the server checks them.
 const multiple = describeReleaseGate({ ...ready, lineChecked: 0, pwhtPending: 1 })
 assert.equal(multiple.allowed, false)
-assert.match(multiple.reason ?? "", /Material check/)
-assert.match(multiple.reason ?? "", /PWHT/)
+assert.deepEqual(multiple.reason, { code: "release_blockers", blockers: [{ code: "material_incomplete", values: { checked: 0, total: 1 } }, { code: "pwht_open", values: { count: 1 } }] })
 
 assert.deepEqual(describePaintGate(null, 240, null, null), {
   allowed: false,
-  reason: "Record Sent to Paint before recording painting activities.",
+  reason: { code: "sent_to_paint_first" },
 })
 assert.deepEqual(describePaintGate("2026-08-11", 240, 200, "W10P-1"), {
   allowed: false,
-  reason: "The measured DFT of 200 microns is below the required 240 microns.",
+  reason: { code: "dft_below", measured: 200, required: 240 },
 })
 assert.deepEqual(describePaintGate("2026-08-11", 240, 260, null), {
   allowed: false,
-  reason: "A DFT measurement requires the W10P form number.",
+  reason: { code: "w10p_required" },
 })
 assert.deepEqual(describePaintGate("2026-08-11", 240, 260, "W10P-1"), {
   allowed: true,

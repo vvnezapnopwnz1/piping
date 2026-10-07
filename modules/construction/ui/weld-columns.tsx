@@ -1,4 +1,5 @@
 import { ChevronRight } from "lucide-react"
+import type { useTranslations } from "next-intl"
 
 import { Badge } from "@/components/ui/badge"
 import type { DataColumn } from "@/components/ui/data-table"
@@ -9,10 +10,13 @@ import type { WeldSummary } from "../infrastructure/supabase-construction-reposi
  * that the two phases follow the same rules; showing them through two different column sets would
  * be the first place that parity quietly stopped being true.
  */
-export const WELD_COLUMNS: ReadonlyArray<DataColumn<WeldSummary>> = [
+export type WeldColumnsTranslator = ReturnType<typeof useTranslations<"fabrication.weldColumns">>
+
+export function weldColumns(t: WeldColumnsTranslator): ReadonlyArray<DataColumn<WeldSummary>> {
+  return [
   {
     id: "weldNumber",
-    header: "Joint",
+    header: t("joint"),
     value: (weld) => weld.weldNumber,
     searchable: true,
     filter: "text",
@@ -20,12 +24,12 @@ export const WELD_COLUMNS: ReadonlyArray<DataColumn<WeldSummary>> = [
     alwaysVisible: true,
     className: "font-mono text-xs",
   },
-  { id: "diameterInch", header: "Dia", numeric: true, value: (weld) => weld.diameterInch, filter: "number" },
-  { id: "thicknessMm", header: "Thk", numeric: true, value: (weld) => weld.thicknessMm, filter: "number" },
-  { id: "wpsCode", header: "WPS", value: (weld) => weld.wpsCode, searchable: true, filter: "select" },
+  { id: "diameterInch", header: t("dia"), numeric: true, value: (weld) => weld.diameterInch, filter: "number" },
+  { id: "thicknessMm", header: t("thk"), numeric: true, value: (weld) => weld.thicknessMm, filter: "number" },
+  { id: "wpsCode", header: t("wps"), value: (weld) => weld.wpsCode, searchable: true, filter: "select" },
   {
     id: "welders",
-    header: "Welders",
+    header: t("welders"),
     // The raw array is handed over so a facet lists each welder once and matches a joint that any
     // of the selected welders worked on.
     value: (weld) => weld.welders,
@@ -34,10 +38,10 @@ export const WELD_COLUMNS: ReadonlyArray<DataColumn<WeldSummary>> = [
     className: "max-w-48",
     cell: (weld) => weld.welders.join(", ") || "—",
   },
-  { id: "weldOn", header: "Weld date", value: (weld) => weld.weldOn, filter: "date" },
+  { id: "weldOn", header: t("weldDate"), value: (weld) => weld.weldOn, filter: "date" },
   {
     id: "nde",
-    header: "NDE",
+    header: t("nde"),
     numeric: true,
     // Sorted by what is still open, because that is the number an operator is chasing.
     value: (weld) => weld.obligationPending,
@@ -46,13 +50,13 @@ export const WELD_COLUMNS: ReadonlyArray<DataColumn<WeldSummary>> = [
   },
   {
     id: "isLocked",
-    header: "Status",
+    header: t("status"),
     value: (weld) => weld.isLocked,
     filter: "boolean",
     cell: (weld) => (
       <>
-        {weld.isLocked ? <Badge variant="outline">Locked</Badge> : null}
-        {weld.weldLocation !== "shop" ? <Badge variant="outline">{weld.weldLocation}</Badge> : null}
+        {weld.isLocked ? <Badge variant="outline">{t("locked")}</Badge> : null}
+        {weld.weldLocation !== "shop" ? <Badge variant="outline">{weld.weldLocation === "field" ? t("fieldLocation") : weld.weldLocation}</Badge> : null}
       </>
     ),
   },
@@ -66,4 +70,5 @@ export const WELD_COLUMNS: ReadonlyArray<DataColumn<WeldSummary>> = [
     className: "text-muted-foreground w-8",
     cell: () => <ChevronRight className="h-4 w-4" aria-hidden="true" />,
   },
-]
+  ]
+}

@@ -1,5 +1,5 @@
 import type { BillLine, TraceEntry } from "../domain/material-check"
-import type { Gate } from "./record-material-check"
+import type { FabricationGate } from "./record-material-check"
 
 /**
  * Why Record is unavailable. It differs from the shop gate only in the To Site prerequisite and the capability.
@@ -9,10 +9,10 @@ export function describeFieldMaterialCheckGate(input: {
   entries: readonly TraceEntry[]
   toSiteOn: string | null
   canRecord: boolean
-}): Gate {
-  if (!input.canRecord) return { allowed: false, reason: "Recording a field material check needs the erection.progress.record capability." }
-  if (input.lines.length === 0) return { allowed: false, reason: "This spool revision has no bill of materials to check." }
-  if (!input.toSiteOn) return { allowed: false, reason: "Record To Site before checking field material." }
-  if (input.entries.length === 0) return { allowed: false, reason: "Select at least one registered material trace." }
+}): FabricationGate {
+  if (!input.canRecord) return { allowed: false, reason: { code: "no_access_field_material" } }
+  if (input.lines.length === 0) return { allowed: false, reason: { code: "no_bom" } }
+  if (!input.toSiteOn) return { allowed: false, reason: { code: "to_site_first_material" } }
+  if (input.entries.length === 0) return { allowed: false, reason: { code: "no_trace" } }
   return { allowed: true, reason: null }
 }
