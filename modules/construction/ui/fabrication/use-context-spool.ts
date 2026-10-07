@@ -19,8 +19,14 @@ export function useContextSpool(
   { enabled = true }: { enabled?: boolean } = {},
 ): [SpoolStatus | null, (status: SpoolStatus | null, options?: { push?: boolean; extra?: Record<string, string | null> }) => void] {
   const [param, setParam] = useWorkContextParam("spool")
+  const [selectedParam, setSelectedParam] = useState<string | null>(null)
   const [loaded, setLoaded] = useState<SpoolStatus | null>(null)
-  const spool = loaded && loaded.spoolRevisionId === param && loaded.projectId === projectId ? loaded : null
+  const effectiveParam = selectedParam ?? param
+  const spool = loaded && loaded.spoolRevisionId === effectiveParam && loaded.projectId === projectId ? loaded : null
+
+  useEffect(() => {
+    setSelectedParam(null)
+  }, [param])
 
   useEffect(() => {
     if (!enabled || !param || (loaded?.spoolRevisionId === param && loaded.projectId === projectId)) return
@@ -42,6 +48,7 @@ export function useContextSpool(
 
   const select = useCallback(
     (status: SpoolStatus | null, options?: { push?: boolean; extra?: Record<string, string | null> }) => {
+      setSelectedParam(status?.spoolRevisionId ?? null)
       setLoaded(status)
       setParam(status?.spoolRevisionId ?? null, options)
     },

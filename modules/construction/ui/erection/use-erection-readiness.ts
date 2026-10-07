@@ -84,6 +84,13 @@ function useOwnErectionReadiness(enabled: boolean): ErectionReadinessState {
   // next erection step, and a blocker link can hand a spool over. Nothing is selected unless the
   // operator or a link chose it.
   const [selectedId, setSelectedId] = useWorkContextParam("spool")
+  const [localSelectedId, setLocalSelectedId] = useState<string | null>(null)
+
+  useEffect(() => {
+    setLocalSelectedId(null)
+  }, [selectedId])
+
+  const activeSelectedId = localSelectedId ?? selectedId
   const [isLoading, setIsLoading] = useState(true)
   const [loadFailed, setLoadFailed] = useState(false)
   const generationRef = useRef(0)
@@ -142,8 +149,8 @@ function useOwnErectionReadiness(enabled: boolean): ErectionReadinessState {
     [projectId, loadedProjectId, rows],
   )
   const selected = useMemo(
-    () => selectErectionRow(visibleRows, projectId, selectedId),
-    [visibleRows, projectId, selectedId],
+    () => selectErectionRow(visibleRows, projectId, activeSelectedId),
+    [visibleRows, projectId, activeSelectedId],
   )
   useNameWorkContext("spool", selected?.spoolRevisionId, selected?.spoolNumber)
 
@@ -155,6 +162,7 @@ function useOwnErectionReadiness(enabled: boolean): ErectionReadinessState {
         extra?: Record<string, string | null>
       },
     ) => {
+      setLocalSelectedId(row?.spoolRevisionId ?? null)
       setSelectedId(row?.spoolRevisionId ?? null, options)
     },
     [setSelectedId],
