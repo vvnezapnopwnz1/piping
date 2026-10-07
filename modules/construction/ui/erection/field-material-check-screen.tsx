@@ -1,11 +1,14 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { useContext, useMemo, useRef, useState } from "react"
 import { RotateCw } from "lucide-react"
 import { toast } from "sonner"
 
+import { codeLabel } from "@/i18n/translator"
+import { errorDetail } from "@/i18n/format"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -58,6 +61,9 @@ export function FieldMaterialCheckScreen({
   title: string
   description: string
 }) {
+  const tc = useTranslations("codes")
+  const tf = useTranslations("fabrication")
+  const t = useTranslations("erection.fieldMaterial")
   const reasonText = useGateReason()
   const state = useErectionReadiness()
   const { selected, canRecord, dataCurrent, refresh } = state
@@ -159,13 +165,13 @@ export function FieldMaterialCheckScreen({
         try {
           await reloadAll()
         } catch {
-          toast.error("Recorded; status could not be refreshed. Retry refresh.")
+          toast.error(t("recordedStatusCouldNotBe"))
           return
         }
-        toast.success("Field material traces recorded.")
+        toast.success(t("fieldMaterialTracesRecorded"))
       } catch (error: unknown) {
         toast.error(
-          error instanceof Error ? error.message : "The traces could not be recorded.",
+          t("theTracesCouldNotBe"), { description: errorDetail(error) },
         )
       } finally {
         setIsSaving(false)
@@ -190,7 +196,7 @@ export function FieldMaterialCheckScreen({
     >
       {(row) => {
         const isDone = Boolean(row.materialCheckedOn)
-        const blockedBy = !isDone && !row.toSiteOn ? "To site" : null
+        const blockedBy = !isDone && !row.toSiteOn ? t("toSite") : null
         const mode = panelMode({ allRecorded: isDone, blockedBy })
 
         return (
@@ -211,21 +217,21 @@ export function FieldMaterialCheckScreen({
             {mode === "done" ? (
               <div className="space-y-4">
                 <p className="text-xs text-muted-foreground">
-                  Checked {row.materialCheckedOn ? row.materialCheckedOn.slice(0, 10) : "—"} · QC-13 {recordedQc13Form?.formNumber ?? "—"}
+                  {t("doneSummary", { checked: row.materialCheckedOn ? row.materialCheckedOn.slice(0, 10) : "—", qc13: recordedQc13Form?.formNumber ?? "—" })}
                 </p>
                 <Card>
                   <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
-                    <CardTitle>Field Material Check</CardTitle>
+                    <CardTitle>{t("fieldMaterialCheck")}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Ident code</TableHead>
-                          <TableHead>Description</TableHead>
-                          <TableHead>Qty</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Heat / trace number</TableHead>
+                          <TableHead>{t("identCode")}</TableHead>
+                          <TableHead>{t("description")}</TableHead>
+                          <TableHead>{t("qty")}</TableHead>
+                          <TableHead>{t("status")}</TableHead>
+                          <TableHead>{t("heatTraceNumber")}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -240,7 +246,7 @@ export function FieldMaterialCheckScreen({
                               </TableCell>
                               <TableCell className={styles.traceStatusBadge}>
                                 <span className="text-emerald-700 font-semibold dark:text-emerald-400">
-                                  {acceptedItem ? "Recorded" : "Not recorded"}
+                                  {acceptedItem ? t("recorded") : t("notRecorded")}
                                 </span>
                               </TableCell>
                               <TableCell>
@@ -248,11 +254,11 @@ export function FieldMaterialCheckScreen({
                                   <div>
                                     <div className="flex items-center justify-between">
                                       <span className="font-medium text-sm">
-                                        {acceptedItem.traceNumber ?? "Evidence source unavailable"}
+                                        {acceptedItem.traceNumber ?? t("evidenceSourceUnavailable")}
                                       </span>
                                     </div>
                                     <span className="block text-xs text-muted-foreground">
-                                      MRR {acceptedItem.mrrNumber ?? "unavailable"} · {acceptedItem.status ?? "unavailable"}
+                                      {tf("shared.mrrStatus", { mrr: acceptedItem.mrrNumber ?? tf("shared.unavailable"), status: acceptedItem.status ? codeLabel(tc, "status", acceptedItem.status) : tf("shared.unavailable") })}
                                     </span>
                                   </div>
                                 ) : (
@@ -269,7 +275,7 @@ export function FieldMaterialCheckScreen({
               </div>
             ) : mode === "blocked" ? (
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                <span>Record To Site first</span>
+                <span>{t("recordToSiteFirst")}</span>
                 {nav && nav.canOpenOperation("to_site") ? (
                   <Button
                     type="button"
@@ -277,32 +283,32 @@ export function FieldMaterialCheckScreen({
                     variant="outline"
                     onClick={() => nav.openOperation("to_site")}
                   >
-                    Open To site
+                    {t("openToSite")}
                   </Button>
                 ) : toSiteHref ? (
                   <Button asChild size="sm" variant="outline">
-                    <Link href={toSiteHref}>Open To site</Link>
+                    <Link href={toSiteHref}>{t("openToSite")}</Link>
                   </Button>
                 ) : null}
               </div>
             ) : (
               <Card>
                 <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
-                  <CardTitle>Field Material Check</CardTitle>
+                  <CardTitle>{t("fieldMaterialCheck")}</CardTitle>
                   {loadState === "loading" ? (
                     <Badge variant="outline" className="border-amber-400 bg-amber-50 text-amber-900">
-                      Loading bill of materials…
+                      {t("loadingBillOfMaterials")}
                     </Badge>
                   ) : loadState === "error" ? (
                     <div className="flex items-center gap-2">
-                      <Badge variant="destructive">Failed to load BOM</Badge>
+                      <Badge variant="destructive">{t("failedToLoadBom")}</Badge>
                       <Button
                         type="button"
                         size="sm"
                         variant="outline"
                         onClick={() => void reloadAll()}
                       >
-                        <RotateCw className="h-3 w-3 mr-1" aria-hidden="true" /> Retry
+                        <RotateCw className="h-3 w-3 mr-1" aria-hidden="true" /> {t("retry")}
                       </Button>
                     </div>
                   ) : null}
@@ -310,7 +316,7 @@ export function FieldMaterialCheckScreen({
                 <CardContent className="space-y-4">
                   <div className="flex flex-wrap items-end gap-3">
                     <label className="text-sm font-medium">
-                      Date checked
+                      {t("dateChecked")}
                       <Input
                         ref={recordingDateInputRef}
                         type="date"
@@ -325,11 +331,11 @@ export function FieldMaterialCheckScreen({
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Ident code</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Qty</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Heat / trace number</TableHead>
+                        <TableHead>{t("identCode")}</TableHead>
+                        <TableHead>{t("description")}</TableHead>
+                        <TableHead>{t("qty")}</TableHead>
+                        <TableHead>{t("status")}</TableHead>
+                        <TableHead>{t("heatTraceNumber")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -337,10 +343,10 @@ export function FieldMaterialCheckScreen({
                         const acceptedItem = acceptedMap.get(line.spoolRevisionMaterialId)
                         const draft = drafts[line.spoolRevisionMaterialId]
                         const traceState = draft
-                          ? "Edited, not recorded"
+                          ? t("editedNotRecorded")
                           : acceptedItem
-                            ? "Recorded"
-                            : "Not recorded"
+                            ? t("recorded")
+                            : t("notRecorded")
 
                         let statusClass = "text-muted-foreground"
                         if (traceState === "Recorded") {
@@ -375,19 +381,19 @@ export function FieldMaterialCheckScreen({
                                 <div>
                                   <div className="flex items-center justify-between">
                                     <span className="font-medium text-sm">
-                                      {acceptedItem.traceNumber ?? "Evidence source unavailable"}
+                                      {acceptedItem.traceNumber ?? t("evidenceSourceUnavailable")}
                                     </span>
                                     {pmlHref ? (
                                       <Link
                                         href={pmlHref}
                                         className="shrink-0 text-[10px] uppercase tracking-wider text-primary hover:underline"
                                       >
-                                        Open PML
+                                        {t("openPml")}
                                       </Link>
                                     ) : null}
                                   </div>
                                   <span className="block text-xs text-muted-foreground">
-                                    MRR {acceptedItem.mrrNumber ?? "unavailable"} · {acceptedItem.status ?? "unavailable"}
+                                    {tf("shared.mrrStatus", { mrr: acceptedItem.mrrNumber ?? tf("shared.unavailable"), status: acceptedItem.status ? codeLabel(tc, "status", acceptedItem.status) : tf("shared.unavailable") })}
                                   </span>
                                 </div>
                               ) : (
@@ -407,7 +413,7 @@ export function FieldMaterialCheckScreen({
                       {lines.length === 0 && loadState === "ready" ? (
                         <TableRow>
                           <TableCell colSpan={5} className="text-muted-foreground text-sm">
-                            This spool revision has no bill of materials to check.
+                            {t("thisSpoolRevisionHasNo")}
                           </TableCell>
                         </TableRow>
                       ) : null}
@@ -417,7 +423,7 @@ export function FieldMaterialCheckScreen({
                   {loadState === "error" ? (
                     <div className="flex items-center gap-2 text-destructive text-sm">
                       <p>
-                        {workspaceError ?? "The bill of materials could not be loaded, so nothing is shown above."}
+                        {workspaceError ?? t("theBillOfMaterialsCould")}
                       </p>
                       <Button
                         type="button"
@@ -425,13 +431,13 @@ export function FieldMaterialCheckScreen({
                         variant="outline"
                         onClick={() => void reloadAll()}
                       >
-                        <RotateCw className="h-3 w-3 mr-1" aria-hidden="true" /> Retry
+                        <RotateCw className="h-3 w-3 mr-1" aria-hidden="true" /> {t("retry")}
                       </Button>
                     </div>
                   ) : null}
 
                   {!dataCurrent ? (
-                    <p className="text-destructive text-sm">Refresh spool status before recording.</p>
+                    <p className="text-destructive text-sm">{t("refreshSpoolStatusBeforeRecording")}</p>
                   ) : null}
 
                   {isCheckComplete ? null : (
@@ -448,7 +454,7 @@ export function FieldMaterialCheckScreen({
                         }
                         loading={isSaving}
                       >
-                        Record field traces
+                        {t("recordFieldTraces")}
                       </Button>
                       {gate.reason && !gate.allowed ? (
                         <span className="text-xs text-muted-foreground">{gate.reason ? reasonText(gate.reason) : null}</span>

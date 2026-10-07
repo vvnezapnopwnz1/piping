@@ -7,6 +7,7 @@ import { useCallback, useContext, useEffect, useRef, useState, useMemo } from "r
 import { toast } from "sonner"
 import { RotateCw } from "lucide-react"
 
+import { errorDetail } from "@/i18n/format"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -87,6 +88,9 @@ export function FieldWeldProgressScreen({
   /** When set, the screen also offers the stage this evidence supports. */
   stage?: RecordableErectionStage
 }) {
+  const tw = useTranslations("fabrication.weldProgress")
+  const ts = useTranslations("erection.shared")
+  const t = useTranslations("erection.fieldWeld")
   const twc = useTranslations("fabrication.weldColumns")
   const weldColumnsList = useMemo(() => weldColumns(twc), [twc])
   const reasonText = useGateReason()
@@ -161,7 +165,7 @@ export function FieldWeldProgressScreen({
       .catch((error: unknown) => {
         if (!cancelled) {
           toast.error(
-            error instanceof Error ? error.message : "Welding referentials could not be loaded.",
+            t("weldingReferentialsCouldNotBe"), { description: errorDetail(error) },
           )
         }
       })
@@ -202,7 +206,7 @@ export function FieldWeldProgressScreen({
       .catch((error: unknown) => {
         if (cancelled) return
         setFailedKey(key)
-        toast.error(error instanceof Error ? error.message : "Field joints could not be loaded.")
+        toast.error(t("fieldJointsCouldNotBe"), { description: errorDetail(error) })
       })
     return () => {
       cancelled = true
@@ -293,12 +297,12 @@ export function FieldWeldProgressScreen({
         try {
           await Promise.all([reloadWelds(targetJointId), refresh()])
         } catch {
-          toast.error("Recorded; status could not be refreshed. Retry refresh.")
+          toast.error(t("recordedStatusCouldNotBe"))
           return
         }
-        toast.success(`Field weld ${selectedWeld.weldNumber} recorded.`)
+        toast.success(t("fieldWeldRecorded", { weld: selectedWeld.weldNumber }))
       } catch (error: unknown) {
-        toast.error(error instanceof Error ? error.message : "The field weld could not be recorded.")
+        toast.error(t("theFieldWeldCouldNot"), { description: errorDetail(error) })
       } finally {
         setIsSaving(false)
       }
@@ -338,7 +342,7 @@ export function FieldWeldProgressScreen({
                 variant="outline"
                 onClick={() => nav.openOperation(targetOp)}
               >
-                Open {stageName(missing)}
+                {ts("open", { stage: stageName(missing) })}
               </Button>
             ) : targetHref && canVisitPredecessor ? (
               <Button asChild size="sm" variant="outline">
@@ -351,7 +355,7 @@ export function FieldWeldProgressScreen({
                     here,
                   )}
                 >
-                  Open {stageName(missing)}
+                  {ts("open", { stage: stageName(missing) })}
                 </Link>
               </Button>
             ) : null
@@ -375,11 +379,11 @@ export function FieldWeldProgressScreen({
             {mode === "done" ? (
               <div className="space-y-4">
                 <p className="text-xs text-muted-foreground">
-                  Recorded {row.weldedBoltedOn?.slice(0, 10)}
+                  {ts("recordedOn", { date: row.weldedBoltedOn?.slice(0, 10) ?? "" })}
                 </p>
                 <Card>
                   <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
-                    <CardTitle>Field weld joints</CardTitle>
+                    <CardTitle>{t("fieldWeldJoints")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <DataTable
@@ -390,8 +394,8 @@ export function FieldWeldProgressScreen({
                       rowId={(weld) => weld.weldJointRevisionId}
                       onRowClick={undefined}
                       selectedRowId={null}
-                      searchPlaceholder="Search joint or WPS…"
-                      emptyTitle="This spool revision has no field joints."
+                      searchPlaceholder={t("searchJointOrWps")}
+                      emptyTitle={t("thisSpoolRevisionHasNo")}
                       containerClassName={embedded ? "max-h-72" : undefined}
                       variant="compact"
                     />
@@ -400,7 +404,7 @@ export function FieldWeldProgressScreen({
               </div>
             ) : mode === "blocked" ? (
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                <span>Record {stageName(missing!)} before {stageName(stage)}</span>
+                <span>{ts("recordBefore", { missing: stageName(missing!), stage: stageName(stage) })}</span>
                 {predecessorAction}
               </div>
             ) : (
@@ -415,21 +419,21 @@ export function FieldWeldProgressScreen({
             {embedded && selectedWeld && !browsingJoints ? null : (
               <Card>
                 <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
-                  <CardTitle>Field joints</CardTitle>
+                  <CardTitle>{t("fieldJoints")}</CardTitle>
                   {loadState === "loading" ? (
                     <Badge variant="outline" className="border-amber-400 bg-amber-50 text-amber-900">
-                      Loading field joints…
+                      {t("loadingFieldJoints")}
                     </Badge>
                   ) : loadState === "error" ? (
                     <div className="flex items-center gap-2">
-                      <Badge variant="destructive">Failed to load joints</Badge>
+                      <Badge variant="destructive">{t("failedToLoadJoints")}</Badge>
                       <Button
                         type="button"
                         size="sm"
                         variant="outline"
                         onClick={() => setRefreshToken((t) => t + 1)}
                       >
-                        <RotateCw className="h-3 w-3 mr-1" aria-hidden="true" /> Retry
+                        <RotateCw className="h-3 w-3 mr-1" aria-hidden="true" /> {t("retry")}
                       </Button>
                     </div>
                   ) : null}
@@ -460,11 +464,11 @@ export function FieldWeldProgressScreen({
                       else choose()
                     }}
                     selectedRowId={selectedWeld?.weldJointRevisionId ?? null}
-                    searchPlaceholder="Search joint or WPS…"
+                    searchPlaceholder={t("searchJointOrWps")}
                     emptyTitle={
                       loadState === "error"
-                        ? "Field joints could not be loaded, so none are listed and nothing has been changed."
-                        : "This spool revision has no field joints."
+                        ? t("fieldJointsCouldNotBe2")
+                        : t("thisSpoolRevisionHasNo")
                     }
                     containerClassName={embedded ? "max-h-72" : undefined}
                     variant="compact"
@@ -477,12 +481,12 @@ export function FieldWeldProgressScreen({
               <div hidden={Boolean(embedded) && browsingJoints}>
                 <ChangeHighlight
                   id={selectedWeld.weldJointRevisionId}
-                  announce={`Now recording field weld ${selectedWeld.weldNumber}`}
+                  announce={t("nowRecording", { weld: selectedWeld.weldNumber })}
                 >
                   <Card>
                     <CardHeader>
                       <IdentityHeadline
-                        kind="Recording field weld"
+                        kind={t("recordingFieldWeld")}
                         identity={selectedWeld.weldNumber}
                         action={
                           embedded ? (
@@ -492,14 +496,15 @@ export function FieldWeldProgressScreen({
                               variant="outline"
                               onClick={() => setBrowsingJoints(true)}
                             >
-                              Change joint
+                              {t("changeJoint")}
                             </Button>
                           ) : undefined
                         }
                         meta={[
+                          // i18n-ignore — WPS reads the same in Russian
                           selectedWeld.wpsCode ? `WPS ${selectedWeld.wpsCode}` : null,
                           selectedWeld.diameterInch ? `${selectedWeld.diameterInch}"` : null,
-                          selectedWeld.thicknessMm ? `${selectedWeld.thicknessMm} mm` : null,
+                          selectedWeld.thicknessMm ? t("thicknessMeta", { thickness: selectedWeld.thicknessMm }) : null,
                         ]
                           .filter(Boolean)
                           .join(" · ")}
@@ -508,41 +513,41 @@ export function FieldWeldProgressScreen({
                     <CardContent className="space-y-4">
                       <div className={styles.jointFacts}>
                         <div className={styles.jointFactItem}>
-                          <span className={styles.jointFactLabel}>Weld number</span>
+                          <span className={styles.jointFactLabel}>{t("weldNumber")}</span>
                           <span className={styles.jointFactValue}>{selectedWeld.weldNumber}</span>
                         </div>
                         <div className={styles.jointFactItem}>
-                          <span className={styles.jointFactLabel}>Weld date</span>
+                          <span className={styles.jointFactLabel}>{t("weldDate")}</span>
                           <span className={styles.jointFactValue}>
-                            {selectedWeld.weldOn ? selectedWeld.weldOn : "Not recorded"}
+                            {selectedWeld.weldOn ? selectedWeld.weldOn : t("notRecorded")}
                           </span>
                         </div>
                         <div className={styles.jointFactItem}>
                           <span className={styles.jointFactLabel}>WPS</span>
                           <span className={styles.jointFactValue}>
-                            {selectedWeld.wpsCode ?? "None"}
+                            {selectedWeld.wpsCode ?? t("none")}
                           </span>
                         </div>
                         <div className={styles.jointFactItem}>
-                          <span className={styles.jointFactLabel}>Welders</span>
+                          <span className={styles.jointFactLabel}>{t("welders")}</span>
                           <span className={styles.jointFactValue}>
                             {selectedWeld.welders && selectedWeld.welders.length > 0
                               ? selectedWeld.welders.join(", ")
-                              : "None"}
+                              : t("none")}
                           </span>
                         </div>
                         <div className={styles.jointFactItem}>
-                          <span className={styles.jointFactLabel}>Lock status</span>
+                          <span className={styles.jointFactLabel}>{t("lockStatus")}</span>
                           <span className={styles.jointFactValue}>
-                            {selectedWeld.isLocked ? "Locked" : "Open"}
+                            {selectedWeld.isLocked ? t("locked") : t("open")}
                           </span>
                         </div>
                         <div className={styles.jointFactItem}>
-                          <span className={styles.jointFactLabel}>NDE obligation</span>
+                          <span className={styles.jointFactLabel}>{t("ndeObligation")}</span>
                           <span className={styles.jointFactValue}>
                             {selectedWeld.obligationPending > 0
-                              ? `${selectedWeld.obligationPending} open`
-                              : "None"}
+                              ? ts("openCount", { count: selectedWeld.obligationPending })
+                              : t("none")}
                           </span>
                         </div>
                         <div className={styles.jointFactItem}>
@@ -550,22 +555,22 @@ export function FieldWeldProgressScreen({
                           <span className={styles.jointFactValue}>
                             {selectedWeld.pwhtRequired
                               ? selectedWeld.pwhtAccepted
-                                ? "Accepted"
-                                : "Required, pending"
-                              : "Not required"}
+                                ? t("accepted")
+                                : t("requiredPending")
+                              : t("notRequired")}
                           </span>
                         </div>
                       </div>
 
                       {selectedWeld.isLocked ? (
                         <p className="text-sm font-medium text-destructive">
-                          This weld joint is locked and does not accept progress.
+                          {t("thisWeldJointIsLocked")}
                         </p>
                       ) : null}
 
                       <div className={embedded ? styles.weldFields : "grid gap-3 sm:grid-cols-2"}>
                         <label className="text-sm font-medium">
-                          Subcontractor
+                          {t("subcontractor")}
                           <select
                             ref={subcontractorRef}
                             className="mt-1 w-full rounded border px-2 py-1"
@@ -573,7 +578,7 @@ export function FieldWeldProgressScreen({
                             disabled={isSaving || commands.pending || selectedWeld.isLocked}
                             onChange={(event) => setSubcontractorId(event.target.value)}
                           >
-                            <option value="">Select…</option>
+                            <option value="">{t("select")}</option>
                             {referentials.subcontractors.map((item) => (
                               <option key={item.id} value={item.id}>
                                 {item.code} — {item.name}
@@ -590,7 +595,7 @@ export function FieldWeldProgressScreen({
                             disabled={isSaving || commands.pending || selectedWeld.isLocked}
                             onChange={(event) => setProcedureId(event.target.value)}
                           >
-                            <option value="">Select…</option>
+                            <option value="">{t("select")}</option>
                             {referentials.procedures.map((item) => (
                               <option key={item.id} value={item.id}>
                                 {item.code}
@@ -599,7 +604,7 @@ export function FieldWeldProgressScreen({
                           </select>
                         </label>
                         <label className="text-sm font-medium">
-                          Root welder
+                          {t("rootWelder")}
                           <select
                             ref={rootWelderRef}
                             className="mt-1 w-full rounded border px-2 py-1"
@@ -607,7 +612,7 @@ export function FieldWeldProgressScreen({
                             disabled={isSaving || commands.pending || selectedWeld.isLocked}
                             onChange={(event) => setRootWelderId(event.target.value)}
                           >
-                            <option value="">Select…</option>
+                            <option value="">{t("select")}</option>
                             {referentials.welders.map((item) => (
                               <option key={item.id} value={item.id}>
                                 {item.welderCode}
@@ -616,7 +621,7 @@ export function FieldWeldProgressScreen({
                           </select>
                         </label>
                         <label className="text-sm font-medium">
-                          Cap welder
+                          {t("capWelder")}
                           <select
                             ref={capWelderRef}
                             className="mt-1 w-full rounded border px-2 py-1"
@@ -624,7 +629,7 @@ export function FieldWeldProgressScreen({
                             disabled={isSaving || commands.pending || selectedWeld.isLocked}
                             onChange={(event) => setCapWelderId(event.target.value)}
                           >
-                            <option value="">Select…</option>
+                            <option value="">{t("select")}</option>
                             {referentials.welders.map((item) => (
                               <option key={item.id} value={item.id}>
                                 {item.welderCode}
@@ -633,7 +638,7 @@ export function FieldWeldProgressScreen({
                           </select>
                         </label>
                         <label className="text-sm font-medium">
-                          Root percent
+                          {t("rootPercent")}
                           <Input
                             ref={rootPercentRef}
                             type="number"
@@ -645,7 +650,7 @@ export function FieldWeldProgressScreen({
                           />
                         </label>
                         <label className="text-sm font-medium">
-                          Weld date
+                          {t("weldDate")}
                           <Input
                             ref={weldOnRef}
                             type="date"
@@ -657,11 +662,11 @@ export function FieldWeldProgressScreen({
                       </div>
 
                       <p className="text-xs text-muted-foreground">
-                        Root and Cap always total 100 percent; the cap takes {100 - rootPercent}.
+                        {tw("rootCapHint", { cap: 100 - rootPercent })}
                       </p>
 
                       {!dataCurrent ? (
-                        <p className="text-destructive text-sm">Refresh spool status before recording.</p>
+                        <p className="text-destructive text-sm">{t("refreshSpoolStatusBeforeRecording")}</p>
                       ) : gate.reason && !selectedWeld.isLocked ? (
                         <p className="text-sm text-destructive">{gate.reason ? reasonText(gate.reason) : null}</p>
                       ) : null}
@@ -680,7 +685,7 @@ export function FieldWeldProgressScreen({
                           }
                           loading={isSaving}
                         >
-                          Record field weld progress
+                          {t("recordFieldWeldProgress")}
                         </Button>
                       </div>
                     </CardContent>

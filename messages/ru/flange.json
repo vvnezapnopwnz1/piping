@@ -1,0 +1,62 @@
+{
+  "pages": {
+    "selectAProjectToRecord": "Выберите проект, чтобы записывать фланцы.",
+    "selectAProjectToManage": "Выберите проект, чтобы вести фланцы."
+  },
+  "management": {
+    "flangeWorklistCouldNotBe": "Не удалось загрузить список фланцев.",
+    "flangeHistoryCouldNotBe": "Не удалось загрузить историю фланца.",
+    "checkTheForm": "Проверьте форму.",
+    "flangeProgressRecorded": "Сборка фланца записана.",
+    "flangeProgressCouldNotBe": "Не удалось записать сборку фланца.",
+    "flangeWorklist": "Список фланцев",
+    "currentAcceptedFlangeDefinitionsAnd": "Принятые фланцевые соединения и их текущая сборка.",
+    "searchFlangeIsoSpoolOr": "Поиск по фланцу, изометрии, катушке или линии…",
+    "noFlangeJointsInThe": "В текущей ревизии нет фланцевых соединений.",
+    "flangeJointsAppearOnceAn": "Фланцевые соединения появятся, когда будет принята инженерная ревизия с ними.",
+    "selectAFlangeJointAbove": "Выберите фланцевое соединение выше, чтобы записать или исправить сборку.",
+    "correctionCreatesANewImmutable": "Исправление добавляет новую строку истории, прежние не меняются.",
+    "recordTheJointingEventOnce": "Запишите сборку, когда фланец будет готов.",
+    "jointCategory": "Категория соединения",
+    "selectCategory": "Выберите категорию",
+    "torquingRequirement": "Требование к затяжке",
+    "selectRequirement": "Выберите требование",
+    "jointingValue": "Момент затяжки",
+    "jointDate": "Дата сборки",
+    "reportNumber": "Номер отчёта",
+    "tagNumber": "Номер бирки",
+    "jointers": "Сборщики",
+    "recordCorrection": "Записать исправление",
+    "recordFlangeProgress": "Записать сборку фланца",
+    "youHaveReadOnlyAccess": "У вас доступ только на чтение. Для записи нужно право flange.manage.",
+    "history": "История",
+    "appendOnlyRecordsForThis": "Записи по этой ревизии фланца только добавляются.",
+    "notConfigured": "не настроено",
+    "noProgressHistory": "Истории нет.",
+    "nowRecording": "Записывается фланец {flange}",
+    "joint": "соединение",
+    "recordingFlangeJoint": "Запись фланцевого соединения",
+    "historyValues": "· момент {value} · UT {ut}"
+  },
+  "columns": {
+    "flange": "Фланец",
+    "isoSpool": "Изометрия / катушка",
+    "rev": "Рев.",
+    "linePds": "Линия / PDS",
+    "rating": "Класс давления",
+    "status": "Статус",
+    "ut": "UT",
+    "notConfigured": "Не настроено"
+  },
+  "validation": {
+    "required": "Не хватает обязательной ссылки.",
+    "report_required": "Нужен номер отчёта",
+    "tag_required": "Нужен номер бирки",
+    "jointing_value_invalid": "Момент затяжки должен быть положительным числом",
+    "date_format": "Дата сборки должна быть в формате ГГГГ-ММ-ДД",
+    "date_invalid": "Неверная дата сборки",
+    "date_future": "Дата сборки не может быть в будущем",
+    "jointers_unique": "Номера сборщиков не должны повторяться",
+    "jointers_required": "Нужен хотя бы один сборщик"
+  }
+}

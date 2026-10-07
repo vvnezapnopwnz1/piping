@@ -47,13 +47,13 @@ function ReadyForTestCell({ row }: { row: ErectionReadiness }) {
   const can = useOptionalAccess()?.can
   const query = params.toString()
   const here = query ? `${pathname}?${query}` : pathname
-  const t = useTranslations("erection")
+  const te = useTranslations("erection")
   const shortfallLabel = useRftShortfallLabel()
 
   if (row.isRft) {
     return (
       <span>
-        Ready
+        {te("shared.ready")}
         {row.rftOn ? <span className="ml-2 font-mono text-xs">{row.rftOn.slice(0, 10)}</span> : null}
       </span>
     )
@@ -61,7 +61,7 @@ function ReadyForTestCell({ row }: { row: ErectionReadiness }) {
 
   const items = listRftShortfall(row)
   if (!items.length) {
-    return <span className="text-muted-foreground text-sm">{t("shared.rftNoEvidence")}</span>
+    return <span className="text-muted-foreground text-sm">{te("shared.rftNoEvidence")}</span>
   }
 
   const first = items[0]
@@ -91,11 +91,13 @@ function ReadyForTestCell({ row }: { row: ErectionReadiness }) {
  * `material_check_records` row per spool revision) while the `field*` counters are phase-filtered,
  * so they are labelled accordingly rather than sharing a heading.
  */
-function fieldSpoolColumns(tc: CodesTranslator): ReadonlyArray<DataColumn<ErectionReadiness>> {
+type ErectionColumnsTranslator = ReturnType<typeof useTranslations<"erection.columns">>
+
+function fieldSpoolColumns(t: ErectionColumnsTranslator, tc: CodesTranslator): ReadonlyArray<DataColumn<ErectionReadiness>> {
   return [
   {
     id: "spoolNumber",
-    header: "Spool",
+    header: t("spool"),
     value: (row) => row.spoolNumber,
     searchable: true,
     filter: "text",
@@ -119,7 +121,7 @@ function fieldSpoolColumns(tc: CodesTranslator): ReadonlyArray<DataColumn<Erecti
   },
   {
     id: "stage",
-    header: "Stage",
+    header: t("stage"),
     value: (row) => tc(`erectionStage.${currentErectionStage(row)}`),
     filter: "select",
     cell: (row) => (
@@ -132,31 +134,31 @@ function fieldSpoolColumns(tc: CodesTranslator): ReadonlyArray<DataColumn<Erecti
   },
   {
     id: "material",
-    header: "Material",
+    header: t("material"),
     numeric: true,
     value: (row) => ratio(row.materialLineChecked, row.materialLineTotal),
     cell: (row) => `${row.materialLineChecked}/${row.materialLineTotal}`,
   },
   {
     id: "fieldWelds",
-    header: "Field welds",
+    header: t("fieldWelds"),
     numeric: true,
     value: (row) => ratio(row.fieldWeldComplete, row.fieldWeldTotal),
     cell: (row) => `${row.fieldWeldComplete}/${row.fieldWeldTotal}`,
   },
   {
     id: "fieldSupports",
-    header: "Field supports",
+    header: t("fieldSupports"),
     numeric: true,
     value: (row) => ratio(row.fieldSupportRecorded, row.fieldSupportTotal),
     cell: (row) => `${row.fieldSupportRecorded}/${row.fieldSupportTotal}`,
   },
-  { id: "ndePending", header: "NDE open", numeric: true, value: (row) => row.ndePending, filter: "number" },
-  { id: "pwhtPending", header: "PWHT open", numeric: true, value: (row) => row.pwhtPending, filter: "number" },
-  { id: "toSiteOn", header: "To site", value: (row) => row.toSiteOn, filter: "date" },
+  { id: "ndePending", header: t("ndeOpen"), numeric: true, value: (row) => row.ndePending, filter: "number" },
+  { id: "pwhtPending", header: t("pwhtOpen"), numeric: true, value: (row) => row.pwhtPending, filter: "number" },
+  { id: "toSiteOn", header: t("toSite"), value: (row) => row.toSiteOn, filter: "date" },
   {
     id: "isRft",
-    header: "Ready for Test",
+    header: t("readyForTest"),
     value: (row) => row.isRft,
     filter: "boolean",
     className: "min-w-44",
@@ -173,11 +175,14 @@ export function FieldSpoolPicker({
   onBrowsingChange,
   loading = false,
 }: FieldSpoolPickerProps) {
+  const te = useTranslations("erection")
+  const t = useTranslations("erection.spoolPicker")
   const tc = useTranslations("codes")
-  const columns = useMemo(() => fieldSpoolColumns(tc), [tc])
+  const tcol = useTranslations("erection.columns")
+  const columns = useMemo(() => fieldSpoolColumns(tcol, tc), [tcol, tc])
   return (
     <RecordSelectTable
-      title="Field spools"
+      title={t("fieldSpools")}
       columns={columns}
       rows={rows}
       rowId={(row) => row.spoolRevisionId}
@@ -187,14 +192,14 @@ export function FieldSpoolPicker({
       onBrowsingChange={onBrowsingChange}
       loading={loading}
       namespace="fspool"
-      changeLabel="Change spool"
-      searchPlaceholder="Search spool, ISO or stage…"
-      emptyTitle="No accepted field spool is available on this project."
-      emptyDescription="Field spools appear once an engineering revision carrying them is accepted."
+      changeLabel={t("changeSpool")}
+      searchPlaceholder={t("searchSpoolIsoOrStage")}
+      emptyTitle={t("noAcceptedFieldSpoolIs")}
+      emptyDescription={t("fieldSpoolsAppearOnceAn")}
       selectedIdentity={(row) => row.spoolNumber}
       // The separator lives in the text, not in CSS margin, so the accessible name does not
       // concatenate to "ER0ISO-2201-07".
-      selectedMeta={(row) => `rev ${row.revisionNumber} · ${row.isoNumber}`}
+      selectedMeta={(row) => te("shared.revIso", { rev: row.revisionNumber, iso: row.isoNumber })}
     />
   )
 }

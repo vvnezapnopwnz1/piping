@@ -19,6 +19,14 @@ export const I18N_DONE_PATHS: readonly string[] = [
   "modules/construction/ui/use-material-check-workspace.ts",
   "modules/construction/ui/weld-columns.tsx",
   "app/fabrication",
+  "modules/construction/ui/erection",
+  "modules/construction/application",
+  "modules/construction/domain",
+  "modules/flange/ui",
+  "modules/flange/application",
+  "modules/flange/domain",
+  "app/erection",
+  "app/flange",
 ]
 
-export const RU_COMPLETE_NAMESPACES: readonly Namespace[] = ["common", "codes", "shell", "nav", "help", "auth", "fabrication"]
+export const RU_COMPLETE_NAMESPACES: readonly Namespace[] = ["common", "codes", "shell", "nav", "help", "auth", "fabrication", "erection", "flange"]

@@ -19,6 +19,9 @@ import ruAuth from "@/messages/ru/auth.json"
 import enFabrication from "@/messages/en/fabrication.json"
 import ruFabrication from "@/messages/ru/fabrication.json"
 
+import enFlange from "@/messages/en/flange.json"
+import ruFlange from "@/messages/ru/flange.json"
+
 import type { Locale } from "./locale"
 
 export type MessageTree = { [key: string]: string | MessageTree }
@@ -36,6 +39,7 @@ export const en = {
   help: enHelp,
   auth: enAuth,
   fabrication: enFabrication,
+  flange: enFlange,
 }
 
 export type Messages = typeof en
@@ -51,6 +55,7 @@ export const ru: { [N in Namespace]?: MessageTree } = {
   help: ruHelp,
   auth: ruAuth,
   fabrication: ruFabrication,
+  flange: ruFlange,
 }
 
 /** `base` with every key `override` has in the same shape; stray or misshapen keys are dropped. */

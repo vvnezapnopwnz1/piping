@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import Link from "next/link"
 import { AlertTriangle, ArrowRight, Check } from "lucide-react"
 
@@ -26,6 +27,8 @@ export function ErectionRftPanel({
   here: string
   can: Can | undefined
 }) {
+  const ts = useTranslations("erection.shared")
+  const t = useTranslations("erection.rftPanel")
   const nav = useErectionOperationNavigation()
   const { refresh } = useErectionReadiness()
   const activityCode = useSupabaseAuth().access?.activityCode
@@ -64,9 +67,9 @@ export function ErectionRftPanel({
 
   const criteria = [
     {
-      name: "Welded / Bolted",
+      name: t("weldedBolted"),
       met: Boolean(row.weldedBoltedOn),
-      detail: row.weldedBoltedOn ? `Recorded ${row.weldedBoltedOn.slice(0, 10)}` : "Not recorded",
+      detail: row.weldedBoltedOn ? ts("recordedOn", { date: row.weldedBoltedOn.slice(0, 10) }) : t("notRecorded"),
       action: !row.weldedBoltedOn ? (
         nav && canOpenWelded ? (
           <button
@@ -75,21 +78,21 @@ export function ErectionRftPanel({
             className={styles.factLink}
             data-help="rft-blocker"
           >
-            Resolve <ArrowRight aria-hidden="true" />
+            {t("resolve")} <ArrowRight aria-hidden="true" />
           </button>
         ) : weldedStandaloneHref ? (
           <Link href={weldedStandaloneHref} className={styles.factLink} data-help="rft-blocker">
-            Resolve <ArrowRight aria-hidden="true" />
+            {t("resolve")} <ArrowRight aria-hidden="true" />
           </Link>
         ) : (
-          <span className={styles.criterionDetail}>Not in your access</span>
+          <span className={styles.criterionDetail}>{t("notInYourAccess")}</span>
         )
       ) : null,
     },
     {
-      name: "Supported",
+      name: t("supported"),
       met: Boolean(row.supportedOn),
-      detail: row.supportedOn ? `Recorded ${row.supportedOn.slice(0, 10)}` : "Not recorded",
+      detail: row.supportedOn ? ts("recordedOn", { date: row.supportedOn.slice(0, 10) }) : t("notRecorded"),
       action: !row.supportedOn ? (
         nav && canOpenSupported ? (
           <button
@@ -98,29 +101,29 @@ export function ErectionRftPanel({
             className={styles.factLink}
             data-help="rft-blocker"
           >
-            Resolve <ArrowRight aria-hidden="true" />
+            {t("resolve")} <ArrowRight aria-hidden="true" />
           </button>
         ) : supportedStandaloneHref ? (
           <Link href={supportedStandaloneHref} className={styles.factLink} data-help="rft-blocker">
-            Resolve <ArrowRight aria-hidden="true" />
+            {t("resolve")} <ArrowRight aria-hidden="true" />
           </Link>
         ) : (
-          <span className={styles.criterionDetail}>Not in your access</span>
+          <span className={styles.criterionDetail}>{t("notInYourAccess")}</span>
         )
       ) : null,
     },
     {
-      name: "NDE obligations",
+      name: t("ndeObligations"),
       met: row.ndePending === 0,
-      detail: row.ndePending === 0 ? "None open" : `${row.ndePending} open`,
+      detail: row.ndePending === 0 ? t("noneOpen") : ts("openCount", { count: row.ndePending }),
       action:
         row.ndePending > 0 ? (
           ndeHref ? (
             <Link href={ndeHref} className={styles.factLink} data-help="rft-blocker">
-              Manage in NDE <ArrowRight aria-hidden="true" />
+              {t("manageInNde")} <ArrowRight aria-hidden="true" />
             </Link>
           ) : (
-            <span className={styles.criterionDetail}>Not in your access</span>
+            <span className={styles.criterionDetail}>{t("notInYourAccess")}</span>
           )
         ) : null,
     },
@@ -129,16 +132,16 @@ export function ErectionRftPanel({
       met: row.pwhtPending === 0,
       detail:
         row.pwhtPending === 0
-          ? "None pending"
-          : `${row.pwhtPending} pending · results are entered on QC Release`,
+          ? t("nonePending")
+          : t("pwhtPending", { count: row.pwhtPending }),
       action:
         row.pwhtPending > 0 ? (
           pwhtHref ? (
             <Link href={pwhtHref} className={styles.factLink} data-help="rft-blocker">
-              Open QC release <ArrowRight aria-hidden="true" />
+              {t("openQcRelease")} <ArrowRight aria-hidden="true" />
             </Link>
           ) : (
-            <span className={styles.criterionDetail}>Not in your access</span>
+            <span className={styles.criterionDetail}>{t("notInYourAccess")}</span>
           )
         ) : null,
     },
@@ -161,16 +164,16 @@ export function ErectionRftPanel({
       </ul>
       <p className={styles.verdict} data-ready={row.isRft ? "" : undefined}>
         {row.isRft ? (
-          `Ready for Test${row.rftOn ? ` since ${row.rftOn.slice(0, 10)}` : ""}.`
+          row.rftOn ? t("rftSince", { date: row.rftOn.slice(0, 10) }) : t("rftNow")
         ) : shortfall.length === 0 ? (
           <span className="flex items-center justify-between gap-2">
-            <span>RFT is closed but no outstanding evidence is reported; reload the page.</span>
+            <span>{t("rftIsClosedButNo")}</span>
             <Button variant="outline" size="sm" onClick={() => void refresh()}>
-              Retry refresh
+              {t("retryRefresh")}
             </Button>
           </span>
         ) : (
-          "Not Ready for Test while any criterion above is open."
+          t("notReadyForTestWhile")
         )}
       </p>
     </div>

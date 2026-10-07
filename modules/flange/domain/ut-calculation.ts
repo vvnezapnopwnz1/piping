@@ -55,6 +55,7 @@ export function calculateFlangeUt(inputs: FlangeUtInputs): FlangeUtSnapshot {
   ] as const
   const missing = values.some(([, value]) => value === null || value === undefined)
   if (missing) {
+    // i18n-ignore — warning code kept for the record, never shown on screen
     return { ...inputs, formulaVersion: "flange-ut-v1", calculatedUt: null, warning: "UT not configured" }
   }
 

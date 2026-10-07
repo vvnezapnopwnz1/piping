@@ -1,0 +1,62 @@
+{
+  "pages": {
+    "selectAProjectToRecord": "Select a project to record flange progress.",
+    "selectAProjectToManage": "Select a project to manage flange progress."
+  },
+  "management": {
+    "flangeWorklistCouldNotBe": "Flange worklist could not be loaded.",
+    "flangeHistoryCouldNotBe": "Flange history could not be loaded.",
+    "checkTheForm": "Check the form.",
+    "flangeProgressRecorded": "Flange progress recorded.",
+    "flangeProgressCouldNotBe": "Flange progress could not be recorded.",
+    "flangeWorklist": "Flange worklist",
+    "currentAcceptedFlangeDefinitionsAnd": "Current accepted flange definitions and their effective bolt-up progress.",
+    "searchFlangeIsoSpoolOr": "Search flange, ISO, spool or line…",
+    "noFlangeJointsInThe": "No flange joints in the current revision.",
+    "flangeJointsAppearOnceAn": "Flange joints appear once an engineering revision carrying them is accepted.",
+    "selectAFlangeJointAbove": "Select a flange joint above to record or correct its bolt-up progress.",
+    "correctionCreatesANewImmutable": "Correction creates a new immutable history row.",
+    "recordTheJointingEventOnce": "Record the jointing event once the flange is ready.",
+    "jointCategory": "Joint category",
+    "selectCategory": "Select category",
+    "torquingRequirement": "Torquing requirement",
+    "selectRequirement": "Select requirement",
+    "jointingValue": "Jointing value",
+    "jointDate": "Joint date",
+    "reportNumber": "Report number",
+    "tagNumber": "Tag number",
+    "jointers": "Jointers",
+    "recordCorrection": "Record correction",
+    "recordFlangeProgress": "Record flange progress",
+    "youHaveReadOnlyAccess": "You have read-only access. Flange progress requires the flange.manage capability.",
+    "history": "History",
+    "appendOnlyRecordsForThis": "Append-only records for this flange revision.",
+    "notConfigured": "not configured",
+    "noProgressHistory": "No progress history.",
+    "nowRecording": "Now recording flange {flange}",
+    "joint": "joint",
+    "recordingFlangeJoint": "Recording flange joint",
+    "historyValues": "· value {value} · UT {ut}"
+  },
+  "columns": {
+    "flange": "Flange",
+    "isoSpool": "ISO / Spool",
+    "rev": "Rev",
+    "linePds": "Line / PDS",
+    "rating": "Rating",
+    "status": "Status",
+    "ut": "UT",
+    "notConfigured": "Not configured"
+  },
+  "validation": {
+    "required": "A required reference is missing.",
+    "report_required": "Report number is required",
+    "tag_required": "Tag number is required",
+    "jointing_value_invalid": "Jointing value must be positive and finite",
+    "date_format": "Joint date must use YYYY-MM-DD",
+    "date_invalid": "Joint date is invalid",
+    "date_future": "Joint date cannot be in the future",
+    "jointers_unique": "Jointer IDs must be unique",
+    "jointers_required": "At least one jointer is required"
+  }
+}

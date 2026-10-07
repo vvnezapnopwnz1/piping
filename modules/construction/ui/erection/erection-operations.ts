@@ -4,7 +4,6 @@ export type ErectionOperationId = "to_site" | "material" | "erected" | "welded" 
 
 export interface ErectionOperation {
   id: ErectionOperationId
-  title: string
   /** The route that opens the workbench on this operation. */
   href: string
 }
@@ -15,14 +14,14 @@ export interface ErectionOperation {
  * derived from the rest and never set by hand.
  */
 export const ERECTION_OPERATIONS: readonly ErectionOperation[] = [
-  { id: "to_site", title: "To site", href: "/erection/to-site" },
-  { id: "material", title: "Field material", href: "/erection/material-check" },
-  { id: "erected", title: "Erected", href: "/erection/erected" },
-  { id: "welded", title: "Welded / Bolted", href: "/erection/welded-bolted" },
-  { id: "supported", title: "Supported", href: "/erection/supported" },
+  { id: "to_site", href: "/erection/to-site" },
+  { id: "material", href: "/erection/material-check" },
+  { id: "erected", href: "/erection/erected" },
+  { id: "welded", href: "/erection/welded-bolted" },
+  { id: "supported", href: "/erection/supported" },
   // The per-spool view of the readiness gate, opened in the drawer with `?op=rft`; the list
   // across spools stays at /erection/rft.
-  { id: "rft", title: "Ready for Test", href: "/erection" },
+  { id: "rft", href: "/erection" },
 ]
 
 const isOperation = (value: string | null): value is ErectionOperationId =>
@@ -45,8 +44,8 @@ export function erectionOperationForPath(
 }
 
 export interface ErectionStep {
-  /** What the step shows instead of a date when it has none. */
-  lines: { label: string; value: string | null }[]
+  /** The step's line: `label` is the operation it belongs to (erection.line), `value` a date or "yes". */
+  lines: { label: ErectionOperationId; value: string | null }[]
   state: "done" | "next" | "later"
 }
 
@@ -67,30 +66,30 @@ export function erectionStep(operation: ErectionOperationId, row: ErectionReadin
     date ? "done" : id === next ? "next" : "later"
   switch (operation) {
     case "to_site":
-      return { lines: [{ label: "To Site", value: day(row.toSiteOn) }], state: milestone(row.toSiteOn, "to_site") }
+      return { lines: [{ label: "to_site", value: day(row.toSiteOn) }], state: milestone(row.toSiteOn, "to_site") }
     case "material":
       return {
-        lines: [{ label: "Field material", value: day(row.materialCheckedOn) }],
+        lines: [{ label: "material", value: day(row.materialCheckedOn) }],
         state:
           row.materialCheckedOn || (row.materialLineTotal > 0 && row.materialLineChecked >= row.materialLineTotal)
             ? "done"
             : "later",
       }
     case "erected":
-      return { lines: [{ label: "Erected", value: day(row.erectedOn) }], state: milestone(row.erectedOn, "erected") }
+      return { lines: [{ label: "erected", value: day(row.erectedOn) }], state: milestone(row.erectedOn, "erected") }
     case "welded":
       return {
-        lines: [{ label: "Welded / Bolted", value: day(row.weldedBoltedOn) }],
+        lines: [{ label: "welded", value: day(row.weldedBoltedOn) }],
         state: milestone(row.weldedBoltedOn, "welded"),
       }
     case "supported":
       return {
-        lines: [{ label: "Supported", value: day(row.supportedOn) }],
+        lines: [{ label: "supported", value: day(row.supportedOn) }],
         state: milestone(row.supportedOn, "supported"),
       }
     case "rft":
       return {
-        lines: [{ label: "Ready for Test", value: row.isRft ? (day(row.rftOn) ?? "yes") : null }],
+        lines: [{ label: "rft", value: row.isRft ? (day(row.rftOn) ?? "yes") : null }],
         state: row.isRft ? "done" : next === "rft" ? "next" : "later",
       }
   }

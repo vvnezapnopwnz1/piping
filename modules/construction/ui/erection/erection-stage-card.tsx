@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation"
 import { useRef, useState } from "react"
 import { toast } from "sonner"
 
+import { errorDetail } from "@/i18n/format"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -68,6 +69,8 @@ export function ErectionStageCard({
   dataCurrent = true,
   onRecorded,
 }: ErectionStageCardProps) {
+  const ts = useTranslations("erection.shared")
+  const t = useTranslations("erection.stageCard")
   const reasonText = useErectionGateReason()
   const tc = useTranslations("codes")
   const stageName = (stage: ErectionStage) => tc(`erectionStage.${stage}`)
@@ -119,12 +122,12 @@ export function ErectionStageCard({
         try {
           await onRecorded()
         } catch {
-          toast.error("Recorded; status could not be refreshed. Retry refresh.")
+          toast.error(t("recordedStatusCouldNotBe"))
           return
         }
-        toast.success(`${label} recorded for ${row.spoolNumber}.`)
+        toast.success(ts("stageRecordedFor", { stage: label, spool: row.spoolNumber }))
       } catch (error: unknown) {
-        toast.error(error instanceof Error ? error.message : `${label} could not be recorded.`)
+        toast.error(ts("stageCouldNotBeRecorded", { stage: label }), { description: errorDetail(error) })
       } finally {
         setIsSaving(false)
       }
@@ -140,7 +143,7 @@ export function ErectionStageCard({
           variant="outline"
           onClick={() => nav.openOperation(targetOp)}
         >
-          Open {stageName(missing)}
+          {ts("open", { stage: stageName(missing) })}
         </Button>
       ) : targetHref && canVisitPredecessor ? (
         <Button asChild size="sm" variant="outline">
@@ -153,7 +156,7 @@ export function ErectionStageCard({
               here,
             )}
           >
-            Open {stageName(missing)}
+            {ts("open", { stage: stageName(missing) })}
           </Link>
         </Button>
       ) : null
@@ -162,7 +165,7 @@ export function ErectionStageCard({
   if (mode === "done") {
     return (
       <p className="text-xs text-muted-foreground">
-        Recorded {alreadyOn?.slice(0, 10)}
+        {ts("recordedOn", { date: alreadyOn?.slice(0, 10) ?? "" })}
       </p>
     )
   }
@@ -170,7 +173,7 @@ export function ErectionStageCard({
   if (mode === "blocked") {
     return (
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-        <span>Record {stageName(missing!)} before {label}</span>
+        <span>{ts("recordBefore", { missing: stageName(missing!), stage: label })}</span>
         {predecessorAction}
       </div>
     )
@@ -179,12 +182,12 @@ export function ErectionStageCard({
   return (
     <Card data-explicit-unsaved-commit="true">
       <CardHeader>
-        <CardTitle>Record {label}</CardTitle>
+        <CardTitle>{ts("recordStage", { stage: label })}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex flex-wrap items-end gap-3">
           <label className="text-sm font-medium">
-            Date {label} happened
+            {ts("dateHappened", { stage: label })}
             <Input
               ref={dateRef}
               type="date"
@@ -200,12 +203,12 @@ export function ErectionStageCard({
             loading={isSaving}
             disabled={!dataCurrent || !gate.allowed || commands.pending}
           >
-            Record {label}
+            {ts("recordStage", { stage: label })}
           </Button>
         </div>
 
         {!dataCurrent ? (
-          <p className="text-destructive text-sm">Refresh spool status before recording.</p>
+          <p className="text-destructive text-sm">{t("refreshSpoolStatusBeforeRecording")}</p>
         ) : gate.reason && !gate.allowed ? (
           <p className="text-destructive text-sm">{gate.reason ? reasonText(gate.reason) : null}</p>
         ) : null}

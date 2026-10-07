@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import {
   createContext,
   useCallback,
@@ -81,6 +82,7 @@ export function ErectionScreenShell({
   commands,
   children,
 }: ErectionScreenShellProps) {
+  const t = useTranslations("erection.shell")
   const { projectId, isLoading, loadFailed, rows, selected, select, canView } = state
   // Browsing for another spool has to take the body with it: everything a screen renders below is
   // about the spool being replaced.
@@ -100,7 +102,7 @@ export function ErectionScreenShell({
   if (!projectId) {
     return (
       <p className="text-muted-foreground text-sm">
-        Select a project to work on erection progress.
+        {t("selectAProjectToWork")}
       </p>
     )
   }
@@ -108,7 +110,7 @@ export function ErectionScreenShell({
   if (!canView) {
     return (
       <p className="text-muted-foreground text-sm">
-        Viewing erection progress needs the erection.view capability on this project.
+        {t("viewingErectionProgressNeedsThe")}
       </p>
     )
   }
@@ -125,8 +127,7 @@ export function ErectionScreenShell({
           picked, so the form below still gets the page. */}
       {loadFailed ? (
         <p className="text-destructive text-sm">
-          Field spools could not be loaded, so none are listed and nothing has been changed.
-          Reload the page, and report this if it persists.
+          {t("fieldSpoolsCouldNotBe")}
         </p>
       ) : (
         <FieldSpoolPicker
@@ -147,7 +148,7 @@ export function ErectionScreenShell({
         <Skeleton className="h-64 w-full" />
       ) : (
         <p className="text-muted-foreground text-sm">
-          {loadFailed ? "" : "Select a field spool to record erection progress against it."}
+          {loadFailed ? "" : t("selectAFieldSpoolTo")}
         </p>
       )}
     </div>

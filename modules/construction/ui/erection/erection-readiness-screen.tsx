@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
 import { ArrowRight } from "lucide-react"
 import { toast } from "sonner"
+import { errorDetail } from "@/i18n/format"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DataTable, useTableUrlState, type DataColumn } from "@/components/ui/data-table"
 import { StatusBadge } from "@/components/ui/status-badge"
@@ -45,10 +46,10 @@ function RftShortfall({ row }: { row: ErectionReadiness }) {
   const can = useOptionalAccess()?.can
   const query = params.toString()
   const here = query ? `${pathname}?${query}` : pathname
-  const t = useTranslations("erection")
+  const te = useTranslations("erection")
   const shortfallLabel = useRftShortfallLabel()
   const items = listRftShortfall(row)
-  if (!items.length) return <span className="text-muted-foreground text-sm">{t("shared.rftNoEvidence")}</span>
+  if (!items.length) return <span className="text-muted-foreground text-sm">{te("shared.rftNoEvidence")}</span>
   return (
     <ul className="flex flex-col gap-0.5 whitespace-normal">
       {items.map((item) => {
@@ -80,7 +81,9 @@ function RftShortfall({ row }: { row: ErectionReadiness }) {
  */
 const ratio = (done: number, total: number) => (total === 0 ? 1 : done / total)
 
-function readinessColumns(tc: CodesTranslator): ReadonlyArray<DataColumn<ErectionReadiness>> {
+type ErectionColumnsTranslator = ReturnType<typeof useTranslations<"erection.columns">>
+
+function readinessColumns(t: ErectionColumnsTranslator, tc: CodesTranslator): ReadonlyArray<DataColumn<ErectionReadiness>> {
   return [
   {
     id: "isoNumber",
@@ -94,7 +97,7 @@ function readinessColumns(tc: CodesTranslator): ReadonlyArray<DataColumn<Erectio
   },
   {
     id: "spoolNumber",
-    header: "Spool",
+    header: t("spool"),
     value: (row) => row.spoolNumber,
     searchable: true,
     filter: "text",
@@ -108,28 +111,28 @@ function readinessColumns(tc: CodesTranslator): ReadonlyArray<DataColumn<Erectio
   },
   {
     id: "material",
-    header: "Material",
+    header: t("material"),
     numeric: true,
     value: (row) => ratio(row.materialLineChecked, row.materialLineTotal),
     cell: (row) => `${row.materialLineChecked}/${row.materialLineTotal}`,
   },
   {
     id: "fieldWelds",
-    header: "Field welds",
+    header: t("fieldWelds"),
     numeric: true,
     value: (row) => ratio(row.fieldWeldComplete, row.fieldWeldTotal),
     cell: (row) => `${row.fieldWeldComplete}/${row.fieldWeldTotal}`,
   },
   {
     id: "fieldSupports",
-    header: "Field supports",
+    header: t("fieldSupports"),
     numeric: true,
     value: (row) => ratio(row.fieldSupportRecorded, row.fieldSupportTotal),
     cell: (row) => `${row.fieldSupportRecorded}/${row.fieldSupportTotal}`,
   },
   {
     id: "stage",
-    header: "Stage",
+    header: t("stage"),
     value: (row) => tc(`erectionStage.${currentErectionStage(row)}`),
     filter: "select",
     cell: (row) => (
@@ -149,7 +152,7 @@ function readinessColumns(tc: CodesTranslator): ReadonlyArray<DataColumn<Erectio
     cell: (row) =>
       row.isRft ? (
         <span>
-          Ready
+          {t("ready")}
           {row.rftOn ? <span className="ml-2 font-mono text-xs">{row.rftOn.slice(0, 10)}</span> : null}
         </span>
       ) : (
@@ -178,8 +181,10 @@ export function ErectionReadinessScreen({
   note?: string
   showCharts?: boolean
 }) {
+  const t = useTranslations("erection.readiness")
   const tc = useTranslations("codes")
-  const columns = useMemo(() => readinessColumns(tc), [tc])
+  const tcol = useTranslations("erection.columns")
+  const columns = useMemo(() => readinessColumns(tcol, tc), [tcol, tc])
   const { projectId, isLoading, loadFailed, rows: allRows, canView } = useErectionReadiness()
   // A spool handed over in the address narrows the table to it; the chip in the page head clears it.
   const [spool] = useWorkContextParam("spool")
@@ -195,20 +200,20 @@ export function ErectionReadinessScreen({
     let cancelled = false
     void loadErectionChartData(getSupabaseBrowserClient(), projectId)
       .then((data) => { if (!cancelled) setCharts(data) })
-      .catch((error: unknown) => toast.error(error instanceof Error ? error.message : "The erection charts could not be loaded."))
+      .catch((error: unknown) => toast.error(t("theErectionChartsCouldNot"), { description: errorDetail(error) }))
       .finally(() => { if (!cancelled) setChartsLoadedProjectId(projectId) })
     return () => { cancelled = true }
   }, [projectId, canView, showCharts])
 
   if (!projectId) {
     return (
-      <p className="text-muted-foreground text-sm">Select a project to see erection progress.</p>
+      <p className="text-muted-foreground text-sm">{t("selectAProjectToSee")}</p>
     )
   }
   if (!canView) {
     return (
       <p className="text-muted-foreground text-sm">
-        Viewing erection progress needs the erection.view capability on this project.
+        {t("viewingErectionProgressNeedsThe")}
       </p>
     )
   }
@@ -232,10 +237,10 @@ export function ErectionReadinessScreen({
       <Card data-help="rft-table">
         <CardHeader>
           <CardTitle>
-            Field spool readiness
+            {t("fieldSpoolReadiness")}
             {isLoading || loadFailed ? null : (
               <span className="text-muted-foreground ml-2 text-sm font-normal tabular-nums">
-                {readyCount}/{rows.length} ready for test
+                {t("readyCount", { ready: readyCount, total: rows.length })}
               </span>
             )}
           </CardTitle>
@@ -243,8 +248,7 @@ export function ErectionReadinessScreen({
         <CardContent>
           {loadFailed ? (
             <p className="text-destructive text-sm">
-              Field spool readiness could not be loaded, so nothing is listed. Reload the page,
-              and report this if it persists.
+              {t("fieldSpoolReadinessCouldNot")}
             </p>
           ) : (
             <DataTable
@@ -254,16 +258,16 @@ export function ErectionReadinessScreen({
               onStateChange={setTableState}
               rowId={(row) => row.spoolRevisionId}
               loading={isLoading}
-              searchPlaceholder="Search ISO or spool…"
+              searchPlaceholder={t("searchIsoOrSpool")}
               emptyTitle={
                 spool
-                  ? "The selected spool is not among the field spools you can see."
-                  : "No accepted field spool is available on this project."
+                  ? t("theSelectedSpoolIsNot")
+                  : t("noAcceptedFieldSpoolIs")
               }
               emptyDescription={
                 spool
-                  ? "Clear the selected spool in the page head to list every field spool."
-                  : "Field spools appear once an engineering revision is accepted."
+                  ? t("clearTheSelectedSpoolIn")
+                  : t("fieldSpoolsAppearOnceAn")
               }
             />
           )}

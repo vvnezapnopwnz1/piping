@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { usePathname, useSearchParams } from "next/navigation"
 import type { ReactNode } from "react"
 
@@ -20,6 +21,7 @@ import {
   nextErectionOperation,
   type ErectionOperation,
   type ErectionOperationId,
+  type ErectionStep,
 } from "./erection-operations"
 import { ErectionRftPanel } from "./erection-rft-panel"
 import {
@@ -35,17 +37,18 @@ import { FieldWeldProgressScreen } from "./field-weld-progress-screen"
 import { ErectionReadinessProvider, useErectionReadiness } from "./use-erection-readiness"
 
 function OperationPanel({ operation }: { operation: ErectionOperationId }): ReactNode {
+  const t = useTranslations("erection.workbench")
   switch (operation) {
     case "to_site":
-      return <ErectionStageScreen stage="to_site" title="To Site" description="" />
+      return <ErectionStageScreen stage="to_site" title={t("toSite")} description="" />
     case "material":
-      return <FieldMaterialCheckScreen title="Field Material Check" description="" />
+      return <FieldMaterialCheckScreen title={t("fieldMaterialCheck")} description="" />
     case "erected":
-      return <ErectionStageScreen stage="erected" title="Erected" description="" />
+      return <ErectionStageScreen stage="erected" title={t("erected")} description="" />
     case "welded":
-      return <FieldWeldProgressScreen title="Welded / Bolted" description="" stage="welded_bolted" />
+      return <FieldWeldProgressScreen title={t("weldedBolted")} description="" stage="welded_bolted" />
     case "supported":
-      return <FieldSupportProgressScreen title="Supported" description="" stage="supported" />
+      return <FieldSupportProgressScreen title={t("supported")} description="" stage="supported" />
     case "rft":
       return null
   }
@@ -57,6 +60,9 @@ function OperationPanel({ operation }: { operation: ErectionOperationId }): Reac
  * and the selected spool opens in a full-height overlay drawer with six process groups in reach.
  */
 export function ErectionWorkbench({ operation }: { operation: ErectionOperationId | null }) {
+  const t = useTranslations("erection.workbench")
+  const te = useTranslations("erection")
+  const stepWords = (step: ErectionStep) => ({ ...step, lines: step.lines.map((line) => ({ label: te(`line.${line.label}`), value: line.value === "yes" ? te("shared.yes") : line.value })) })
   const state = useErectionReadiness()
   const { projectId, isLoading, loadFailed, rows, selected, select, canView } = state
   const [spoolParam] = useWorkContextParam("spool")
@@ -67,12 +73,12 @@ export function ErectionWorkbench({ operation }: { operation: ErectionOperationI
   const here = query ? `${pathname}?${query}` : pathname
 
   if (!projectId) {
-    return <p className="text-muted-foreground text-sm">Select a project to work on erection.</p>
+    return <p className="text-muted-foreground text-sm">{t("selectAProjectToWork")}</p>
   }
   if (!canView) {
     return (
       <p className="text-muted-foreground text-sm">
-        Viewing erection progress needs the erection.view capability on this project.
+        {t("viewingErectionProgressNeedsThe")}
       </p>
     )
   }
@@ -102,7 +108,7 @@ export function ErectionWorkbench({ operation }: { operation: ErectionOperationI
   return (
     <ErectionReadinessProvider value={state}>
       <div className="space-y-4">
-        <h1 className="sr-only">Field spools</h1>
+        <h1 className="sr-only">{t("fieldSpools")}</h1>
         <div className={styles.split} data-open={spoolParam ? "" : undefined}>
           <div className={styles.listPane}>
             <FieldSpoolPicker
@@ -117,59 +123,58 @@ export function ErectionWorkbench({ operation }: { operation: ErectionOperationI
 
           {loadFailed ? (
             <p className="text-destructive text-sm">
-              Field spools could not be loaded, so none are listed and nothing has been changed.
-              Reload the page, and report this if it persists.
+              {t("fieldSpoolsCouldNotBe")}
             </p>
           ) : resolving ? (
             <Skeleton className="h-96 w-full" />
           ) : unavailable ? (
             <div className="rounded-md border border-destructive/20 bg-destructive/10 p-4 text-sm">
               <p className="font-semibold text-destructive">
-                Selected spool is not available in this project.
+                {t("selectedSpoolIsNotAvailable")}
               </p>
               <p className="mt-1 text-muted-foreground">
-                The spool link may belong to another project or was removed.
+                {t("theSpoolLinkMayBelong")}
               </p>
               <div className="mt-3">
                 <Button variant="outline" size="sm" onClick={close}>
-                  Clear selection
+                  {t("clearSelection")}
                 </Button>
               </div>
             </div>
           ) : spool && current ? (
             <SpoolDrawer
-              kicker="Spool in erection"
+              kicker={t("spoolInErection")}
               title={spool.spoolNumber}
-              meta={`rev ${spool.revisionNumber} · ${spool.isoNumber}`}
+              meta={te("shared.revIso", { rev: spool.revisionNumber, iso: spool.isoNumber })}
               status={
                 <span className={styles.stageBadge}>
                   {spool.isRft
-                    ? "Ready for Test"
-                    : `Next: ${ERECTION_OPERATIONS.find((item) => item.id === nextErectionOperation(spool))?.title ?? "Ready for Test"}`}
+                    ? t("readyForTest")
+                    : t("nextOperation", { operation: te(`operation.${nextErectionOperation(spool)}`) })}
                 </span>
               }
               onClose={close}
             >
               <SpoolTimeline
-                label={`Erection of spool ${spool.spoolNumber}`}
-                processTitle="Erection process"
+                label={t("erectionOf", { spool: spool.spoolNumber })}
+                processTitle={t("erectionProcess")}
                 active={current.id}
                 onOpen={(id) => openOperation(id as ErectionOperationId)}
                 steps={ERECTION_OPERATIONS.map((item) => ({
                   id: item.id,
-                  title: item.title,
-                  ...erectionStep(item.id, spool),
+                  title: te(`operation.${item.id}`),
+                  ...stepWords(erectionStep(item.id, spool)),
                   locked: !canOpen(item),
-                  completedLabel: item.id === "rft" ? "Ready" : undefined,
+                  completedLabel: item.id === "rft" ? t("ready") : undefined,
                   stateLabel:
                     item.id === "rft"
                       ? spool.isRft
-                        ? "Ready"
-                        : "Evidence required"
+                        ? t("ready")
+                        : t("evidenceRequired")
                       : item.id === "material"
                         ? erectionStep(item.id, spool).state === "done"
-                          ? "Evidence complete"
-                          : "Evidence"
+                          ? t("evidenceComplete")
+                          : t("evidence")
                         : undefined,
                 }))}
               >
@@ -195,7 +200,7 @@ export function ErectionWorkbench({ operation }: { operation: ErectionOperationI
                         )
                       ) : (
                         <p className={styles.notice}>
-                          This operation is not part of your project access.
+                          {t("thisOperationIsNotPart")}
                         </p>
                       )}
                     </ErectionCommandProvider>

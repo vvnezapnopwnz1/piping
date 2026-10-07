@@ -5,6 +5,7 @@ import { useCallback, useContext, useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 import { RotateCw } from "lucide-react"
 
+import { errorDetail } from "@/i18n/format"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -55,6 +56,8 @@ export function FieldSupportProgressScreen({
   description: string
   stage?: RecordableErectionStage
 }) {
+  const ts = useTranslations("erection.shared")
+  const t = useTranslations("erection.fieldSupport")
   const tc = useTranslations("codes")
   const stageName = (stage: ErectionStage) => tc(`erectionStage.${stage}`)
   const state = useErectionReadiness()
@@ -101,7 +104,7 @@ export function FieldSupportProgressScreen({
       .catch((error: unknown) => {
         if (cancelled) return
         setFailedKey(key)
-        toast.error(error instanceof Error ? error.message : "Supports could not be loaded.")
+        toast.error(t("supportsCouldNotBeLoaded"), { description: errorDetail(error) })
       })
     return () => {
       cancelled = true
@@ -123,13 +126,13 @@ export function FieldSupportProgressScreen({
         try {
           await Promise.all([reloadSupports(), refresh()])
         } catch {
-          toast.error("Recorded; status could not be refreshed. Retry refresh.")
+          toast.error(t("recordedStatusCouldNotBe"))
           return
         }
-        toast.success(`Support ${support.supportNumber} recorded as installed.`)
+        toast.success(t("supportRecorded", { support: support.supportNumber }))
       } catch (error: unknown) {
         toast.error(
-          error instanceof Error ? error.message : "The support could not be recorded.",
+          t("theSupportCouldNotBe"), { description: errorDetail(error) },
         )
       } finally {
         setSavingId(null)
@@ -169,25 +172,25 @@ export function FieldSupportProgressScreen({
             {mode === "done" ? (
               <div className="space-y-4">
                 <p className="text-xs text-muted-foreground">
-                  Recorded {row.supportedOn?.slice(0, 10)}
+                  {ts("recordedOn", { date: row.supportedOn?.slice(0, 10) ?? "" })}
                 </p>
                 <Card>
                   <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
-                    <CardTitle>Supports on this spool</CardTitle>
+                    <CardTitle>{t("supportsOnThisSpool")}</CardTitle>
                     {loadState === "loading" ? (
                       <Badge variant="outline" className="border-amber-400 bg-amber-50 text-amber-900">
-                        Loading supports…
+                        {t("loadingSupports")}
                       </Badge>
                     ) : loadState === "error" ? (
                       <div className="flex items-center gap-2">
-                        <Badge variant="destructive">Failed to load supports</Badge>
+                        <Badge variant="destructive">{t("failedToLoadSupports")}</Badge>
                         <Button
                           type="button"
                           size="sm"
                           variant="outline"
                           onClick={() => setRefreshToken((t) => t + 1)}
                         >
-                          <RotateCw className="h-3 w-3 mr-1" aria-hidden="true" /> Retry
+                          <RotateCw className="h-3 w-3 mr-1" aria-hidden="true" /> {t("retry")}
                         </Button>
                       </div>
                     ) : null}
@@ -197,11 +200,11 @@ export function FieldSupportProgressScreen({
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Support</TableHead>
-                            <TableHead>Type</TableHead>
-                            <TableHead>Qty</TableHead>
-                            <TableHead>Installed</TableHead>
-                            <TableHead>Recorded in</TableHead>
+                            <TableHead>{t("support")}</TableHead>
+                            <TableHead>{t("type")}</TableHead>
+                            <TableHead>{t("qty")}</TableHead>
+                            <TableHead>{t("installed")}</TableHead>
+                            <TableHead>{t("recordedIn")}</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -227,7 +230,7 @@ export function FieldSupportProgressScreen({
                           {supports.length === 0 && loadState === "ready" ? (
                             <TableRow>
                               <TableCell colSpan={5} className="text-muted-foreground text-sm">
-                                This spool revision has no supports.
+                                {t("thisSpoolRevisionHasNo")}
                               </TableCell>
                             </TableRow>
                           ) : null}
@@ -257,21 +260,21 @@ export function FieldSupportProgressScreen({
 
                 <Card>
                   <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
-                    <CardTitle>Supports on this spool</CardTitle>
+                    <CardTitle>{t("supportsOnThisSpool")}</CardTitle>
                     {loadState === "loading" ? (
                       <Badge variant="outline" className="border-amber-400 bg-amber-50 text-amber-900">
-                        Loading supports…
+                        {t("loadingSupports")}
                       </Badge>
                     ) : loadState === "error" ? (
                       <div className="flex items-center gap-2">
-                        <Badge variant="destructive">Failed to load supports</Badge>
+                        <Badge variant="destructive">{t("failedToLoadSupports")}</Badge>
                         <Button
                           type="button"
                           size="sm"
                           variant="outline"
                           onClick={() => setRefreshToken((t) => t + 1)}
                         >
-                          <RotateCw className="h-3 w-3 mr-1" aria-hidden="true" /> Retry
+                          <RotateCw className="h-3 w-3 mr-1" aria-hidden="true" /> {t("retry")}
                         </Button>
                       </div>
                     ) : null}
@@ -279,7 +282,7 @@ export function FieldSupportProgressScreen({
                   <CardContent className="space-y-4">
                     <div className="flex flex-wrap items-end gap-3">
                       <label className="text-sm font-medium">
-                        Installation date
+                        {t("installationDate")}
                         <Input
                           ref={dateRef}
                           type="date"
@@ -295,12 +298,12 @@ export function FieldSupportProgressScreen({
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Support</TableHead>
-                            <TableHead>Type</TableHead>
-                            <TableHead>Qty</TableHead>
-                            <TableHead>Installed</TableHead>
-                            <TableHead>Recorded in</TableHead>
-                            <TableHead>Action</TableHead>
+                            <TableHead>{t("support")}</TableHead>
+                            <TableHead>{t("type")}</TableHead>
+                            <TableHead>{t("qty")}</TableHead>
+                            <TableHead>{t("installed")}</TableHead>
+                            <TableHead>{t("recordedIn")}</TableHead>
+                            <TableHead>{t("action")}</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -308,10 +311,10 @@ export function FieldSupportProgressScreen({
                             const isSavingThis = savingId === support.supportRevisionId
                             const actionLabel =
                               support.installedPhase === "fabrication"
-                                ? "Record in field"
+                                ? t("recordInField")
                                 : support.installedPhase === "erection"
-                                  ? "Record correction"
-                                  : "Record installed"
+                                  ? t("recordCorrection")
+                                  : t("recordInstalled")
 
                             return (
                               <TableRow key={support.supportRevisionId}>
@@ -354,7 +357,7 @@ export function FieldSupportProgressScreen({
                           {supports.length === 0 && loadState === "ready" ? (
                             <TableRow>
                               <TableCell colSpan={6} className="text-muted-foreground text-sm">
-                                This spool revision has no supports.
+                                {t("thisSpoolRevisionHasNo")}
                               </TableCell>
                             </TableRow>
                           ) : null}
@@ -364,30 +367,28 @@ export function FieldSupportProgressScreen({
 
                     {loadState === "error" ? (
                       <div className="flex items-center gap-2 text-destructive text-sm">
-                        <p>Supports could not be loaded, so none are listed and nothing has been changed.</p>
+                        <p>{t("supportsCouldNotBeLoaded2")}</p>
                         <Button
                           type="button"
                           size="sm"
                           variant="outline"
                           onClick={() => setRefreshToken((t) => t + 1)}
                         >
-                          <RotateCw className="h-3 w-3 mr-1" aria-hidden="true" /> Retry
+                          <RotateCw className="h-3 w-3 mr-1" aria-hidden="true" /> {t("retry")}
                         </Button>
                       </div>
                     ) : null}
 
                     {!dataCurrent ? (
-                      <p className="text-destructive text-sm">Refresh spool status before recording.</p>
+                      <p className="text-destructive text-sm">{t("refreshSpoolStatusBeforeRecording")}</p>
                     ) : !canRecord ? (
                       <p className="text-muted-foreground text-sm">
-                        Recording support installation needs the erection.progress.record capability.
+                        {t("recordingSupportInstallationNeedsThe")}
                       </p>
                     ) : null}
 
                     <p className="text-muted-foreground mt-3 text-xs">
-                      A support carries one installation record, so a support installed in the shop
-                      shows its fabrication phase here and is not counted as field evidence.
-                      Re-recording it moves it to the erection phase.
+                      {t("aSupportCarriesOneInstallation")}
                     </p>
                   </CardContent>
                 </Card>

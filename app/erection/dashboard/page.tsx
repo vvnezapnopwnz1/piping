@@ -1,12 +1,14 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { ErectionReadinessScreen } from "@/modules/construction/ui/erection/erection-readiness-screen"
 
 export default function ErectionDashboardPage() {
+  const t = useTranslations("erection.pages")
   return (
     <ErectionReadinessScreen
-      title="Erection Dashboard"
-      description="Live field-spool progress from the Supabase construction ledger."
+      title={t("erectionDashboard")}
+      description={t("liveFieldSpoolProgressFrom")}
       showCharts
     />
   )

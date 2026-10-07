@@ -53,6 +53,25 @@ for (const input of [
   assert.equal(result.ok, false)
 }
 
+// Each refusal names its field with a code; the screen words it (flange.validation).
+const base = {
+  projectId: "project-1",
+  flangeJointRevisionId: "revision-1",
+  jointCategoryId: "category-1",
+  torquingRequirementId: "method-1",
+  jointingValue: 125,
+  jointDate: "2026-08-05",
+  reportNumber: "REP-1",
+  tagNumber: "TAG-1",
+  jointerIds: ["J-01"],
+  idempotencyKey: "idem-1",
+}
+const now = new Date("2026-08-05T12:00:00Z")
+assert.deepEqual(normalizeFlangeProgressInput({ ...base, jointerIds: [] }, now).errors, { jointerIds: "jointers_required" })
+assert.deepEqual(normalizeFlangeProgressInput({ ...base, jointerIds: ["J-01", "j-01"] }, now).errors, { jointerIds: "jointers_unique" })
+assert.deepEqual(normalizeFlangeProgressInput({ ...base, jointDate: "2026-08-06" }, now).errors, { jointDate: "date_future" })
+assert.deepEqual(normalizeFlangeProgressInput({ ...base, reportNumber: " ", projectId: "" }, now).errors, { projectId: "required", reportNumber: "report_required" })
+
 assert.equal(deriveFlangeProgressState({ hasEffectiveProgress: false, isCurrentRevision: true, isRemoved: false }), "not_started")
 assert.equal(deriveFlangeProgressState({ hasEffectiveProgress: true, isCurrentRevision: true, isRemoved: false }), "completed")
 assert.equal(deriveFlangeProgressState({ hasEffectiveProgress: true, isCurrentRevision: false, isRemoved: false }), "revision_mismatch")

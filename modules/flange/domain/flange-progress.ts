@@ -18,15 +18,20 @@ export type NormalizedFlangeProgressInput = Omit<FlangeProgressInput, "jointerId
   jointerIds: string[]
 }
 
+/** Why a flange record is refused, per field; the screen words it from flange.validation. */
+export type FlangeValidationCode =
+  | "required" | "report_required" | "tag_required" | "jointing_value_invalid"
+  | "date_format" | "date_invalid" | "date_future" | "jointers_unique" | "jointers_required"
+
 export type FlangeProgressValidation<T> =
   | { ok: true; value: T; errors: Record<string, never> }
-  | { ok: false; errors: Record<string, string> }
+  | { ok: false; errors: Record<string, FlangeValidationCode> }
 
 export function normalizeFlangeProgressInput(
   input: FlangeProgressInput,
   now = new Date(),
 ): FlangeProgressValidation<NormalizedFlangeProgressInput> {
-  const errors: Record<string, string> = {}
+  const errors: Record<string, FlangeValidationCode> = {}
   const requiredIds = [
     ["projectId", input.projectId],
     ["flangeJointRevisionId", input.flangeJointRevisionId],
@@ -35,24 +40,24 @@ export function normalizeFlangeProgressInput(
     ["idempotencyKey", input.idempotencyKey],
   ] as const
   for (const [name, value] of requiredIds) {
-    if (!value.trim()) errors[name] = `${name} is required`
+    if (!value.trim()) errors[name] = "required"
   }
 
   const reportNumber = input.reportNumber.trim()
   const tagNumber = input.tagNumber.trim()
-  if (!reportNumber) errors.reportNumber = "Report number is required"
-  if (!tagNumber) errors.tagNumber = "Tag number is required"
+  if (!reportNumber) errors.reportNumber = "report_required"
+  if (!tagNumber) errors.tagNumber = "tag_required"
   if (!Number.isFinite(input.jointingValue) || input.jointingValue <= 0) {
-    errors.jointingValue = "Jointing value must be positive and finite"
+    errors.jointingValue = "jointing_value_invalid"
   }
 
   const jointDate = input.jointDate.trim()
   if (!/^\d{4}-\d{2}-\d{2}$/.test(jointDate)) {
-    errors.jointDate = "Joint date must use YYYY-MM-DD"
+    errors.jointDate = "date_format"
   } else {
     const parsed = new Date(`${jointDate}T00:00:00Z`)
-    if (Number.isNaN(parsed.getTime())) errors.jointDate = "Joint date is invalid"
-    if (jointDate > now.toISOString().slice(0, 10)) errors.jointDate = "Joint date cannot be in the future"
+    if (Number.isNaN(parsed.getTime())) errors.jointDate = "date_invalid"
+    if (jointDate > now.toISOString().slice(0, 10)) errors.jointDate = "date_future"
   }
 
   const jointerIds: string[] = []
@@ -62,13 +67,13 @@ export function normalizeFlangeProgressInput(
     if (!id) continue
     const key = id.toUpperCase()
     if (seen.has(key)) {
-      errors.jointerIds = "Jointer IDs must be unique"
+      errors.jointerIds = "jointers_unique"
       continue
     }
     seen.add(key)
     jointerIds.push(id)
   }
-  if (jointerIds.length === 0) errors.jointerIds = "At least one jointer is required"
+  if (jointerIds.length === 0) errors.jointerIds = "jointers_required"
 
   if (Object.keys(errors).length > 0) return { ok: false, errors }
   return {

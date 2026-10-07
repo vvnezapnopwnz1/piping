@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import {
   createContext,
   createElement,
@@ -13,6 +14,7 @@ import {
 } from "react"
 import { toast } from "sonner"
 
+import { errorDetail } from "@/i18n/format"
 import { useNameWorkContext, useWorkContextParam } from "@/components/pipeqc/work-context"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { useOptionalAccess } from "@/modules/access/ui/access-context"
@@ -73,6 +75,7 @@ export function useErectionReadiness(): ErectionReadinessState {
 }
 
 function useOwnErectionReadiness(enabled: boolean): ErectionReadinessState {
+  const t = useTranslations("erection.shared")
   const access = useOptionalAccess()
   const projectId = access?.access.projectId ?? null
   const canRecord = access?.can("erection.progress.record") ?? false
@@ -122,7 +125,7 @@ function useOwnErectionReadiness(enabled: boolean): ErectionReadinessState {
         setRows([])
       }
       toast.error(
-        error instanceof Error ? error.message : "Erection readiness could not be loaded.",
+        t("erectionReadinessCouldNotBe"), { description: errorDetail(error) },
       )
       throw error
     } finally {
