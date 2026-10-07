@@ -1,21 +1,16 @@
 "use client"
 
-import Link from "next/link"
-import { usePathname, useSearchParams } from "next/navigation"
 import { useCallback, useEffect, useRef, useState } from "react"
-import { ArrowRight } from "lucide-react"
 
 import { Skeleton } from "@/components/ui/skeleton"
 import { canVisit } from "@/components/pipeqc/navigation-model"
 import { useRequestLeave } from "@/components/pipeqc/unsaved-input-guard"
 import { useWorkContextParam } from "@/components/pipeqc/work-context"
-import { linkFrom } from "@/components/pipeqc/workspace-model"
-import type { Capability } from "@/modules/access/domain/capability"
 import { useOptionalAccess } from "@/modules/access/ui/access-context"
 
 import { stageLabel } from "../../domain/construction-phase"
 import type { SpoolStatus } from "../../infrastructure/supabase-construction-repository"
-import { FactsStrip, SpoolDrawer, SpoolTimeline } from "../spool-drawer"
+import { SpoolDrawer, SpoolTimeline } from "../spool-drawer"
 import styles from "../spool-workbench.module.css"
 import {
   FABRICATION_OPERATIONS,
@@ -54,30 +49,6 @@ function OperationPanel({
   }
 }
 
-function spoolFacts(spool: SpoolStatus, here: string, can: ((capability: Capability) => boolean) | undefined) {
-  const ratio = (done: number, total: number) => (total ? `${done} of ${total}` : "none")
-  const ndeHref =
-    can && canVisit("/nde", can) ? linkFrom(`/nde?spool=${encodeURIComponent(spool.spoolRevisionId)}`, here) : null
-  return [
-    { label: "Material lines", value: ratio(spool.lineChecked, spool.lineTotal) },
-    { label: "Shop welds", value: ratio(spool.weldComplete, spool.weldTotal) },
-    { label: "Supports", value: ratio(spool.supportRecorded, spool.supportTotal) },
-    {
-      label: "NDE open",
-      value:
-        spool.ndePending > 0 && ndeHref ? (
-          <Link href={ndeHref} className={styles.factLink}>
-            {spool.ndePending} <ArrowRight aria-hidden="true" />
-          </Link>
-        ) : (
-          String(spool.ndePending)
-        ),
-    },
-    { label: "PWHT open", value: String(spool.pwhtPending) },
-    { label: "Releasable", value: spool.isReleasable ? "Yes" : "No" },
-  ]
-}
-
 /**
  * Fabrication as one workbench: the spool list keeps its full width, and the selected spool opens
  * in a full-height overlay drawer with its eight shop stages in reach and a separate working area
@@ -96,9 +67,6 @@ export function FabricationWorkbench({
   const [refreshToken, setRefreshToken] = useState(0)
   const requestLeave = useRequestLeave()
   const can = useOptionalAccess()?.can
-  const pathname = usePathname()
-  const query = useSearchParams().toString()
-  const here = query ? `${pathname}?${query}` : pathname
 
   const currentRevisionRef = useRef(spool?.spoolRevisionId ?? null)
   useEffect(() => {
@@ -156,12 +124,13 @@ export function FabricationWorkbench({
             meta={`rev ${spool.revisionNumber} · ${spool.isoNumber}`}
             status={
               <span className={styles.stageBadge}>
-                {spool.currentStage ? stageLabel(spool.currentStage) : "Not started"}
+                {spool.dates.laydown
+                  ? "Fabrication complete"
+                  : `Next: ${FABRICATION_OPERATIONS.find((op) => op.id === nextOperation(spool.dates))?.title ?? "Material"}`}
               </span>
             }
             onClose={close}
           >
-            <FactsStrip facts={spoolFacts(spool, here, can)} />
             <SpoolTimeline
               label={`Shop stages of spool ${spool.spoolNumber}`}
               active={current.id}

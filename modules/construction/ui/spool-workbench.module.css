@@ -164,34 +164,6 @@
   white-space: nowrap;
 }
 
-/* Evidence */
-.factsStrip {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  flex: none;
-  gap: 6px;
-  margin: 0;
-}
-
-.factsStrip > div {
-  padding: 6px 8px;
-  border: 1px solid var(--wb-line);
-  border-radius: 6px;
-  background: var(--wb-field);
-}
-
-.factsStrip dt {
-  color: var(--muted-foreground);
-  font-size: 11px;
-}
-
-.factsStrip dd {
-  margin: 0;
-  font-size: 13.5px;
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-
 .factLink {
   display: inline-flex;
   align-items: center;
@@ -420,21 +392,6 @@
 .operationTitle {
   margin: 0;
   font: 400 22px/1.2 var(--wb-serif);
-}
-
-.operationState {
-  margin-left: auto;
-  color: var(--muted-foreground);
-  font-size: 11px;
-}
-
-.operationDates {
-  display: none;
-  flex-basis: 100%;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  color: var(--muted-foreground);
-  font-size: 11px;
 }
 
 .operationScroll {
@@ -854,10 +811,6 @@
     display: none;
   }
 
-  .operationDates {
-    display: flex;
-  }
-
   .operationPane {
     flex: 1;
   }
@@ -884,15 +837,6 @@
   .drawerBody {
     padding: 8px;
     gap: 8px;
-  }
-
-  .factsStrip {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 4px;
-  }
-
-  .factsStrip > div {
-    padding: 4px 6px;
   }
 
   .operationHead {

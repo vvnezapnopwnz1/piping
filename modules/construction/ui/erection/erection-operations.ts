@@ -51,7 +51,6 @@ export interface ErectionStep {
 }
 
 const day = (value: string | null) => (value ? value.slice(0, 10) : null)
-const ratio = (done: number, total: number) => (total ? `${done} of ${total}` : "none")
 
 /** The milestone the spool needs next, in the order the readiness view evaluates them. */
 export function nextErectionOperation(row: ErectionReadiness): ErectionOperationId {
@@ -71,26 +70,22 @@ export function erectionStep(operation: ErectionOperationId, row: ErectionReadin
       return { lines: [{ label: "To Site", value: day(row.toSiteOn) }], state: milestone(row.toSiteOn, "to_site") }
     case "material":
       return {
-        lines: [{ label: "Lines checked", value: ratio(row.materialLineChecked, row.materialLineTotal) }],
+        lines: [{ label: "Field material", value: day(row.materialCheckedOn) }],
         state:
-          row.materialLineTotal > 0 && row.materialLineChecked >= row.materialLineTotal ? "done" : "later",
+          row.materialCheckedOn || (row.materialLineTotal > 0 && row.materialLineChecked >= row.materialLineTotal)
+            ? "done"
+            : "later",
       }
     case "erected":
       return { lines: [{ label: "Erected", value: day(row.erectedOn) }], state: milestone(row.erectedOn, "erected") }
     case "welded":
       return {
-        lines: [
-          { label: "Field welds", value: ratio(row.fieldWeldComplete, row.fieldWeldTotal) },
-          { label: "Welded / Bolted", value: day(row.weldedBoltedOn) },
-        ],
+        lines: [{ label: "Welded / Bolted", value: day(row.weldedBoltedOn) }],
         state: milestone(row.weldedBoltedOn, "welded"),
       }
     case "supported":
       return {
-        lines: [
-          { label: "Field supports", value: ratio(row.fieldSupportRecorded, row.fieldSupportTotal) },
-          { label: "Supported", value: day(row.supportedOn) },
-        ],
+        lines: [{ label: "Supported", value: day(row.supportedOn) }],
         state: milestone(row.supportedOn, "supported"),
       }
     case "rft":

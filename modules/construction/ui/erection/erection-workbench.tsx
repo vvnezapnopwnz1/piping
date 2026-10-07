@@ -1,23 +1,17 @@
 "use client"
 
-import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
-import { type ReactNode } from "react"
-import { ArrowRight } from "lucide-react"
+import type { ReactNode } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { canVisit } from "@/components/pipeqc/navigation-model"
-import { withProject } from "@/components/pipeqc/project-url"
 import { useRequestLeave } from "@/components/pipeqc/unsaved-input-guard"
 import { useWorkContextParam } from "@/components/pipeqc/work-context"
-import { linkFrom } from "@/components/pipeqc/workspace-model"
-import { useSupabaseAuth } from "@/contexts/supabase-auth-context"
 import { useOptionalAccess } from "@/modules/access/ui/access-context"
 
-import { erectionStageDisplay } from "../../application/describe-erection-readiness"
 import type { ErectionReadiness } from "../../infrastructure/supabase-erection-repository"
-import { FactsStrip, SpoolDrawer, SpoolTimeline } from "../spool-drawer"
+import { SpoolDrawer, SpoolTimeline } from "../spool-drawer"
 import styles from "../spool-workbench.module.css"
 import {
   ERECTION_OPERATIONS,
@@ -68,7 +62,6 @@ export function ErectionWorkbench({ operation }: { operation: ErectionOperationI
   const [spoolParam] = useWorkContextParam("spool")
   const requestLeave = useRequestLeave()
   const can = useOptionalAccess()?.can
-  const code = useSupabaseAuth().access?.activityCode
   const pathname = usePathname()
   const query = useSearchParams().toString()
   const here = query ? `${pathname}?${query}` : pathname
@@ -105,11 +98,6 @@ export function ErectionWorkbench({ operation }: { operation: ErectionOperationI
     if (!selected || !target || !canOpen(target)) return
     requestLeave(() => select(selected, { extra: { op: id, step: null } }))
   }
-
-  const ndeHref =
-    spool && can && canVisit("/nde", can)
-      ? linkFrom(withProject(`/nde?spool=${encodeURIComponent(spool.spoolRevisionId)}`, code), here)
-      : null
 
   return (
     <ErectionReadinessProvider value={state}>
@@ -153,38 +141,15 @@ export function ErectionWorkbench({ operation }: { operation: ErectionOperationI
               kicker="Spool in erection"
               title={spool.spoolNumber}
               meta={`rev ${spool.revisionNumber} · ${spool.isoNumber}`}
-              status={<span className={styles.stageBadge}>{erectionStageDisplay(spool).label}</span>}
+              status={
+                <span className={styles.stageBadge}>
+                  {spool.isRft
+                    ? "Ready for Test"
+                    : `Next: ${ERECTION_OPERATIONS.find((item) => item.id === nextErectionOperation(spool))?.title ?? "Ready for Test"}`}
+                </span>
+              }
               onClose={close}
             >
-              <FactsStrip
-                facts={[
-                  {
-                    label: "Material lines",
-                    value: `${spool.materialLineChecked} of ${spool.materialLineTotal}`,
-                  },
-                  {
-                    label: "Field welds",
-                    value: `${spool.fieldWeldComplete} of ${spool.fieldWeldTotal}`,
-                  },
-                  {
-                    label: "Field supports",
-                    value: `${spool.fieldSupportRecorded} of ${spool.fieldSupportTotal}`,
-                  },
-                  {
-                    label: "NDE open",
-                    value:
-                      spool.ndePending > 0 && ndeHref ? (
-                        <Link href={ndeHref} className={styles.factLink}>
-                          {spool.ndePending} <ArrowRight aria-hidden="true" />
-                        </Link>
-                      ) : (
-                        String(spool.ndePending)
-                      ),
-                  },
-                  { label: "PWHT open", value: String(spool.pwhtPending) },
-                  { label: "Ready for Test", value: spool.isRft ? "Yes" : "No" },
-                ]}
-              />
               <SpoolTimeline
                 label={`Erection of spool ${spool.spoolNumber}`}
                 processTitle="Erection process"

@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, type ReactNode } from "react"
 import { Check } from "lucide-react"
 
 import { RecordDrawer } from "@/components/ui/record-drawer"
+import { timelineLines } from "./timeline-lines"
 import styles from "./spool-workbench.module.css"
 
 /**
@@ -85,6 +86,8 @@ export function SpoolTimeline({
     <ol className={styles.timeline}>
       {steps.map((step) => {
         const open = step.id === active
+        const visibleLines = timelineLines(step.title, step.lines)
+        const singleDate = visibleLines.length === 0 && step.lines.length === 1 ? step.lines[0]?.value : null
         return (
           <li key={step.id} className={styles.tStep} data-state={step.state} data-open={open ? "" : undefined}>
             <div className={styles.tMain}>
@@ -100,6 +103,7 @@ export function SpoolTimeline({
                 <span className={styles.tHeadContent}>
                 <span className={styles.tTitleRow}>
                   <span className={styles.tTitle}>{step.title}</span>
+                  {singleDate ? <span className={styles.stageDate}>{singleDate}</span> : null}
                   {step.state === "done" ? (
                     <span className={styles.tDone}>{step.completedLabel ?? "Recorded"}</span>
                   ) : step.state === "next" ? (
@@ -107,13 +111,15 @@ export function SpoolTimeline({
                   ) : null}
                   {step.locked ? <span className={styles.tLocked}>Not in your access</span> : null}
                 </span>
-                <span className={styles.tLines}>
-                  {step.lines.map((line) => (
-                    <span key={line.label} data-recorded={line.value ? "" : undefined}>
-                      {line.label} <span className={styles.stageDate}>{line.value ?? "—"}</span>
-                    </span>
-                  ))}
-                </span>
+                {visibleLines.length > 0 ? (
+                  <span className={styles.tLines}>
+                    {visibleLines.map((line) => (
+                      <span key={line.label} data-recorded={line.value ? "" : undefined}>
+                        {line.label} <span className={styles.stageDate}>{line.value ?? "—"}</span>
+                      </span>
+                    ))}
+                  </span>
+                ) : null}
                 </span>
               </button>
             </div>
@@ -125,32 +131,11 @@ export function SpoolTimeline({
     <section id={panelId} className={styles.operationPane} aria-labelledby={`${panelId}-title`}>
       <header className={styles.operationHead}>
         <h3 id={`${panelId}-title`} className={styles.operationTitle}>{current?.title}</h3>
-        <span className={styles.operationState}>
-          {current?.stateLabel ??
-            (current?.state === "done" ? "Recorded" : current?.state === "next" ? "Next to record" : "Not recorded")}
-        </span>
-        <div className={styles.operationDates}>
-          {current?.lines.map((line) => <span key={line.label}>{line.label} <span className={styles.stageDate}>{line.value ?? "—"}</span></span>)}
-        </div>
       </header>
       <div ref={operation} className={styles.operationScroll} data-operation-scroll="" tabIndex={0} aria-label={`${current?.title} operation`}>
         {children}
       </div>
     </section>
     </div>
-  )
-}
-
-/** The spool's evidence as a compact strip at the top of the drawer. */
-export function FactsStrip({ facts }: { facts: readonly { label: string; value: ReactNode }[] }) {
-  return (
-    <dl className={styles.factsStrip}>
-      {facts.map((fact) => (
-        <div key={fact.label}>
-          <dt>{fact.label}</dt>
-          <dd>{fact.value}</dd>
-        </div>
-      ))}
-    </dl>
   )
 }
