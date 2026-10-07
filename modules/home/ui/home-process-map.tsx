@@ -125,7 +125,6 @@ export function ProcessMap({
           <span key={area.id} data-linked={Boolean(ndeArea?.serves?.includes(area.id)) || undefined} />
         ))}
       </div>
-      <h2 className={`${styles.sectionLabel} ${styles.srOnlyNarrow}`}>Shared services</h2>
       <ul className={styles.services}>
         {ndeArea ? (
           <li key={ndeArea.id} data-area={ndeArea.id}>
@@ -140,7 +139,9 @@ export function ProcessMap({
         >
           {secondaryAreas.map((item, index) => (
             <span key={item.id} className="inline-flex items-center gap-2">
-              {index > 0 ? <span aria-hidden="true">·</span> : null}
+              {index > 0 ? (
+                <span className="inline-block size-1 rounded-full bg-muted-foreground/60" aria-hidden="true" />
+              ) : null}
               <Link href={item.href} className="hover:text-foreground underline-offset-4 hover:underline">
                 {item.title}
               </Link>

@@ -66,7 +66,7 @@ export default [
     // Unit tests hand-roll Supabase client mocks, where `any` is the honest type, and print
     // their own progress. Operator scripts print by design: stdout is their interface.
     name: "pipeqc/tests-and-scripts",
-    files: ["**/*.test.ts", "**/*.test.tsx", "scripts/**/*.ts"],
+    files: ["**/*.test.ts", "**/*.test.tsx", "scripts/**/*.ts", "tasks/**/*.ts"],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
       "no-console": "off",
