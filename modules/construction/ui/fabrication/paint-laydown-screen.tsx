@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
-import { ArrowRight, RotateCw } from "lucide-react"
+import { RotateCw } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -29,6 +29,7 @@ import {
 import { SpoolPicker } from "./spool-picker"
 import { useContextSpool, type EmbeddedSpool } from "./use-context-spool"
 import { SpoolStageTimeline } from "./spool-stage-timeline"
+import { panelMode } from "../panel-mode"
 import styles from "../spool-workbench.module.css"
 
 const today = () => new Date().toISOString().slice(0, 10)
@@ -59,6 +60,7 @@ export function PaintLaydownScreen({
   const [storedOn, setStoredOn] = useState(today())
   const [refreshToken, setRefreshToken] = useState(0)
   const [browsingSpools, setBrowsingSpools] = useState(false)
+  const [attemptedSave, setAttemptedSave] = useState(false)
 
   const [lastSpoolId, setLastSpoolId] = useState<string | null>(null)
   if (spoolRevisionId !== lastSpoolId) {
@@ -71,6 +73,7 @@ export function PaintLaydownScreen({
     setW10p("")
     setLocationId("")
     setStoredOn(today())
+    setAttemptedSave(false)
   }
 
   const currentKey = `${projectId}:${refreshToken}`
@@ -183,6 +186,7 @@ export function PaintLaydownScreen({
   }
 
   const handleRecordPainting = async () => {
+    setAttemptedSave(true)
     if (!spool || pendingRef.current || !gate.allowed) return
     pendingRef.current = true
     setPendingAction("record-painting")
@@ -257,6 +261,14 @@ export function PaintLaydownScreen({
     }
   }
 
+  const paintDone = Boolean(spool?.dates.sent_to_paint && spool?.dates.painted && spool?.dates.final_qc)
+  const paintBlockedBy = !spool?.dates.qc_release ? "QC release" : null
+  const paintPanelMode = spool ? panelMode({ allRecorded: paintDone, blockedBy: paintBlockedBy }) : "actionable"
+
+  const laydownDone = Boolean(spool?.dates.laydown)
+  const laydownBlockedBy = !spool?.dates.painted || !spool?.dates.final_qc ? "Paint" : null
+  const laydownPanelMode = spool ? panelMode({ allRecorded: laydownDone, blockedBy: laydownBlockedBy }) : "actionable"
+
   return (
     <div className="space-y-4" data-explicit-unsaved-commit="true">
       {/* Inside the workbench the one spool list sits above every operation. */}
@@ -288,195 +300,193 @@ export function PaintLaydownScreen({
           )}
 
           {mode === "paint" ? (
-            <Card>
-              <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
-                <CardTitle>Painting</CardTitle>
-                {loadState === "loading" ? (
-                  <Badge variant="outline" className="border-amber-400 bg-amber-50 text-amber-900">
-                    Loading paint referentials…
-                  </Badge>
-                ) : loadState === "error" ? (
-                  <div className="flex items-center gap-2">
-                    <Badge variant="destructive">Failed to load referentials</Badge>
+            paintPanelMode === "done" ? (
+              <p className="text-xs text-muted-foreground">
+                Sent {spool.dates.sent_to_paint} · Painted {spool.dates.painted} · Final QC {spool.dates.final_qc}
+              </p>
+            ) : paintPanelMode === "blocked" ? (
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <span>QC release is required before painting</span>
+                {embedded ? (
+                  embedded.canOpenOperation?.("release") ? (
                     <Button
                       type="button"
                       size="sm"
                       variant="outline"
-                      onClick={() => setRefreshToken((t) => t + 1)}
+                      onClick={() => embedded.onOpenOperation?.("release")}
                     >
-                      <RotateCw className="h-3 w-3 mr-1" aria-hidden="true" /> Retry
+                      Open QC release
+                    </Button>
+                  ) : null
+                ) : releaseHref ? (
+                  <Button asChild size="sm" variant="outline">
+                    <Link href={releaseHref}>Open QC release</Link>
+                  </Button>
+                ) : null}
+              </div>
+            ) : !spool.dates.sent_to_paint ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Sent to Paint</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex flex-wrap items-end gap-2 pt-1">
+                    <label className="text-sm font-medium">
+                      Sent to Paint on
+                      <Input
+                        ref={sentToPaintOnRef}
+                        type="date"
+                        value={sentToPaintOn}
+                        disabled={pendingAction !== null}
+                        onChange={(event) => setSentToPaintOn(event.target.value)}
+                        className="mt-1"
+                      />
+                    </label>
+                    <Button
+                      type="button"
+                      disabled={pendingAction !== null}
+                      loading={pendingAction === "sent-to-paint"}
+                      onClick={() => void handleSentToPaint()}
+                    >
+                      Record Sent to Paint
                     </Button>
                   </div>
-                ) : null}
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* 3 stages and server dates */}
-                <div className={styles.opSummary}>
-                  <div className={styles.opSummaryItem}>
-                    <span className={styles.opSummaryLabel}>Sent to Paint:</span>
-                    <span className={styles.opSummaryValue}>
-                      {spool.dates.sent_to_paint ? spool.dates.sent_to_paint : "Not recorded"}
-                    </span>
-                  </div>
-                  <div className={styles.opSummaryItem}>
-                    <span className={styles.opSummaryLabel}>Painted:</span>
-                    <span className={styles.opSummaryValue}>
-                      {spool.dates.painted ? spool.dates.painted : "Not recorded"}
-                    </span>
-                  </div>
-                  <div className={styles.opSummaryItem}>
-                    <span className={styles.opSummaryLabel}>Final QC:</span>
-                    <span className={styles.opSummaryValue}>
-                      {spool.dates.final_qc ? spool.dates.final_qc : "Not recorded"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Blocker check: QC release */}
-                {spool.dates.qc_release === null ? (
-                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
-                    <span>QC release is required before sending the spool to paint.</span>
-                    {embedded ? (
-                      embedded.canOpenOperation?.("release") ? (
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-xs text-muted-foreground">
+                  Sent to paint {spool.dates.sent_to_paint}
+                </p>
+                <Card>
+                  <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
+                    <CardTitle>Painting</CardTitle>
+                    {loadState === "loading" ? (
+                      <Badge variant="outline" className="border-amber-400 bg-amber-50 text-amber-900">
+                        Loading paint referentials…
+                      </Badge>
+                    ) : loadState === "error" ? (
+                      <div className="flex items-center gap-2">
+                        <Badge variant="destructive">Failed to load referentials</Badge>
                         <Button
                           type="button"
                           size="sm"
                           variant="outline"
-                          onClick={() => embedded.onOpenOperation?.("release")}
+                          onClick={() => setRefreshToken((t) => t + 1)}
                         >
-                          Open QC release <ArrowRight className="h-3.5 w-3.5 ml-1 inline" aria-hidden="true" />
+                          <RotateCw className="h-3 w-3 mr-1" aria-hidden="true" /> Retry
                         </Button>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">QC release not in your access</span>
-                      )
-                    ) : releaseHref ? (
-                      <Link href={releaseHref} className={styles.checkActionLink}>
-                        Open QC release <ArrowRight className="h-3.5 w-3.5 ml-1 inline" aria-hidden="true" />
-                      </Link>
+                      </div>
                     ) : null}
-                  </div>
-                ) : null}
-
-                {/* Sent to Paint group */}
-                <div className="rounded-md border p-3 space-y-2">
-                  <h4 className="text-sm font-semibold">1. Sent to Paint</h4>
-                  {spool.dates.sent_to_paint ? (
-                    <p className="text-xs text-muted-foreground">
-                      Sent to paint was recorded on{" "}
-                      <span className="font-semibold text-foreground">{spool.dates.sent_to_paint}</span>.
-                    </p>
-                  ) : (
-                    <div className="flex flex-wrap items-end gap-2 pt-1">
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid gap-3 sm:grid-cols-2">
                       <label className="text-sm font-medium">
-                        Sent to Paint on
+                        Line service
+                        <select
+                          ref={lineServiceRef}
+                          className="mt-1 w-full rounded border px-2 py-1"
+                          value={lineServiceId}
+                          disabled={pendingAction !== null}
+                          onChange={(event) => {
+                            setLineServiceId(event.target.value)
+                            setAttemptedSave(false)
+                          }}
+                        >
+                          <option value="">Select…</option>
+                          {paintOptions.map((item) => (
+                            <option key={item.lineServiceId} value={item.lineServiceId}>
+                              {item.lineServiceCode} — {item.ralCode} ({item.requiredFinalDftMicrons} µm)
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="text-sm font-medium">
+                        Painted on
                         <Input
-                          ref={sentToPaintOnRef}
+                          ref={paintedOnRef}
                           type="date"
-                          value={sentToPaintOn}
-                          disabled={pendingAction !== null || spool.dates.qc_release === null}
-                          onChange={(event) => setSentToPaintOn(event.target.value)}
+                          value={paintedOn}
+                          disabled={pendingAction !== null}
+                          onChange={(event) => setPaintedOn(event.target.value)}
                           className="mt-1"
                         />
                       </label>
+                      <label className="text-sm font-medium">
+                        Final QC on (optional)
+                        <Input
+                          ref={finalQcOnRef}
+                          type="date"
+                          value={finalQcOn}
+                          disabled={pendingAction !== null}
+                          onChange={(event) => setFinalQcOn(event.target.value)}
+                          className="mt-1"
+                        />
+                      </label>
+                      <label className="text-sm font-medium">
+                        Measured DFT (µm, optional)
+                        <Input
+                          ref={measuredDftRef}
+                          type="number"
+                          value={measuredDft}
+                          disabled={pendingAction !== null}
+                          onChange={(event) => setMeasuredDft(event.target.value)}
+                          className="mt-1"
+                        />
+                      </label>
+                      <label className="text-sm font-medium sm:col-span-2">
+                        W10P form number {measured !== null ? "(required with DFT)" : "(optional)"}
+                        <Input
+                          ref={w10pRef}
+                          value={w10p}
+                          disabled={pendingAction !== null}
+                          onChange={(event) => setW10p(event.target.value)}
+                          placeholder="Required when DFT is entered"
+                          className="mt-1"
+                        />
+                      </label>
+                    </div>
+
+                    {attemptedSave && gate.reason ? <p className="text-sm text-destructive">{gate.reason}</p> : null}
+
+                    <div className={embedded ? styles.recordActions : undefined}>
                       <Button
                         type="button"
-                        variant="outline"
-                        disabled={
-                          spool.dates.qc_release === null ||
-                          spool.dates.sent_to_paint !== null ||
-                          pendingAction !== null
-                        }
-                        loading={pendingAction === "sent-to-paint"}
-                        onClick={() => void handleSentToPaint()}
+                        disabled={pendingAction !== null}
+                        loading={pendingAction === "record-painting"}
+                        onClick={() => void handleRecordPainting()}
                       >
-                        Record Sent to Paint
+                        Record painting
                       </Button>
                     </div>
-                  )}
-                </div>
-
-                {/* Painting activities group */}
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold">2. Painting activities</h4>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <label className="text-sm font-medium">
-                      Line service
-                      <select
-                        ref={lineServiceRef}
-                        className="mt-1 w-full rounded border px-2 py-1"
-                        value={lineServiceId}
-                        disabled={pendingAction !== null}
-                        onChange={(event) => setLineServiceId(event.target.value)}
-                      >
-                        <option value="">Select…</option>
-                        {paintOptions.map((item) => (
-                          <option key={item.lineServiceId} value={item.lineServiceId}>
-                            {item.lineServiceCode} — {item.ralCode} ({item.requiredFinalDftMicrons} µm)
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="text-sm font-medium">
-                      Painted on
-                      <Input
-                        ref={paintedOnRef}
-                        type="date"
-                        value={paintedOn}
-                        disabled={pendingAction !== null}
-                        onChange={(event) => setPaintedOn(event.target.value)}
-                        className="mt-1"
-                      />
-                    </label>
-                    <label className="text-sm font-medium">
-                      Final QC on (optional)
-                      <Input
-                        ref={finalQcOnRef}
-                        type="date"
-                        value={finalQcOn}
-                        disabled={pendingAction !== null}
-                        onChange={(event) => setFinalQcOn(event.target.value)}
-                        className="mt-1"
-                      />
-                    </label>
-                    <label className="text-sm font-medium">
-                      Measured DFT (µm, optional)
-                      <Input
-                        ref={measuredDftRef}
-                        type="number"
-                        value={measuredDft}
-                        disabled={pendingAction !== null}
-                        onChange={(event) => setMeasuredDft(event.target.value)}
-                        className="mt-1"
-                      />
-                    </label>
-                    <label className="text-sm font-medium sm:col-span-2">
-                      W10P form number {measured !== null ? "(required with DFT)" : "(optional)"}
-                      <Input
-                        ref={w10pRef}
-                        value={w10p}
-                        disabled={pendingAction !== null}
-                        onChange={(event) => setW10p(event.target.value)}
-                        placeholder="Required when DFT is entered"
-                        className="mt-1"
-                      />
-                    </label>
-                  </div>
-
-                  {gate.reason ? <p className="text-sm text-destructive">{gate.reason}</p> : null}
-
-                  <div className={embedded ? styles.recordActions : undefined}>
-                    <Button
-                      type="button"
-                      disabled={!gate.allowed || pendingAction !== null}
-                      loading={pendingAction === "record-painting"}
-                      onClick={() => void handleRecordPainting()}
-                    >
-                      Record painting
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              </div>
+            )
+          ) : laydownPanelMode === "done" ? (
+            <p className="text-xs text-muted-foreground">
+              Placed in laydown {spool.dates.laydown}
+            </p>
+          ) : laydownPanelMode === "blocked" ? (
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <span>Record final QC before moving the spool to laydown</span>
+              {embedded ? (
+                embedded.canOpenOperation?.("paint") ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => embedded.onOpenOperation?.("paint")}
+                  >
+                    Open Paint
+                  </Button>
+                ) : null
+              ) : paintHref ? (
+                <Button asChild size="sm" variant="outline">
+                  <Link href={paintHref}>Open Paint</Link>
+                </Button>
+              ) : null}
+            </div>
           ) : (
             <Card>
               <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
@@ -500,55 +510,6 @@ export function PaintLaydownScreen({
                 ) : null}
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Summary of stages */}
-                <div className={styles.opSummary}>
-                  <div className={styles.opSummaryItem}>
-                    <span className={styles.opSummaryLabel}>Final QC:</span>
-                    <span className={styles.opSummaryValue}>
-                      {spool.dates.final_qc ? spool.dates.final_qc : "Not recorded"}
-                    </span>
-                  </div>
-                  <div className={styles.opSummaryItem}>
-                    <span className={styles.opSummaryLabel}>Laydown:</span>
-                    <span className={styles.opSummaryValue}>
-                      {spool.dates.laydown ? spool.dates.laydown : "Not recorded"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Final QC blocker */}
-                {spool.dates.final_qc === null ? (
-                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
-                    <span>Record final QC before moving the spool to laydown.</span>
-                    {embedded ? (
-                      embedded.canOpenOperation?.("paint") ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          onClick={() => embedded.onOpenOperation?.("paint")}
-                        >
-                          Open Paint <ArrowRight className="h-3.5 w-3.5 ml-1 inline" aria-hidden="true" />
-                        </Button>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">Paint not in your access</span>
-                      )
-                    ) : paintHref ? (
-                      <Link href={paintHref} className={styles.checkActionLink}>
-                        Open Paint <ArrowRight className="h-3.5 w-3.5 ml-1 inline" aria-hidden="true" />
-                      </Link>
-                    ) : null}
-                  </div>
-                ) : null}
-
-                {/* Laydown completed confirmation */}
-                {spool.dates.laydown ? (
-                  <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
-                    Fabrication complete. The spool was placed in laydown on{" "}
-                    <span className="font-semibold">{spool.dates.laydown}</span>.
-                  </div>
-                ) : null}
-
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="text-sm font-medium">
                     Location
@@ -556,7 +517,7 @@ export function PaintLaydownScreen({
                       ref={locationRef}
                       className="mt-1 w-full rounded border px-2 py-1"
                       value={locationId}
-                      disabled={pendingAction !== null || spool.dates.final_qc === null}
+                      disabled={pendingAction !== null}
                       onChange={(event) => setLocationId(event.target.value)}
                     >
                       <option value="">Select…</option>
@@ -573,7 +534,7 @@ export function PaintLaydownScreen({
                       ref={storedOnRef}
                       type="date"
                       value={storedOn}
-                      disabled={pendingAction !== null || spool.dates.final_qc === null}
+                      disabled={pendingAction !== null}
                       onChange={(event) => setStoredOn(event.target.value)}
                       className="mt-1"
                     />
@@ -583,11 +544,7 @@ export function PaintLaydownScreen({
                 <div className={embedded ? styles.recordActions : undefined}>
                   <Button
                     type="button"
-                    disabled={
-                      locationId === "" ||
-                      spool.dates.final_qc === null ||
-                      pendingAction !== null
-                    }
+                    disabled={locationId === "" || pendingAction !== null}
                     loading={pendingAction === "record-laydown"}
                     onClick={() => void handleRecordLaydown()}
                   >

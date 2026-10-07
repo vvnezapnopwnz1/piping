@@ -37,6 +37,7 @@ import { MaterialTracePicker } from "../material-trace-picker"
 import { SpoolPicker } from "./spool-picker"
 import { useContextSpool, type EmbeddedSpool } from "./use-context-spool"
 import { SpoolStageTimeline } from "./spool-stage-timeline"
+import { panelMode } from "../panel-mode"
 import styles from "../spool-workbench.module.css"
 
 export function MaterialCheckScreen({
@@ -259,6 +260,9 @@ export function MaterialCheckScreen({
     }
   }
 
+  const isDone = Boolean(spool?.dates.start_fab && spool?.dates.material_check)
+  const mode = spool ? panelMode({ allRecorded: isDone, blockedBy: null }) : "actionable"
+
   return (
     <div className="space-y-4" data-explicit-unsaved-commit="true">
       {/* Inside the workbench the one spool list sits above every operation. */}
@@ -276,12 +280,17 @@ export function MaterialCheckScreen({
 
       {spool && !browsingSpools ? (
         <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                {embedded ? "Start Fab and QC-13" : `${spool.isoNumber} / ${spool.spoolNumber} (${spool.revisionNumber})`}
-              </CardTitle>
-            </CardHeader>
+          {mode === "done" ? (
+            <p className="text-xs text-muted-foreground">
+              Start Fab {spool.dates.start_fab} · Material check {spool.dates.material_check} · QC-13 {recordedQc13Form?.formNumber ?? "—"}
+            </p>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  {embedded ? "Start Fab and QC-13" : `${spool.isoNumber} / ${spool.spoolNumber} (${spool.revisionNumber})`}
+                </CardTitle>
+              </CardHeader>
             <CardContent className="space-y-3">
               {embedded ? null : <SpoolStageTimeline status={spool} />}
 
@@ -355,6 +364,7 @@ export function MaterialCheckScreen({
               </div>
             </CardContent>
           </Card>
+          )}
 
           <Card>
             <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
@@ -446,6 +456,8 @@ export function MaterialCheckScreen({
                                 MRR {acceptedItem.mrrNumber ?? "unavailable"} · {acceptedItem.status ?? "unavailable"}
                               </span>
                             </div>
+                          ) : isDone ? (
+                            <span className="text-sm text-muted-foreground">—</span>
                           ) : (
                             <MaterialTracePicker
                               line={line}
@@ -477,12 +489,10 @@ export function MaterialCheckScreen({
                     <RotateCw className="h-3 w-3 mr-1" aria-hidden="true" /> Retry
                   </Button>
                 </div>
-              ) : gate.reason ? (
-                <p className="text-sm text-muted-foreground">{gate.reason}</p>
               ) : null}
 
-              {isCheckComplete ? null : (
-                <div className={embedded ? styles.recordActions : undefined}>
+              {isCheckComplete || isDone ? null : (
+                <div className={embedded ? styles.recordActions : "flex flex-wrap items-center gap-2"}>
                   <Button
                     type="button"
                     onClick={() => void saveTraces()}
@@ -495,6 +505,9 @@ export function MaterialCheckScreen({
                   >
                     Record traces
                   </Button>
+                  {gate.reason && !gate.allowed ? (
+                    <span className="text-xs text-muted-foreground">{gate.reason}</span>
+                  ) : null}
                 </div>
               )}
             </CardContent>

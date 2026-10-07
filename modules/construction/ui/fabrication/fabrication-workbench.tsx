@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { usePathname, useSearchParams } from "next/navigation"
 
 import { Skeleton } from "@/components/ui/skeleton"
 import { canVisit } from "@/components/pipeqc/navigation-model"

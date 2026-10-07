@@ -25,6 +25,7 @@ import {
 } from "../../infrastructure/supabase-construction-repository"
 import { SpoolPicker } from "./spool-picker"
 import { useContextSpool, type EmbeddedSpool } from "./use-context-spool"
+import { panelMode } from "../panel-mode"
 import styles from "../spool-workbench.module.css"
 
 const today = () => new Date().toISOString().slice(0, 10)
@@ -246,6 +247,9 @@ export function WeldProgressScreen({
     }
   }
 
+  const isDone = Boolean(spool?.dates.fabricated)
+  const mode = spool ? panelMode({ allRecorded: isDone, blockedBy: null }) : "actionable"
+
   return (
     <div className="space-y-4" data-explicit-unsaved-commit="true">
       {/* Inside the workbench the one spool list sits above every operation. */}
@@ -295,25 +299,29 @@ export function WeldProgressScreen({
                   state={weldTable}
                   onStateChange={setWeldTable}
                   rowId={(weld) => weld.weldJointRevisionId}
-                  onRowClick={(joint) => {
-                    if (selected?.weldJointRevisionId === joint.weldJointRevisionId) {
-                      setBrowsingJoints(false)
-                      return
-                    }
-                    const choose = () => {
-                      setSelected(joint)
-                      setBrowsingJoints(false)
-                      setSubcontractorId("")
-                      setProcedureId("")
-                      setRootWelderId("")
-                      setCapWelderId("")
-                      setRootPercent(50)
-                      setWeldOn(today())
-                    }
-                    if (selected) requestLeave(choose)
-                    else choose()
-                  }}
-                  selectedRowId={selected?.weldJointRevisionId ?? null}
+                  onRowClick={
+                    mode === "done"
+                      ? undefined
+                      : (joint) => {
+                          if (selected?.weldJointRevisionId === joint.weldJointRevisionId) {
+                            setBrowsingJoints(false)
+                            return
+                          }
+                          const choose = () => {
+                            setSelected(joint)
+                            setBrowsingJoints(false)
+                            setSubcontractorId("")
+                            setProcedureId("")
+                            setRootWelderId("")
+                            setCapWelderId("")
+                            setRootPercent(50)
+                            setWeldOn(today())
+                          }
+                          if (selected) requestLeave(choose)
+                          else choose()
+                        }
+                  }
+                  selectedRowId={mode === "done" ? null : (selected?.weldJointRevisionId ?? null)}
                   searchPlaceholder="Search joint or WPS…"
                   emptyTitle="This spool revision has no shop joints."
                   containerClassName={embedded ? "max-h-72" : undefined}
@@ -322,7 +330,7 @@ export function WeldProgressScreen({
             </Card>
           )}
 
-          {selected ? (
+          {mode === "actionable" && selected ? (
             <div hidden={Boolean(embedded) && browsingJoints}>
               <ChangeHighlight
                 id={selected.weldJointRevisionId}
@@ -533,13 +541,7 @@ export function WeldProgressScreen({
                 </Card>
               </ChangeHighlight>
             </div>
-          ) : (
-            <Card>
-              <CardContent className="text-muted-foreground py-6 text-sm">
-                Select a weld joint above to record its progress.
-              </CardContent>
-            </Card>
-          )}
+          ) : null}
         </div>
       ) : null}
     </div>

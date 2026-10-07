@@ -46,6 +46,7 @@ import { releaseChecks, type ReleaseCheckId } from "./release-checks"
 import { SpoolPicker } from "./spool-picker"
 import { useContextSpool, type EmbeddedSpool } from "./use-context-spool"
 import { SpoolStageTimeline } from "./spool-stage-timeline"
+import { panelMode } from "../panel-mode"
 import styles from "../spool-workbench.module.css"
 
 const today = () => new Date().toISOString().slice(0, 10)
@@ -68,7 +69,7 @@ export function QcReleaseScreen({
   const [supports, setSupports] = useState<SupportRow[]>([])
   const [releasedOn, setReleasedOn] = useState(today())
   const [chartNumber, setChartNumber] = useState("")
-  const [evidence, setEvidence] = useState<"supports" | "nde" | "pwht">("supports")
+  const [evidence, setEvidence] = useState<"supports" | "nde" | "pwht" | null>(null)
   const [refreshToken, setRefreshToken] = useState(0)
   const [browsingSpools, setBrowsingSpools] = useState(false)
 
@@ -382,6 +383,10 @@ export function QcReleaseScreen({
     )
   }
 
+  const isDone = Boolean(spool?.dates.qc_release)
+  const blockedBy = !isDone && !spool?.dates.fabricated ? "Shop welds" : null
+  const mode = spool ? panelMode({ allRecorded: isDone, blockedBy }) : "actionable"
+
   return (
     <div className="space-y-4" data-explicit-unsaved-commit="true">
       {/* Inside the workbench the one spool list sits above every operation. */}
@@ -399,111 +404,135 @@ export function QcReleaseScreen({
 
       {spool && !browsingSpools ? (
         <div className="space-y-4">
-          <Card>
-            <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
-              <CardTitle>
-                {embedded ? "Release decision" : `${spool.isoNumber} / ${spool.spoolNumber}`}
-              </CardTitle>
-              {statusBadge}
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {embedded ? null : <SpoolStageTimeline status={spool} />}
-
+          {mode === "done" ? (
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                QC released {spool.dates.qc_release}
+              </p>
               {readiness && loadState === "ready" ? (
-                <div className={styles.checksList}>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <details className="text-xs text-muted-foreground">
+                  <summary className="cursor-pointer font-medium hover:text-foreground">
                     Readiness checks
-                  </p>
-                  <ul className={styles.checksTable}>
-                    {releaseChecks(readiness).map((check) => (
-                      <li key={check.id} className={styles.checkRow} data-complete={check.complete ? "" : undefined}>
-                        <div className={styles.checkIcon}>
-                          {check.complete ? (
+                  </summary>
+                  <div className="mt-2">
+                    <ul className={styles.checksTable}>
+                      {releaseChecks(readiness).map((check) => (
+                        <li key={check.id} className={styles.checkRow} data-complete={check.complete ? "" : undefined}>
+                          <div className={styles.checkIcon}>
                             <Check className="h-4 w-4 text-emerald-600" aria-hidden="true" />
-                          ) : (
-                            <AlertCircle className="h-4 w-4 text-amber-600" aria-hidden="true" />
-                          )}
-                        </div>
-                        <div className={styles.checkInfo}>
-                          <span className={styles.checkLabel}>{check.label}</span>
-                          <span className={styles.checkDetail}>{check.detail}</span>
-                        </div>
-                        <div className={styles.checkStatus}>
-                          {check.complete ? (
+                          </div>
+                          <div className={styles.checkInfo}>
+                            <span className={styles.checkLabel}>{check.label}</span>
+                            <span className={styles.checkDetail}>{check.detail}</span>
+                          </div>
+                          <div className={styles.checkStatus}>
                             <span className={styles.checkCompleteBadge}>Complete</span>
-                          ) : (
-                            renderBlockerAction(check.id)
-                          )}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </details>
               ) : null}
-
-              {isReleased ? (
-                <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
-                  This spool was QC released on <span className="font-semibold">{spool.dates.qc_release}</span>.
-                </div>
-              ) : (
-                <div className="flex flex-wrap items-end gap-2 pt-1">
-                  <label className="text-sm font-medium">
-                    Release date
-                    <Input
-                      ref={releasedOnInputRef}
-                      type="date"
-                      value={releasedOn}
-                      disabled={pendingAction !== null}
-                      onChange={(event) => setReleasedOn(event.target.value)}
-                      className="mt-1"
-                    />
-                  </label>
+            </div>
+          ) : mode === "blocked" ? (
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <span>Shop welds must be complete first</span>
+              {embedded ? (
+                embedded.canOpenOperation?.("welds") ? (
                   <Button
                     type="button"
-                    disabled={
-                      loadState !== "ready" ||
-                      !gate.allowed ||
-                      spool.dates.qc_release !== null ||
-                      pendingAction !== null
-                    }
-                    loading={pendingAction === "release"}
-                    onClick={() => void handleRelease()}
+                    size="sm"
+                    variant="outline"
+                    onClick={() => embedded.onOpenOperation?.("welds")}
                   >
-                    QC release spool
+                    Open Shop welds
                   </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                ) : null
+              ) : weldsHref ? (
+                <Button asChild size="sm" variant="outline">
+                  <Link href={weldsHref}>Open Shop welds</Link>
+                </Button>
+              ) : null}
+            </div>
+          ) : (
+            <>
+              <Card>
+                <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
+                  <CardTitle>
+                    {embedded ? "Release decision" : `${spool.isoNumber} / ${spool.spoolNumber}`}
+                  </CardTitle>
+                  {statusBadge}
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {embedded ? null : <SpoolStageTimeline status={spool} />}
 
-          {embedded ? (
-            <nav className={styles.evidenceNav} aria-label="QC release evidence">
-              <button
-                type="button"
-                aria-pressed={evidence === "supports"}
-                aria-controls="release-supports"
-                onClick={() => setEvidence("supports")}
-              >
-                Supports <span>{supports.filter((support) => !support.installedOn).length} open</span>
-              </button>
-              <button
-                type="button"
-                aria-pressed={evidence === "nde"}
-                aria-controls="release-nde"
-                onClick={() => setEvidence("nde")}
-              >
-                NDE <span>{spool.ndePending} open</span>
-              </button>
-              <button
-                type="button"
-                aria-pressed={evidence === "pwht"}
-                aria-controls="release-pwht"
-                onClick={() => setEvidence("pwht")}
-              >
-                PWHT <span>{spool.pwhtPending} open</span>
-              </button>
-            </nav>
-          ) : null}
+                  {readiness && loadState === "ready" ? (
+                    <div className={styles.checksList}>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Readiness checks
+                      </p>
+                      <ul className={styles.checksTable}>
+                        {releaseChecks(readiness).map((check) => (
+                          <li key={check.id} className={styles.checkRow} data-complete={check.complete ? "" : undefined}>
+                            <div className={styles.checkIcon}>
+                              {check.complete ? (
+                                <Check className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+                              ) : (
+                                <AlertCircle className="h-4 w-4 text-amber-600" aria-hidden="true" />
+                              )}
+                            </div>
+                            <div className={styles.checkInfo}>
+                              <span className={styles.checkLabel}>{check.label}</span>
+                              <span className={styles.checkDetail}>{check.detail}</span>
+                            </div>
+                            <div className={styles.checkStatus}>
+                              {check.complete ? (
+                                <span className={styles.checkCompleteBadge}>Complete</span>
+                              ) : (
+                                renderBlockerAction(check.id)
+                              )}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+
+                  {isReleased ? (
+                    <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">
+                      This spool was QC released on <span className="font-semibold">{spool.dates.qc_release}</span>.
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap items-end gap-2 pt-1">
+                      <label className="text-sm font-medium">
+                        Release date
+                        <Input
+                          ref={releasedOnInputRef}
+                          type="date"
+                          value={releasedOn}
+                          disabled={pendingAction !== null}
+                          onChange={(event) => setReleasedOn(event.target.value)}
+                          className="mt-1"
+                        />
+                      </label>
+                      <Button
+                        type="button"
+                        disabled={
+                          loadState !== "ready" ||
+                          !gate.allowed ||
+                          spool.dates.qc_release !== null ||
+                          pendingAction !== null
+                        }
+                        loading={pendingAction === "release"}
+                        onClick={() => void handleRelease()}
+                      >
+                        QC release spool
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
           <Card id="release-supports" hidden={Boolean(embedded) && evidence !== "supports"}>
             <CardHeader>
@@ -670,6 +699,8 @@ export function QcReleaseScreen({
               ) : null}
             </CardContent>
           </Card>
+            </>
+          )}
         </div>
       ) : (
         <p className="text-sm text-muted-foreground">Select a spool to review its QC release.</p>
