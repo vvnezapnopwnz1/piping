@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { LocaleToggle } from "@/components/pipeqc/locale-switch"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 
 export function LoginScreen() {
@@ -38,7 +39,7 @@ export function LoginScreen() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
+    <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-muted/30 p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Sign in to PipeQC</CardTitle>
@@ -79,6 +80,7 @@ export function LoginScreen() {
           </form>
         </CardContent>
       </Card>
+      <LocaleToggle />
     </main>
   )
 }

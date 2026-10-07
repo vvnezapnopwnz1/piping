@@ -1,3 +1,8 @@
+import createNextIntlPlugin from "next-intl/plugin"
+
+// The language comes from a cookie, not from the address; i18n/request.ts resolves it per request.
+const withNextIntl = createNextIntlPlugin("./i18n/request.ts")
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // docs/qa/local-supabase-browser-runbook.md offers 127.0.0.1 and localhost as
@@ -9,4 +14,5 @@ const nextConfig = {
   },
 }
 
-export default nextConfig
+export default withNextIntl(nextConfig)
+

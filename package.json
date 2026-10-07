@@ -33,7 +33,7 @@
     "demo:check:hosted": "tsx scripts/check-hosted-demo.ts",
     "demo:showcase:hosted": "tsx scripts/bootstrap-showcase-dataset-hosted.ts",
     "typecheck": "tsc --noEmit --incremental false",
-    "test:unit": "node --import tsx --test \"modules/**/*.test.ts\" \"lib/**/*.test.ts\" \"config/**/*.test.ts\" \"components/**/*.test.ts\" \"scripts/**/*.test.ts\" \"app/**/*.test.ts\"",
+    "test:unit": "node --import tsx --test \"modules/**/*.test.ts\" \"lib/**/*.test.ts\" \"config/**/*.test.ts\" \"components/**/*.test.ts\" \"scripts/**/*.test.ts\" \"app/**/*.test.ts\" \"i18n/**/*.test.ts\"",
     "test:db": "supabase test db",
     "verify": "npm run lint && npm run typecheck && npm run test:unit && npm run test:db"
   },
@@ -78,6 +78,7 @@
     "jspdf": "^3.0.4",
     "lucide-react": "^0.564.0",
     "next": "16.2.6",
+    "next-intl": "4.14.9",
     "next-themes": "^0.4.6",
     "playwright": "^1.62.1",
     "react": "^19",

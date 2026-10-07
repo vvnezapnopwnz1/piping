@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useSupabaseAuth } from "@/contexts/supabase-auth-context";
 
+import { LocaleMenuItems } from "@/components/pipeqc/locale-switch";
 import { withProject } from "./project-url";
 import { getTopNavDisplay } from "./top-nav-state";
 import styles from "./workbench-shell.module.css";
@@ -160,6 +161,8 @@ export function TopNav({ mode: _mode = "workspace" }: { mode?: "workspace" | "ca
                 <DropdownMenuSeparator />
               </>
             ) : null}
+            <LocaleMenuItems />
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => void signOut()}>
               <LogOut className="mr-2 size-4" />
               Sign out
