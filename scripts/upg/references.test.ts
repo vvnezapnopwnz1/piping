@@ -3,7 +3,7 @@ import test from "node:test"
 
 import { DEMO_MANIFEST } from "../demo/manifest"
 import { buildDemoReferencePlan } from "../demo/supabase-demo-stand"
-import { PDS_AREAS, SERVICE_CLASSES, SYSTEMS } from "./dataset"
+import { PDS_AREAS, SERVICE_CLASSES, SYSTEMS, WELDING_PROCEDURES } from "./dataset"
 import { IMPORTED_FAMILIES, UPG_REFERENCES } from "./references"
 
 const ids = {
@@ -28,6 +28,12 @@ test("UPG-1 brings its own PDS areas, classes, systems, subsystems and the field
   assert.deepEqual(UPG_REFERENCES.systems.map((row) => row.code), SYSTEMS.map((system) => system.code))
   assert.equal(UPG_REFERENCES.subsystems.length, SYSTEMS.flatMap((system) => system.subsystems).length)
   assert.ok(UPG_REFERENCES.subcontractors.some((row) => row.code === "ERC-A"))
+})
+
+test("spooling material types carry the WPS material codes, so record_weld_progress can match a WPS to the spool", () => {
+  const typeCodes = UPG_REFERENCES.spoolingMaterialTypes.map((row) => row.code)
+  assert.deepEqual(typeCodes.sort(), [...new Set(WELDING_PROCEDURES.map((wps) => wps.materialType))].sort())
+  for (const row of UPG_REFERENCES.spoolingMaterialClasses) assert.ok(typeCodes.includes(row.materialTypeCode), row.code)
 })
 
 test("everything else is the manifest's, so teams, punch codes, locations and paint rules exist", () => {

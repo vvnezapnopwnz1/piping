@@ -41,6 +41,14 @@ export const UPG_REFERENCES: DemoReferences = {
     status: "active" as const,
     materialTypeCode: spec.materialTypeCode,
   })),
+  // record_weld_progress matches a spool to a WPS by these codes, so they are the WPS material types.
+  spoolingMaterialTypes: [...new Set(Object.values(SERVICE_CLASSES).map((spec) => spec.materialTypeCode))].map((code) => ({
+    ...base.spoolingMaterialTypes[0],
+    key: code,
+    code,
+    description: code === "CS" ? "Углеродистая сталь" : "Нержавеющая сталь 316",
+    status: "active" as const,
+  })),
   spoolingMaterialClasses: Object.values(SERVICE_CLASSES).map((spec) => ({
     ...base.spoolingMaterialClasses[0],
     key: spec.code,
