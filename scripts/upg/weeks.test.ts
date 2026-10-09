@@ -92,3 +92,16 @@ test("the overdue spool leaves the laydown and never arrives on site", () => {
 test("every action has a Russian description", () => {
   for (const action of plan) assert.match(describeAction(action), /[а-яё]/i)
 })
+
+test("the shop NDE round of a cohort examines the thread spools too, so a thread spool can be released", () => {
+  const thread = UPG_ISOS.filter((iso) => iso.thread).flatMap((iso) => iso.spools.map((spool) => spool.spoolNumber))
+  const shopRounds = plan.filter((action): action is Extract<UpgAction, { kind: "nde_round" }> => action.kind === "nde_round" && action.label.endsWith("-shop"))
+  for (const spool of thread) assert.ok(shopRounds.some((round) => round.spools.includes(spool)), spool)
+})
+
+test("only the overdue spool leaves the laydown without arriving on site", () => {
+  const tracking = plan.filter((action): action is Extract<UpgAction, { kind: "tracking" }> => action.kind === "tracking")
+  const left = tracking.filter((action) => action.location === "LAYDOWN-A" && action.direction === "out").map((action) => action.spool)
+  const arrived = new Set(tracking.filter((action) => action.location === "SITE-A" && action.direction === "in").map((action) => action.spool))
+  assert.deepEqual(left.filter((spool) => !arrived.has(spool)), [OVERDUE_SPOOL])
+})

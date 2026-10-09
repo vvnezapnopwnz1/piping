@@ -2,8 +2,9 @@
 /**
  * The eight construction weeks of UPG-1 as a list of actions with project days.
  *
- * Pure. Spool steps follow the order the commands enforce (material before release, release
- * before paint, final QC before laydown, To Site before Erected…). Cohort steps (NDE rounds) and
+ * Pure. Spool steps follow the order the commands enforce (material before release, start before
+ * Sent to Paint, final QC before laydown, To Site before Erected…); release before paint is our
+ * order, not a command rule. Cohort steps (NDE rounds) and
  * test pack steps sit on fixed days. Manual actions are what the walkthrough records by hand.
  */
 import {
@@ -95,11 +96,11 @@ function spoolActions(iso: UpgIso, spool: UpgSpool, spoolIndex: number): UpgActi
   push({ kind: "paint", spool: s, day: start + 18, finalQcDay: start + 19, manual, situation: "paint_dft" })
   push({ kind: "laydown", spool: s, day: start + 20, manual, situation: "laydown" })
   push({ kind: "tracking", spool: s, location: "LAYDOWN-A", direction: "in", day: start + 20, manual, situation: "tracking_in_out" })
+  // A spool leaves the laydown only to go to site; the overdue spool leaves and never arrives.
+  const erects = iso.cohort === "A" || iso.cohort === "B" || iso.groupIndex < 6
+  if (!erects && s !== OVERDUE_SPOOL) return out
   push({ kind: "tracking", spool: s, location: "LAYDOWN-A", direction: "out", day: start + 22, manual, situation: s === OVERDUE_SPOOL ? "transit_overdue" : undefined })
   if (s === OVERDUE_SPOOL) return out
-
-  const erects = iso.cohort === "A" || iso.cohort === "B" || iso.groupIndex < 6
-  if (!erects) return out
   push({ kind: "tracking", spool: s, location: "SITE-A", direction: "in", day: start + 23, manual })
   push({ kind: "stage", phase: "erection", stage: "to_site", spool: s, day: start + 23, manual })
   push({ kind: "stage", phase: "erection", stage: "erected", spool: s, day: start + 25, manual })
@@ -121,8 +122,10 @@ function spoolActions(iso: UpgIso, spool: UpgSpool, spoolIndex: number): UpgActi
   return out
 }
 
+// The thread spools are welded by hand in the walkthrough, but their NDE comes back with their
+// cohort's round like any other spool's, or they could never be released.
 function cohortSpools(cohort: Cohort): string[] {
-  return UPG_ISOS.filter((iso) => iso.cohort === cohort && !iso.thread).flatMap((iso) => iso.spools.map((spool) => spool.spoolNumber))
+  return UPG_ISOS.filter((iso) => iso.cohort === cohort).flatMap((iso) => iso.spools.map((spool) => spool.spoolNumber))
 }
 
 function roundActions(): UpgAction[] {

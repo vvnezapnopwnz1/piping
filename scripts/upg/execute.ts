@@ -97,38 +97,79 @@ async function weld(ctx: RunContext, action: Extract<UpgAction, { kind: "weld" }
   })
 }
 
+/** The items of a batch that have no result yet, with what record_nde_result needs to know. */
+async function unexamined(ctx: RunContext, batchId: string): Promise<{ id: string; weld_joint_revision_id: string; cycle_kind: string }[]> {
+  const items = await ctx.client.from("nde_batch_items").select("id, obligation_id").eq("batch_id", batchId)
+  if (items.error) throw new Error(items.error.message)
+  const rows = items.data ?? []
+  if (rows.length === 0) return []
+  const results = await ctx.client.from("nde_results").select("batch_item_id").in("batch_item_id", rows.map((row) => row.id))
+  if (results.error) throw new Error(results.error.message)
+  const examined = new Set((results.data ?? []).map((row) => row.batch_item_id))
+  const open = rows.filter((row) => !examined.has(row.id)).map((row) => row.obligation_id)
+  if (open.length === 0) return []
+  const obligations = await ctx.client.from("nde_obligations").select("id, weld_joint_revision_id, cycle_kind").in("id", open)
+  if (obligations.error) throw new Error(obligations.error.message)
+  return obligations.data ?? []
+}
+
+/**
+ * One NDE round. A batch takes every pending candidate of its method and coverage regime in the
+ * project, not only the round's spools, and close_nde_batch needs a result on every item. So the
+ * round examines whole batches: the ones it issues, and the open ones that already hold its
+ * spools' obligations (issued by an earlier round or left by an interrupted run).
+ */
 async function ndeRound(ctx: RunContext, action: Extract<UpgAction, { kind: "nde_round" }>, week: number, date: string): Promise<boolean> {
   const revisions = action.spools.map((spool) => ctx.ids.spoolRevision(spool)).filter((id): id is string => Boolean(id))
   const { data, error } = await ctx.client.from("nde_obligations")
-    .select("id, method, coverage_regime, weld_joint_revision_id, cycle_kind")
-    .eq("project_id", ctx.ids.projectId).eq("disposition", "pending").in("spool_revision_id", revisions)
+    .select("id, method, coverage_regime, disposition")
+    .eq("project_id", ctx.ids.projectId).in("disposition", ["pending", "issued"]).in("spool_revision_id", revisions)
   if (error) throw new Error(error.message)
-  const obligations = (data ?? []) as { id: string; method: string; coverage_regime: string; weld_joint_revision_id: string; cycle_kind: string }[]
+  const obligations = data ?? []
   if (obligations.length === 0) return false
-  const rejectIds = new Set(action.reject.map((weldNumber) => ctx.ids.weldJointRevision(weldNumber)).filter(Boolean))
-  const pairs = [...new Set(obligations.map((row) => `${row.method}|${row.coverage_regime}`))]
-  const batches: string[] = []
+
+  const batches = new Set<string>()
+  const issued = obligations.filter((row) => row.disposition === "issued").map((row) => row.id)
+  if (issued.length > 0) {
+    const items = await ctx.client.from("nde_batch_items").select("batch_id").in("obligation_id", issued)
+    if (items.error) throw new Error(items.error.message)
+    const open = await ctx.client.from("nde_batches").select("id").eq("status", "issued").in("id", [...new Set((items.data ?? []).map((row) => row.batch_id))])
+    if (open.error) throw new Error(open.error.message)
+    for (const row of open.data ?? []) batches.add(row.id)
+  }
+  const pairs = [...new Set(obligations.filter((row) => row.disposition === "pending").map((row) => `${row.method}|${row.coverage_regime}`))]
   for (const pair of pairs) {
     const [method, coverageRegime] = pair.split("|")
     const batch = await rpc(ctx.client, "create_nde_batch", { target_project_id: ctx.ids.projectId, method, coverage_regime: coverageRegime, idempotency_key: actionKey(week, action, `batch-${pair}`) })
-    await rpc(ctx.client, "allocate_nde_batch_candidates", { target_batch_id: batch.id, target_percentage: 100, idempotency_key: actionKey(week, action, `allocate-${pair}`) })
-    await rpc(ctx.client, "issue_nde_batch", { target_batch_id: batch.id, idempotency_key: actionKey(week, action, `issue-${pair}`) })
-    batches.push(batch.id)
+    // A rerun gets the batch back from its receipt, but allocate and issue check the batch state
+    // before their own receipt, so they refuse a batch that has moved on.
+    const current = await ctx.client.from("nde_batches").select("status").eq("id", batch.id).single()
+    if (current.error) throw new Error(current.error.message)
+    if (current.data.status === "draft") {
+      await rpc(ctx.client, "allocate_nde_batch_candidates", { target_batch_id: batch.id, target_percentage: 100, idempotency_key: actionKey(week, action, `allocate-${pair}`) })
+      await rpc(ctx.client, "issue_nde_batch", { target_batch_id: batch.id, idempotency_key: actionKey(week, action, `issue-${pair}`) })
+    }
+    batches.add(batch.id)
   }
+
+  const rejectIds = new Set(action.reject.map((weldNumber) => ctx.ids.weldJointRevision(weldNumber)).filter(Boolean))
   let n = 0
-  for (const obligation of obligations) {
-    const rejected = obligation.cycle_kind === "original" && rejectIds.has(obligation.weld_joint_revision_id)
-    n += 1
-    await rpc(ctx.client, "record_nde_result", {
-      target_obligation_id: obligation.id,
-      outcome: rejected ? "rejected" : "accepted",
-      examined_on: date,
-      report_number: `RT-${week}-${String(n).padStart(3, "0")}`,
-      ...(rejected ? { defect_rework_code_id: ctx.ids.reworkCode("POR") } : {}),
-      idempotency_key: actionKey(week, action, `result-${obligation.id}`),
-    })
-  }
   for (const batchId of batches) {
+    const status = await ctx.client.from("nde_batches").select("status").eq("id", batchId).single()
+    if (status.error) throw new Error(status.error.message)
+    if (status.data.status !== "issued") continue
+    for (const obligation of await unexamined(ctx, batchId)) {
+      const rejected = obligation.cycle_kind === "original" && rejectIds.has(obligation.weld_joint_revision_id)
+      n += 1
+      await rpc(ctx.client, "record_nde_result", {
+        target_obligation_id: obligation.id,
+        outcome: rejected ? "rejected" : "accepted",
+        examined_on: date,
+        report_number: `RT-${week}-${String(n).padStart(3, "0")}`,
+        ...(rejected ? { defect_rework_code_id: ctx.ids.reworkCode("POR") } : {}),
+        idempotency_key: actionKey(week, action, `result-${obligation.id}`),
+      })
+    }
     await rpc(ctx.client, "close_nde_batch", { target_batch_id: batchId, returned_on_date: date, idempotency_key: actionKey(week, action, `close-${batchId}`) })
   }
   return true
@@ -274,6 +315,10 @@ export async function executeAction(ctx: RunContext, action: UpgAction): Promise
         break
       }
       case "revision": {
+        const current = await client.from("isometric_revisions").select("id, isometrics!inner(iso_number, project_id)")
+          .eq("isometrics.project_id", ctx.ids.projectId).eq("isometrics.iso_number", action.iso).eq("revision_number", "R1").eq("status", "accepted")
+        if (current.error) throw new Error(current.error.message)
+        if ((current.data ?? []).length > 0) throw new Skip("R1 is already imported")
         const files = { weld: readFixtureText("revision/weld.txt"), trace: readFixtureText("revision/trace.txt"), bolt: readFixtureText("revision/bolt.txt"), supp: readFixtureText("revision/supp.txt") }
         await importSpoolgenPackage(client, ctx.ids.projectId, files, "UPG-1 R1", { decision: "done_without_modification" })
         await ctx.ids.reload()

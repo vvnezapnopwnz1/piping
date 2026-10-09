@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 
 import type { Database } from "../../lib/supabase/database.types"
+import { materializeProgressCopies } from "../../modules/construction/infrastructure/supabase-construction-repository"
 import { buildSpoolgenSubmission } from "../../modules/engineering/application/import-spooling"
 import { unresolvedItems } from "../../modules/engineering/application/resolve-revision"
 import type { SpoolgenFileRole } from "../../modules/engineering/domain/spoolgen-file"
@@ -64,6 +65,8 @@ export async function importSpoolgenPackage(
       decisions += 1
     }
   }
-  await applySpoolingImportJob(client, job.id)
+  const applied = await applySpoolingImportJob(client, job.id)
+  // As the revision workbench does: the apply authorizes the carry-over, this performs it.
+  for (const revisionId of applied.affectedEntityIds) await materializeProgressCopies(client, revisionId)
   return { jobId: job.id, status: "applied", blockerCount: 0, warningCount: counts.warningCount, decisions }
 }
