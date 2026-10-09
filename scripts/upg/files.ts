@@ -137,8 +137,8 @@ function ndeMatrix(): Cell[][] {
 
 /**
  * One row per ISO: the import's natural key is (test pack, ISO). The spool columns name one spool
- * of the accepted revision as a cross-check, and "Spool Revision" is that spool's sequence number
- * in the ISO, not the revision label (20260813092000_test_pack_import.sql:45-51).
+ * of the accepted revision as a cross-check. "Spool Revision" is, as in the manual, the ISO revision
+ * the spool last changed in: R0 for every spool here. The server does not compare it.
  */
 function compositionMatrix(startDate: string): Cell[][] {
   const rows: Cell[][] = []
@@ -147,7 +147,7 @@ function compositionMatrix(startDate: string): Cell[][] {
       rows.push([
         group.systemCode, group.subsystemCode, group.testPack, 0, "H", group.testPressureBar,
         addDays(startDate, 42), addDays(startDate, 55), group.priority, group.serviceClass, LINE_SERVICE,
-        2.5, group.pdsArea, iso.isoNumber, iso.revision, iso.spools[0].spoolNumber, 1,
+        2.5, group.pdsArea, iso.isoNumber, iso.revision, iso.spools[0].spoolNumber, iso.revision,
       ])
     }
   }

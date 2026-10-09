@@ -78,7 +78,7 @@ test("the composition lists every ISO once with its first spool, consistent meta
   assert.equal(rows.length, UPG_ISOS.length)
   for (const row of rows) {
     assert.equal(row[15], `${row[13]}-S1`)
-    assert.equal(row[16], 1, "Spool Revision is the spool sequence number")
+    assert.equal(row[16], row[14], "Spool Revision is the ISO revision the spool last changed in: R0 here")
     assert.equal(row[6], addDays(START, 42))
     assert.equal(row[7], addDays(START, 55))
   }
