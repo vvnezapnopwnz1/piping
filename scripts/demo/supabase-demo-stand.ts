@@ -1284,8 +1284,8 @@ function plannedDependentReference<
   }
 }
 
-function assertDemoProgressWeightTotals(): void {
-  for (const phase of DEMO_MANIFEST.references.progressWeights) {
+function assertDemoProgressWeightTotals(references: DemoReferences): void {
+  for (const phase of references.progressWeights) {
     const total = phase.items.reduce(
       (sum, item) => sum + item.weight,
       0,
@@ -1316,9 +1316,8 @@ type DemoSystemReferencePlan = Pick<
   | "system_ut_calculation_rules"
 >
 
-function buildDemoSystemReferencePlan(): DemoSystemReferencePlan {
-  assertDemoProgressWeightTotals()
-  const references = DEMO_MANIFEST.references
+function buildDemoSystemReferencePlan(references: DemoReferences): DemoSystemReferencePlan {
+  assertDemoProgressWeightTotals(references)
 
   return {
     system_reference_entries: [
@@ -1370,9 +1369,13 @@ export function buildDemoReferencePlan(
    * project's memberships, because showcase members are unscoped on purpose.
    */
   targetProjectId: string = resolvedIds.goldenProjectId,
+  /**
+   * Which referential values to plan. Defaults to the manifest, so every existing call site is
+   * unchanged; UPG-1 passes its own set (scripts/upg/references.ts).
+   */
+  references: DemoReferences = DEMO_MANIFEST.references,
 ): DemoReferencePlan {
-  assertDemoProgressWeightTotals()
-  const references = DEMO_MANIFEST.references
+  assertDemoProgressWeightTotals(references)
   const projectId = targetProjectId
   const dates = resolveDemoDates(preparedOn)
   const scopedUser = DEMO_MANIFEST.users.find(
@@ -1391,7 +1394,7 @@ export function buildDemoReferencePlan(
   }
 
   return {
-    ...buildDemoSystemReferencePlan(),
+    ...buildDemoSystemReferencePlan(references),
     project_subcontractors: references.subcontractors.map((row) =>
       plannedReference(row, {
         project_id: projectId,
@@ -1478,7 +1481,7 @@ export function buildDemoReferencePlan(
     project_pressure_units: references.pressureUnits.map((row) =>
       plannedReference(row, {
         project_id: projectId,
-        unit: row.code,
+        unit: row.code as "bar" | "psi",
       }),
     ),
     project_spooling_material_types: references.spoolingMaterialTypes.map(
@@ -2775,7 +2778,7 @@ export class SupabaseDemoStandCore {
   }
 
   async prepareSystemReferences(): Promise<void> {
-    const plan = buildDemoSystemReferencePlan()
+    const plan = buildDemoSystemReferencePlan(DEMO_MANIFEST.references)
     await this.reconcileReferenceBatches(systemReferenceBatches(plan))
   }
 
@@ -2828,6 +2831,31 @@ export class SupabaseDemoStandCore {
       }).filter((batch) => batch.rows.length > 0),
     )
   }
+
+  /**
+   * Referentials for a project an operator created in the UI (UPG-1), from a caller-supplied set.
+   * Same reconciler as SHOWCASE-1. Families with no rows are dropped before reconciling, so rows
+   * the operator imported from Excel are never reconciled away. Call
+   * resolveShowcasePrerequisiteIds() first: the plan needs the golden ids.
+   */
+  async prepareProjectReferencesFor(
+    targetProjectId: string,
+    references: DemoReferences,
+    preparedOn: Date,
+  ): Promise<void> {
+    const plan = buildDemoReferencePlan(
+      this.referenceResolvedIds(),
+      preparedOn,
+      targetProjectId,
+      references,
+    )
+    await this.reconcileReferenceBatches(
+      projectReferenceBatches({ ...plan, project_device_users: [] }).filter(
+        (batch) => batch.rows.length > 0,
+      ),
+    )
+  }
+
 
   // Resolves the ids of every manifest user `resolveShowcasePrerequisiteIds` needs: the
   // golden-project reference memberships plus any user with a SHOWCASE-1 membership.
