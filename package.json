@@ -19,6 +19,7 @@
     "demo:prepare": "tsx --env-file-if-exists=.env.local scripts/prepare-track12-demo.ts",
     "demo:check": "tsx --env-file-if-exists=.env.local scripts/check-track12-demo.ts",
     "demo:showcase": "tsx --env-file-if-exists=.env.local scripts/bootstrap-showcase-dataset.ts",
+    "demo:project-files": "tsx scripts/upg/write-files.ts",
     "demo:record-video": "tsx --env-file-if-exists=.env.local scripts/demo-golden-path.ts",
     "demo:preview-video": "remotion studio remotion/index.ts",
     "demo:render-video": "remotion render remotion/index.ts DemoVideo out/pipeqc-demo.mp4",

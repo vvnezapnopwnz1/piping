@@ -787,12 +787,15 @@ test("every class and diameter in the main package has a thickness rule; the err
   assert.ok(UPG_ISOS.some((iso) => iso.isoNumber === WPS_GAP_ISO))
 })
 
-test("the composition lists every spool once, R0, with consistent pack metadata and dates in range", () => {
+test("the composition lists every ISO once with its first spool, consistent metadata and dates in range", () => {
   const composition = importSheets(START).find((sheet) => sheet.importType === "test_pack_composition")!
-  const spools = composition.matrix.slice(1).map((row) => String(row[15]))
-  assert.equal(new Set(spools).size, spools.length)
-  assert.equal(spools.length, UPG_ISOS.flatMap((iso) => iso.spools).length)
-  for (const row of composition.matrix.slice(1)) {
+  const rows = composition.matrix.slice(1)
+  const keys = rows.map((row) => `${row[2]}|${row[13]}`)
+  assert.equal(new Set(keys).size, keys.length, "natural key is (test pack, ISO)")
+  assert.equal(rows.length, UPG_ISOS.length)
+  for (const row of rows) {
+    assert.equal(row[15], `${row[13]}-S1`)
+    assert.equal(row[16], 1, "Spool Revision is the spool sequence number")
     assert.equal(row[6], addDays(START, 42))
     assert.equal(row[7], addDays(START, 55))
   }
@@ -820,7 +823,7 @@ Expected: FAIL — `Cannot find module './files'`.
 
 - [ ] **Step 3: Write the implementation**
 
-Колонки Spoolgen — те же, что в `buildShowcaseSpoolgenFiles` (`scripts/demo/showcase-dataset.ts:313-316`). Порядок колонок Excel-шаблонов — из `templateHeaderRow`. Матрица строится по ключам колонок из `modules/imports/domain/import-types.json`. Состав test pack — одна строка на катушку.
+Колонки Spoolgen — те же, что в `buildShowcaseSpoolgenFiles` (`scripts/demo/showcase-dataset.ts:313-316`). Порядок колонок Excel-шаблонов — из `templateHeaderRow`. Матрица строится по ключам колонок из `modules/imports/domain/import-types.json`. Состав test pack — одна строка на ISO: натуральный ключ импорта — (пакет, ISO). В колонке «Spool Revision» — порядковый номер катушки в ISO, а не метка ревизии.
 
 ```ts
 // scripts/upg/files.ts
@@ -961,17 +964,20 @@ function ndeMatrix(): Cell[][] {
   ]
 }
 
+/**
+ * One row per ISO: the import's natural key is (test pack, ISO). The spool columns name one spool
+ * of the accepted revision as a cross-check, and "Spool Revision" is that spool's sequence number
+ * in the ISO, not the revision label (20260813092000_test_pack_import.sql:45-51).
+ */
 function compositionMatrix(startDate: string): Cell[][] {
   const rows: Cell[][] = []
   for (const group of ISO_GROUPS) {
     for (const iso of UPG_ISOS.filter((candidate) => candidate.testPack === group.testPack)) {
-      for (const spool of iso.spools) {
-        rows.push([
-          group.systemCode, group.subsystemCode, group.testPack, 0, "H", group.testPressureBar,
-          addDays(startDate, 42), addDays(startDate, 55), group.priority, group.serviceClass, LINE_SERVICE,
-          2.5, group.pdsArea, iso.isoNumber, iso.revision, spool.spoolNumber, iso.revision,
-        ])
-      }
+      rows.push([
+        group.systemCode, group.subsystemCode, group.testPack, 0, "H", group.testPressureBar,
+        addDays(startDate, 42), addDays(startDate, 55), group.priority, group.serviceClass, LINE_SERVICE,
+        2.5, group.pdsArea, iso.isoNumber, iso.revision, iso.spools[0].spoolNumber, 1,
+      ])
     }
   }
   return [templateHeaderRow("test_pack_composition"), ...rows]
