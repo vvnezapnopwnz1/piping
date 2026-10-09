@@ -37,7 +37,8 @@
     "test:unit": "node --import tsx --test \"modules/**/*.test.ts\" \"lib/**/*.test.ts\" \"config/**/*.test.ts\" \"components/**/*.test.ts\" \"scripts/**/*.test.ts\" \"app/**/*.test.ts\" \"i18n/**/*.test.ts\"",
     "test:db": "supabase test db",
     "verify": "npm run lint && npm run typecheck && npm run test:unit && npm run test:db",
-    "demo:project-setup": "tsx --env-file-if-exists=.env.local scripts/upg/setup-references.ts"
+    "demo:project-setup": "tsx --env-file-if-exists=.env.local scripts/upg/setup-references.ts",
+    "demo:project-load": "tsx --env-file-if-exists=.env.local scripts/upg/load-project.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
