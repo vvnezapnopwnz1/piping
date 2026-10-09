@@ -35,7 +35,7 @@ test("generateDemoReport returns a visible failure when snapshot loading fails",
     code: "RPT-T-001", projectId: "project-a", projectCode: "EP-100", generatedAt: fabricationSnapshot.generatedAt,
   })
 
-  assert.deepEqual(result, { ok: false, reason: "read denied" })
+  assert.deepEqual(result, { ok: false, reason: "failed", detail: "read denied" })
 })
 
 test("generateDemoReport rejects codes outside the Demo Lite registry", async () => {
@@ -43,5 +43,16 @@ test("generateDemoReport rejects codes outside the Demo Lite registry", async ()
     code: "RPT-N-001", projectId: "project-a", projectCode: "EP-100", generatedAt: fabricationSnapshot.generatedAt,
   })
 
-  assert.deepEqual(result, { ok: false, reason: "Unknown report: RPT-N-001" })
+  assert.deepEqual(result, { ok: false, reason: "unknownReport" })
+})
+
+test("generateDemoReport reports a failure without a message as a bare reason", async () => {
+  const result = await generateDemoReport({
+    ...repository,
+    loadTestPackRft: async () => { throw "boom" },
+  }, {
+    code: "RPT-T-001", projectId: "project-a", projectCode: "EP-100", generatedAt: fabricationSnapshot.generatedAt,
+  })
+
+  assert.deepEqual(result, { ok: false, reason: "failed" })
 })

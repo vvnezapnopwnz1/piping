@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import {
   filterProjectCatalog,
-  projectRoleLabel,
+  projectRoleCode,
   resolveProjectToOpen,
 } from "./project-catalog"
 import type { ProjectAccessSummary } from "@/modules/access/infrastructure/supabase-access-repository"
@@ -57,11 +57,9 @@ test("opening requires a currently available active project", () => {
   )
 })
 
-test("platform administration and project roles remain distinct labels", () => {
+test("platform administration and project roles remain distinct codes", () => {
   const reader = project("a", "Allowed")
-  assert.equal(projectRoleLabel(reader), "Project Reader")
-  assert.equal(
-    projectRoleLabel({ ...reader, isPlatformAdmin: true }),
-    "System Admin",
-  )
+  assert.equal(projectRoleCode(reader), "project_reader")
+  assert.equal(projectRoleCode({ ...reader, isPlatformAdmin: true }), "platform_admin")
+  assert.equal(projectRoleCode({ ...reader, accessRole: null }), null)
 })

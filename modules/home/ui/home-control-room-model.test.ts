@@ -64,6 +64,6 @@ test("only real open work becomes an attention row, upstream first", () => {
     testPacks: { blocked: 2, total: 2 },
   })
   assert.deepEqual(items.map((item) => item.id), ["nde", "erection", "testpacks"])
-  assert.equal(items[0].title, "1 NDE obligation awaiting a result")
-  assert.equal(items[1].title, "3 of 4 spools not Ready for Test")
+  assert.deepEqual(items.map((item) => [item.count, item.total]), [[1, undefined], [3, 4], [2, 2]])
+  for (const item of items) assert.deepEqual(Object.keys(item).sort(), item.total === undefined ? ["count", "href", "id"] : ["count", "href", "id", "total"])
 })

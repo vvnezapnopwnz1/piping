@@ -1,0 +1,156 @@
+{
+  "batch": {
+    "errors": {
+      "failedToLoadNdeData": "Failed to load NDE data",
+      "couldNotLoadTheWelders": "Could not load the welders on this joint",
+      "couldNotCreateBatch": "Could not create batch",
+      "couldNotPreviewAllocationCandidates": "Could not preview allocation candidates",
+      "candidateAllocationFailed": "Candidate allocation failed",
+      "issuingBatchFailed": "Issuing batch failed",
+      "closingBatchFailed": "Closing batch failed",
+      "failedToRecordResult": "Failed to record result"
+    },
+    "success": {
+      "ndeBatchCreated": "NDE Batch created successfully",
+      "candidatesAllocated": "{count, plural, one {# candidate allocated to batch at {percentage}% coverage} other {# candidates allocated to batch at {percentage}% coverage}}",
+      "ndeBatchIssued": "NDE Batch issued",
+      "ndeBatchClosed": "NDE Batch closed",
+      "resultRecorded": "Result recorded: {outcome}"
+    },
+    "validation": {
+      "coveragePercentage": "The coverage percentage must be between 1 and 100.",
+      "rejectedRequiresDefectCode": "A rejected result must carry a defect code."
+    },
+    "columns": {
+      "spool": "Spool",
+      "joint": "Joint",
+      "batch": "Batch",
+      "method": "Method",
+      "manualStatus": "Status (manual)",
+      "cycle": "Cycle",
+      "coverage": "Coverage",
+      "disposition": "Disposition"
+    },
+    "cycle": {
+      "original": "Original",
+      "repair": "repair",
+      "tracer": "tracer",
+      "value": "{kind} {ordinal}",
+      "badge": "{kind} ({code})"
+    },
+    "coveragePercent": "{percentage}%",
+    "coverageRegimeOption": {
+      "spot": "Spot rate (10 % / 20 %)",
+      "mandatory_100": "Mandatory 100 %"
+    },
+    "coverageRegimeSummary": {
+      "spot": "Spot",
+      "mandatory_100": "100 %"
+    },
+    "ndeBatchManagement": "NDE Batch Management",
+    "action": "Action",
+    "recordResult": "Record Result",
+    "createBatch": "Create Batch",
+    "newNdeBatch": "New NDE Batch",
+    "ndtMethod": "NDT Method",
+    "coverageRegime": "Coverage regime",
+    "create": "Create",
+    "penaltyShoot100ControlIn": "Penalty shoot: 100 % control in force",
+    "escalationReason": {
+      "fourRejections": "it reached four rejected joints",
+      "secondLevelTracer": "a second-level tracer was rejected"
+    },
+    "escalatedBatch": "<batch>Batch {batchNumber}</batch> escalated on {date} because {reason}. Every remaining joint of that welder is now examined at 100 %.",
+    "batches": "Batches ({count})",
+    "batch": "Batch #",
+    "method": "Method",
+    "regime": "Regime",
+    "status": "Status",
+    "batchStatus": {
+      "draft": "Draft",
+      "issued": "Issued",
+      "returned": "Returned",
+      "closed": "Closed",
+      "pending": "Pending allocation",
+      "satisfied": "Satisfied",
+      "rejected": "Rejected",
+      "waived": "Waived",
+      "superseded": "Superseded"
+    },
+    "obligations": "Obligations",
+    "issuedOn": "Issued On",
+    "actions": "Actions",
+    "noNdeBatchesCreatedYet": "No NDE batches created yet.",
+    "coveragePercentage": "Coverage percentage",
+    "allocateCandidates": "Allocate Candidates",
+    "issueBatch": "Issue Batch",
+    "closeBatch": "Close Batch",
+    "ndeObligations": "NDE Obligations ({count})",
+    "ndeObligationsForSpool": "NDE Obligations ({shown} of {total} · selected spool)",
+    "searchJointSpoolOrBatch": "Search joint, spool or batch…",
+    "noNdeObligationForThe": "No NDE obligation for the selected spool.",
+    "noNdeObligationsFound": "No NDE obligations found.",
+    "clearTheSelectedSpoolIn": "Clear the selected spool in the page head to see every obligation.",
+    "obligationsAppearOnceAWeld": "Obligations appear once a weld with an NDE requirement is recorded.",
+    "allocateCandidatesFor": "Allocate candidates — {batch}",
+    "batchFallback": "batch",
+    "loadingCandidateJoints": "Loading candidate joints…",
+    "noCandidateJointsAreAvailable": "No candidate joints are available for this batch. Allocating would take nothing.",
+    "candidatePreview": "{count, plural, one {# candidate joint at {percentage}% coverage. The server picks the final set; a spot regime takes a subset of these.} other {# candidate joints at {percentage}% coverage. The server picks the final set; a spot regime takes a subset of these.}}",
+    "joint": "Joint",
+    "weldedOn": "Welded On",
+    "allocateAtPercentage": "Allocate at {percentage}% coverage",
+    "recordNdeResult": "Record NDE Result",
+    "recordNdeResultFor": "Record NDE Result — {weldNumber} ({status})",
+    "outcome": "Outcome",
+    "outcomeCode": {
+      "accepted": "accepted",
+      "rejected": "rejected"
+    },
+    "accepted": "Accepted",
+    "rejected": "Rejected",
+    "examinedOn": "Examined On",
+    "reportNumber": "Report Number",
+    "defectCode": "Defect code",
+    "selectADefectCode": "Select a defect code…",
+    "responsibleWelder": "Responsible welder",
+    "theReportDoesNotName": "The report does not name a welder",
+    "onlyTheWeldersOnThis": "Only the welders on this joint may be named. Leaving it unnamed still forces the repair and its tracers, but counts no penalty against anyone.",
+    "saveResult": "Save Result"
+  },
+  "charts": {
+    "noNdeActivityRecordedYet": "No NDE activity recorded yet.",
+    "ndeQualityCharts": "NDE quality charts",
+    "weeklyExaminationOutcomes": "Weekly examination outcomes",
+    "acceptedAndRejectedResultsRecorded": "Accepted and rejected results recorded in each ISO week. This is actual inspection activity, not a forecast.",
+    "recordAnNdeResultTo": "Record an NDE result to see its weekly outcome trend.",
+    "inspectionWorkflow": "Inspection workflow",
+    "currentObligationsByTheirNext": "Current obligations by their next operational step.",
+    "workflowPositionsAppearAfterNde": "Workflow positions appear after NDE obligations are generated.",
+    "ndtMethodDistribution": "NDT method distribution",
+    "eachMethodSplitIntoMutually": "Each method split into mutually exclusive inspection positions.",
+    "methodDistributionAppearsAfterThe": "Method distribution appears after the first NDE obligation is generated.",
+    "accepted": "Accepted",
+    "rejected": "Rejected",
+    "pendingAllocation": "Pending allocation",
+    "allocated": "Allocated",
+    "issued": "Issued",
+    "obligations": "Obligations"
+  },
+  "dashboard": {
+    "errors": {
+      "failedToLoadNdeKpis": "Failed to load NDE KPIs",
+      "theNdeChartsCouldNot": "The NDE charts could not be loaded."
+    },
+    "ndeQualityDashboard": "NDE Quality Dashboard",
+    "realTimeMetricsDerivedFrom": "Real-time metrics derived from project NDE batches and obligations.",
+    "totalBatches": "Total Batches",
+    "openBatches": "Open Batches",
+    "pendingObligations": "Pending Obligations",
+    "satisfiedObligations": "Satisfied Obligations"
+  },
+  "pages": {
+    "selectAProjectToView": "Select a project to view NDE dashboard.",
+    "selectAProjectToManage": "Select a project to manage NDE batches."
+  }
+}

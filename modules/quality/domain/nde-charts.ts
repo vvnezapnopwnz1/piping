@@ -41,11 +41,11 @@ export const toNdeWorkflowSeries = (rows: readonly WorkflowRow[], statusLabel: L
       count: Number(row.obligation_count),
     }))
 
-export const toNdeMethodSeries = (rows: readonly MethodRow[]) =>
+export const toNdeMethodSeries = (rows: readonly MethodRow[], methodLabel: Label) =>
   [...rows]
     .sort((left, right) => METHOD_ORDER.indexOf(left.method) - METHOD_ORDER.indexOf(right.method))
     .map((row) => ({
-      method: row.method.toUpperCase(),
+      method: methodLabel(row.method),
       pending: Number(row.pending_count),
       allocated: Number(row.allocated_count),
       issued: Number(row.issued_count),

@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { useCallback, useState } from "react"
 
 import { useOptionalAccess } from "@/modules/access/ui/access-context"
@@ -7,6 +8,7 @@ import { RevisionWorkbench } from "@/modules/engineering/ui/revision-workbench"
 import { SpoolingImportScreen } from "@/modules/engineering/ui/spooling-import-screen"
 
 export default function SpoolingImportPage() {
+  const t = useTranslations("spooling.pages")
   const access = useOptionalAccess()
   const [jobId, setJobId] = useState<string | null>(null)
   const onApplied = useCallback(() => setJobId(null), [])
@@ -14,7 +16,7 @@ export default function SpoolingImportPage() {
   const projectId = access?.access.projectId ?? null
   if (!projectId) {
     return (
-      <p className="text-muted-foreground text-sm">Select a project to import SpoolGen files.</p>
+      <p className="text-muted-foreground text-sm">{t("selectImport")}</p>
     )
   }
 

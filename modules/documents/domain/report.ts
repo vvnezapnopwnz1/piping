@@ -4,8 +4,6 @@ export type ReportCode = "RPT-F-001" | "RPT-T-001"
 
 export interface ReportDefinition {
   code: ReportCode
-  title: string
-  description: string
   outputFormat: "xlsx" | "pdf"
   requiredCapability: Capability
   fileNameStem: string
@@ -54,16 +52,12 @@ export type ReportSnapshot = FabricationProgressSnapshot | TestPackRftSnapshot
 export const REPORT_DEFINITIONS: readonly ReportDefinition[] = [
   {
     code: "RPT-F-001",
-    title: "Fabrication Progress",
-    description: "Project snapshot of completed weld progress and NDE workload.",
     outputFormat: "xlsx",
     requiredCapability: "reports.view",
     fileNameStem: "fabrication-progress",
   },
   {
     code: "RPT-T-001",
-    title: "Test Pack RFT Pursuit",
-    description: "Project snapshot of Test Pack readiness and outstanding blockers.",
     outputFormat: "pdf",
     requiredCapability: "reports.view",
     fileNameStem: "test-pack-rft-pursuit",

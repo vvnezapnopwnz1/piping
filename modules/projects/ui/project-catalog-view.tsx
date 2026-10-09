@@ -1,9 +1,10 @@
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { ArrowRight, Building2, CornerUpLeft, Search, ShieldCheck } from "lucide-react"
 import type { ProjectAccessSummary } from "@/modules/access/infrastructure/supabase-access-repository"
 import {
   filterProjectCatalog,
-  projectRoleLabel,
+  projectRoleCode,
   type ProjectCatalogMetadata,
 } from "../domain/project-catalog"
 
@@ -32,32 +33,38 @@ export function ProjectCatalogView({
   onOpen,
   onRetry,
 }: ProjectCatalogViewProps) {
+  const t = useTranslations("projects")
+  const tc = useTranslations("codes.accessRole")
+  const roleLabel = (project: ProjectAccessSummary) => {
+    const code = projectRoleCode(project)
+    return code ? tc(code) : t("role.none")
+  }
   const visible = filterProjectCatalog(projects, metadata, query)
   const byId = new Map(metadata.map((row) => [row.id, row]))
   return (
     <React.Fragment>
       <header className="catalog-heading">
-        <h1>Projects</h1>
-        <p>Choose a project to work in.</p>
+        <h1>{t("title")}</h1>
+        <p>{t("intro")}</p>
       </header>
       <div className="catalog-toolbar">
         <label className="catalog-search" data-help="project-search">
           <Search aria-hidden="true" size={18} />
-          <span className="sr-only">Search projects</span>
+          <span className="sr-only">{t("search.label")}</span>
           <input
             type="search"
             value={query}
             onChange={(event) => onQuery(event.target.value)}
-            placeholder="Search projects, owners or contracts…"
+            placeholder={t("search.placeholder")}
           />
         </label>
-        <span className="catalog-count">{projects.length} available to your account</span>
+        <span className="catalog-count">{t("count", { count: projects.length })}</span>
       </div>
       {detailsState === "error" && (
         <div className="catalog-error" role="alert">
-          Project details could not be loaded. You can still open a project.
+          {t("error.text")}
           <button type="button" onClick={onRetry}>
-            Try again
+            {t("error.retry")}
           </button>
         </div>
       )}
@@ -78,7 +85,7 @@ export function ProjectCatalogView({
                 <div className="catalog-card-top">
                   <span className="catalog-code">{project.activityCode}</span>
                   <span className="catalog-status" data-current={selected || undefined}>
-                    {selected ? "Current project" : "Active"}
+                    {selected ? t("status.current") : t("status.active")}
                   </span>
                 </div>
                 <h2 id={`project-${project.projectId}`}>{project.title}</h2>
@@ -89,58 +96,58 @@ export function ProjectCatalogView({
                   {detail ? (
                     <dl>
                       <div>
-                        <dt>Contractor</dt>
-                        <dd>{detail.contractor_name || "Not specified"}</dd>
+                        <dt>{t("details.contractor")}</dt>
+                        <dd>{detail.contractor_name || t("details.notSpecified")}</dd>
                       </div>
                       <div>
-                        <dt>Owner</dt>
-                        <dd>{detail.owner_name || "Not specified"}</dd>
+                        <dt>{t("details.owner")}</dt>
+                        <dd>{detail.owner_name || t("details.notSpecified")}</dd>
                       </div>
                       <div>
-                        <dt>Contract</dt>
-                        <dd className="catalog-mono">{detail.contract_number || "Not specified"}</dd>
+                        <dt>{t("details.contract")}</dt>
+                        <dd className="catalog-mono">{detail.contract_number || t("details.notSpecified")}</dd>
                       </div>
                     </dl>
                   ) : detailsState === "loading" && detailsLoading ? (
                     <div role="status">
-                      <span className="sr-only">Loading project details…</span>
+                      <span className="sr-only">{t("details.loading")}</span>
                       {detailsLoading}
                     </div>
                   ) : (
                     <p role="status">
                       {detailsState === "loading"
-                        ? "Loading project details…"
+                        ? t("details.loading")
                         : detailsState === "error"
-                          ? "Project details unavailable."
-                          : "Project details not provided."}
+                          ? t("details.unavailable")
+                          : t("details.notProvided")}
                     </p>
                   )}
                 </div>
                 <div className="catalog-access">
                   <ShieldCheck aria-hidden="true" size={14} />
-                  <span>{projectRoleLabel(project)}</span>
+                  <span>{roleLabel(project)}</span>
                 </div>
                 {selected ? (
                   <button
                     type="button"
                     className="catalog-open"
                     data-variant="primary"
-                    aria-label={`Return to project ${project.activityCode}`}
+                    aria-label={t("open.returnLabel", { code: project.activityCode })}
                     disabled={Boolean(pendingId)}
                     onClick={() => onOpen(project.projectId)}
                   >
                     <CornerUpLeft aria-hidden="true" size={16} />
-                    Return to current project
+                    {t("open.return")}
                   </button>
                 ) : (
                   <button
                     type="button"
                     className="catalog-open"
-                    aria-label={`Open project ${project.activityCode}`}
+                    aria-label={t("open.openLabel", { code: project.activityCode })}
                     disabled={Boolean(pendingId)}
                     onClick={() => onOpen(project.projectId)}
                   >
-                    {pending ? "Opening project…" : "Open project"}
+                    {pending ? t("open.opening") : t("open.open")}
                     <ArrowRight aria-hidden="true" size={16} />
                   </button>
                 )}
@@ -152,18 +159,14 @@ export function ProjectCatalogView({
         <div className="catalog-empty">
           <Building2 aria-hidden="true" size={32} />
           <h2>
-            {projects.length
-              ? "No matching projects"
-              : "No active projects available"}
+            {projects.length ? t("empty.noMatch") : t("empty.noProjects")}
           </h2>
           <p>
-            {projects.length
-              ? "Try a different project code, title, owner or contract."
-              : "Ask your administrator to assign project access. No project data is shown without access."}
+            {projects.length ? t("empty.tryDifferent") : t("empty.askAdmin")}
           </p>
           {query && (
             <button type="button" onClick={() => onQuery("")}>
-              Clear search
+              {t("empty.clear")}
             </button>
           )}
         </div>

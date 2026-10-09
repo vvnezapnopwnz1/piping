@@ -1,5 +1,7 @@
 "use client"
 
+import { useTestPackTranslations, testPackValidationMessages, reportTestPackError } from "@/modules/pressure-test/ui/test-pack-i18n"
+
 import { useEffect, useMemo, useState, type FormEvent } from "react"
 import { Plus } from "lucide-react"
 
@@ -78,7 +80,7 @@ type FormState = {
 const emptyForm: FormState = {
   testPackNumber: "",
   location: "",
-  priority: "Normal",
+  priority: TEST_PACK_PRIORITIES[1],
   medium: "P",
   pressure: "",
   volumeM3: "",
@@ -102,37 +104,6 @@ function toInput(form: FormState, isoIds: string[]) {
   }
 }
 
-const PACK_COLUMNS: ReadonlyArray<DataColumn<TestPackCatalogRow>> = [
-  {
-    id: "testPackNumber",
-    header: "Test Pack",
-    value: (pack) => pack.testPackNumber,
-    searchable: true,
-    filter: "text",
-    pinned: true,
-    alwaysVisible: true,
-    className: "font-mono text-xs",
-  },
-  {
-    id: "lifecycle",
-    header: "Lifecycle",
-    value: (pack) => pack.lifecycle,
-    filter: "select",
-    cell: (pack) => <StatusBadge status={pack.lifecycle} />,
-  },
-  { id: "activeIsoCount", header: "ISO", numeric: true, value: (pack) => pack.activeIsoCount, filter: "number" },
-  { id: "revisionNo", header: "Rev", numeric: true, value: (pack) => pack.revisionNo },
-  { id: "location", header: "Location", value: (pack) => pack.location, searchable: true, filter: "select" },
-  { id: "priority", header: "Priority", value: (pack) => pack.priority, filter: "select" },
-  {
-    id: "medium",
-    header: "Medium",
-    value: (pack) => mediumLabel(pack.medium),
-    filter: "select",
-  },
-  { id: "plannedStartOn", header: "Planned start", value: (pack) => pack.plannedStartOn, filter: "date" },
-]
-
 export interface TestPackBuilderScreenProps {
   projectId: string
   canManage: boolean
@@ -148,6 +119,38 @@ export function TestPackBuilderScreen({
   initialView = "definition",
   isNew = false,
 }: TestPackBuilderScreenProps) {
+  const t = useTestPackTranslations()
+  const PACK_COLUMNS: ReadonlyArray<DataColumn<TestPackCatalogRow>> = [
+  {
+    id: "testPackNumber",
+    header: t("text.testPack"),
+    value: (pack) => pack.testPackNumber,
+    searchable: true,
+    filter: "text",
+    pinned: true,
+    alwaysVisible: true,
+    className: "font-mono text-xs",
+  },
+  {
+    id: "lifecycle",
+    header: t("text.lifecycle"),
+    value: (pack) => t(`codes.status.${pack.lifecycle}`),
+    filter: "select",
+    cell: (pack) => <StatusBadge status={pack.lifecycle} />,
+  },
+  { id: "activeIsoCount", header: "ISO", numeric: true, value: (pack) => pack.activeIsoCount, filter: "number" },
+  { id: "revisionNo", header: t("text.rev123"), numeric: true, value: (pack) => pack.revisionNo },
+  { id: "location", header: t("text.location"), value: (pack) => pack.location, searchable: true, filter: "select" },
+  { id: "priority", header: t("text.priority"), value: (pack) => pack.priority ? t(`text.${pack.priority.toLowerCase()}`) : t("text.normal"), filter: "select" },
+  {
+    id: "medium",
+    header: t("text.medium"),
+    value: (pack) => t(mediumLabel(pack.medium)),
+    filter: "select",
+  },
+  { id: "plannedStartOn", header: t("text.plannedStart"), value: (pack) => pack.plannedStartOn, filter: "date" },
+]
+
   const [packs, setPacks] = useState<TestPackCatalogRow[]>([])
   const [selected, setSelected] = useState<string | null>(testPackId ?? null)
   const [activeTab, setActiveTab] = useState<"definition" | "composition">(initialView)
@@ -215,7 +218,7 @@ export function TestPackBuilderScreen({
     setLoading(true)
     void Promise.all([refresh(null), loadReferences()])
       .catch((cause) => {
-        if (active) setError(cause instanceof Error ? cause.message : "Could not load Builder")
+        if (active) setError(reportTestPackError(cause, t("text.couldNotLoadBuilder")))
       })
       .finally(() => {
         if (active) setLoading(false)
@@ -251,7 +254,7 @@ export function TestPackBuilderScreen({
       return
     }
     void refresh(selected).catch((cause) =>
-      setError(cause instanceof Error ? cause.message : "Could not load Test Pack"),
+      setError(reportTestPackError(cause, t("text.couldNotLoadTestPack"))),
     )
   }, [selected])
 
@@ -310,10 +313,10 @@ export function TestPackBuilderScreen({
       if (selected) {
         const result = await updateManagedTestPack(getSupabaseBrowserClient(), selected, toInput(form, []))
         if (!result.ok) {
-          setError(Object.values(result.errors).join("; "))
+          setError(testPackValidationMessages(result.errors, t))
           return
         }
-        setNotice("Metadata saved; server revision incremented.")
+        setNotice(t("text.metadataSavedServerRevisionIncremented"))
       } else {
         const result = await createManagedTestPack(
           getSupabaseBrowserClient(),
@@ -322,7 +325,7 @@ export function TestPackBuilderScreen({
           `browser-create-${Date.now()}`,
         )
         if (!result.ok) {
-          setError(Object.values(result.errors).join("; "))
+          setError(testPackValidationMessages(result.errors, t))
           return
         }
         const createdId = (result.value as { id?: string }).id
@@ -338,11 +341,11 @@ export function TestPackBuilderScreen({
             }
           }
           if (failedIsoIds.length === 0) {
-            setNotice(`Test Pack created with ${successCount} ISO(s) composed.`)
+            setNotice(t("text.testPackCreatedWith0IsoSComposed", { v1: (successCount) ?? "—" }))
           } else {
             const failedLabels = failedIsoIds.map((id) => isoLabelById.get(id) ?? id).join(", ")
             setNotice(
-              `Test Pack created with ${successCount} of ${selectedAvailable.length} ISOs composed. Failed: ${failedLabels}. You can compose them in Composition area.`,
+              t("text.testPackCreatedWith0Of0Isos", { v1: (successCount) ?? "—", v2: (selectedAvailable.length) ?? "—", v3: (failedLabels) ?? "—" }),
             )
           }
           setSelected(createdId)
@@ -353,7 +356,7 @@ export function TestPackBuilderScreen({
       }
       await refresh(selected)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Test Pack mutation failed")
+      setError(reportTestPackError(cause, t("text.testPackMutationFailed")))
     } finally {
       setSubmitting(false)
     }
@@ -367,7 +370,7 @@ export function TestPackBuilderScreen({
   const AVAILABLE_COLUMNS: ReadonlyArray<DataColumn<IsometricOption>> = [
     {
       id: "select",
-      header: "Add",
+      header: t("text.add"),
       sortable: false,
       alwaysVisible: true,
       value: (option) => selectedAvailable.includes(option.id),
@@ -375,7 +378,7 @@ export function TestPackBuilderScreen({
       headerClassName: "w-14",
       cell: (option) => (
         <Checkbox
-          aria-label={`Add ${option.label}`}
+          aria-label={t("text.add0", { v1: (option.label) ?? "—" })}
           checked={selectedAvailable.includes(option.id)}
           disabled={!canManage}
           onCheckedChange={() => toggleAvailable(option.id)}
@@ -394,14 +397,14 @@ export function TestPackBuilderScreen({
     },
     {
       id: "isRft",
-      header: "Readiness",
+      header: t("text.readiness"),
       value: (option) => option.isRft,
       filter: "boolean",
       cell: (option) =>
         option.isRft ? (
-          <StatusBadge status="ready" label="Ready for test" />
+          <StatusBadge status="ready" label={t("text.readyForTest")} />
         ) : (
-          <StatusBadge status="blocked" label="Blocked" />
+          <StatusBadge status="blocked" label={t("text.blocked")} />
         ),
     },
   ]
@@ -447,9 +450,10 @@ export function TestPackBuilderScreen({
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold">Test Pack Builder</h1>
+          <h1 className="text-2xl font-semibold">{t("text.testPackBuilder")}</h1>
           <p className="text-muted-foreground text-sm">
-            Whole-ISO composition. Readiness, lifecycle, and duplicate membership remain server-owned.
+
+            {t("text.wholeIsoCompositionReadinessLifecycleAndDuplicateMembership")}
           </p>
         </div>
         <Skeleton className="h-64 w-full" />
@@ -462,9 +466,10 @@ export function TestPackBuilderScreen({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Test Pack Builder</h1>
+        <h1 className="text-2xl font-semibold">{t("text.testPackBuilder")}</h1>
         <p className="text-muted-foreground text-sm">
-          Whole-ISO composition. Readiness, lifecycle, and duplicate membership remain server-owned.
+
+          {t("text.wholeIsoCompositionReadinessLifecycleAndDuplicateMembership")}
         </p>
       </div>
 
@@ -474,15 +479,16 @@ export function TestPackBuilderScreen({
       {creating ? (
         <Card>
           <CardContent className="flex flex-wrap items-center justify-between gap-3 py-3">
-            <p className="text-sm font-medium">Creating a new Test Pack</p>
+            <p className="text-sm font-medium">{t("text.creatingANewTestPack")}</p>
             <Button variant="outline" size="sm" onClick={handleCancelNew}>
-              Cancel
+
+              {t("text.cancel")}
             </Button>
           </CardContent>
         </Card>
       ) : (
         <RecordSelectTable
-          title="Test Packs"
+          title={t("text.testPacks")}
           columns={PACK_COLUMNS}
           rows={packs}
           rowId={(pack) => pack.id}
@@ -490,20 +496,18 @@ export function TestPackBuilderScreen({
           onSelect={handleSelectPack}
           browsing={browsing}
           onBrowsingChange={setBrowsing}
-          changeLabel="Change Test Pack"
+          changeLabel={t("text.changePack")}
           namespace="pack"
-          searchPlaceholder="Search Test Pack number or location…"
-          emptyTitle="No Test Packs in this project yet."
-          emptyDescription="Create one, then compose accepted ISOs into it."
+          searchPlaceholder={t("text.searchPack")}
+          emptyTitle={t("text.noPacksBuilder")}
+          emptyDescription={t("text.createAndComposeHelp")}
           selectedIdentity={(pack) => pack.testPackNumber}
           selectedMeta={(pack) =>
-            `rev ${pack.revisionNo} · ${pack.activeIsoCount} ISO · ${mediumLabel(pack.medium)}${
-              pack.location ? ` · ${pack.location}` : ""
-            }`
+            t("text.rev00Iso00", { v1: (pack.revisionNo) ?? "—", v2: (pack.activeIsoCount) ?? "—", v3: (t(mediumLabel(pack.medium))) ?? "—", v4: pack.location ? ` · ${pack.location}` : "" })
           }
           toolbarActions={
             <Button disabled={!canManage} onClick={handleNewPack}>
-              <Plus /> New Test Pack
+              <Plus />  {t("text.newTestPack")}
             </Button>
           }
         />
@@ -518,7 +522,8 @@ export function TestPackBuilderScreen({
               size="sm"
               onClick={() => handleTabChange("definition")}
             >
-              Definition
+
+              {t("text.definition")}
             </Button>
             <Button
               type="button"
@@ -526,7 +531,8 @@ export function TestPackBuilderScreen({
               size="sm"
               onClick={() => handleTabChange("composition")}
             >
-              Composition
+
+              {t("text.composition")}
             </Button>
           </div>
 
@@ -556,7 +562,8 @@ export function TestPackBuilderScreen({
           ) : (
             <Card>
               <CardContent className="p-6 text-center text-sm text-muted-foreground">
-                Test Pack unavailable or not found in this project.
+
+                {t("text.testPackUnavailableOrNotFoundInThis")}
               </CardContent>
             </Card>
           )}
@@ -567,11 +574,11 @@ export function TestPackBuilderScreen({
         <>
           <Card>
             <CardHeader>
-              <CardTitle>New Test Pack</CardTitle>
+              <CardTitle>{t("text.newTestPack")}</CardTitle>
               <CardDescription>
                 {canManage
-                  ? "Mutations use capability-checked RPCs and refresh projections after success."
-                  : "View-only access: mutation controls are disabled."}
+                  ? t("text.mutationsUseCapabilityCheckedRpcsAndRefreshProjections")
+                  : t("text.viewOnlyAccessMutationControlsAreDisabled")}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -579,7 +586,7 @@ export function TestPackBuilderScreen({
                 {TEST_PACK_FIELDS.map(({ field, label, type, required, unit }) => (
                   <div key={field} className="space-y-1.5">
                     <Label htmlFor={`pack-${field}`}>
-                      {label}
+                      {t(label)}
                       {unit ? <span className="text-muted-foreground"> ({unit})</span> : null}
                       {required ? <span className="text-destructive"> *</span> : null}
                     </Label>
@@ -596,20 +603,20 @@ export function TestPackBuilderScreen({
 
                 <FieldSelect
                   id="pack-priority"
-                  label="Priority"
+                  label={t("text.priority")}
                   value={form.priority}
-                  placeholder="Select a priority"
+                  placeholder={t("text.selectAPriority")}
                   disabled={!canManage}
-                  options={TEST_PACK_PRIORITIES.map((item) => ({ id: item, label: item }))}
+                  options={TEST_PACK_PRIORITIES.map((item) => ({ id: item, label: t(`text.${item.toLowerCase()}`) }))}
                   onChange={(value) => updateField("priority", value)}
                 />
                 <FieldSelect
                   id="pack-medium"
-                  label="Test medium"
+                  label={t("text.testMedium")}
                   value={form.medium}
-                  placeholder="Select a medium"
+                  placeholder={t("text.selectAMedium")}
                   disabled={!canManage}
-                  options={TEST_PACK_MEDIA.map((item) => ({ id: item.value, label: item.label }))}
+                  options={TEST_PACK_MEDIA.map((item) => ({ id: item.value, label: t(item.label) }))}
                   onChange={(value) => updateField("medium", value)}
                 />
 
@@ -619,16 +626,16 @@ export function TestPackBuilderScreen({
                     <FieldSelect
                       key={field}
                       id={`pack-${field}`}
-                      label={label}
+                      label={t(label)}
                       value={form[field]}
                       disabled={!canManage}
                       options={options}
                       placeholder={
                         field === "subsystemId" && !form.systemId
-                          ? "Select a System first"
+                          ? t("text.selectASystemFirst")
                           : options.length === 0
-                            ? `No active ${label.toLowerCase()} in this project`
-                            : `Select ${label.toLowerCase()}`
+                            ? t("text.noActive0InThisProject", { v1: (t(label).toLowerCase()) ?? "—" })
+                            : t("text.select0", { v1: (t(label).toLowerCase()) ?? "—" })
                       }
                       onChange={(value) => updateField(field, value)}
                     />
@@ -637,11 +644,13 @@ export function TestPackBuilderScreen({
 
                 <div className="flex flex-wrap items-end gap-2 sm:col-span-2">
                   <Button type="submit" loading={submitting} disabled={!canManage || missing.length > 0}>
-                    Create and compose
+
+                    {t("text.createAndCompose")}
                   </Button>
                   {missing.length > 0 ? (
                     <p className="text-muted-foreground text-sm">
-                      Still needed: {missing.join(", ")}
+
+                      {t("text.stillNeeded")} {missing.map((label) => t(label)).join(", ")}
                     </p>
                   ) : null}
                 </div>
@@ -651,9 +660,10 @@ export function TestPackBuilderScreen({
 
           <Card>
             <CardHeader>
-              <CardTitle>Available accepted ISOs</CardTitle>
+              <CardTitle>{t("text.availableAcceptedIsos")}</CardTitle>
               <CardDescription>
-                Every accepted ISO in scope that is not already composed into a Test Pack.
+
+                {t("text.everyAcceptedIsoInScopeThatIsNot")}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -663,12 +673,12 @@ export function TestPackBuilderScreen({
                 state={availableTable}
                 onStateChange={setAvailableTable}
                 rowId={(option) => option.id}
-                searchPlaceholder="Search ISO…"
-                emptyTitle="No available accepted ISOs in this project scope."
+                searchPlaceholder={t("text.searchIso")}
+                emptyTitle={t("text.noAcceptedIsos")}
                 containerClassName="max-h-[40vh]"
                 toolbarActions={
                   <span className="text-muted-foreground text-sm">
-                    {selectedAvailable.length} will be composed on create
+                    {selectedAvailable.length}  {t("text.willBeComposedOnCreate")}
                   </span>
                 }
               />

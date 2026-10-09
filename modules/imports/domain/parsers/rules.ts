@@ -1,8 +1,8 @@
 import { getImportTypeDefinition, type ImportType } from "../import-type"
-import type { ImportIssue } from "../import-issue"
+import type { ImportRowIssue } from "../import-issue"
 import type { ParsedRow } from "./registry"
 
-const WELD_LOCATIONS = new Set(["shop", "assembly", "field"])
+const WELD_LOCATIONS = ["shop", "assembly", "field"] as const
 
 const COVERAGE_KEYS = [
   "rt_coverage",
@@ -22,8 +22,8 @@ function checkRange(
   row: ParsedRow,
   fromKey: string,
   toKey: string,
-  label: string,
-  issues: ImportIssue[]
+  range: "diameter" | "thickness",
+  issues: ImportRowIssue[]
 ): void {
   const from = numberAt(row, fromKey)
   const to = numberAt(row, toKey)
@@ -34,12 +34,12 @@ function checkRange(
       columnName: toKey,
       severity: "blocker",
       code: "INVALID_RANGE",
-      message: `${label} "to" must be greater than or equal to "from".`,
+      range,
     })
   }
 }
 
-function checkPositive(row: ParsedRow, key: string, label: string, issues: ImportIssue[]): void {
+function checkPositive(row: ParsedRow, key: string, issues: ImportRowIssue[]): void {
   const value = numberAt(row, key)
   if (value === null) return
   if (value <= 0) {
@@ -48,7 +48,7 @@ function checkPositive(row: ParsedRow, key: string, label: string, issues: Impor
       columnName: key,
       severity: "blocker",
       code: "OUT_OF_RANGE",
-      message: `${label} must be greater than zero.`,
+      bound: "positive",
     })
   }
 }
@@ -56,7 +56,7 @@ function checkPositive(row: ParsedRow, key: string, label: string, issues: Impor
 function checkDuplicateNaturalKeys(
   importType: ImportType,
   rows: readonly ParsedRow[],
-  issues: ImportIssue[]
+  issues: ImportRowIssue[]
 ): void {
   if (importType === "tracking_scan") return
   const naturalKey = getImportTypeDefinition(importType).naturalKey
@@ -72,7 +72,7 @@ function checkDuplicateNaturalKeys(
         columnName: naturalKey[0],
         severity: "blocker",
         code: "DUPLICATE_IN_FILE",
-        message: `This ${naturalKey.join(" + ")} appears more than once in the file.`,
+        keys: naturalKey,
       })
       continue
     }
@@ -80,19 +80,19 @@ function checkDuplicateNaturalKeys(
   }
 }
 
-function checkIsoDate(row: ParsedRow, key: string, issues: ImportIssue[]): void {
+function checkIsoDate(row: ParsedRow, key: string, issues: ImportRowIssue[]): void {
   const value = row.normalizedValues[key]
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    issues.push({ rowNumber: row.rowNumber, columnName: key, severity: "blocker", code: "INVALID_DATE", message: `${key} must be a valid YYYY-MM-DD date.` })
+    issues.push({ rowNumber: row.rowNumber, columnName: key, severity: "blocker", code: "INVALID_DATE" })
     return
   }
   const parsed = new Date(`${value}T00:00:00Z`)
   if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) {
-    issues.push({ rowNumber: row.rowNumber, columnName: key, severity: "blocker", code: "INVALID_DATE", message: `${key} must be a valid YYYY-MM-DD date.` })
+    issues.push({ rowNumber: row.rowNumber, columnName: key, severity: "blocker", code: "INVALID_DATE" })
   }
 }
 
-function checkCompositionRules(rows: readonly ParsedRow[], issues: ImportIssue[]): void {
+function checkCompositionRules(rows: readonly ParsedRow[], issues: ImportRowIssue[]): void {
   const metadataKeys = [
     "system", "subsystem", "test_pack_revision", "test_medium", "test_pressure",
     "planned_start_on", "planned_end_on", "priority", "service_class", "line_service",
@@ -103,16 +103,16 @@ function checkCompositionRules(rows: readonly ParsedRow[], issues: ImportIssue[]
   for (const row of rows) {
     const medium = row.normalizedValues.test_medium
     if (typeof medium === "string" && !["H", "P", "V"].includes(medium)) {
-      issues.push({ rowNumber: row.rowNumber, columnName: "test_medium", severity: "blocker", code: "INVALID_VALUE", message: "Test Medium must be H, P, or V." })
+      issues.push({ rowNumber: row.rowNumber, columnName: "test_medium", severity: "blocker", code: "INVALID_VALUE", expected: ["H", "P", "V"] })
     }
-    checkPositive(row, "test_pressure", "Test Pressure", issues)
-    checkPositive(row, "volume_m3", "Volume m3", issues)
+    checkPositive(row, "test_pressure", issues)
+    checkPositive(row, "volume_m3", issues)
     checkIsoDate(row, "planned_start_on", issues)
     checkIsoDate(row, "planned_end_on", issues)
     const start = row.normalizedValues.planned_start_on
     const end = row.normalizedValues.planned_end_on
     if (typeof start === "string" && typeof end === "string" && end < start) {
-      issues.push({ rowNumber: row.rowNumber, columnName: "planned_end_on", severity: "blocker", code: "INVALID_RANGE", message: "Planned End cannot be before Planned Start." })
+      issues.push({ rowNumber: row.rowNumber, columnName: "planned_end_on", severity: "blocker", code: "INVALID_RANGE", range: "plannedDates" })
     }
 
     const packNumber = String(row.normalizedValues.test_pack_number ?? "")
@@ -124,7 +124,7 @@ function checkCompositionRules(rows: readonly ParsedRow[], issues: ImportIssue[]
     }
     for (const key of metadataKeys) {
       if (String(first.normalizedValues[key] ?? "") !== String(row.normalizedValues[key] ?? "")) {
-        issues.push({ rowNumber: row.rowNumber, columnName: key, severity: "blocker", code: "INCONSISTENT_TEST_PACK_METADATA", message: "Test Pack metadata must be consistent across all ISO rows." })
+        issues.push({ rowNumber: row.rowNumber, columnName: key, severity: "blocker", code: "INCONSISTENT_TEST_PACK_METADATA" })
       }
     }
   }
@@ -133,29 +133,29 @@ function checkCompositionRules(rows: readonly ParsedRow[], issues: ImportIssue[]
 export function applyTypeRules(
   importType: ImportType,
   rows: readonly ParsedRow[]
-): ImportIssue[] {
-  const issues: ImportIssue[] = []
+): ImportRowIssue[] {
+  const issues: ImportRowIssue[] = []
 
   for (const row of rows) {
     if (importType === "welding_procedure") {
-      checkRange(row, "diameter_from_inch", "diameter_to_inch", "Diameter", issues)
-      checkRange(row, "thickness_from_mm", "thickness_to_mm", "Thickness", issues)
+      checkRange(row, "diameter_from_inch", "diameter_to_inch", "diameter", issues)
+      checkRange(row, "thickness_from_mm", "thickness_to_mm", "thickness", issues)
     }
 
     if (importType === "thickness_flange") {
-      checkPositive(row, "diameter_inch", "Dia Inch", issues)
-      checkPositive(row, "thickness_mm", "Thickness", issues)
+      checkPositive(row, "diameter_inch", issues)
+      checkPositive(row, "thickness_mm", issues)
     }
 
     if (importType === "nde_matrix") {
       const location = row.normalizedValues.weld_location
-      if (typeof location === "string" && location !== "" && !WELD_LOCATIONS.has(location)) {
+      if (typeof location === "string" && location !== "" && !(WELD_LOCATIONS as readonly string[]).includes(location)) {
         issues.push({
           rowNumber: row.rowNumber,
           columnName: "weld_location",
           severity: "blocker",
           code: "INVALID_VALUE",
-          message: 'Weld Location must be one of "shop", "assembly" or "field".',
+          expected: WELD_LOCATIONS,
         })
       }
       for (const key of COVERAGE_KEYS) {
@@ -167,28 +167,28 @@ export function applyTypeRules(
             columnName: key,
             severity: "blocker",
             code: "OUT_OF_RANGE",
-            message: "Coverage must be between 0 and 100.",
+            bound: "percent",
           })
         }
       }
     }
 
     if (importType === "flange_progress") {
-      checkPositive(row, "jointing_value", "Jointing Value", issues)
+      checkPositive(row, "jointing_value", issues)
       const date = row.normalizedValues.joint_date
       if (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(new Date(`${date}T00:00:00Z`).getTime())) {
-        issues.push({ rowNumber: row.rowNumber, columnName: "joint_date", severity: "blocker", code: "INVALID_DATE", message: "Joint Date must be a valid YYYY-MM-DD date." })
+        issues.push({ rowNumber: row.rowNumber, columnName: "joint_date", severity: "blocker", code: "INVALID_DATE" })
       }
       const jointerCodes = row.normalizedValues.jointer_codes
       if (Array.isArray(jointerCodes)) {
         const seen = new Set<string>()
         for (const code of jointerCodes) {
           const key = String(code).toUpperCase()
-          if (seen.has(key)) issues.push({ rowNumber: row.rowNumber, columnName: "jointer_codes", severity: "blocker", code: "DUPLICATE_JOINTER", message: "Jointer Codes must not repeat a jointer." })
+          if (seen.has(key)) issues.push({ rowNumber: row.rowNumber, columnName: "jointer_codes", severity: "blocker", code: "DUPLICATE_JOINTER" })
           seen.add(key)
         }
       }
-      issues.push({ rowNumber: row.rowNumber, columnName: "jointing_value", severity: "warning", code: "UT_CONFIGURATION_WARNING", message: "UT is calculated by the server from the active project configuration." })
+      issues.push({ rowNumber: row.rowNumber, columnName: "jointing_value", severity: "warning", code: "UT_CONFIGURATION_WARNING" })
     }
 
     if (importType === "test_pack_composition") {

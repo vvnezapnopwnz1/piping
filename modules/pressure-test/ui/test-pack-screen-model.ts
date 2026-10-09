@@ -2,7 +2,7 @@ import type { TestPackCatalogRow, TestPackMemberRow } from "../infrastructure/su
 import { TEST_PACK_VIEWS, type TestPackView } from "./test-pack-workspace-model"
 
 export { TEST_PACK_VIEWS, type TestPackView }
-export const explorerTabs = ["General", "Release Tracking", "Operation Management", "Progress Status", "Spool Status", "Isometric Status", "Spool"] as const
+export const explorerTabs = ["text.general", "text.releaseTracking", "text.operationManagement", "text.progressStatus", "text.spoolStatus", "text.isometricStatus", "text.spool"] as const
 
 export function filterTestPackCatalog(rows: TestPackCatalogRow[], query: string): TestPackCatalogRow[] {
   const normalized = query.trim().toLowerCase()

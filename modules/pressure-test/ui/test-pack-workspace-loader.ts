@@ -149,7 +149,7 @@ function resolveReferenceLabel(
 ): string | null {
   if (!id) return null
   const matched = options.find((opt) => opt.id === id)
-  if (!matched) return "Reference unavailable"
+  if (!matched) return "text.referenceUnavailable"
   return matched.description ? `${matched.code} · ${matched.description}` : matched.code
 }
 
@@ -159,13 +159,13 @@ export async function loadTestPackWorkspaceSnapshot(
   packId: string | null,
 ): Promise<TestPackWorkspaceResult> {
   if (!packId) {
-    return { status: "unavailable", reason: "No test pack selected" }
+    return { status: "unavailable", reason: "text.noTestPackSelected" }
   }
 
   // 1. Direct lookup first. If the pack is missing or belongs to another project, abort detail reads.
   const pack = await repo.getTestPackCatalogRow(projectId, packId)
   if (!pack) {
-    return { status: "unavailable", reason: "Test Pack not found in current project" }
+    return { status: "unavailable", reason: "text.testPackNotFoundInCurrentProject" }
   }
 
   // 2. Load detail reads in parallel.

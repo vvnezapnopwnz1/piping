@@ -28,13 +28,13 @@ export interface RecordDrawerProps {
   status?: ReactNode
   returnLabel: string
   closeLabel: string
-  recordKind: "spool" | "test-pack"
+  recordKind: "spool" | "test-pack" | "flange"
   onClose: () => void
   children: ReactNode
 }
 
 /**
- * A neutral right-hand overlay drawer for records (Spool, Test Pack).
+ * A neutral right-hand overlay drawer for records (Spool, Test Pack, Flange).
  * The table keeps its full layout underneath, while the selected record
  * occupies a full-height sheet above the page.
  */
@@ -109,7 +109,11 @@ export function RecordDrawer({
   const kindAttrs =
     recordKind === "spool"
       ? { "data-spool-drawer": "" }
-      : { "data-test-pack-drawer": "" }
+      : recordKind === "test-pack"
+        ? { "data-test-pack-drawer": "" }
+        : recordKind === "flange"
+          ? { "data-flange-drawer": "" }
+          : {}
 
   return (
     <>

@@ -13,10 +13,10 @@ export interface PressureTestRequestConfig {
 }
 
 const configs: Record<PressureTestRequestType, PressureTestRequestConfig> = {
-  line_check: { title: "Line Check", description: "Assign an ISO team and record the line-check result with optional Category X punches.", teamType: "line_check", targetLabel: "ISO", worklist: "line_check_worklist", printPath: "/testpack/print/line-check/{requestId}" },
-  item_clearance: { title: "Item Clearance", description: "Assign open Category X punch items to finishing and record their clearance.", teamType: "finishing", targetLabel: "Punch item", worklist: "item_clearance_worklist", printPath: "/testpack/print/item-clearance/{requestId}" },
-  blinding: { title: "Blinding", description: "Assign the RFT Test Pack to a blinding team and record completion.", teamType: "blinding", targetLabel: "Test Pack", worklist: "blinding_worklist", printPath: "/testpack/print/blinding/{requestId}" },
-  reinstatement: { title: "Reinstatement", description: "Assign eligible Y/Z flange joints and record each joint result.", teamType: "reinstatement", targetLabel: "Flange joint", worklist: "reinstatement_worklist", printPath: "/testpack/print/reinstatement/{requestId}" },
+  line_check: { title: "text.lineCheck", description: "text.assignAnIsoTeamAndRecordTheLine", teamType: "line_check", targetLabel: "ISO", worklist: "line_check_worklist", printPath: "/testpack/print/line-check/{requestId}" },
+  item_clearance: { title: "text.itemClearance", description: "text.assignOpenCategoryXPunchItemsToFinishing", teamType: "finishing", targetLabel: "text.punchItem", worklist: "item_clearance_worklist", printPath: "/testpack/print/item-clearance/{requestId}" },
+  blinding: { title: "text.blinding", description: "text.assignTheRftTestPackToABlinding", teamType: "blinding", targetLabel: "text.testPack", worklist: "blinding_worklist", printPath: "/testpack/print/blinding/{requestId}" },
+  reinstatement: { title: "text.reinstatement", description: "text.assignEligibleYZFlangeJointsAndRecord", teamType: "reinstatement", targetLabel: "text.flangeJoint", worklist: "reinstatement_worklist", printPath: "/testpack/print/reinstatement/{requestId}" },
 }
 
 export function getPressureTestRequestConfig(type: PressureTestRequestType): PressureTestRequestConfig {
@@ -27,13 +27,13 @@ export type WorkflowTone = "blocked" | "ready" | "ongoing" | "complete"
 export interface WorkflowSummary { label: string; tone: WorkflowTone; code?: 12 }
 
 export function summarizeWorkflow(facts: PressureTestWorkflowFacts): WorkflowSummary {
-  if (!facts.isRft) return { label: "Awaiting RFT", tone: "blocked" }
-  if (!facts.blindingAssigned) return { label: "Ready for blinding", tone: "ready", code: 12 }
-  if (!facts.blindingCompleted) return { label: "Blinding ongoing", tone: "ongoing" }
-  if (!facts.testingStarted) return { label: "Ready to start testing", tone: "ready", code: 12 }
-  if (!facts.testingCompleted) return { label: "Testing ongoing", tone: "ongoing" }
-  if (facts.yEligible && !facts.yReinstated) return { label: "Awaiting Y reinstatement", tone: "blocked" }
-  if (!facts.precommissioned) return { label: "Ready for pre-commissioning", tone: "ready" }
-  if (facts.zEligible && !facts.zReinstated) return { label: "Awaiting Z reinstatement", tone: "blocked" }
-  return { label: "Complete", tone: "complete" }
+  if (!facts.isRft) return { label: "text.awaitingRft", tone: "blocked" }
+  if (!facts.blindingAssigned) return { label: "text.readyForBlinding", tone: "ready", code: 12 }
+  if (!facts.blindingCompleted) return { label: "text.blindingOngoing", tone: "ongoing" }
+  if (!facts.testingStarted) return { label: "text.readyToStartTesting", tone: "ready", code: 12 }
+  if (!facts.testingCompleted) return { label: "text.testingOngoing", tone: "ongoing" }
+  if (facts.yEligible && !facts.yReinstated) return { label: "text.awaitingYReinstatement", tone: "blocked" }
+  if (!facts.precommissioned) return { label: "text.readyForPreCommissioning", tone: "ready" }
+  if (facts.zEligible && !facts.zReinstated) return { label: "text.awaitingZReinstatement", tone: "blocked" }
+  return { label: "text.complete", tone: "complete" }
 }

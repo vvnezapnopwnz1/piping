@@ -1,7 +1,6 @@
 import assert from "node:assert/strict"
 import {
   IMPORT_TYPES,
-  getImportJobTypeLabel,
   getImportTypeDefinition,
   templateHeaderRow,
   requiredColumnKeys,
@@ -23,7 +22,7 @@ function run() {
   )
 
   const pml = getImportTypeDefinition("piping_material_list")
-  assert.equal(pml.label, "Project Piping Material List")
+  assert.equal("label" in pml, false, "labels are translated in the UI, not stored in the domain")
   assert.deepEqual(pml.naturalKey, ["ident_code", "trace_number"])
   assert.deepEqual(templateHeaderRow("piping_material_list"), [
     "MRR Number",
@@ -47,7 +46,6 @@ function run() {
     "ISO Number", "Revision", "BT Number", "Jointing Method", "Jointing Value",
     "Joint Category", "Reason", "Joint Date", "Report Number", "Jointer Codes", "Tag Number",
   ])
-  assert.equal(getImportJobTypeLabel("flange_progress"), "Flange progress")
 
   assert.deepEqual(templateHeaderRow("tracking_scan"), [
     "ISO Number", "Spool Number", "Location Code", "Direction", "Occurred At",
@@ -58,7 +56,6 @@ function run() {
   ])
 
   const testPack = getImportTypeDefinition("test_pack_composition")
-  assert.equal(testPack.label, "Test Pack composition")
   assert.deepEqual(testPack.naturalKey, ["test_pack_number", "iso_number"])
   assert.deepEqual(templateHeaderRow("test_pack_composition"), [
     "System", "Subsystem", "Test Pack", "Test Pack Rev", "Test Medium",
@@ -68,9 +65,6 @@ function run() {
   ])
 
   assert.throws(() => getImportTypeDefinition("nope" as never), /Unknown import type/)
-
-  assert.equal(getImportJobTypeLabel("spooling_definition"), "SpoolGen definition")
-  assert.equal(getImportJobTypeLabel("future_import_type"), "Unknown import type: future_import_type")
 
   console.log("All import-type.test.ts assertions passed!")
 }

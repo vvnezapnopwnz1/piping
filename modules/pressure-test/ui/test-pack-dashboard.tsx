@@ -1,5 +1,7 @@
 "use client"
 
+import { useTestPackTranslations, reportTestPackError } from "@/modules/pressure-test/ui/test-pack-i18n"
+
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,6 +12,8 @@ import { buildTestPackHref } from "./test-pack-workspace-model"
 type DashboardRow = { label: string; ready: number; ongoing: number; total: number; href: string }
 
 export function TestPackDashboard({ projectId }: { projectId: string }) {
+  const t = useTestPackTranslations()
+
   const [rows, setRows] = useState<TestPackReadinessRow[]>([])
   const [counts, setCounts] = useState({ line: 0, lineTotal: 0, clearance: 0, clearanceTotal: 0, blinding: 0, blindingTotal: 0, testing: 0, testingTotal: 0, reinstatement: 0, reinstatementTotal: 0 })
   const [filter, setFilter] = useState("")
@@ -34,24 +38,24 @@ export function TestPackDashboard({ projectId }: { projectId: string }) {
         reinstatement: reinstatement.filter((item) => item.record_id !== null).length, reinstatementTotal: reinstatement.length,
       })
       setError(null)
-    }).catch((cause) => { if (active) setError(cause instanceof Error ? cause.message : "Could not load Test Packs") }).finally(() => { if (active) setLoading(false) })
+    }).catch((cause) => { if (active) setError(reportTestPackError(cause, t("text.couldNotLoadTestPacks"))) }).finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [projectId])
 
   const visibleRows = useMemo(() => rows.filter((row) => (row.test_pack_number ?? "").toLowerCase().includes(filter.toLowerCase())), [filter, rows])
   const stages: DashboardRow[] = [
-    { label: "Line Check", ready: counts.line, ongoing: counts.lineTotal - counts.line, total: counts.lineTotal, href: "/testpack/pressure-test/line-check/progress" },
-    { label: "Item Clearance", ready: counts.clearance, ongoing: counts.clearanceTotal - counts.clearance, total: counts.clearanceTotal, href: "/testpack/pressure-test/item-clearance/progress" },
-    { label: "Blinding", ready: counts.blinding, ongoing: counts.blindingTotal - counts.blinding, total: counts.blindingTotal, href: "/testpack/pressure-test/blinding/progress" },
-    { label: "Testing", ready: counts.testing, ongoing: counts.testingTotal - counts.testing, total: counts.testingTotal, href: "/testpack/pressure-test/testing-precomm/progress" },
-    { label: "Reinstatement", ready: counts.reinstatement, ongoing: counts.reinstatementTotal - counts.reinstatement, total: counts.reinstatementTotal, href: "/testpack/pressure-test/reinstatement/progress" },
+    { label: t("text.lineCheck"), ready: counts.line, ongoing: counts.lineTotal - counts.line, total: counts.lineTotal, href: "/testpack/pressure-test/line-check/progress" },
+    { label: t("text.itemClearance"), ready: counts.clearance, ongoing: counts.clearanceTotal - counts.clearance, total: counts.clearanceTotal, href: "/testpack/pressure-test/item-clearance/progress" },
+    { label: t("text.blinding"), ready: counts.blinding, ongoing: counts.blindingTotal - counts.blinding, total: counts.blindingTotal, href: "/testpack/pressure-test/blinding/progress" },
+    { label: t("text.testing"), ready: counts.testing, ongoing: counts.testingTotal - counts.testing, total: counts.testingTotal, href: "/testpack/pressure-test/testing-precomm/progress" },
+    { label: t("text.reinstatement"), ready: counts.reinstatement, ongoing: counts.reinstatementTotal - counts.reinstatement, total: counts.reinstatementTotal, href: "/testpack/pressure-test/reinstatement/progress" },
   ]
 
   if (error) return <p className="text-sm text-destructive">{error}</p>
   return <div className="space-y-6">
-    <div className="flex flex-wrap items-end justify-between gap-3"><div><h1 className="text-2xl font-semibold">Test Packs</h1><p className="text-sm text-muted-foreground">Database-backed release tracking and pressure-test workflow.</p></div><div className="flex gap-3 text-sm"><Link className="underline" href="/testpack/builder">Builder</Link><Link className="underline" href="/testpack/explorer">Explorer</Link></div></div>
-    <div className="grid gap-4 sm:grid-cols-3"><Card><CardHeader><CardTitle className="text-sm">Ready for Test</CardTitle></CardHeader><CardContent className="text-3xl font-semibold">{loading ? "…" : rows.filter((row) => row.isRft).length}</CardContent></Card><Card><CardHeader><CardTitle className="text-sm">Ongoing / blocked</CardTitle></CardHeader><CardContent className="text-3xl font-semibold">{loading ? "…" : rows.filter((row) => !row.isRft).length}</CardContent></Card><Card><CardHeader><CardTitle className="text-sm">Visible packs</CardTitle></CardHeader><CardContent className="text-3xl font-semibold">{loading ? "…" : rows.length}</CardContent></Card></div>
-    <Card><CardHeader><CardTitle>Workflow by stage</CardTitle></CardHeader><CardContent className="grid gap-3 md:grid-cols-5">{stages.map((stage) => <Link key={stage.label} href={stage.href} className="rounded border p-3 hover:bg-muted"><div className="text-sm font-medium">{stage.label}</div><div className="mt-2 text-xs text-muted-foreground">Ready {stage.ready} · Ongoing {stage.ongoing}</div><div className="mt-1 text-xs text-muted-foreground">{stage.total} targets</div></Link>)}</CardContent></Card>
-    <Card><CardHeader className="flex flex-row items-center justify-between gap-3"><CardTitle>Release backlog</CardTitle><input aria-label="Filter Test Packs" value={filter} onChange={(event) => setFilter(event.target.value)} placeholder="Filter number" className="h-9 rounded border bg-transparent px-3 text-sm" /></CardHeader><CardContent className="space-y-2">{visibleRows.map((row) => <Link key={row.testPackId} href={buildTestPackHref({ href: "/testpack/explorer", testPackId: row.testPackId, view: "readiness" })} className="flex justify-between rounded border p-3 text-sm hover:bg-muted"><span>{row.test_pack_number} <span className="text-muted-foreground">rev {row.revision_no} · {row.member_count ?? 0} ISO</span></span><span>{row.isRft ? "RFT · 12" : `Blocked · X ${row.x_open_count ?? 0}`}</span></Link>)}{!loading && visibleRows.length === 0 && <p className="text-sm text-muted-foreground">No Test Packs are visible in this project scope.</p>}</CardContent></Card>
+    <div className="flex flex-wrap items-end justify-between gap-3"><div><h1 className="text-2xl font-semibold">{t("text.testPacks")}</h1><p className="text-sm text-muted-foreground">{t("text.databaseBackedReleaseTrackingAndPressureTestWorkflow")}</p></div><div className="flex gap-3 text-sm"><Link className="underline" href="/testpack/builder">{t("text.builder")}</Link><Link className="underline" href="/testpack/explorer">{t("text.explorer")}</Link></div></div>
+    <div className="grid gap-4 sm:grid-cols-3"><Card><CardHeader><CardTitle className="text-sm">{t("text.readyForTest190")}</CardTitle></CardHeader><CardContent className="text-3xl font-semibold">{loading ? "…" : rows.filter((row) => row.isRft).length}</CardContent></Card><Card><CardHeader><CardTitle className="text-sm">{t("text.ongoingBlocked")}</CardTitle></CardHeader><CardContent className="text-3xl font-semibold">{loading ? "…" : rows.filter((row) => !row.isRft).length}</CardContent></Card><Card><CardHeader><CardTitle className="text-sm">{t("text.visiblePacks")}</CardTitle></CardHeader><CardContent className="text-3xl font-semibold">{loading ? "…" : rows.length}</CardContent></Card></div>
+    <Card><CardHeader><CardTitle>{t("text.workflowByStage")}</CardTitle></CardHeader><CardContent className="grid gap-3 md:grid-cols-5">{stages.map((stage) => <Link key={stage.label} href={stage.href} className="rounded border p-3 hover:bg-muted"><div className="text-sm font-medium">{stage.label}</div><div className="mt-2 text-xs text-muted-foreground">{t("text.ready")} {stage.ready}  {t("text.ongoing195")} {stage.ongoing}</div><div className="mt-1 text-xs text-muted-foreground">{t("text.targets", { count: stage.total })}</div></Link>)}</CardContent></Card>
+    <Card><CardHeader className="flex flex-row items-center justify-between gap-3"><CardTitle>{t("text.releaseBacklog")}</CardTitle><input aria-label={t("text.filterTestPacks")} value={filter} onChange={(event) => setFilter(event.target.value)} placeholder={t("text.filterNumber")} className="h-9 rounded border bg-transparent px-3 text-sm" /></CardHeader><CardContent className="space-y-2">{visibleRows.map((row) => <Link key={row.testPackId} href={buildTestPackHref({ href: "/testpack/explorer", testPackId: row.testPackId, view: "readiness" })} className="flex justify-between rounded border p-3 text-sm hover:bg-muted"><span>{row.test_pack_number} <span className="text-muted-foreground">{t("text.packMeta", { revision: row.revision_no ?? 0, count: row.member_count ?? 0 })}</span></span><span>{row.isRft ? t("text.rft12") : t("text.blockedX0", { v1: (row.x_open_count ?? 0) ?? "—" })}</span></Link>)}{!loading && visibleRows.length === 0 && <p className="text-sm text-muted-foreground">{t("text.noTestPacksAreVisibleInThisProject")}</p>}</CardContent></Card>
   </div>
 }

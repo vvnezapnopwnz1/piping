@@ -1,0 +1,156 @@
+{
+  "batch": {
+    "errors": {
+      "failedToLoadNdeData": "Не удалось загрузить данные NDE",
+      "couldNotLoadTheWelders": "Не удалось загрузить сварщиков этого стыка",
+      "couldNotCreateBatch": "Не удалось создать партию NDE",
+      "couldNotPreviewAllocationCandidates": "Не удалось предварительно посмотреть кандидатов для распределения",
+      "candidateAllocationFailed": "Не удалось распределить кандидатов",
+      "issuingBatchFailed": "Не удалось выдать партию NDE",
+      "closingBatchFailed": "Не удалось закрыть партию NDE",
+      "failedToRecordResult": "Не удалось записать результат"
+    },
+    "success": {
+      "ndeBatchCreated": "Партия NDE создана",
+      "candidatesAllocated": "{count, plural, one {# кандидат распределён в партию с охватом {percentage}%} few {# кандидата распределены в партию с охватом {percentage}%} many {# кандидатов распределены в партию с охватом {percentage}%} other {# кандидата распределено в партию с охватом {percentage}%}}",
+      "ndeBatchIssued": "Партия NDE выдана",
+      "ndeBatchClosed": "Партия NDE закрыта",
+      "resultRecorded": "Результат записан: {outcome}"
+    },
+    "validation": {
+      "coveragePercentage": "Процент охвата должен быть от 1 до 100.",
+      "rejectedRequiresDefectCode": "Для отклонённого результата нужен код дефекта."
+    },
+    "columns": {
+      "spool": "Катушка",
+      "joint": "Стык",
+      "batch": "Партия",
+      "method": "Метод",
+      "manualStatus": "Статус по руководству",
+      "cycle": "Цикл",
+      "coverage": "Охват",
+      "disposition": "Состояние"
+    },
+    "cycle": {
+      "original": "Исходный",
+      "repair": "ремонт",
+      "tracer": "трассер",
+      "value": "{ordinal}-й {kind}",
+      "badge": "{kind}: {code}"
+    },
+    "coveragePercent": "{percentage} %",
+    "coverageRegimeOption": {
+      "spot": "Выборочный (10 % / 20 %)",
+      "mandatory_100": "Обязательный 100 %"
+    },
+    "coverageRegimeSummary": {
+      "spot": "Выборочный",
+      "mandatory_100": "100 %"
+    },
+    "ndeBatchManagement": "Управление партиями NDE",
+    "action": "Действие",
+    "recordResult": "Записать результат",
+    "createBatch": "Создать партию",
+    "newNdeBatch": "Новая партия NDE",
+    "ndtMethod": "Метод NDE",
+    "coverageRegime": "Режим охвата",
+    "create": "Создать",
+    "penaltyShoot100ControlIn": "Усиленный контроль: действует охват 100 %",
+    "escalationReason": {
+      "fourRejections": "достигнуты четыре отклонённых стыка",
+      "secondLevelTracer": "отклонён трассер второго уровня"
+    },
+    "escalatedBatch": "Партия <batch>{batchNumber}</batch> переведена на усиленный контроль {date}, потому что {reason}. Все оставшиеся стыки этого сварщика теперь проверяются на 100 %.",
+    "batches": "Партии ({count})",
+    "batch": "Партия №",
+    "method": "Метод",
+    "regime": "Режим",
+    "status": "Статус",
+    "batchStatus": {
+      "draft": "Черновик",
+      "issued": "Выдана",
+      "returned": "Возвращена",
+      "closed": "Закрыта",
+      "pending": "Ожидает распределения",
+      "satisfied": "Выполнено",
+      "rejected": "Отклонено",
+      "waived": "Отменено",
+      "superseded": "Заменено"
+    },
+    "obligations": "Требования",
+    "issuedOn": "Выдана",
+    "actions": "Действия",
+    "noNdeBatchesCreatedYet": "Партий NDE пока нет.",
+    "coveragePercentage": "Процент охвата",
+    "allocateCandidates": "Распределить кандидатов",
+    "issueBatch": "Выдать партию",
+    "closeBatch": "Закрыть партию",
+    "ndeObligations": "Требования NDE ({count})",
+    "ndeObligationsForSpool": "Требования NDE ({shown} из {total} · выбрана катушка)",
+    "searchJointSpoolOrBatch": "Найти стык, катушку или партию…",
+    "noNdeObligationForThe": "Для выбранной катушки нет требований NDE.",
+    "noNdeObligationsFound": "Требований NDE не найдено.",
+    "clearTheSelectedSpoolIn": "Снимите выбор катушки в шапке страницы, чтобы увидеть все требования.",
+    "obligationsAppearOnceAWeld": "Требования появятся после записи стыка с требованием NDE.",
+    "allocateCandidatesFor": "Распределить кандидатов — {batch}",
+    "batchFallback": "партия",
+    "loadingCandidateJoints": "Загружаем стыки-кандидаты…",
+    "noCandidateJointsAreAvailable": "Для этой партии нет стыков-кандидатов. Распределять нечего.",
+    "candidatePreview": "{count, plural, one {# стык-кандидат с охватом {percentage}%. Сервер выберет итоговый набор; выборочный режим возьмёт часть из них.} few {# стыка-кандидата с охватом {percentage}%. Сервер выберет итоговый набор; выборочный режим возьмёт часть из них.} many {# стыков-кандидатов с охватом {percentage}%. Сервер выберет итоговый набор; выборочный режим возьмёт часть из них.} other {# стыка-кандидата с охватом {percentage}%. Сервер выберет итоговый набор; выборочный режим возьмёт часть из них.}}",
+    "joint": "Стык",
+    "weldedOn": "Сварен",
+    "allocateAtPercentage": "Распределить с охватом {percentage}%",
+    "recordNdeResult": "Записать результат NDE",
+    "recordNdeResultFor": "Записать результат NDE — {weldNumber} ({status})",
+    "outcome": "Результат",
+    "outcomeCode": {
+      "accepted": "принят",
+      "rejected": "отклонён"
+    },
+    "accepted": "Принят",
+    "rejected": "Отклонён",
+    "examinedOn": "Дата контроля",
+    "reportNumber": "Номер заключения",
+    "defectCode": "Код дефекта",
+    "selectADefectCode": "Выберите код дефекта…",
+    "responsibleWelder": "Ответственный сварщик",
+    "theReportDoesNotName": "В заключении не указан сварщик",
+    "onlyTheWeldersOnThis": "Можно указать только сварщиков этого стыка. Если не указывать сварщика, ремонт и трассеры всё равно создадутся, но штраф никому не будет учтён.",
+    "saveResult": "Сохранить результат"
+  },
+  "charts": {
+    "noNdeActivityRecordedYet": "Записей NDE пока нет.",
+    "ndeQualityCharts": "Графики качества NDE",
+    "weeklyExaminationOutcomes": "Результаты контроля по неделям",
+    "acceptedAndRejectedResultsRecorded": "Принятые и отклонённые результаты в каждой ISO-неделе. Это фактический контроль, не прогноз.",
+    "recordAnNdeResultTo": "Запишите результат NDE, чтобы увидеть недельную динамику.",
+    "inspectionWorkflow": "Ход контроля",
+    "currentObligationsByTheirNext": "Текущие требования по следующему операционному шагу.",
+    "workflowPositionsAppearAfterNde": "Позиции процесса появятся после создания требований NDE.",
+    "ndtMethodDistribution": "Распределение методов NDE",
+    "eachMethodSplitIntoMutually": "Каждый метод разделён на взаимоисключающие состояния контроля.",
+    "methodDistributionAppearsAfterThe": "Распределение по методам появится после создания первого требования NDE.",
+    "accepted": "Принят",
+    "rejected": "Отклонён",
+    "pendingAllocation": "Ожидает распределения",
+    "allocated": "Распределён",
+    "issued": "Выдан",
+    "obligations": "Требования"
+  },
+  "dashboard": {
+    "errors": {
+      "failedToLoadNdeKpis": "Не удалось загрузить показатели NDE",
+      "theNdeChartsCouldNot": "Не удалось загрузить графики NDE."
+    },
+    "ndeQualityDashboard": "Сводка качества NDE",
+    "realTimeMetricsDerivedFrom": "Показатели в реальном времени по партиям и требованиям NDE проекта.",
+    "totalBatches": "Всего партий",
+    "openBatches": "Открытые партии",
+    "pendingObligations": "Ожидающие требования",
+    "satisfiedObligations": "Выполненные требования"
+  },
+  "pages": {
+    "selectAProjectToView": "Выберите проект, чтобы посмотреть сводку NDE.",
+    "selectAProjectToManage": "Выберите проект, чтобы управлять партиями NDE."
+  }
+}

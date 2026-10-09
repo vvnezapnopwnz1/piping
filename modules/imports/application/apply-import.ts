@@ -1,41 +1,37 @@
 import { canApply, isTerminalStatus, type ApplyGate } from "../domain/import-job"
 
+/** Why an import cannot be applied yet, as a code the UI turns into a sentence. */
+export type ApplyGateReason =
+  | { code: "alreadyApplied" }
+  | { code: "closed" }
+  | { code: "notValidated" }
+  | { code: "blockers"; count: number }
+  | { code: "conflictsUnconfirmed"; count: number }
+
 export interface ApplyGateDescription {
   allowed: boolean
   requiresConfirmation: boolean
-  reason: string | null
+  reason: ApplyGateReason | null
 }
 
 export function describeApplyGate(gate: ApplyGate): ApplyGateDescription {
   if (gate.status === "applied") {
-    return {
-      allowed: false,
-      requiresConfirmation: false,
-      reason: "This import has already been applied.",
-    }
+    return { allowed: false, requiresConfirmation: false, reason: { code: "alreadyApplied" } }
   }
 
   if (isTerminalStatus(gate.status)) {
-    return {
-      allowed: false,
-      requiresConfirmation: false,
-      reason: "This import is closed and can no longer be applied.",
-    }
+    return { allowed: false, requiresConfirmation: false, reason: { code: "closed" } }
   }
 
   if (gate.status !== "validated") {
-    return {
-      allowed: false,
-      requiresConfirmation: false,
-      reason: "Upload and validate the file before applying it.",
-    }
+    return { allowed: false, requiresConfirmation: false, reason: { code: "notValidated" } }
   }
 
   if (gate.blockerCount > 0) {
     return {
       allowed: false,
       requiresConfirmation: false,
-      reason: `${gate.blockerCount} rows have blocking errors that must be fixed in the source file.`,
+      reason: { code: "blockers", count: gate.blockerCount },
     }
   }
 
@@ -43,7 +39,7 @@ export function describeApplyGate(gate: ApplyGate): ApplyGateDescription {
     return {
       allowed: false,
       requiresConfirmation: true,
-      reason: `${gate.conflictCount} rows overwrite existing records. Confirm the overwrite to continue.`,
+      reason: { code: "conflictsUnconfirmed", count: gate.conflictCount },
     }
   }
 

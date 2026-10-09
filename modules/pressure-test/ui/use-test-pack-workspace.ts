@@ -1,5 +1,7 @@
 "use client"
 
+import { useTestPackTranslations, reportTestPackError } from "./test-pack-i18n"
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createRequestVersion } from "@/lib/request-version"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
@@ -34,6 +36,7 @@ export function useTestPackWorkspace({
   testPackId,
   repo: customRepo,
 }: UseTestPackWorkspaceOptions): TestPackWorkspaceState {
+  const t = useTestPackTranslations()
   const repo = useMemo(
     () => customRepo ?? createSupabaseTestPackLoaderRepository(getSupabaseBrowserClient()),
     [customRepo],
@@ -98,7 +101,7 @@ export function useTestPackWorkspace({
         }
       } catch (cause) {
         if (!token.isCurrent()) return
-        const message = cause instanceof Error ? cause.message : "Failed to load test pack details"
+        const message = reportTestPackError(cause, t("text.failedToLoadTestPackDetails"))
         setError(message)
         setDataCurrent(false)
         if (!isRefresh) {
@@ -110,7 +113,7 @@ export function useTestPackWorkspace({
         }
       }
     },
-    [projectId, testPackId, repo],
+    [projectId, testPackId, repo, t],
   )
 
   useEffect(() => {

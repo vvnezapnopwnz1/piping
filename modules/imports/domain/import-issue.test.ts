@@ -1,16 +1,18 @@
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
 import {
+  IMPORT_ISSUE_CODES,
   summarizeIssues,
   issuesForRow,
   highestSeverity,
 } from "./import-issue"
-import type { ImportIssue } from "./import-issue"
+import type { ImportRowIssue } from "./import-issue"
 
-const ISSUES: ImportIssue[] = [
-  { rowNumber: 1, columnName: "ident_code", severity: "blocker", code: "REQUIRED", message: "Ident code is required" },
-  { rowNumber: 2, columnName: "trace_number", severity: "conflict", code: "OVERWRITE", message: "Will overwrite" },
-  { rowNumber: 2, columnName: null, severity: "warning", code: "NO_WPS", message: "No covering WPS" },
-  { rowNumber: null, columnName: null, severity: "warning", code: "SHEET", message: "Extra sheet ignored" },
+const ISSUES: ImportRowIssue[] = [
+  { rowNumber: 1, columnName: "ident_code", severity: "blocker", code: "REQUIRED", header: "Ident Code" },
+  { rowNumber: 2, columnName: "trace_number", severity: "conflict", code: "OVERWRITE" },
+  { rowNumber: 2, columnName: null, severity: "warning", code: "UT_CONFIGURATION_WARNING" },
+  { rowNumber: null, columnName: null, severity: "warning", code: "EMPTY_SHEET" },
 ]
 
 function run() {
@@ -25,6 +27,14 @@ function run() {
   assert.equal(highestSeverity(issuesForRow(ISSUES, 1)), "blocker")
   assert.equal(highestSeverity(issuesForRow(ISSUES, 2)), "conflict")
   assert.equal(highestSeverity([]), null)
+
+  // Every code has a sentence in both languages; the UI has nothing else to say.
+  for (const locale of ["en", "ru"]) {
+    const messages = JSON.parse(readFileSync(`messages/${locale}/spooling.json`, "utf8"))
+    for (const code of IMPORT_ISSUE_CODES) {
+      assert.equal(typeof messages.issues?.[code], "string", `${locale}: issues.${code}`)
+    }
+  }
 
   console.log("All import-issue.test.ts assertions passed!")
 }

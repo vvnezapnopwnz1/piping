@@ -1,5 +1,7 @@
 "use client"
 
+import { useTestPackTranslations, reportTestPackError } from "@/modules/pressure-test/ui/test-pack-i18n"
+
 import { useEffect, useMemo, useState } from "react"
 import { Plus, Trash2, ArrowRightLeft } from "lucide-react"
 import { toast } from "sonner"
@@ -41,26 +43,6 @@ export interface TestPackCompositionEditorProps {
   onComposed?: () => void
 }
 
-const memberColumns: DataColumn<TestPackMemberRow>[] = [
-  {
-    id: "isoNumber",
-    header: "ISO number",
-    searchable: true,
-    value: (row) => row.iso_number ?? row.isometric_id ?? "—",
-  },
-  {
-    id: "sourceKind",
-    header: "Source",
-    value: (row) => row.source_kind ?? "manual",
-  },
-  {
-    id: "assignedAt",
-    header: "Assigned at",
-    value: (row) => row.assigned_at ?? "—",
-    filter: "date",
-  },
-]
-
 export function TestPackCompositionEditor({
   projectId,
   pack,
@@ -68,6 +50,27 @@ export function TestPackCompositionEditor({
   dataCurrent,
   onComposed,
 }: TestPackCompositionEditorProps) {
+  const t = useTestPackTranslations()
+  const memberColumns: DataColumn<TestPackMemberRow>[] = [
+  {
+    id: "isoNumber",
+    header: t("text.isoNumber"),
+    searchable: true,
+    value: (row) => row.iso_number ?? row.isometric_id ?? "—",
+  },
+  {
+    id: "sourceKind",
+    header: t("text.source"),
+    value: (row) => t(`text.${row.source_kind ?? "manual"}`),
+  },
+  {
+    id: "assignedAt",
+    header: t("text.assignedAt"),
+    value: (row) => row.assigned_at ?? "—",
+    filter: "date",
+  },
+]
+
   const workspace = useOptionalTestPackWorkspaceContext()
   const [members, setMembers] = useState<TestPackMemberRow[]>(
     () => workspace?.snapshot?.members ?? [],
@@ -147,7 +150,7 @@ export function TestPackCompositionEditor({
   const availableColumns: DataColumn<IsometricOption>[] = [
     {
       id: "select",
-      header: "Add",
+      header: t("text.add"),
       sortable: false,
       alwaysVisible: true,
       value: (option) => selectedAvailable.includes(option.id),
@@ -155,7 +158,7 @@ export function TestPackCompositionEditor({
       headerClassName: "w-14",
       cell: (option) => (
         <Checkbox
-          aria-label={`Add ${option.label}`}
+          aria-label={t("text.add0", { v1: (option.label) ?? "—" })}
           checked={selectedAvailable.includes(option.id)}
           disabled={!editable}
           onCheckedChange={() => toggleAvailable(option.id)}
@@ -164,14 +167,14 @@ export function TestPackCompositionEditor({
     },
     {
       id: "label",
-      header: "ISO number",
+      header: t("text.isoNumber"),
       searchable: true,
       value: (row) => row.label,
     },
     {
       id: "status",
-      header: "Readiness",
-      value: (row) => (row.isRft ? "Ready For Test" : "Ongoing"),
+      header: t("text.readiness"),
+      value: (row) => (row.isRft ? t("text.readyForTest162") : t("text.ongoing")),
       filter: "select",
     },
   ]
@@ -195,7 +198,7 @@ export function TestPackCompositionEditor({
         } catch (cause) {
           remainingIsoIds.push(isoId)
           if (!failedError) {
-            failedError = cause instanceof Error ? cause.message : "Failed to compose isometric"
+            failedError = reportTestPackError(cause, t("text.failedToComposeIsometric"))
           }
         }
       }
@@ -209,10 +212,10 @@ export function TestPackCompositionEditor({
         })
         setSelectedAvailable(remainingIsoIds)
         toast.warning(
-          `Partially composed: ${confirmedIsoIds.length} added, ${remainingIsoIds.length} failed.`,
+          t("text.partiallyComposed0Added0Failed", { v1: (confirmedIsoIds.length) ?? "—", v2: (remainingIsoIds.length) ?? "—" }),
         )
       } else {
-        toast.success(`Added ${confirmedIsoIds.length} isometric(s) to ${pack.testPackNumber}.`)
+        toast.success(t("text.added0IsometricSTo0", { v1: (confirmedIsoIds.length) ?? "—", v2: (pack.testPackNumber) ?? "—" }))
         setSelectedAvailable([])
       }
 
@@ -235,7 +238,7 @@ export function TestPackCompositionEditor({
         await doCompose()
       }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Failed to compose Test Pack")
+      setError(reportTestPackError(cause, t("text.failedToComposeTestPack")))
     } finally {
       setSubmitting(false)
     }
@@ -254,7 +257,7 @@ export function TestPackCompositionEditor({
         pack.id,
         member.isometric_id ?? "",
       )
-      toast.success(`Removed ISO ${member.iso_number ?? member.isometric_id} from ${pack.testPackNumber}.`)
+      toast.success(t("text.removedIso0From0", { v1: (member.iso_number ?? member.isometric_id) ?? "—", v2: (pack.testPackNumber) ?? "—" }))
       if (workspace) {
         await workspace.refresh()
       } else {
@@ -273,7 +276,7 @@ export function TestPackCompositionEditor({
         await doRemove()
       }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Failed to remove ISO")
+      setError(reportTestPackError(cause, t("text.failedToRemoveIso")))
     } finally {
       setSubmitting(false)
       setPendingRemoval(null)
@@ -294,7 +297,7 @@ export function TestPackCompositionEditor({
         member.isometric_id ?? "",
         destinationId,
       )
-      toast.success(`Moved ISO ${member.iso_number ?? member.isometric_id}.`)
+      toast.success(t("text.movedIso0", { v1: (member.iso_number ?? member.isometric_id) ?? "—" }))
       if (workspace) {
         await workspace.refresh()
       } else {
@@ -313,7 +316,7 @@ export function TestPackCompositionEditor({
         await doMove()
       }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Failed to move ISO")
+      setError(reportTestPackError(cause, t("text.failedToMoveIso")))
     } finally {
       setSubmitting(false)
       setPendingMove(null)
@@ -325,29 +328,31 @@ export function TestPackCompositionEditor({
       {error && <p className="text-sm text-destructive">{error}</p>}
       {!dataCurrent && (
         <p className="rounded border border-amber-200 bg-amber-50 p-2 text-sm text-amber-900">
-          Data is stale; retry refresh before modifying composition.
+
+          {t("text.dataIsStaleRetryRefreshBeforeModifyingComposition")}
         </p>
       )}
 
       {attemptResult?.failure && (
         <div className="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 space-y-1">
-          <p className="font-medium">Partial Composition Result</p>
-          <p>Confirmed added ISOs: {attemptResult.confirmedIsoIds.length}</p>
-          <p>Remaining unadded ISOs: {attemptResult.remainingIsoIds.length}</p>
+          <p className="font-medium">{t("text.partialCompositionResult")}</p>
+          <p>{t("text.confirmedAddedIsos")} {attemptResult.confirmedIsoIds.length}</p>
+          <p>{t("text.remainingUnaddedIsos")} {attemptResult.remainingIsoIds.length}</p>
           <Button
             size="sm"
             variant="outline"
             disabled={!editable || submitting}
             onClick={() => void onAddSelected()}
           >
-            Retry adding remaining ISOs
+
+            {t("text.retryAddingRemainingIsos")}
           </Button>
         </div>
       )}
 
       <Card>
         <CardHeader>
-          <CardTitle>Current ISO Members ({activeMembers.length})</CardTitle>
+          <CardTitle>{t("text.currentIsoMembers")}{activeMembers.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <DataTable
@@ -356,7 +361,7 @@ export function TestPackCompositionEditor({
               ...memberColumns,
               {
                 id: "actions",
-                header: "Actions",
+                header: t("text.actions"),
                 value: () => null,
                 cell: (row) =>
                   editable ? (
@@ -365,7 +370,7 @@ export function TestPackCompositionEditor({
                         type="button"
                         size="sm"
                         variant="ghost"
-                        title="Move ISO to another pack"
+                        title={t("text.moveIsoToAnotherPack")}
                         disabled={submitting}
                         onClick={() => setPendingMove(row)}
                       >
@@ -376,7 +381,7 @@ export function TestPackCompositionEditor({
                         size="sm"
                         variant="ghost"
                         className="text-destructive hover:text-destructive"
-                        title="Remove ISO from pack"
+                        title={t("text.removeIsoFromPack")}
                         disabled={submitting}
                         onClick={() => setPendingRemoval(row)}
                       >
@@ -389,7 +394,7 @@ export function TestPackCompositionEditor({
             rowId={(row) => String(row.id)}
             state={memberTable}
             onStateChange={setMemberTable}
-            emptyTitle="No isometrics currently assigned to this Test Pack."
+            emptyTitle={t("text.noAssignedIsos")}
           />
         </CardContent>
       </Card>
@@ -398,9 +403,10 @@ export function TestPackCompositionEditor({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-4">
             <div>
-              <CardTitle>Available Candidate ISOs</CardTitle>
+              <CardTitle>{t("text.availableCandidateIsos")}</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Select candidate isometrics to add to this pack.
+
+                {t("text.selectCandidateIsometricsToAddToThisPack")}
               </p>
             </div>
             <Button
@@ -410,7 +416,8 @@ export function TestPackCompositionEditor({
               onClick={() => void onAddSelected()}
             >
               <Plus className="mr-2 h-4 w-4" />
-              Add selected ({selectedAvailable.length})
+
+              {t("text.addSelected")}{selectedAvailable.length})
             </Button>
           </CardHeader>
           <CardContent>
@@ -420,7 +427,7 @@ export function TestPackCompositionEditor({
               rowId={(option) => option.id}
               state={availableTable}
               onStateChange={setAvailableTable}
-              emptyTitle="No candidate isometrics available for assignment."
+              emptyTitle={t("text.noCandidates")}
             />
           </CardContent>
         </Card>
@@ -429,9 +436,9 @@ export function TestPackCompositionEditor({
       <ConfirmAction
         open={pendingRemoval !== null}
         onOpenChange={(open) => !open && setPendingRemoval(null)}
-        title={`Remove ISO ${pendingRemoval?.iso_number ?? pendingRemoval?.isometric_id}?`}
-        description="Removing this isometric drops its spools from the test pack. The server refuses if workflow evidence exists."
-        confirmLabel="Remove ISO"
+        title={t("text.removeIso0", { v1: (pendingRemoval?.iso_number ?? pendingRemoval?.isometric_id) ?? "—" })}
+        description={t("text.removingThisIsometricDropsItsSpoolsFromThe")}
+        confirmLabel={t("text.removeIso")}
         destructive
         onConfirm={() => void onConfirmRemove()}
       />

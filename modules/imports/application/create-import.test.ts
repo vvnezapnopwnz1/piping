@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { validateSheet } from "./create-import"
+import { toStoredIssues, validateSheet } from "./create-import"
 
 function run() {
   // Shape issues and type-rule issues arrive in one list.
@@ -27,6 +27,11 @@ function run() {
   const broken = validateSheet("piping_material_list", [["Wrong"], ["x"]])
   assert.equal(broken.rows.length, 0)
   assert.equal(broken.summary.blockerCount > 0, true)
+
+  // The stored row keeps the code as its text: the sentence is chosen on screen, not saved.
+  assert.deepEqual(toStoredIssues(outcome.issues), [
+    { rowNumber: 1, columnName: "diameter_to_inch", severity: "blocker", code: "INVALID_RANGE", message: "INVALID_RANGE" },
+  ])
 
   console.log("All create-import.test.ts assertions passed!")
 }

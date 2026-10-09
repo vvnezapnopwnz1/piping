@@ -26,6 +26,7 @@ function run() {
   assert.equal(missingHeader.issues[0].severity, "blocker")
   assert.equal(missingHeader.issues[0].code, "MISSING_COLUMN")
   assert.equal(missingHeader.issues[0].rowNumber, null)
+  assert.deepEqual(missingHeader.issues[0], { rowNumber: null, columnName: "trace_number", severity: "blocker", code: "MISSING_COLUMN", header: "Trace Number" })
   assert.equal(missingHeader.rows.length, 0)
 
   // A blank required cell is a row-level blocker, but parsing continues.
@@ -39,6 +40,7 @@ function run() {
   assert.equal(blankCell.issues[0].severity, "blocker")
   assert.equal(blankCell.issues[0].rowNumber, 1)
   assert.equal(blankCell.issues[0].columnName, "ident_code")
+  assert.deepEqual(blankCell.issues[0], { rowNumber: 1, columnName: "ident_code", severity: "blocker", code: "REQUIRED", header: "Ident Code" })
 
   // Non-numeric input in a number column is a blocker, not a silent NaN.
   const badNumber = parseSheet("thickness_flange", [
@@ -47,6 +49,7 @@ function run() {
   ])
   assert.equal(badNumber.issues.some((i) => i.code === "NOT_A_NUMBER"), true)
   assert.equal(badNumber.issues[0].severity, "blocker")
+  assert.deepEqual(badNumber.issues[0], { rowNumber: 1, columnName: "diameter_inch", severity: "blocker", code: "NOT_A_NUMBER", header: "Dia Inch", received: "abc" })
 
   // textList splits on comma and trims.
   const list = parseSheet("welder_qualification", [
@@ -101,6 +104,12 @@ function run() {
   const empty = parseSheet("piping_material_list", [])
   assert.equal(empty.issues[0].code, "EMPTY_SHEET")
   assert.equal(empty.issues[0].severity, "blocker")
+  assert.deepEqual(empty.issues[0], { rowNumber: null, columnName: null, severity: "blocker", code: "EMPTY_SHEET" })
+
+  // No parser output carries an English sentence.
+  for (const issue of [...missingHeader.issues, ...blankCell.issues, ...badNumber.issues, ...badTracking.issues, ...empty.issues]) {
+    assert.equal("message" in issue, false)
+  }
 
   console.log("All registry.test.ts assertions passed!")
 }

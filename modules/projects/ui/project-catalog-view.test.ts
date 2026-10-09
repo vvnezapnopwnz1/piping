@@ -1,7 +1,9 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { createElement } from "react"
+import { createElement, type ComponentType } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
+import { NextIntlClientProvider } from "next-intl"
+import { messagesFor } from "@/i18n/messages"
 import {
   ProjectCatalogView,
   type ProjectCatalogViewProps,
@@ -40,10 +42,17 @@ const props: ProjectCatalogViewProps = {
   onOpen() {},
   onRetry() {},
 }
-const render = (override: Partial<ProjectCatalogViewProps> = {}) =>
+// The provider's props type lists children as required, which createElement's child arguments do not satisfy.
+const Provider = NextIntlClientProvider as unknown as ComponentType<{ locale: string; messages: object; timeZone: string }>
+const renderIn = (locale: "en" | "ru", override: Partial<ProjectCatalogViewProps> = {}) =>
   renderToStaticMarkup(
-    createElement(ProjectCatalogView, { ...props, ...override }),
+    createElement(
+      Provider,
+      { locale, messages: messagesFor(locale), timeZone: "UTC" },
+      createElement(ProjectCatalogView, { ...props, ...override }),
+    ),
   )
+const render = (override: Partial<ProjectCatalogViewProps> = {}) => renderIn("en", override)
 
 test("cards show actual project identity, metadata, role and explicit opening action", () => {
   const html = render()
@@ -87,4 +96,23 @@ test("the current project offers a return, not a second opening", () => {
   assert.ok(html.includes('aria-label="Return to project REAL-1"'))
   assert.ok(!html.includes('aria-label="Open project REAL-1"'))
   assert.ok(html.includes('data-help="current-project"'))
+})
+
+test("the catalog reads in Russian, with the role from its code and file data untouched", () => {
+  const html = renderIn("ru", { selectedId: "p1" })
+  assert.ok(html.includes("Выберите проект для работы."))
+  assert.ok(html.includes("Просмотр проекта"))
+  assert.ok(html.includes("Текущий проект"))
+  assert.ok(html.includes('aria-label="Вернуться к проекту REAL-1"'))
+  assert.ok(html.includes("Owner &amp; Sons") && html.includes("CN-1"))
+  assert.ok(!html.includes("Return to"))
+  assert.ok(renderIn("ru", { query: "x" }).includes("Нет подходящих проектов"))
+  assert.ok(renderIn("ru", { detailsState: "error", metadata: [] }).includes("Повторить"))
+  assert.ok(renderIn("ru", { metadata: [{ id: "p1", owner_name: "", contractor_name: "", contract_number: "" }] }).includes("Не указан"))
+})
+
+test("a project without a role says so in the open language", () => {
+  const noRole = { ...props.projects[0], accessRole: null }
+  assert.ok(renderIn("en", { projects: [noRole] }).includes("Project access"))
+  assert.ok(renderIn("ru", { projects: [noRole] }).includes("Доступ к проекту"))
 })

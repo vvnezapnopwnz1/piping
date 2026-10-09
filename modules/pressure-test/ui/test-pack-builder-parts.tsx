@@ -1,5 +1,7 @@
 "use client"
 
+import { useTestPackTranslations } from "@/modules/pressure-test/ui/test-pack-i18n"
+
 import { useState } from "react"
 
 import {
@@ -52,6 +54,8 @@ export function ConfirmAction({
   destructive?: boolean
   onConfirm: () => void
 }) {
+  const t = useTestPackTranslations()
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
@@ -60,7 +64,7 @@ export function ConfirmAction({
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{t("text.cancel")}</AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             className={destructive ? "bg-destructive text-white hover:bg-destructive/90" : undefined}
@@ -90,6 +94,8 @@ export function MoveIsoDialog({
   onOpenChange: (open: boolean) => void
   onMove: (destinationId: string) => void
 }) {
+  const t = useTestPackTranslations()
+
   const [destination, setDestination] = useState("")
 
   return (
@@ -102,18 +108,18 @@ export function MoveIsoDialog({
     >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Move {isoNumber}</DialogTitle>
+          <DialogTitle>{t("text.move")} {isoNumber}</DialogTitle>
           <DialogDescription>
-            The server performs the move and refreshes both Test Pack revisions. It refuses once
-            workflow evidence exists against this membership.
+
+            {t("text.theServerPerformsTheMoveAndRefreshesBoth")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-2">
-          <Label htmlFor="move-destination">Destination Test Pack</Label>
+          <Label htmlFor="move-destination">{t("text.destinationTestPack")}</Label>
           <Select value={destination} onValueChange={setDestination}>
             <SelectTrigger id="move-destination" className="w-full">
-              <SelectValue placeholder="Select a Test Pack" />
+              <SelectValue placeholder={t("text.selectATestPack")} />
             </SelectTrigger>
             <SelectContent>
               {destinations.map((option) => (
@@ -125,17 +131,20 @@ export function MoveIsoDialog({
           </Select>
           {destinations.length === 0 ? (
             <p className="text-muted-foreground text-xs">
-              There is no other open Test Pack in this project to move it into.
+
+              {t("text.thereIsNoOtherOpenTestPackIn")}
             </p>
           ) : null}
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+
+            {t("text.cancel")}
           </Button>
           <Button disabled={!destination} onClick={() => onMove(destination)}>
-            Move ISO
+
+            {t("text.moveIso")}
           </Button>
         </DialogFooter>
       </DialogContent>

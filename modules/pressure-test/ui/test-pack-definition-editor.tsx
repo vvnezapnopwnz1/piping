@@ -1,5 +1,7 @@
 "use client"
 
+import { useTestPackTranslations, testPackValidationMessages, reportTestPackError } from "@/modules/pressure-test/ui/test-pack-i18n"
+
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -61,7 +63,7 @@ function packToForm(pack: TestPackCatalogRow): FormState {
   return {
     testPackNumber: pack.testPackNumber ?? "",
     location: pack.location ?? "",
-    priority: pack.priority ?? "Normal",
+    priority: pack.priority ?? TEST_PACK_PRIORITIES[1],
     medium: pack.medium ?? "P",
     pressure: pack.pressure !== undefined ? String(pack.pressure) : "",
     volumeM3: pack.volumeM3 !== undefined ? String(pack.volumeM3) : "",
@@ -82,6 +84,8 @@ export function TestPackDefinitionEditor({
   onUpdated,
   onArchived,
 }: TestPackDefinitionEditorProps) {
+  const t = useTestPackTranslations()
+
   const [form, setForm] = useState<FormState>(() => packToForm(pack))
   const [systems, setSystems] = useState<ProjectReferenceOptionRow[]>([])
   const [subsystems, setSubsystems] = useState<ProjectSubsystemOptionRow[]>([])
@@ -132,7 +136,7 @@ export function TestPackDefinitionEditor({
   useRegisterUnsavedState(isDirty)
 
   const editable = canManage && pack.lifecycle !== "archived" && dataCurrent
-  const pressureUnitDisplay = pack.pressureUnit ?? "Pressure unit is not configured"
+  const pressureUnitDisplay = pack.pressureUnit ?? t("text.pressureUnitIsNotConfigured")
   const dynamicFields = useMemo(() => testPackFields(pack.pressureUnit ?? null), [pack.pressureUnit])
 
   const availableSubsystems = useMemo(
@@ -163,7 +167,7 @@ export function TestPackDefinitionEditor({
 
     const missing = missingRequiredFields(form)
     if (missing.length > 0) {
-      setError(`Please fill in required fields: ${missing.join(", ")}.`)
+      setError(t("text.pleaseFillInRequiredFields0", { v1: (missing.map((label) => t(label)).join(", ")) ?? "—" }))
       return
     }
 
@@ -188,7 +192,7 @@ export function TestPackDefinitionEditor({
       })
 
       if (!result.ok) {
-        setError(Object.values(result.errors).join("; "))
+        setError(testPackValidationMessages(result.errors, t))
         return
       }
 
@@ -199,7 +203,7 @@ export function TestPackDefinitionEditor({
         markRecorded(fields)
       }
 
-      toast.success("Test Pack metadata updated.")
+      toast.success(t("text.testPackMetadataUpdated"))
       if (workspace) {
         await workspace.refresh()
       }
@@ -213,7 +217,7 @@ export function TestPackDefinitionEditor({
         await doSubmit()
       }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Failed to update Test Pack")
+      setError(reportTestPackError(cause, t("text.failedToUpdateTestPack")))
     } finally {
       setSubmitting(false)
     }
@@ -227,7 +231,7 @@ export function TestPackDefinitionEditor({
     const doArchive = async () => {
       const client = getSupabaseBrowserClient()
       await archiveManagedTestPack(client, pack.id)
-      toast.success(`Test Pack ${pack.testPackNumber} archived.`)
+      toast.success(t("text.testPack0Archived", { v1: (pack.testPackNumber) ?? "—" }))
       if (workspace) {
         await workspace.refresh()
       }
@@ -241,7 +245,7 @@ export function TestPackDefinitionEditor({
         await doArchive()
       }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Failed to archive Test Pack")
+      setError(reportTestPackError(cause, t("text.failedToArchiveTestPack")))
     } finally {
       setSubmitting(false)
       setPendingArchive(false)
@@ -252,14 +256,15 @@ export function TestPackDefinitionEditor({
     <Card data-explicit-unsaved-commit="true">
       <CardHeader className="flex flex-row items-center justify-between gap-4">
         <div>
-          <CardTitle>Definition</CardTitle>
+          <CardTitle>{t("text.definition")}</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Metadata and referential attributes for {pack.testPackNumber} (rev {pack.revisionNo}).
+
+            {t("text.metadataAndReferentialAttributesFor")} {pack.testPackNumber} {t("text.revisionInline", { revision: pack.revisionNo })}.
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant={pack.lifecycle === "archived" ? "outline" : "default"}>
-            {pack.lifecycle}
+            {t(`codes.status.${pack.lifecycle}`)}
           </Badge>
         </div>
       </CardHeader>
@@ -267,12 +272,14 @@ export function TestPackDefinitionEditor({
         {error && <p className="mb-4 text-sm text-destructive">{error}</p>}
         {!dataCurrent && (
           <p className="mb-4 rounded border border-amber-200 bg-amber-50 p-2 text-sm text-amber-900">
-            Data is stale; retry refresh before recording modifications.
+
+            {t("text.dataIsStaleRetryRefreshBeforeRecordingModifications")}
           </p>
         )}
         {!pack.pressureUnit && (
           <p className="mb-4 text-xs text-amber-700">
-            Pressure unit is not configured for this project.
+
+            {t("text.pressureUnitIsNotConfiguredForThisProject")}
           </p>
         )}
 
@@ -295,7 +302,7 @@ export function TestPackDefinitionEditor({
             ))}
 
             <div className="space-y-1.5">
-              <Label htmlFor="pack-priority">Priority *</Label>
+              <Label htmlFor="pack-priority">{t("text.priority211")}</Label>
               <select
                 id="pack-priority"
                 value={form.priority}
@@ -304,7 +311,7 @@ export function TestPackDefinitionEditor({
                 className="h-9 w-full rounded border bg-transparent px-3 text-sm"
               >
                 {TEST_PACK_PRIORITIES.map((priority) => (
-                  <option key={priority} value={priority}>
+                  <option key={t(`text.${priority.toLowerCase()}`)} value={priority}>
                     {priority}
                   </option>
                 ))}
@@ -312,7 +319,7 @@ export function TestPackDefinitionEditor({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="def-medium">Medium *</Label>
+              <Label htmlFor="def-medium">{t("text.medium212")}</Label>
               <select
                 id="def-medium"
                 value={form.medium}
@@ -322,7 +329,7 @@ export function TestPackDefinitionEditor({
               >
                 {TEST_PACK_MEDIA.map((m) => (
                   <option key={m.value} value={m.value}>
-                    {m.label}
+                    {t(m.label)}
                   </option>
                 ))}
               </select>
@@ -330,9 +337,9 @@ export function TestPackDefinitionEditor({
 
             <FieldSelect
               id="def-system"
-              label="System *"
+              label={t("text.system213")}
               value={form.systemId}
-              placeholder="Select system"
+              placeholder={t("text.selectSystem")}
               options={systemOptions}
               disabled={!editable}
               onChange={(value) => updateField("systemId", value)}
@@ -340,9 +347,9 @@ export function TestPackDefinitionEditor({
 
             <FieldSelect
               id="def-subsystem"
-              label="Subsystem *"
+              label={t("text.subsystem215")}
               value={form.subsystemId}
-              placeholder="Select subsystem"
+              placeholder={t("text.selectSubsystem")}
               options={availableSubsystems}
               disabled={!editable || !form.systemId}
               onChange={(value) => updateField("subsystemId", value)}
@@ -350,9 +357,9 @@ export function TestPackDefinitionEditor({
 
             <FieldSelect
               id="def-service-class"
-              label="Service class *"
+              label={t("text.serviceClass217")}
               value={form.serviceClassId}
-              placeholder="Select service class"
+              placeholder={t("text.selectServiceClass")}
               options={serviceClassOptions}
               disabled={!editable}
               onChange={(value) => updateField("serviceClassId", value)}
@@ -360,9 +367,9 @@ export function TestPackDefinitionEditor({
 
             <FieldSelect
               id="def-line-service"
-              label="Line service *"
+              label={t("text.lineService219")}
               value={form.lineServiceId}
-              placeholder="Select line service"
+              placeholder={t("text.selectLineService")}
               options={lineServiceOptions}
               disabled={!editable}
               onChange={(value) => updateField("lineServiceId", value)}
@@ -376,7 +383,8 @@ export function TestPackDefinitionEditor({
                 disabled={!editable || submitting || !isDirty}
                 loading={submitting}
               >
-                Save metadata
+
+                {t("text.saveMetadata")}
               </Button>
               {isDirty && (
                 <Button
@@ -385,7 +393,8 @@ export function TestPackDefinitionEditor({
                   disabled={submitting}
                   onClick={() => setForm(packToForm(pack))}
                 >
-                  Discard changes
+
+                  {t("text.discardChanges")}
                 </Button>
               )}
             </div>
@@ -397,7 +406,8 @@ export function TestPackDefinitionEditor({
                 disabled={!editable || submitting}
                 onClick={() => setPendingArchive(true)}
               >
-                Archive Test Pack
+
+                {t("text.archiveTestPack")}
               </Button>
             )}
           </div>
@@ -406,9 +416,9 @@ export function TestPackDefinitionEditor({
         <ConfirmAction
           open={pendingArchive}
           onOpenChange={setPendingArchive}
-          title={`Archive ${pack.testPackNumber}?`}
-          description="Archiving marks the pack read-only and locks all operations and composition. This cannot be undone from the UI."
-          confirmLabel="Archive"
+          title={t("text.archive0", { v1: (pack.testPackNumber) ?? "—" })}
+          description={t("text.archivingMarksThePackReadOnlyAndLocks")}
+          confirmLabel={t("text.archive")}
           destructive
           onConfirm={() => void onConfirmArchive()}
         />

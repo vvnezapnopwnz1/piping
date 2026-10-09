@@ -1,5 +1,7 @@
 "use client"
 
+import { useTestPackTranslations, type TestPackTranslator } from "@/modules/pressure-test/ui/test-pack-i18n"
+
 import { useMemo } from "react"
 import { CheckCircle2, Clock, ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -43,20 +45,20 @@ function stateBadgeVariant(state: StagePresentationState): "default" | "secondar
   }
 }
 
-function stateLabel(state: StagePresentationState): string {
+function stateLabel(state: StagePresentationState, t: TestPackTranslator): string {
   switch (state) {
     case "completed":
-      return "Completed"
+      return t("text.completed")
     case "ready":
-      return "Ready"
+      return t("text.ready")
     case "ongoing":
-      return "In Progress"
+      return t("text.inProgress")
     case "blocked":
-      return "Blocked"
+      return t("text.blocked")
     case "not_applicable":
-      return "N/A"
+      return t("text.notApplicable")
     case "unknown":
-      return "Unknown"
+      return t("text.unknown")
   }
 }
 
@@ -69,6 +71,8 @@ export function TestPackWorkflowPanel({
   currentMode,
   onSelectOperation,
 }: TestPackWorkflowPanelProps) {
+  const t = useTestPackTranslations()
+
   const workspace = useOptionalTestPackWorkspaceContext()
   const snapshot = workspace?.snapshot
 
@@ -117,26 +121,27 @@ export function TestPackWorkflowPanel({
       {!opCheck.allowed && (
         <div className="flex items-center gap-2 rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
           <ShieldAlert className="h-4 w-4 flex-none" />
-          <span>{opCheck.reason}</span>
+          <span>{opCheck.reason ? t(opCheck.reason) : null}</span>
         </div>
       )}
 
       {/* Preparatory operations */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm font-semibold">Preparatory Work</CardTitle>
+          <CardTitle className="text-sm font-semibold">{t("text.preparatoryWork")}</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2">
           {/* Line Check */}
           <div className="rounded border p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="font-medium text-sm">Line Check</span>
+              <span className="font-medium text-sm">{t("text.lineCheck")}</span>
               <span className="text-xs text-muted-foreground">
-                {summary?.lineCheckSummary.open ?? 0} open · {summary?.lineCheckSummary.total ?? 0} total
+                {t("text.openOfTotal", { open: summary?.lineCheckSummary.open ?? 0, total: summary?.lineCheckSummary.total ?? 0 })}
               </span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Walk the line and identify outstanding punch items prior to pressure test.
+
+              {t("text.walkTheLineAndIdentifyOutstandingPunchItems")}
             </p>
             <div className="flex gap-2 pt-1">
               <Button
@@ -144,14 +149,16 @@ export function TestPackWorkflowPanel({
                 variant={currentOperation === "line_check" && currentMode === "preparation" ? "default" : "outline"}
                 onClick={() => openOp("line_check", "preparation")}
               >
-                Preparation
+
+                {t("text.preparation293")}
               </Button>
               <Button
                 size="sm"
                 variant={currentOperation === "line_check" && currentMode === "progress" ? "default" : "outline"}
                 onClick={() => openOp("line_check", "progress")}
               >
-                Progress
+
+                {t("text.progress")}
               </Button>
             </div>
           </div>
@@ -159,13 +166,14 @@ export function TestPackWorkflowPanel({
           {/* Item Clearance */}
           <div className="rounded border p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="font-medium text-sm">Item Clearance (X Punches)</span>
+              <span className="font-medium text-sm">{t("text.itemClearanceXPunches")}</span>
               <span className="text-xs text-muted-foreground">
-                {summary?.itemClearanceSummary.open ?? 0} open · {summary?.itemClearanceSummary.total ?? 0} total
+                {t("text.openOfTotal", { open: summary?.itemClearanceSummary.open ?? 0, total: summary?.itemClearanceSummary.total ?? 0 })}
               </span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Clear Category X blockers identified during Line Check inspection.
+
+              {t("text.clearCategoryXBlockersIdentifiedDuringLineCheck")}
             </p>
             <div className="flex gap-2 pt-1">
               <Button
@@ -173,14 +181,16 @@ export function TestPackWorkflowPanel({
                 variant={currentOperation === "item_clearance" && currentMode === "preparation" ? "default" : "outline"}
                 onClick={() => openOp("item_clearance", "preparation")}
               >
-                Preparation
+
+                {t("text.preparation293")}
               </Button>
               <Button
                 size="sm"
                 variant={currentOperation === "item_clearance" && currentMode === "progress" ? "default" : "outline"}
                 onClick={() => openOp("item_clearance", "progress")}
               >
-                Progress
+
+                {t("text.progress")}
               </Button>
             </div>
           </div>
@@ -191,7 +201,8 @@ export function TestPackWorkflowPanel({
       <Card>
         <CardHeader>
           <CardTitle className="text-sm font-semibold">
-            Pressure Test Process: RFT → Blinding → Testing → Y → Pre-comm → Z
+
+            {t("text.pressureTestProcessRftBlindingTestingYPre")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -204,14 +215,15 @@ export function TestPackWorkflowPanel({
                 <Clock className="h-5 w-5 text-amber-500" />
               )}
               <div>
-                <span className="font-medium">1. Ready For Test (RFT)</span>
+                <span className="font-medium">{t("text.1ReadyForTestRft")}</span>
                 <p className="text-xs text-muted-foreground">
-                  Derived server verdict from 12 construction and inspection rules.
+
+                  {t("text.derivedServerVerdictFrom12ConstructionAndInspection")}
                 </p>
               </div>
             </div>
             <Badge variant={stateBadgeVariant(summary?.rftState ?? "unknown")}>
-              {stateLabel(summary?.rftState ?? "unknown")}
+              {stateLabel(summary?.rftState ?? "unknown", t)}
             </Badge>
           </div>
 
@@ -219,13 +231,14 @@ export function TestPackWorkflowPanel({
           <div className="flex items-center justify-between p-3 rounded border text-sm">
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-medium">2. Blinding</span>
+                <span className="font-medium">{t("text.2Blinding")}</span>
                 <Badge variant={stateBadgeVariant(summary?.blindingState ?? "unknown")}>
-                  {stateLabel(summary?.blindingState ?? "unknown")}
+                  {stateLabel(summary?.blindingState ?? "unknown", t)}
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Spades and blind flanges installed to isolate the test boundary.
+
+                {t("text.spadesAndBlindFlangesInstalledToIsolateThe")}
               </p>
             </div>
             <div className="flex gap-2">
@@ -234,14 +247,16 @@ export function TestPackWorkflowPanel({
                 variant={currentOperation === "blinding" && currentMode === "preparation" ? "default" : "outline"}
                 onClick={() => openOp("blinding", "preparation")}
               >
-                Assign
+
+                {t("text.assign")}
               </Button>
               <Button
                 size="sm"
                 variant={currentOperation === "blinding" && currentMode === "progress" ? "default" : "outline"}
                 onClick={() => openOp("blinding", "progress")}
               >
-                Complete
+
+                {t("text.complete")}
               </Button>
             </div>
           </div>
@@ -250,13 +265,14 @@ export function TestPackWorkflowPanel({
           <div className="flex items-center justify-between p-3 rounded border text-sm">
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-medium">3. Pressure Testing</span>
+                <span className="font-medium">{t("text.3PressureTesting")}</span>
                 <Badge variant={stateBadgeVariant(summary?.testingState ?? "unknown")}>
-                  {stateLabel(summary?.testingState ?? "unknown")}
+                  {stateLabel(summary?.testingState ?? "unknown", t)}
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Pressurize test pack boundary and confirm holding integrity.
+
+                {t("text.pressurizeTestPackBoundaryAndConfirmHoldingIntegrity")}
               </p>
             </div>
             <Button
@@ -264,7 +280,8 @@ export function TestPackWorkflowPanel({
               variant={currentOperation === "testing" ? "default" : "outline"}
               onClick={() => openOp("testing", "progress")}
             >
-              Record Testing
+
+              {t("text.recordTesting")}
             </Button>
           </div>
 
@@ -272,13 +289,14 @@ export function TestPackWorkflowPanel({
           <div className="flex items-center justify-between p-3 rounded border text-sm">
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-medium">4. Category Y Reinstatement</span>
+                <span className="font-medium">{t("text.4CategoryYReinstatement")}</span>
                 <Badge variant={stateBadgeVariant(summary?.yState ?? "unknown")}>
-                  {stateLabel(summary?.yState ?? "unknown")}
+                  {stateLabel(summary?.yState ?? "unknown", t)}
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Pre-test joint reinstatement required before pre-commissioning.
+
+                {t("text.preTestJointReinstatementRequiredBeforePreCommissioning")}
               </p>
             </div>
             <div className="flex gap-2">
@@ -288,7 +306,8 @@ export function TestPackWorkflowPanel({
                 disabled={summary?.yState === "not_applicable"}
                 onClick={() => openOp("y_reinstatement", "preparation")}
               >
-                Assign
+
+                {t("text.assign")}
               </Button>
               <Button
                 size="sm"
@@ -296,7 +315,8 @@ export function TestPackWorkflowPanel({
                 disabled={summary?.yState === "not_applicable"}
                 onClick={() => openOp("y_reinstatement", "progress")}
               >
-                Record joints
+
+                {t("text.recordJoints")}
               </Button>
             </div>
           </div>
@@ -305,15 +325,15 @@ export function TestPackWorkflowPanel({
           <div className="flex items-center justify-between p-3 rounded border text-sm">
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-medium">5. Pre-commissioning</span>
+                <span className="font-medium">{t("text.5PreCommissioning")}</span>
                 <Badge variant={stateBadgeVariant(summary?.precommState ?? "unknown")}>
-                  {stateLabel(summary?.precommState ?? "unknown")}
+                  {stateLabel(summary?.precommState ?? "unknown", t)}
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {summary?.precommState === "blocked" && summary.yState !== "completed" && summary.yState !== "not_applicable"
-                  ? "Blocked: Category Y reinstatement must be complete before pre-commissioning."
-                  : "Drying, air blowing, inerting or other pre-commissioning procedures."}
+                  ? t("text.blockedCategoryYReinstatementMustBeCompleteBefore")
+                  : t("text.dryingAirBlowingInertingOrOtherPreCommissioning")}
               </p>
             </div>
             <Button
@@ -321,7 +341,8 @@ export function TestPackWorkflowPanel({
               variant={currentOperation === "precommissioning" ? "default" : "outline"}
               onClick={() => openOp("precommissioning", "progress")}
             >
-              Record Pre-comm
+
+              {t("text.recordPreComm")}
             </Button>
           </div>
 
@@ -329,13 +350,14 @@ export function TestPackWorkflowPanel({
           <div className="flex items-center justify-between p-3 rounded border text-sm">
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-medium">6. Category Z Reinstatement</span>
+                <span className="font-medium">{t("text.6CategoryZReinstatement")}</span>
                 <Badge variant={stateBadgeVariant(summary?.zState ?? "unknown")}>
-                  {stateLabel(summary?.zState ?? "unknown")}
+                  {stateLabel(summary?.zState ?? "unknown", t)}
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Final post-precommissioning reinstatement to complete handover readiness.
+
+                {t("text.finalPostPrecommissioningReinstatementToCompleteHandoverReadiness")}
               </p>
             </div>
             <div className="flex gap-2">
@@ -345,7 +367,8 @@ export function TestPackWorkflowPanel({
                 disabled={summary?.zState === "not_applicable"}
                 onClick={() => openOp("z_reinstatement", "preparation")}
               >
-                Assign
+
+                {t("text.assign")}
               </Button>
               <Button
                 size="sm"
@@ -353,7 +376,8 @@ export function TestPackWorkflowPanel({
                 disabled={summary?.zState === "not_applicable"}
                 onClick={() => openOp("z_reinstatement", "progress")}
               >
-                Record joints
+
+                {t("text.recordJoints")}
               </Button>
             </div>
           </div>
@@ -366,7 +390,7 @@ export function TestPackWorkflowPanel({
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <div className="flex items-center gap-2">
               <CardTitle className="text-base capitalize">
-                {currentOperation.replace(/_/g, " ")} · {currentMode ?? "Progress"}
+                {t(`operation.${currentOperation}`)} · {t(`mode.${currentMode ?? "progress"}`)}
               </CardTitle>
             </div>
             <Button
@@ -374,7 +398,8 @@ export function TestPackWorkflowPanel({
               variant="ghost"
               onClick={() => onSelectOperation?.(null, null)}
             >
-              Close operation
+
+              {t("text.closeOperation")}
             </Button>
           </CardHeader>
           <CardContent data-operation-scroll="" className="max-h-[60vh] overflow-y-auto">

@@ -1,0 +1,75 @@
+{
+  "title": "Project state",
+  "noProject": "Select a project to see its process, live figures and open work.",
+  "lede": {
+    "contractor": "contractor {name}",
+    "owner": "owner {name}",
+    "contract": "contract {number}"
+  },
+  "process": "Process",
+  "secondaryAreas": "Secondary areas",
+  "locked": "Not part of your project access",
+  "kicker": {
+    "project": "Project",
+    "serves": "Serves {areas}"
+  },
+  "subject": {
+    "fabrication": "Fabrication",
+    "erection": "Erection",
+    "testPack": "Test pack",
+    "nde": "NDE",
+    "openWork": "Open work"
+  },
+  "status": {
+    "loading": "Loading {subject} figures…",
+    "failed": "{subject} figures could not be loaded.",
+    "tryAgain": "Try again",
+    "denied": "{subject} figures are outside your project access.",
+    "noProject": "Select a project to see figures."
+  },
+  "figure": {
+    "of": "of {total}"
+  },
+  "spooling": {
+    "baseline": "Engineering baseline",
+    "outstanding": "ISO workflow and transmittals outstanding"
+  },
+  "fabrication": {
+    "unit": "spools at Laydown",
+    "empty": "No fabrication records yet."
+  },
+  "erection": {
+    "unit": "spools Ready for Test",
+    "note": "{count} not ready yet",
+    "empty": "No erection records yet."
+  },
+  "testPacks": {
+    "unit": "test packs Ready for Test",
+    "empty": "No test packs yet."
+  },
+  "nde": {
+    "unit": "obligations have a result recorded",
+    "note": "{count} awaiting a result",
+    "empty": "No NDE obligations yet."
+  },
+  "attention": {
+    "title": "Needs attention",
+    "nothingTitle": "Nothing is waiting",
+    "nothingDetail": "No issued NDE obligation, spool short of Ready for Test or blocked test pack in your access.",
+    "nde": {
+      "title": "{count, plural, one {# NDE obligation} other {# NDE obligations}} awaiting a result",
+      "detail": "Issued to the inspector. An open obligation keeps its spool from Ready for Test.",
+      "action": "Open issued obligations"
+    },
+    "erection": {
+      "title": "{count} of {total} spools not Ready for Test",
+      "detail": "Each row names what is still open and links to where it is recorded.",
+      "action": "Open RFT readiness"
+    },
+    "testpacks": {
+      "title": "{count} of {total} test packs not Ready for Test",
+      "detail": "Blocked by member spools or open punch items.",
+      "action": "Open test packs"
+    }
+  }
+}

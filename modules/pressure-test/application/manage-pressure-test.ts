@@ -12,8 +12,8 @@ export async function recordManagedPressureTestStage(
   idempotencyKey = key("pressure-test-stage"),
 ) {
   if (!canRecordPressureTestEvent(state, event)) {
-    return { ok: false as const, errors: { stage: `Cannot record ${event} from ${state}` } }
+    return { ok: false as const, errors: { stage: "invalidStage" } }
   }
-  if (!occurredOn.trim()) return { ok: false as const, errors: { occurredOn: "Occurred date is required" } }
+  if (!occurredOn.trim()) return { ok: false as const, errors: { occurredOn: "required" } }
   return { ok: true as const, value: await recordPressureTestStage(repository, testPackId, event, occurredOn, idempotencyKey) }
 }

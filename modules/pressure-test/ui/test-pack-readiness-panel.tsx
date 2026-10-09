@@ -1,5 +1,7 @@
 "use client"
 
+import { useTestPackTranslations } from "@/modules/pressure-test/ui/test-pack-i18n"
+
 import { useMemo } from "react"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
@@ -42,6 +44,8 @@ export function TestPackReadinessPanel({
   onSelectSpool,
   onNavigateWorkflow,
 }: TestPackReadinessPanelProps) {
+  const t = useTestPackTranslations()
+
   const workspace = useOptionalTestPackWorkspaceContext()
   const access = useOptionalAccess()
   const can = access?.can
@@ -83,9 +87,10 @@ export function TestPackReadinessPanel({
         <CardContent className="flex flex-col items-center justify-center p-8 space-y-4 text-center">
           <AlertCircle className="h-10 w-10 text-amber-600" />
           <div>
-            <h3 className="text-lg font-semibold">Readiness unavailable</h3>
+            <h3 className="text-lg font-semibold">{t("text.readinessUnavailable")}</h3>
             <p className="text-sm text-muted-foreground">
-              Readiness facts could not be loaded from the server projection.
+
+              {t("text.readinessFactsCouldNotBeLoadedFromThe")}
             </p>
           </div>
           {workspace && (
@@ -96,7 +101,8 @@ export function TestPackReadinessPanel({
               disabled={workspace.loading}
             >
               <RefreshCw className="mr-2 h-4 w-4" />
-              Retry loading readiness
+
+              {t("text.retryLoadingReadiness")}
             </Button>
           )}
         </CardContent>
@@ -123,10 +129,11 @@ export function TestPackReadinessPanel({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-base font-semibold">
-            Server Readiness Verdict
+
+            {t("text.serverReadinessVerdict")}
           </CardTitle>
           <Badge variant={isRft ? "default" : "destructive"}>
-            {isRft ? "Ready For Test" : "Blocked"}
+            {isRft ? t("text.readyForTest162") : t("text.blocked")}
           </Badge>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -139,15 +146,16 @@ export function TestPackReadinessPanel({
             <div>
               <p className="font-medium text-sm">
                 {isRft
-                  ? "All 12 readiness criteria satisfied. Eligible for downstream pressure test operations."
+                  ? t("text.all12ReadinessCriteriaSatisfiedEligibleForDownstream")
                   : memberCount === 0
-                    ? "Test Pack has no isometric members. Add isometrics in Composition."
+                    ? t("text.testPackHasNoIsometricMembersAddIsometrics")
                     : unexplainedBlocker
-                      ? "Readiness could not be explained from these facts. Refresh recommended."
-                      : "The pack is blocked by upstream construction or inspection requirements."}
+                      ? t("text.readinessCouldNotBeExplainedFromTheseFacts")
+                      : t("text.thePackIsBlockedByUpstreamConstructionOr")}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Rev {readiness.revisionNo} · {memberCount} member isometrics
+
+                {t("text.rev123")} {readiness.revisionNo} · {memberCount}  {t("text.memberIsometrics")}
               </p>
             </div>
           </div>
@@ -159,36 +167,37 @@ export function TestPackReadinessPanel({
               onClick={() => void workspace.refresh()}
             >
               <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh facts
+
+              {t("text.refreshFacts")}
             </Button>
           )}
 
           {/* Facts grid */}
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6 pt-2 border-t text-sm">
             <div className="rounded border p-2">
-              <span className="text-xs text-muted-foreground block">Members</span>
+              <span className="text-xs text-muted-foreground block">{t("text.members")}</span>
               <span className="font-semibold">{memberCount} ISO</span>
             </div>
             <div className="rounded border p-2">
-              <span className="text-xs text-muted-foreground block">Welds</span>
+              <span className="text-xs text-muted-foreground block">{t("text.welds")}</span>
               <span className="font-semibold">{weldTotal}</span>
             </div>
             <div className="rounded border p-2">
-              <span className="text-xs text-muted-foreground block">Flanges</span>
+              <span className="text-xs text-muted-foreground block">{t("text.flanges")}</span>
               <span className="font-semibold">{flangeTotal}</span>
             </div>
             <div className={`rounded border p-2 ${ndePending > 0 ? "border-amber-400 bg-amber-50/50" : ""}`}>
-              <span className="text-xs text-muted-foreground block">NDE pending</span>
+              <span className="text-xs text-muted-foreground block">{t("text.ndePending")}</span>
               <span className="font-semibold">{ndePending}</span>
             </div>
             <div className={`rounded border p-2 ${pwhtPending > 0 ? "border-amber-400 bg-amber-50/50" : ""}`}>
-              <span className="text-xs text-muted-foreground block">PWHT pending</span>
+              <span className="text-xs text-muted-foreground block">{t("text.pwhtPending")}</span>
               <span className="font-semibold">{pwhtPending}</span>
             </div>
             <div className={`rounded border p-2 ${linePending > 0 || xOpen > 0 ? "border-amber-400 bg-amber-50/50" : ""}`}>
-              <span className="text-xs text-muted-foreground block">Line Check / X</span>
+              <span className="text-xs text-muted-foreground block">{t("text.lineCheckX")}</span>
               <span className="font-semibold">
-                {linePending} line · {xOpen} X
+                {linePending}  {t("text.line")} {xOpen} X
               </span>
             </div>
           </div>
@@ -199,31 +208,33 @@ export function TestPackReadinessPanel({
       {!isRft && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-semibold">Blocker Resolution</CardTitle>
+            <CardTitle className="text-sm font-semibold">{t("text.blockerResolution")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {linePending > 0 && (
               <div className="flex items-center justify-between p-2 rounded border text-sm">
-                <span>Line Check pending ({linePending} target(s))</span>
+                <span>{t("text.lineCheckPendingCount", { count: linePending })}</span>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => onNavigateWorkflow?.("line_check", "preparation")}
                 >
-                  Workflow Line Check →
+
+                  {t("text.workflowLineCheck")}
                 </Button>
               </div>
             )}
 
             {xOpen > 0 && (
               <div className="flex items-center justify-between p-2 rounded border text-sm">
-                <span>Open Category X Punches ({xOpen} item(s))</span>
+                <span>{t("text.punchCount", { count: xOpen })}</span>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => onNavigateWorkflow?.("item_clearance", "preparation")}
                 >
-                  Workflow Item Clearance →
+
+                  {t("text.workflowItemClearance")}
                 </Button>
               </div>
             )}
@@ -231,14 +242,16 @@ export function TestPackReadinessPanel({
             {ndePending > 0 && (
               <div className="flex items-center justify-between p-2 rounded border text-sm">
                 <span>
-                  NDE pending ({ndePending} check(s))
-                  {selectedSpool && ` · Spool ${selectedSpool.spool_number}`}
+
+                  {t("text.ndeCount", { count: ndePending })}
+                  {selectedSpool && t("text.spool0", { v1: (selectedSpool.spool_number) ?? "—" })}
                 </span>
                 <Link
                   className="inline-flex items-center gap-1 text-xs underline font-medium"
                   href={safeLink("/nde", selectedSpool?.spool_revision_id)}
                 >
-                  Open NDE <ExternalLink className="h-3 w-3" />
+
+                  {t("text.openNde")} <ExternalLink className="h-3 w-3" />
                 </Link>
               </div>
             )}
@@ -246,50 +259,55 @@ export function TestPackReadinessPanel({
             {pwhtPending > 0 && (
               <div className="flex items-center justify-between p-2 rounded border text-sm">
                 <span>
-                  PWHT pending ({pwhtPending} check(s))
-                  {selectedSpool && ` · Spool ${selectedSpool.spool_number}`}
+
+                  {t("text.pwhtCount", { count: pwhtPending })}
+                  {selectedSpool && t("text.spool0", { v1: (selectedSpool.spool_number) ?? "—" })}
                 </span>
                 <Link
                   className="inline-flex items-center gap-1 text-xs underline font-medium"
                   href={safeLink("/fabrication/qc-release", selectedSpool?.spool_revision_id)}
                 >
-                  QC Release <ExternalLink className="h-3 w-3" />
+
+                  {t("text.qcRelease")} <ExternalLink className="h-3 w-3" />
                 </Link>
               </div>
             )}
 
             {can?.("erection.view") && (
               <div className="flex items-center justify-between p-2 rounded border text-sm">
-                <span>Weld / Support erection status</span>
+                <span>{t("text.weldSupportErectionStatus")}</span>
                 <Link
                   className="inline-flex items-center gap-1 text-xs underline font-medium"
                   href={safeLink("/erection", selectedSpool?.spool_revision_id)}
                 >
-                  Erection Workbench <ExternalLink className="h-3 w-3" />
+
+                  {t("text.erectionWorkbench")} <ExternalLink className="h-3 w-3" />
                 </Link>
               </div>
             )}
 
             {can?.("flange.view") && (
               <div className="flex items-center justify-between p-2 rounded border text-sm">
-                <span>Flange progress inspection</span>
+                <span>{t("text.flangeProgressInspection")}</span>
                 <Link
                   className="inline-flex items-center gap-1 text-xs underline font-medium"
                   href={safeLink("/erection/flange-progress")}
                 >
-                  Flange Progress <ExternalLink className="h-3 w-3" />
+
+                  {t("text.flangeProgress")} <ExternalLink className="h-3 w-3" />
                 </Link>
               </div>
             )}
 
             {memberCount === 0 && (
               <div className="flex items-center justify-between p-2 rounded border text-sm">
-                <span>Missing engineering / isometrics composition</span>
+                <span>{t("text.missingEngineeringIsometricsComposition")}</span>
                 <Link
                   className="inline-flex items-center gap-1 text-xs underline font-medium"
                   href={safeLink("/spooling/browse")}
                 >
-                  Spooling browse <ExternalLink className="h-3 w-3" />
+
+                  {t("text.spoolingBrowse")} <ExternalLink className="h-3 w-3" />
                 </Link>
               </div>
             )}
@@ -300,7 +318,7 @@ export function TestPackReadinessPanel({
       {/* ISO Breakdown */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm font-semibold">Isometric Breakdown ({isoStatus.length})</CardTitle>
+          <CardTitle className="text-sm font-semibold">{t("text.isometricBreakdown")}{isoStatus.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
@@ -317,24 +335,25 @@ export function TestPackReadinessPanel({
                   <div>
                     <span className="font-medium font-mono">{businessNumber}</span>
                     <span className="ml-2 text-xs text-muted-foreground">
-                      {iso.is_rft ? "Ready For Test" : "Ongoing / Blocked"}
+                      {iso.is_rft ? t("text.readyForTest162") : t("text.ongoingBlocked260")}
                     </span>
                   </div>
                   <div>
                     {xCount > 0 && (
                       <span className="text-xs text-destructive font-medium mr-2">
-                        X open: {xCount}
+
+                        {t("text.xOpen")} {xCount}
                       </span>
                     )}
                     <Badge variant={iso.is_rft ? "default" : "secondary"}>
-                      {iso.is_rft ? "RFT" : "Blocked"}
+                      {iso.is_rft ? "RFT" : t("text.blocked")}
                     </Badge>
                   </div>
                 </div>
               )
             })}
             {isoStatus.length === 0 && (
-              <p className="text-sm text-muted-foreground">No isometrics in this pack.</p>
+              <p className="text-sm text-muted-foreground">{t("text.noIsometricsInThisPack")}</p>
             )}
           </div>
         </CardContent>
@@ -344,9 +363,10 @@ export function TestPackReadinessPanel({
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle className="text-sm font-semibold">Spool Breakdown ({spools.length})</CardTitle>
+            <CardTitle className="text-sm font-semibold">{t("text.spoolBreakdown")}{spools.length})</CardTitle>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Click a spool to scope resolution links to that specific spool.
+
+              {t("text.clickASpoolToScopeResolutionLinksTo")}
             </p>
           </div>
           {selectedSpool && (
@@ -355,7 +375,8 @@ export function TestPackReadinessPanel({
               variant="ghost"
               onClick={() => onSelectSpool?.(null)}
             >
-              Clear spool selection
+
+              {t("text.clearSpoolSelection")}
             </Button>
           )}
         </CardHeader>
@@ -368,8 +389,8 @@ export function TestPackReadinessPanel({
                 spool.is_rft === true
                   ? "RFT"
                   : spool.is_rft === false
-                    ? "Ongoing"
-                    : "Unknown"
+                    ? t("text.ongoing")
+                    : t("text.unknown")
               return (
                 <button
                   key={spool.spool_revision_id}
@@ -388,7 +409,8 @@ export function TestPackReadinessPanel({
                       {spool.spool_number ?? spool.spool_revision_id}
                     </span>
                     <span className="ml-3 text-xs text-muted-foreground">
-                      NDE pending: {spool.nde_pending ?? 0} · PWHT pending:{" "}
+
+                      {t("text.ndePending267")} {spool.nde_pending ?? 0}  {t("text.pwhtPending268")}{" "}
                       {spool.pwht_pending ?? 0}
                     </span>
                   </div>
@@ -402,7 +424,7 @@ export function TestPackReadinessPanel({
               )
             })}
             {spools.length === 0 && (
-              <p className="text-sm text-muted-foreground">No spools in current projection.</p>
+              <p className="text-sm text-muted-foreground">{t("text.noSpoolsInCurrentProjection")}</p>
             )}
           </div>
         </CardContent>

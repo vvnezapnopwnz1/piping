@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,20 +23,20 @@ export function ImportConflictDialog({
   onCancel: () => void
   onConfirm: () => void
 }) {
+  const t = useTranslations("spooling.conflictDialog")
+
   return (
     <AlertDialog open={open} onOpenChange={(next) => { if (!next) onCancel() }}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Confirm overwrite</AlertDialogTitle>
+          <AlertDialogTitle>{t("title")}</AlertDialogTitle>
           <AlertDialogDescription>
-            {conflictCount} row{conflictCount === 1 ? "" : "s"} in this file already exist in the
-            project. Applying the import replaces the stored values with the values from the
-            spreadsheet. This cannot be undone.
+            {t("description", { count: conflictCount })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>Keep existing values</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>Overwrite {conflictCount} rows</AlertDialogAction>
+          <AlertDialogCancel onClick={onCancel}>{t("keep")}</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm}>{t("overwrite", { count: conflictCount })}</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

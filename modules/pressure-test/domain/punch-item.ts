@@ -54,7 +54,7 @@ function validDate(value: string): boolean {
 
 function required(value: string, field: string, errors: Record<string, string>): string {
   const normalized = value.trim()
-  if (!normalized) errors[field] = `${field} is required`
+  if (!normalized) errors[field] = "required"
   return normalized
 }
 
@@ -66,9 +66,9 @@ export function normalizePunchItemInput(input: PunchItemInput): ReferenceValidat
   const description = required(input.description, "description", errors)
   const checkingDate = input.checkingDate.trim()
   const completionDate = input.completionDate?.trim()
-  if (!validDate(checkingDate)) errors.checkingDate = "Checking date must be an ISO date"
-  if (completionDate && !validDate(completionDate)) errors.completionDate = "Completion date must be an ISO date"
-  if (completionDate && validDate(checkingDate) && completionDate < checkingDate) errors.completionDate = "Completion date cannot be before checking date"
+  if (!validDate(checkingDate)) errors.checkingDate = "invalidCheckingDate"
+  if (completionDate && !validDate(completionDate)) errors.completionDate = "invalidCompletionDate"
+  if (completionDate && validDate(checkingDate) && completionDate < checkingDate) errors.completionDate = "completionBeforeChecking"
   if (Object.keys(errors).length > 0) return { ok: false, errors }
   return {
     ok: true,
@@ -82,10 +82,10 @@ export function normalizeLineCheckAssignment(input: LineCheckAssignment): Refere
   const testPackId = required(input.testPackId, "testPackId", errors)
   const teamId = required(input.teamId, "teamId", errors)
   const assignedDate = input.assignedDate.trim()
-  if (!validDate(assignedDate)) errors.assignedDate = "Assigned date must be an ISO date"
+  if (!validDate(assignedDate)) errors.assignedDate = "invalidAssignedDate"
   const isometricIds = input.isometricIds.map((id) => id.trim())
   if (isometricIds.length === 0 || isometricIds.some((id) => !id) || new Set(isometricIds).size !== isometricIds.length) {
-    errors.isometricIds = "At least one unique ISO is required"
+    errors.isometricIds = "invalidIsometricSelection"
   }
   if (Object.keys(errors).length > 0) return { ok: false, errors }
   return { ok: true, value: { testPackId, teamId, assignedDate, isometricIds }, errors: {} }

@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,12 +15,11 @@ import {
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import {
   IMPORT_TYPES,
-  getImportTypeDefinition,
   type ImportType,
 } from "../domain/import-type"
-import type { ImportIssue } from "../domain/import-issue"
+import type { ImportRowIssue } from "../domain/import-issue"
 import type { ParsedRow } from "../domain/parsers/registry"
-import { validateSheet } from "../application/create-import"
+import { toStoredIssues, validateSheet } from "../application/create-import"
 import { describeApplyGate } from "../application/apply-import"
 import {
   buildTemplateWorkbook,
@@ -34,6 +34,8 @@ import {
   applyImportJob,
   importObjectPath,
 } from "../infrastructure/supabase-import-repository"
+import { describeApplyReason } from "./apply-reason-text"
+import { importTypeLabel } from "./import-issue-text"
 import { ImportIssueList } from "./import-issue-list"
 import { ImportConflictDialog } from "./import-conflict-dialog"
 
@@ -48,15 +50,14 @@ export function ImportWorkbench({
   canManage: boolean
   onApplied: () => void
 }) {
+  const t = useTranslations("spooling")
   const [importType, setImportType] = useState<ImportType>("piping_material_list")
   const [jobId, setJobId] = useState<string | null>(null)
   const [rows, setRows] = useState<ParsedRow[]>([])
-  const [issues, setIssues] = useState<ImportIssue[]>([])
+  const [issues, setIssues] = useState<ImportRowIssue[]>([])
   const [stage, setStage] = useState<Stage>("idle")
   const [busy, setBusy] = useState(false)
   const [conflictDialogOpen, setConflictDialogOpen] = useState(false)
-
-  const definition = useMemo(() => getImportTypeDefinition(importType), [importType])
 
   const summary = useMemo(() => {
     let blockerCount = 0
@@ -114,19 +115,19 @@ export function ImportWorkbench({
         const objectPath = importObjectPath(projectId, job.id, file.name)
         await uploadImportFile(client, objectPath, file)
         await markImportJobUploaded(client, job.id, objectPath)
-        await recordImportValidation(client, job.id, outcome.rows, outcome.issues)
+        await recordImportValidation(client, job.id, outcome.rows, toStoredIssues(outcome.issues))
 
         setJobId(job.id)
         setRows(outcome.rows)
         setIssues(outcome.issues)
         setStage("validated")
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "The file could not be processed.")
+        toast.error(error instanceof Error ? error.message : t("workbench.fileFailed"))
       } finally {
         setBusy(false)
       }
     },
-    [importType, projectId]
+    [importType, projectId, t]
   )
 
   const runApply = useCallback(
@@ -137,22 +138,22 @@ export function ImportWorkbench({
         const client = getSupabaseBrowserClient()
         const applied = await applyImportJob(client, jobId, confirmConflicts, importType)
         setStage("applied")
-        toast.success(`Applied ${applied.appliedRowCount} rows.`)
+        toast.success(t("workbench.applied", { count: applied.appliedRowCount }))
         onApplied()
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "The import could not be applied.")
+        toast.error(error instanceof Error ? error.message : t("workbench.applyFailed"))
       } finally {
         setBusy(false)
         setConflictDialogOpen(false)
       }
     },
-    [importType, jobId, onApplied]
+    [importType, jobId, onApplied, t]
   )
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Import {definition.label}</CardTitle>
+        <CardTitle>{t("workbench.title", { type: importTypeLabel(t, importType) })}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-wrap items-center gap-3">
@@ -172,14 +173,14 @@ export function ImportWorkbench({
             <SelectContent>
               {IMPORT_TYPES.map((value) => (
                 <SelectItem key={value} value={value}>
-                  {getImportTypeDefinition(value).label}
+                  {importTypeLabel(t, value)}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
           <Button variant="outline" onClick={downloadTemplate}>
-            Download template
+            {t("workbench.downloadTemplate")}
           </Button>
 
           <input
@@ -196,15 +197,14 @@ export function ImportWorkbench({
 
         {importType === "test_pack_composition" && (
           <p role="status" className="text-warning-fg text-sm">
-            Existing Test Packs can be updated only after conflict confirmation. Additional ISO membership is a manual Builder action and is never added silently by import.
+            {t("workbench.testPackNote")}
           </p>
         )}
 
         {stage !== "idle" && (
           <div className="space-y-3">
             <p className="text-sm">
-              {rows.length} rows parsed · {summary.blockerCount} errors ·{" "}
-              {summary.conflictCount} overwrites
+              {t("workbench.summary", { rows: rows.length, errors: summary.blockerCount, overwrites: summary.conflictCount })}
             </p>
 
             <ImportIssueList issues={issues} />
@@ -220,9 +220,11 @@ export function ImportWorkbench({
                   void runApply(false)
                 }}
               >
-                Apply import
+                {t("workbench.apply")}
               </Button>
-              {gate.reason && <span className="text-sm text-muted-foreground">{gate.reason}</span>}
+              {gate.reason && (
+                <span className="text-sm text-muted-foreground">{describeApplyReason(t, gate.reason)}</span>
+              )}
             </div>
           </div>
         )}

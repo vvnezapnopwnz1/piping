@@ -1,0 +1,43 @@
+{
+  "title": "Projects",
+  "intro": "Choose a project to work in.",
+  "search": {
+    "label": "Search projects",
+    "placeholder": "Search projects, owners or contracts…"
+  },
+  "count": "{count} available to your account",
+  "error": {
+    "text": "Project details could not be loaded. You can still open a project.",
+    "retry": "Try again"
+  },
+  "status": {
+    "current": "Current project",
+    "active": "Active"
+  },
+  "details": {
+    "contractor": "Contractor",
+    "owner": "Owner",
+    "contract": "Contract",
+    "notSpecified": "Not specified",
+    "loading": "Loading project details…",
+    "unavailable": "Project details unavailable.",
+    "notProvided": "Project details not provided."
+  },
+  "role": {
+    "none": "Project access"
+  },
+  "open": {
+    "return": "Return to current project",
+    "returnLabel": "Return to project {code}",
+    "open": "Open project",
+    "openLabel": "Open project {code}",
+    "opening": "Opening project…"
+  },
+  "empty": {
+    "noMatch": "No matching projects",
+    "noProjects": "No active projects available",
+    "tryDifferent": "Try a different project code, title, owner or contract.",
+    "askAdmin": "Ask your administrator to assign project access. No project data is shown without access.",
+    "clear": "Clear search"
+  }
+}

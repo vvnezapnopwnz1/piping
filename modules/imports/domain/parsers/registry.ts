@@ -1,5 +1,5 @@
 import { getImportTypeDefinition, type ImportType } from "../import-type"
-import type { ImportIssue } from "../import-issue"
+import type { ImportRowIssue } from "../import-issue"
 
 export interface ParsedRow {
   rowNumber: number
@@ -10,7 +10,7 @@ export interface ParsedRow {
 
 export interface ParseOutcome {
   rows: ParsedRow[]
-  issues: ImportIssue[]
+  issues: ImportRowIssue[]
 }
 
 export type SheetMatrix = readonly (readonly unknown[])[]
@@ -46,7 +46,7 @@ function normalizeTrackingValue(key: string, value: string): string | null {
 
 export function parseSheet(importType: ImportType, sheet: SheetMatrix): ParseOutcome {
   const definition = getImportTypeDefinition(importType)
-  const issues: ImportIssue[] = []
+  const issues: ImportRowIssue[] = []
 
   if (sheet.length === 0) {
     issues.push({
@@ -54,7 +54,6 @@ export function parseSheet(importType: ImportType, sheet: SheetMatrix): ParseOut
       columnName: null,
       severity: "blocker",
       code: "EMPTY_SHEET",
-      message: "The selected sheet is empty.",
     })
     return { rows: [], issues }
   }
@@ -73,7 +72,7 @@ export function parseSheet(importType: ImportType, sheet: SheetMatrix): ParseOut
           columnName: column.key,
           severity: "blocker",
           code: "MISSING_COLUMN",
-          message: `The required column "${column.header}" is missing from the sheet.`,
+          header: column.header,
         })
       }
       continue
@@ -115,7 +114,7 @@ export function parseSheet(importType: ImportType, sheet: SheetMatrix): ParseOut
             columnName: column.key,
             severity: "blocker",
             code: "REQUIRED",
-            message: `"${column.header}" is mandatory.`,
+            header: column.header,
           })
         }
         normalizedValues[column.key] = column.kind === "textList" ? [] : null
@@ -130,7 +129,8 @@ export function parseSheet(importType: ImportType, sheet: SheetMatrix): ParseOut
             columnName: column.key,
             severity: "blocker",
             code: "NOT_A_NUMBER",
-            message: `"${column.header}" must be numeric, received "${raw}".`,
+            header: column.header,
+            received: raw,
           })
           normalizedValues[column.key] = null
           continue
@@ -156,7 +156,6 @@ export function parseSheet(importType: ImportType, sheet: SheetMatrix): ParseOut
             columnName: column.key,
             severity: "blocker",
             code: "TRACKING_DIRECTION",
-            message: '"Direction" must be either "in" or "out".',
           })
         }
         if (column.key === "occurred_at" && normalized === null) {
@@ -165,7 +164,6 @@ export function parseSheet(importType: ImportType, sheet: SheetMatrix): ParseOut
             columnName: column.key,
             severity: "blocker",
             code: "TRACKING_TIMESTAMP",
-            message: '"Occurred At" must be a complete ISO-8601 timestamp with a timezone.',
           })
         }
       } else if (importType === "test_pack_composition") {

@@ -43,7 +43,7 @@ test("Line Check keeps its optional-punch semantics", () => {
 
 test("the reinstatement report number stays a free-text field", () => {
   assert.ok(
-    source.includes('placeholder="Report number"'),
+    /<Input\s+placeholder=\{t\("text\.reportNumber"\)\}\s+value=\{draft\.reportNumber\}\s+onChange=\{[\s\S]*?updateReinstatementDraft\(draftKey, "reportNumber", event\.target\.value\)/.test(source),
     "reinstatement reuses the draft shape but its report number is not a referential id",
   )
 })
@@ -79,7 +79,7 @@ test("every durable action on this screen reports through a toast", () => {
 // from a bare "Event date" label sitting above a list of rows.
 test("the Event date field explains it is shared across every row action", () => {
   assert.ok(
-    /Event date[\s\S]{0,400}applies to whichever row/i.test(source),
+    /\{t\("text\.eventDate"\)\}[\s\S]*?<Input\s+type="date"[\s\S]*?<\/label>\s*<p className="text-xs text-muted-foreground">\s*\{t\("text\.thisDateAppliesToWhicheverRowActionYou"\)\}\s*<\/p>/.test(source),
     "a caption must tell the user the date field is not per-row",
   )
 })

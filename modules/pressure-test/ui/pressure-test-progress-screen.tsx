@@ -1,5 +1,7 @@
 "use client"
 
+import { useTestPackTranslations, testPackValidationMessages, reportTestPackError } from "@/modules/pressure-test/ui/test-pack-i18n"
+
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
@@ -60,6 +62,8 @@ export function PressureTestProgressScreen({
   operation: _operation,
   onRecorded,
 }: Props) {
+  const t = useTestPackTranslations()
+
   const auth = useSupabaseAuth()
   const access = useOptionalAccess()
   const projectId = auth.access?.projectId
@@ -128,11 +132,11 @@ export function PressureTestProgressScreen({
     setLoading(true)
     setError(null)
     void load()
-      .catch((cause) => setError(cause instanceof Error ? cause.message : "Could not load progress worklist"))
+      .catch((cause) => setError(reportTestPackError(cause, t("text.couldNotLoadProgressWorklist"))))
       .finally(() => setLoading(false))
   }, [projectId, requestType, effectivePackId])
 
-  const heading = title ?? (requestType === "testing_precomm" ? "Testing / Pre-commissioning" : config?.title ?? "Progress")
+  const heading = title ?? (requestType === "testing_precomm" ? t("text.testingPreCommissioning") : (config ? t(config.title) : t("text.progress")))
 
   const saveLine = async (row: LineCheckWorklistRow) => {
     if (!canManage || pendingRef.current) return
@@ -160,10 +164,10 @@ export function PressureTestProgressScreen({
         punches,
       )
       if (!result.ok) {
-        setError(Object.values(result.errors).join("; "))
+        setError(testPackValidationMessages(result.errors, t))
         return
       }
-      toast.success("Line Check result saved; readiness projection reloaded.")
+      toast.success(t("text.lineCheckResultSavedReadinessProjectionReloaded"))
       if (containerRef.current) {
         markRecorded(Array.from(containerRef.current.querySelectorAll("input, select, textarea")))
       }
@@ -176,7 +180,7 @@ export function PressureTestProgressScreen({
       if (workspace) await workspace.runCommand(doSave)
       else await doSave()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Line Check result failed")
+      setError(reportTestPackError(cause, t("text.lineCheckResultFailed")))
     } finally {
       pendingRef.current = false
       setPending(false)
@@ -197,7 +201,7 @@ export function PressureTestProgressScreen({
         date,
         `browser-clear-${row.punch_item_id}-${date}`,
       )
-      toast.success("Punch clearance saved; readiness projection reloaded.")
+      toast.success(t("text.punchClearanceSavedReadinessProjectionReloaded"))
       await load()
       if (workspace) await workspace.refresh()
       onRecorded?.()
@@ -207,7 +211,7 @@ export function PressureTestProgressScreen({
       if (workspace) await workspace.runCommand(doClear)
       else await doClear()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Punch clearance failed")
+      setError(reportTestPackError(cause, t("text.punchClearanceFailed")))
     } finally {
       pendingRef.current = false
       setPending(false)
@@ -227,7 +231,7 @@ export function PressureTestProgressScreen({
         date,
         `browser-blinding-complete-${row.request_id}-${date}`,
       )
-      toast.success("Blinding completion saved.")
+      toast.success(t("text.blindingCompletionSaved"))
       await load()
       if (workspace) await workspace.refresh()
       onRecorded?.()
@@ -237,7 +241,7 @@ export function PressureTestProgressScreen({
       if (workspace) await workspace.runCommand(doBlind)
       else await doBlind()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Blinding completion failed")
+      setError(reportTestPackError(cause, t("text.blindingCompletionFailed")))
     } finally {
       pendingRef.current = false
       setPending(false)
@@ -270,10 +274,10 @@ export function PressureTestProgressScreen({
         date,
       )
       if (!result.ok) {
-        setError(Object.values(result.errors).join("; "))
+        setError(testPackValidationMessages(result.errors, t))
         return
       }
-      toast.success(`${stage} saved.`)
+      toast.success(t("text.0Saved", { v1: (t(`event.${stage}`)) ?? "—" }))
       await load()
       if (workspace) await workspace.refresh()
       onRecorded?.()
@@ -283,7 +287,7 @@ export function PressureTestProgressScreen({
       if (workspace) await workspace.runCommand(doStage)
       else await doStage()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Stage event failed")
+      setError(reportTestPackError(cause, t("text.stageEventFailed")))
     } finally {
       pendingRef.current = false
       setPending(false)
@@ -296,11 +300,11 @@ export function PressureTestProgressScreen({
     const draft = reinstatementDrafts[key] ?? { date, reportNumber: "", tagNumber: "" }
 
     if (!draft.reportNumber.trim()) {
-      setError("Report number is required to record flange reinstatement.")
+      setError(t("text.reportNumberIsRequiredToRecordFlangeReinstatement"))
       return
     }
     if (!draft.tagNumber.trim()) {
-      setError("Tag number is required to record flange reinstatement.")
+      setError(t("text.tagNumberIsRequiredToRecordFlangeReinstatement"))
       return
     }
 
@@ -319,7 +323,7 @@ export function PressureTestProgressScreen({
         draft.tagNumber,
         `browser-reinstatement-complete-${row.flange_joint_revision_id}-${draft.date}`,
       )
-      toast.success("Reinstatement result saved.")
+      toast.success(t("text.reinstatementResultSaved"))
       if (containerRef.current) {
         markRecorded(Array.from(containerRef.current.querySelectorAll("input, select, textarea")))
       }
@@ -332,7 +336,7 @@ export function PressureTestProgressScreen({
       if (workspace) await workspace.runCommand(doReinstatement)
       else await doReinstatement()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Reinstatement failed")
+      setError(reportTestPackError(cause, t("text.reinstatementFailed")))
     } finally {
       pendingRef.current = false
       setPending(false)
@@ -351,16 +355,16 @@ export function PressureTestProgressScreen({
       [key]: { ...(current[key] ?? { date, reportNumber: "", tagNumber: "" }), [field]: value },
     }))
 
-  if (!projectId) return <p className="text-sm text-muted-foreground">Select a project to view progress.</p>
+  if (!projectId) return <p className="text-sm text-muted-foreground">{t("text.selectAProjectToViewProgress")}</p>
   if (loading) return <Skeleton className="h-64 w-full" />
 
   return (
     <div ref={containerRef} className="space-y-6" data-explicit-unsaved-commit="true">
       {!embedded && (
         <div>
-          <h1 className="text-2xl font-semibold">{heading} · Progress</h1>
+          <h1 className="text-2xl font-semibold">{heading}  {t("text.progress26")}</h1>
           <p className="text-sm text-muted-foreground">
-            {description ?? config?.description ?? "Record the next permitted durable workflow event."}
+            {description ?? (config ? t(config.description) : t("text.recordTheNextPermittedDurableWorkflowEvent"))}
           </p>
         </div>
       )}
@@ -368,7 +372,8 @@ export function PressureTestProgressScreen({
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       <label className="block max-w-xs text-xs text-muted-foreground">
-        Event date
+
+        {t("text.eventDate")}
         <Input
           type="date"
           className="mt-1"
@@ -378,12 +383,13 @@ export function PressureTestProgressScreen({
         />
       </label>
       <p className="text-xs text-muted-foreground">
-        This date applies to whichever row action you record next, not to a specific row.
+
+        {t("text.thisDateAppliesToWhicheverRowActionYou")}
       </p>
 
       <Card>
         <CardHeader>
-          <CardTitle>Server worklist</CardTitle>
+          <CardTitle>{t("text.serverWorklist")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {requestType === "line_check" &&
@@ -397,9 +403,9 @@ export function PressureTestProgressScreen({
                 >
                   <div className="flex justify-between font-medium">
                     <span>
-                      {row.request_number} · ISO {row.iso_number ?? row.isometric_id}
+                      {row.request_number}  {t("text.iso")} {row.iso_number ?? row.isometric_id}
                     </span>
-                    <span>{row.result_id ? "Completed" : "Open"}</span>
+                    <span>{row.result_id ? t("text.completed") : t("text.open33")}</span>
                   </div>
                   {!row.result_id && (
                     <div className="mt-3 grid gap-2 sm:grid-cols-3">
@@ -410,7 +416,8 @@ export function PressureTestProgressScreen({
                         disabled={!canManage || pending}
                       />
                       <label className="text-xs text-muted-foreground">
-                        Punch code (optional)
+
+                        {t("text.punchCodeOptional")}
                         <select
                           className="h-9 w-full rounded border bg-transparent px-3 text-sm mt-1"
                           value={draft.punchCodeId}
@@ -421,8 +428,8 @@ export function PressureTestProgressScreen({
                         >
                           <option value="">
                             {punchCodes.length === 0
-                              ? "No active punch codes in this project"
-                              : "No punch"}
+                              ? t("text.noActivePunchCodesInThisProject")
+                              : t("text.noPunch")}
                           </option>
                           {toReferenceOptions(punchCodes).map((option) => (
                             <option key={option.id} value={option.id}>{option.label}</option>
@@ -430,7 +437,7 @@ export function PressureTestProgressScreen({
                         </select>
                       </label>
                       <Input
-                        placeholder="Punch description"
+                        placeholder={t("text.punchDescription")}
                         value={draft.description}
                         onChange={(event) =>
                           updateDraft(draftKey, "description", event.target.value)
@@ -443,7 +450,8 @@ export function PressureTestProgressScreen({
                         disabled={!canManage || pending}
                         loading={pending}
                       >
-                        Complete Line Check
+
+                        {t("text.completeLineCheck")}
                       </Button>
                     </div>
                   )}
@@ -458,11 +466,11 @@ export function PressureTestProgressScreen({
                 className="flex items-center justify-between rounded border p-3 text-sm"
               >
                 <span>
-                  {row.request_number} · punch {row.item_number ?? row.punch_item_id}
+                  {row.request_number}  {t("text.punch")} {row.item_number ?? row.punch_item_id}
                 </span>
                 <span className="flex items-center gap-2">
                   {row.clearance_id ? (
-                    "Cleared"
+                    t("text.cleared")
                   ) : (
                     <Button
                       type="button"
@@ -470,7 +478,8 @@ export function PressureTestProgressScreen({
                       disabled={!canManage || pending}
                       loading={pending}
                     >
-                      Clear
+
+                      {t("text.clear")}
                     </Button>
                   )}
                 </span>
@@ -486,7 +495,7 @@ export function PressureTestProgressScreen({
                 <span>{row.request_number}</span>
                 <span>
                   {row.record_id ? (
-                    "Completed"
+                    t("text.completed")
                   ) : (
                     <Button
                       type="button"
@@ -494,7 +503,8 @@ export function PressureTestProgressScreen({
                       disabled={!canManage || pending}
                       loading={pending}
                     >
-                      Complete blinding
+
+                      {t("text.completeBlinding")}
                     </Button>
                   )}
                 </span>
@@ -507,10 +517,10 @@ export function PressureTestProgressScreen({
                 key={row.test_pack_id}
                 className="flex items-center justify-between rounded border p-3 text-sm"
               >
-                <span>Test Pack {row.test_pack_number ?? row.test_pack_id}</span>
+                <span>{t("text.testPack")} {row.test_pack_number ?? row.test_pack_id}</span>
                 <span>
                   {row.precommissioning_completed_on ? (
-                    "Complete"
+                    t("text.complete")
                   ) : (
                     <Button
                       type="button"
@@ -519,10 +529,10 @@ export function PressureTestProgressScreen({
                       loading={pending}
                     >
                       {row.testing_started_on === null
-                        ? "Start testing"
+                        ? t("text.startTesting")
                         : row.testing_completed_on === null
-                          ? "Complete testing"
-                          : "Complete pre-commissioning"}
+                          ? t("text.completeTesting")
+                          : t("text.completePreCommissioning")}
                     </Button>
                   )}
                 </span>
@@ -543,7 +553,7 @@ export function PressureTestProgressScreen({
                       {row.request_number} · {row.category_snapshot} ·{" "}
                       {row.flange_number ?? row.flange_joint_revision_id}
                     </span>
-                    <span>{row.record_id ? "Completed" : "Open"}</span>
+                    <span>{row.record_id ? t("text.completed") : t("text.open33")}</span>
                   </div>
                   {!row.record_id && (
                     <div className="mt-3 grid gap-2 sm:grid-cols-4">
@@ -556,7 +566,7 @@ export function PressureTestProgressScreen({
                         disabled={!canManage || pending}
                       />
                       <Input
-                        placeholder="Report number"
+                        placeholder={t("text.reportNumber")}
                         value={draft.reportNumber}
                         onChange={(event) =>
                           updateReinstatementDraft(draftKey, "reportNumber", event.target.value)
@@ -576,7 +586,7 @@ export function PressureTestProgressScreen({
                         ))}
                       </select>
                       <Input
-                        placeholder="Tag number"
+                        placeholder={t("text.tagNumber")}
                         value={draft.tagNumber}
                         onChange={(event) =>
                           updateReinstatementDraft(draftKey, "tagNumber", event.target.value)
@@ -589,7 +599,8 @@ export function PressureTestProgressScreen({
                         disabled={!canManage || !teamId || pending}
                         loading={pending}
                       >
-                        Record joint
+
+                        {t("text.recordJoint")}
                       </Button>
                     </div>
                   )}
@@ -604,7 +615,8 @@ export function PressureTestProgressScreen({
             reinstatementRows.length ===
             0 && (
             <p className="text-sm text-muted-foreground">
-              No server worklist rows for this project/filter.
+
+              {t("text.noServerWorklistRowsForThisProjectFilter")}
             </p>
           )}
         </CardContent>
@@ -612,7 +624,8 @@ export function PressureTestProgressScreen({
 
       {!embedded && (
         <Link className="underline text-sm" href="/testpack">
-          Return to Test Packs
+
+          {t("text.returnToTestPacks")}
         </Link>
       )}
     </div>

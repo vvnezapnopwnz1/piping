@@ -1,4 +1,4 @@
-import type { ImportIssue } from "@/modules/imports/domain/import-issue"
+import { spoolgenIssue, type SpoolgenIssue } from "./spoolgen-issue"
 
 export const SPOOLGEN_FILE_ROLES = ["weld", "trace", "bolt", "supp"] as const
 export type SpoolgenFileRole = (typeof SPOOLGEN_FILE_ROLES)[number]
@@ -16,8 +16,8 @@ export function describeFileSet(present: readonly SpoolgenFileRole[]): FileSetDe
   const missingRequired = missingRequiredRoles(present)
   return { complete: missingRequired.length === 0 && present.length === SPOOLGEN_FILE_ROLES.length, missingRequired, optionalMissing: SPOOLGEN_FILE_ROLES.filter((role) => !present.includes(role) && !SPOOLGEN_REQUIRED_ROLES.includes(role)) }
 }
-export function checkFileSize(role: SpoolgenFileRole, fileName: string, sizeBytes: number): ImportIssue | null {
-  if (sizeBytes <= 0) return { rowNumber: null, columnName: role, severity: "blocker", code: "FILE_EMPTY", message: `${fileName} is empty.` }
-  if (sizeBytes > SPOOLGEN_MAX_FILE_BYTES) return { rowNumber: null, columnName: role, severity: "blocker", code: "FILE_TOO_LARGE", message: `${fileName} is larger than the 4 MB limit for SpoolGen files.` }
+export function checkFileSize(role: SpoolgenFileRole, _fileName: string, sizeBytes: number): SpoolgenIssue | null {
+  if (sizeBytes <= 0) return spoolgenIssue("FILE_EMPTY", null, role)
+  if (sizeBytes > SPOOLGEN_MAX_FILE_BYTES) return spoolgenIssue("FILE_TOO_LARGE", null, role)
   return null
 }

@@ -4,7 +4,9 @@ import { readFileSync } from "node:fs"
 const source = readFileSync(new URL("./nde-charts-panel.tsx", import.meta.url), "utf8")
 
 assert.match(source, /<ChartContainer/)
-assert.match(source, /Weekly examination outcomes/)
-assert.match(source, /Inspection workflow/)
-assert.match(source, /NDT method distribution/)
-assert.match(source, /No NDE activity recorded yet\./)
+assert.match(source, /t\("weeklyExaminationOutcomes"\)/)
+assert.match(source, /t\("inspectionWorkflow"\)/)
+assert.match(source, /t\("ndtMethodDistribution"\)/)
+assert.match(source, /t\("noNdeActivityRecordedYet"\)/)
+assert.match(source, /outcomeConfig\(t\)/)
+assert.match(source, /methodConfig\(t\)/)

@@ -33,9 +33,9 @@ assert.deepEqual(
   toNdeMethodSeries([
     { method: "pt", pending_count: 1, allocated_count: 0, issued_count: 2, accepted_count: 3, rejected_count: 0 },
     { method: "rt", pending_count: 0, allocated_count: 3, issued_count: 1, accepted_count: 7, rejected_count: 1 },
-  ]),
+  ], label),
   [
-    { method: "RT", pending: 0, allocated: 3, issued: 1, accepted: 7, rejected: 1 },
-    { method: "PT", pending: 1, allocated: 0, issued: 2, accepted: 3, rejected: 0 },
+    { method: "label rt", pending: 0, allocated: 3, issued: 1, accepted: 7, rejected: 1 },
+    { method: "label pt", pending: 1, allocated: 0, issued: 2, accepted: 3, rejected: 0 },
   ],
 )

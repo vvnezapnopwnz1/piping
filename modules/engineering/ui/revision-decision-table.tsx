@@ -16,11 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  changeTypeLabel,
-  type ChangeType,
-  type PreviewChangeItem,
-} from "../domain/diff";
+import type { ChangeType, PreviewChangeItem } from "../domain/diff";
 import {
   REVISION_DECISIONS,
   type RevisionDecision,
@@ -47,21 +43,22 @@ export function RevisionDecisionTable({
   onDecide: (item: PreviewChangeItem, decision: RevisionDecision) => void;
 }) {
   const tc = useTranslations("codes");
+  const t = useTranslations("spooling");
   if (items.length === 0)
     return (
       <p className="text-sm text-muted-foreground">
-        This import changes nothing.
+        {t("revision.noChanges")}
       </p>
     );
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Entity</TableHead>
-          <TableHead>Number</TableHead>
-          <TableHead>Spool</TableHead>
-          <TableHead>Change</TableHead>
-          <TableHead>Decision</TableHead>
+          <TableHead>{t("revision.columns.entity")}</TableHead>
+          <TableHead>{t("revision.columns.number")}</TableHead>
+          <TableHead>{t("revision.columns.spool")}</TableHead>
+          <TableHead>{t("revision.columns.change")}</TableHead>
+          <TableHead>{t("revision.columns.decision")}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -70,7 +67,7 @@ export function RevisionDecisionTable({
             key={`${item.isoNumber}-${item.entityType}-${item.entityKey}`}
           >
             <TableCell className="text-xs uppercase text-muted-foreground">
-              {item.entityType.replace("_", " ")}
+              {t(`revision.entity.${item.entityType}`)}
             </TableCell>
             <TableCell className="font-mono text-xs">
               {item.entityKey}
@@ -83,7 +80,7 @@ export function RevisionDecisionTable({
                 variant="outline"
                 className={CHANGE_STYLE[item.changeType]}
               >
-                {changeTypeLabel(item.changeType)}
+                {t(`revision.change.${item.changeType}`)}
               </Badge>
             </TableCell>
             <TableCell>
@@ -96,7 +93,7 @@ export function RevisionDecisionTable({
                   }
                 >
                   <SelectTrigger className="w-64">
-                    <SelectValue placeholder="Decision required" />
+                    <SelectValue placeholder={t("revision.decisionRequired")} />
                   </SelectTrigger>
                   <SelectContent>
                     {REVISION_DECISIONS.map((decision) => (
@@ -108,7 +105,7 @@ export function RevisionDecisionTable({
                 </Select>
               ) : (
                 <span className="text-xs text-muted-foreground">
-                  Not required
+                  {t("revision.notRequired")}
                 </span>
               )}
             </TableCell>

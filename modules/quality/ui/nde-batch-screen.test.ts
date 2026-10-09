@@ -29,8 +29,8 @@ test("the allocation toast reports the count the RPC actually returned", () => {
     "the screen must keep the allocated count",
   )
   assert.ok(
-    /\$\{allocated\} candidate/.test(source),
-    "the success toast must name the real allocated count, not a fixed string",
+    /t\("success\.candidatesAllocated", \{ count: allocated, percentage \}\)/.test(source),
+    "the success toast must pass the real allocated count to the localized message",
   )
 })
 

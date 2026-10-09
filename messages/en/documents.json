@@ -1,0 +1,23 @@
+{
+  "title": "Reports",
+  "description": "Download real project snapshots from the current Supabase data.",
+  "noProject": "Select a project to view reports.",
+  "reports": {
+    "RPT-F-001": {
+      "title": "Fabrication Progress",
+      "description": "Project snapshot of completed weld progress and NDE workload."
+    },
+    "RPT-T-001": {
+      "title": "Test Pack RFT Pursuit",
+      "description": "Project snapshot of Test Pack readiness and outstanding blockers."
+    }
+  },
+  "download": "Download {format}",
+  "downloaded": "File downloaded from the current project snapshot.",
+  "error": {
+    "unknownReport": "Could not generate report: this report does not exist.",
+    "failed": "Could not generate report: {detail}",
+    "failedNoDetail": "Could not generate report."
+  },
+  "note": "Demo Lite creates browser downloads only. It does not retain document history, snapshots, or handover artifacts."
+}

@@ -41,14 +41,8 @@ export function resolveProjectToOpen(
   )
 }
 
-export function projectRoleLabel(project: ProjectAccessSummary): string {
-  if (project.isPlatformAdmin) return "System Admin"
-  const labels = {
-    project_admin: "Project Admin",
-    site_admin: "Site Admin",
-    project_editor: "Project Editor",
-    subcontractor: "Subcontractor",
-    project_reader: "Project Reader",
-  }
-  return project.accessRole ? labels[project.accessRole] : "Project access"
+/** The `codes.accessRole` code to show for a project; null when the account holds no role in it. */
+export function projectRoleCode(project: ProjectAccessSummary): "platform_admin" | NonNullable<ProjectAccessSummary["accessRole"]> | null {
+  if (project.isPlatformAdmin) return "platform_admin"
+  return project.accessRole ?? null
 }

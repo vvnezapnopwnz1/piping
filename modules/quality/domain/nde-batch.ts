@@ -27,10 +27,7 @@ export type CycleKind = "original" | "repair" | "tracer"
  */
 export type CoverageRegime = "spot" | "mandatory_100"
 
-export const COVERAGE_REGIMES: { value: CoverageRegime; label: string }[] = [
-  { value: "spot", label: "Spot rate (10 % / 20 %)" },
-  { value: "mandatory_100", label: "Mandatory 100 %" },
-]
+export const COVERAGE_REGIMES: readonly CoverageRegime[] = ["spot", "mandatory_100"]
 
 /**
  * The manual's joint status, mirroring public.nde_joint_status_label. Derived

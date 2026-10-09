@@ -1,5 +1,7 @@
 "use client"
 
+import { useTestPackTranslations, testPackValidationMessages, reportTestPackError } from "@/modules/pressure-test/ui/test-pack-i18n"
+
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
@@ -50,6 +52,8 @@ export function RequestPreparationScreen({
   testPackId: propPackId,
   onRecorded,
 }: Props) {
+  const t = useTestPackTranslations()
+
   const auth = useSupabaseAuth()
   const access = useOptionalAccess()
   const projectId = auth.access?.projectId
@@ -105,7 +109,7 @@ export function RequestPreparationScreen({
     }
     void load()
       .catch((cause) => {
-        if (active) setError(cause instanceof Error ? cause.message : "Could not load preparation data")
+        if (active) setError(reportTestPackError(cause, t("text.couldNotLoadPreparationData")))
       })
       .finally(() => {
         if (active) setLoading(false)
@@ -143,7 +147,7 @@ export function RequestPreparationScreen({
       setSelectedTargets([])
     }
     void load().catch((cause) => {
-      if (active) setError(cause instanceof Error ? cause.message : "Could not load scoped targets")
+      if (active) setError(reportTestPackError(cause, t("text.couldNotLoadScopedTargets")))
     })
     return () => {
       active = false
@@ -162,7 +166,7 @@ export function RequestPreparationScreen({
     if (requestType === "item_clearance") {
       return punches.map((punch) => ({
         id: String(punch.id ?? ""),
-        label: `${String(punch.item_number ?? punch.id)} · ISO ${String(punch.isometric_id ?? "")}`,
+        label: t("text.0Iso0", { v1: (String(punch.item_number ?? punch.id)) ?? "—", v2: (String(punch.isometric_id ?? "")) ?? "—" }),
       }))
     }
     if (requestType === "reinstatement") {
@@ -223,7 +227,7 @@ export function RequestPreparationScreen({
 
       const value = result as { ok?: boolean; value?: { id?: string }; errors?: Record<string, string> }
       if (value.ok === false) {
-        setError(Object.values(value.errors ?? {}).join("; "))
+        setError(testPackValidationMessages(value.errors ?? {}, t))
         return
       }
 
@@ -234,7 +238,7 @@ export function RequestPreparationScreen({
         const details = await listRequestDetails(client, projectId, id).catch(() => null)
         const businessNo = details?.request_number ?? id.slice(0, 8)
         setRequestNumber(businessNo)
-        toast.success(`Assigned ${config.title} request ${businessNo}.`)
+        toast.success(t("text.assigned0Request0", { v1: (t(config.title)) ?? "—", v2: (businessNo) ?? "—" }))
         onRecorded?.(id)
       }
 
@@ -255,14 +259,14 @@ export function RequestPreparationScreen({
         await doAssign()
       }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Assignment failed")
+      setError(reportTestPackError(cause, t("text.assignmentFailed")))
     } finally {
       pendingRef.current = false
       setPending(false)
     }
   }
 
-  if (!projectId) return <p className="text-sm text-muted-foreground">Select a project to prepare a request.</p>
+  if (!projectId) return <p className="text-sm text-muted-foreground">{t("text.selectAProjectToPrepareARequest")}</p>
   if (loading) return <Skeleton className="h-64 w-full" />
 
   const printHref = requestId
@@ -273,8 +277,8 @@ export function RequestPreparationScreen({
     <div ref={formRef} className="space-y-6" data-explicit-unsaved-commit="true">
       {!embedded && (
         <div>
-          <h1 className="text-2xl font-semibold">{title ?? config.title} · Preparation</h1>
-          <p className="text-sm text-muted-foreground">{description ?? config.description}</p>
+          <h1 className="text-2xl font-semibold">{title ?? t(config.title)}  {t("text.preparation")}</h1>
+          <p className="text-sm text-muted-foreground">{description ?? t(config.description)}</p>
         </div>
       )}
 
@@ -282,22 +286,23 @@ export function RequestPreparationScreen({
 
       <Card>
         <CardHeader>
-          <CardTitle>Assignment</CardTitle>
+          <CardTitle>{t("text.assignment")}</CardTitle>
         </CardHeader>
         <CardContent className={`grid gap-4 ${embedded ? "sm:grid-cols-2" : "lg:grid-cols-3"}`}>
           {!embedded && (
             <label className="text-xs text-muted-foreground">
-              Test Pack
+
+              {t("text.testPack")}
               <select
                 className="h-9 w-full rounded border bg-transparent px-3 text-sm mt-1"
                 value={selectedPack}
                 onChange={(event) => setSelectedPack(event.target.value)}
                 disabled={loading || pending}
               >
-                <option value="">Select a Test Pack</option>
+                <option value="">{t("text.selectATestPack")}</option>
                 {packs.map((pack) => (
                   <option key={pack.id} value={pack.id}>
-                    {pack.testPackNumber} · rev {pack.revisionNo}
+                    {pack.testPackNumber}  {t("text.rev")} {pack.revisionNo}
                   </option>
                 ))}
               </select>
@@ -305,14 +310,15 @@ export function RequestPreparationScreen({
           )}
 
           <label className="text-xs text-muted-foreground">
-            Team *
+
+            {t("text.team")}
             <select
               className="h-9 w-full rounded border bg-transparent px-3 text-sm mt-1"
               value={teamId}
               onChange={(event) => setTeamId(event.target.value)}
               disabled={!canManage || pending}
             >
-              <option value="">Select a {config.teamType} team</option>
+              <option value="">{t("text.selectTeam", { type: t(`codes.teamType.${config.teamType}`) })}</option>
               {teams.map((team) => (
                 <option key={team.id} value={team.id}>
                   {team.code} · {team.description}
@@ -322,7 +328,8 @@ export function RequestPreparationScreen({
           </label>
 
           <label className="text-xs text-muted-foreground">
-            Assigned date *
+
+            {t("text.assignedDate")}
             <Input
               type="date"
               className="mt-1"
@@ -336,7 +343,7 @@ export function RequestPreparationScreen({
 
       <Card>
         <CardHeader>
-          <CardTitle>{config.targetLabel} targets</CardTitle>
+          <CardTitle>{t(config.targetLabel)} {t("text.targetsHeading")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {targets.map((target) => (
@@ -352,7 +359,7 @@ export function RequestPreparationScreen({
           ))}
 
           {targets.length === 0 && (
-            <p className="text-sm text-muted-foreground">No target of this test pack can be assigned yet.</p>
+            <p className="text-sm text-muted-foreground">{t("text.noTargetOfThisTestPackCanBe")}</p>
           )}
 
           <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -367,7 +374,8 @@ export function RequestPreparationScreen({
                 (requestType !== "blinding" && selectedTargets.length === 0)
               }
             >
-              Assign request
+
+              {t("text.assignRequest")}
             </Button>
 
             {progressHref && (
@@ -375,18 +383,21 @@ export function RequestPreparationScreen({
                 className="rounded border px-4 py-2 text-sm hover:bg-muted"
                 href={`${progressHref}${selectedPack ? `?testPackId=${selectedPack}` : ""}`}
               >
-                Open progress
+
+                {t("text.openProgress")}
               </Link>
             )}
 
             {printHref && (
               <Link className="rounded border px-4 py-2 text-sm hover:bg-muted" href={printHref}>
-                Open printable request {requestNumber ?? requestId?.slice(0, 8)}
+
+                {t("text.openPrintableRequest")} {requestNumber ?? requestId?.slice(0, 8)}
               </Link>
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            Eligibility is checked and a duplicate assignment refused when you assign; nothing is marked ready until it is recorded.
+
+            {t("text.eligibilityIsCheckedAndADuplicateAssignmentRefused")}
           </p>
         </CardContent>
       </Card>

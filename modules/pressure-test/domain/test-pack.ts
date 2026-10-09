@@ -57,7 +57,7 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
 function requiredText(value: string, field: string, errors: Record<string, string>): string {
   const normalized = value.trim()
-  if (!normalized) errors[field] = `${field === "testPackNumber" ? "Test Pack number" : field} is required`
+  if (!normalized) errors[field] = "required"
   return normalized
 }
 
@@ -75,34 +75,34 @@ export function normalizeTestPackInput(
   const location = requiredText(input.location, "location", errors)
   const priority = requiredText(input.priority, "priority", errors)
   const medium = input.medium.trim().toUpperCase()
-  if (!["H", "P", "V"].includes(medium)) errors.medium = "Test medium must be H, P, or V"
+  if (!["H", "P", "V"].includes(medium)) errors.medium = "invalidMedium"
 
   if (!Number.isFinite(input.pressure) || input.pressure <= 0) {
-    errors.pressure = "Test pressure must be a positive number"
+    errors.pressure = "invalidPressure"
   }
   if (input.volumeM3 !== undefined && (!Number.isFinite(input.volumeM3) || input.volumeM3 <= 0)) {
-    errors.volumeM3 = "Volume must be a positive number"
+    errors.volumeM3 = "invalidVolume"
   }
 
-  if (!isIsoDate(input.plannedStartOn)) errors.plannedStartOn = "Planned start must be an ISO date"
-  if (!isIsoDate(input.plannedEndOn)) errors.plannedEndOn = "Planned end must be an ISO date"
+  if (!isIsoDate(input.plannedStartOn)) errors.plannedStartOn = "invalidPlannedStart"
+  if (!isIsoDate(input.plannedEndOn)) errors.plannedEndOn = "invalidPlannedEnd"
   if (!errors.plannedStartOn && !errors.plannedEndOn && input.plannedEndOn < input.plannedStartOn) {
-    errors.plannedEndOn = "Planned end cannot be before planned start"
+    errors.plannedEndOn = "endBeforeStart"
   }
 
   const systemId = input.systemId.trim()
   const subsystemId = input.subsystemId.trim()
   const serviceClassId = input.serviceClassId.trim()
   const lineServiceId = input.lineServiceId.trim()
-  if (!systemId) errors.systemId = "System is required"
-  if (!subsystemId) errors.subsystemId = "Subsystem is required"
-  if (!serviceClassId) errors.serviceClassId = "Service class is required"
-  if (!lineServiceId) errors.lineServiceId = "Line service is required"
+  if (!systemId) errors.systemId = "required"
+  if (!subsystemId) errors.subsystemId = "required"
+  if (!serviceClassId) errors.serviceClassId = "required"
+  if (!lineServiceId) errors.lineServiceId = "required"
 
   const isoIds = input.isoIds.map((id) => id.trim())
   const normalizedIsoIds = new Set(isoIds.filter(Boolean).map((id) => id.toUpperCase()))
   if (isoIds.some((id) => !id) || normalizedIsoIds.size !== isoIds.length) {
-    errors.isoIds = "ISO ids must be non-empty and unique"
+    errors.isoIds = "invalidIsoIds"
   }
 
   if (Object.keys(errors).length > 0) return { ok: false, errors }

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
+import type { HomeTranslator } from "./attention-text";
 import type { NavName } from "@/components/pipeqc/navigation-model";
 import { useNavName } from "@/components/pipeqc/nav-name";
 import { Lock } from "lucide-react";
@@ -11,14 +13,14 @@ import styles from "./home-control-room.module.css";
 
 export type AreaReadouts = Partial<Record<string, ReactNode>>;
 
-function kicker(area: WorkspaceArea, name: NavName): string {
+function kicker(area: WorkspaceArea, name: NavName, t: HomeTranslator): string {
   const titleOf = (id: string) => {
     const found = workspaceAreas.find((candidate) => candidate.id === id);
     return found ? name(found.title) : id;
   };
   if (area.kind === "stage") return area.step ?? "";
-  if (area.kind === "service") return `Serves ${(area.serves ?? []).map(titleOf).join(" · ")}`;
-  return "Project";
+  if (area.kind === "service") return t("kicker.serves", { areas: (area.serves ?? []).map(titleOf).join(" · ") });
+  return t("kicker.project");
 }
 
 function AreaCard({
@@ -35,18 +37,19 @@ function AreaCard({
   attention: boolean;
 }) {
   const name = useNavName();
+  const t = useTranslations("home");
   const Icon = area.icon;
   if (!visible || !href) {
     return (
       <article className={styles.card} data-kind={area.kind} data-state="locked" aria-labelledby={`map-${area.id}`}>
         <p className={styles.cardTop}>
-          <span>{kicker(area, name)}</span>
+          <span>{kicker(area, name, t)}</span>
           <Lock aria-hidden="true" className={styles.cardIcon} />
         </p>
         <h3 id={`map-${area.id}`} className={styles.cardTitle}>
           {name(area.title)}
         </h3>
-        <p className={styles.cardSub}>Not part of your project access</p>
+        <p className={styles.cardSub}>{t("locked")}</p>
       </article>
     );
   }
@@ -58,7 +61,7 @@ function AreaCard({
       aria-labelledby={`map-${area.id}`}
     >
       <p className={styles.cardTop}>
-        <span>{kicker(area, name)}</span>
+        <span>{kicker(area, name, t)}</span>
         <Icon aria-hidden="true" className={styles.cardIcon} />
       </p>
       <h3 id={`map-${area.id}`} className={styles.cardTitle}>
@@ -89,6 +92,7 @@ export function ProcessMap({
   attention: ReadonlySet<string>;
 }) {
   const name = useNavName();
+  const t = useTranslations("home");
   const visible = new Map(areas.map((area) => [area.id, area]));
   const card = (area: WorkspaceArea) => {
     const open = visible.get(area.id);
@@ -117,7 +121,7 @@ export function ProcessMap({
   return (
     <section className={styles.map} aria-labelledby="map-title" data-help="process-map">
       <h2 id="map-title" className={styles.sectionLabel}>
-        Process
+        {t("process")}
       </h2>
       <ol className={styles.stages}>
         {stages.map((area) => (
@@ -141,7 +145,7 @@ export function ProcessMap({
       {secondaryAreas.length > 0 ? (
         <nav
           className="mt-4 flex flex-wrap items-center justify-center gap-x-2 text-xs text-muted-foreground"
-          aria-label="Secondary areas"
+          aria-label={t("secondaryAreas")}
         >
           {secondaryAreas.map((item, index) => (
             <span key={item.id} className="inline-flex items-center gap-2">

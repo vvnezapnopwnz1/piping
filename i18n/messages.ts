@@ -1,3 +1,5 @@
+import enTestPack from "@/messages/en/testPack.json"
+import ruTestPack from "@/messages/ru/testPack.json"
 import enCodes from "@/messages/en/codes.json"
 import enCommon from "@/messages/en/common.json"
 import enErection from "@/messages/en/erection.json"
@@ -22,6 +24,24 @@ import ruFabrication from "@/messages/ru/fabrication.json"
 import enFlange from "@/messages/en/flange.json"
 import ruFlange from "@/messages/ru/flange.json"
 
+import enNde from "@/messages/en/nde.json"
+import ruNde from "@/messages/ru/nde.json"
+
+import enSpooling from "@/messages/en/spooling.json"
+import ruSpooling from "@/messages/ru/spooling.json"
+
+import enHome from "@/messages/en/home.json"
+import ruHome from "@/messages/ru/home.json"
+
+import enProjects from "@/messages/en/projects.json"
+import ruProjects from "@/messages/ru/projects.json"
+
+import enDocuments from "@/messages/en/documents.json"
+import ruDocuments from "@/messages/ru/documents.json"
+
+import enSettings from "@/messages/en/settings.json"
+import ruSettings from "@/messages/ru/settings.json"
+
 import type { Locale } from "./locale"
 
 export type MessageTree = { [key: string]: string | MessageTree }
@@ -40,6 +60,13 @@ export const en = {
   auth: enAuth,
   fabrication: enFabrication,
   flange: enFlange,
+  nde: enNde,
+  testPack: enTestPack,
+  spooling: enSpooling,
+  home: enHome,
+  projects: enProjects,
+  documents: enDocuments,
+  settings: enSettings,
 }
 
 export type Messages = typeof en
@@ -56,6 +83,13 @@ export const ru: { [N in Namespace]?: MessageTree } = {
   auth: ruAuth,
   fabrication: ruFabrication,
   flange: ruFlange,
+  nde: ruNde,
+  testPack: ruTestPack,
+  spooling: ruSpooling,
+  home: ruHome,
+  projects: ruProjects,
+  documents: ruDocuments,
+  settings: ruSettings,
 }
 
 /** `base` with every key `override` has in the same shape; stray or misshapen keys are dropped. */

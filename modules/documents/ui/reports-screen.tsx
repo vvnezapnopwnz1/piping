@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { Download } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,6 +11,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import {
   generateDemoReport,
   type GenerateDemoReportInput,
+  type GenerateDemoReportResult,
 } from "../application/generate-demo-report"
 import { REPORT_DEFINITIONS, type ReportCode } from "../domain/report"
 import {
@@ -33,8 +35,9 @@ export function ReportsScreen({
   projectId: string
   projectCode: string
 }) {
+  const t = useTranslations("documents")
   const [pendingCode, setPendingCode] = useState<ReportCode | null>(null)
-  const [error, setError] = useState<{ code: ReportCode; message: string } | null>(null)
+  const [error, setError] = useState<{ code: ReportCode; failure: Extract<GenerateDemoReportResult, { ok: false }> } | null>(null)
   const [lastDownloaded, setLastDownloaded] = useState<ReportCode | null>(null)
   const requestVersion = useRef(createRequestVersion())
 
@@ -64,7 +67,7 @@ export function ReportsScreen({
     if (!token.isCurrent()) return
     setPendingCode(null)
     if (!result.ok) {
-      setError({ code, message: result.reason })
+      setError({ code, failure: result })
       return
     }
 
@@ -72,29 +75,36 @@ export function ReportsScreen({
     setLastDownloaded(code)
   }
 
+  const describeReportFailure = (failure: Extract<GenerateDemoReportResult, { ok: false }>) =>
+    failure.reason === "unknownReport"
+      ? t("error.unknownReport")
+      : failure.detail === undefined
+        ? t("error.failedNoDetail")
+        : t("error.failed", { detail: failure.detail })
+
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Reports</h1>
+        <h1 className="text-2xl font-semibold">{t("title")}</h1>
         <p className="text-sm text-muted-foreground">
-          Download real project snapshots from the current Supabase data.
+          {t("description")}
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         {REPORT_DEFINITIONS.map((report) => {
           const pending = pendingCode === report.code
-          const reportError = error?.code === report.code ? error.message : null
+          const reportError = error?.code === report.code ? error.failure : null
           return (
             <Card key={report.code}>
               <CardHeader>
-                <CardTitle>{report.title}</CardTitle>
-                <CardDescription>{report.description}</CardDescription>
+                <CardTitle>{t(`reports.${report.code}.title`)}</CardTitle>
+                <CardDescription>{t(`reports.${report.code}.description`)}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-xs text-muted-foreground">{report.code} · {report.outputFormat.toUpperCase()}</p>
-                {reportError ? <p className="text-sm text-destructive">Could not generate report: {reportError}</p> : null}
-                {lastDownloaded === report.code ? <p className="text-success-fg text-sm">File downloaded from the current project snapshot.</p> : null}
+                {reportError ? <p className="text-sm text-destructive">{describeReportFailure(reportError)}</p> : null}
+                {lastDownloaded === report.code ? <p className="text-success-fg text-sm">{t("downloaded")}</p> : null}
                 <Button
                   type="button"
                   onClick={() => void generate(report.code)}
@@ -102,7 +112,7 @@ export function ReportsScreen({
                   disabled={pendingCode !== null}
                 >
                   {pending ? null : <Download className="mr-2 size-4" />}
-                  {`Download ${report.outputFormat.toUpperCase()}`}
+                  {t("download", { format: report.outputFormat.toUpperCase() })}
                 </Button>
               </CardContent>
             </Card>
@@ -111,7 +121,7 @@ export function ReportsScreen({
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Demo Lite creates browser downloads only. It does not retain document history, snapshots, or handover artifacts.
+        {t("note")}
       </p>
     </div>
   )

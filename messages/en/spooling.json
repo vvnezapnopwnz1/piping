@@ -1,0 +1,185 @@
+{
+  "importType": {
+    "piping_material_list": "Project Piping Material List",
+    "welding_procedure": "Welding Procedure Specification",
+    "welder_qualification": "Welder Qualification",
+    "thickness_flange": "Weld Thickness and Flange Rating",
+    "nde_matrix": "NDE Matrix",
+    "flange_progress": "Flange progress",
+    "test_pack_composition": "Test Pack composition",
+    "tracking_scan": "Tracking scanner events",
+    "spooling_definition": "SpoolGen definition",
+    "unknown": "Unknown import type: {type}"
+  },
+  "severity": {
+    "blocker": "Error",
+    "conflict": "Overwrite",
+    "warning": "Warning"
+  },
+  "issues": {
+    "EMPTY_SHEET": "The selected sheet is empty.",
+    "MISSING_COLUMN": "The required column \"{header}\" is missing from the sheet.",
+    "REQUIRED": "\"{header}\" is mandatory.",
+    "NOT_A_NUMBER": "\"{header}\" must be numeric, received \"{received}\".",
+    "TRACKING_DIRECTION": "\"Direction\" must be either \"in\" or \"out\".",
+    "TRACKING_TIMESTAMP": "\"Occurred At\" must be a complete ISO-8601 timestamp with a timezone.",
+    "INVALID_RANGE": "{range, select, diameter {Diameter \"to\" must be greater than or equal to \"from\".} thickness {Thickness \"to\" must be greater than or equal to \"from\".} other {Planned End cannot be before Planned Start.}}",
+    "OUT_OF_RANGE": "{bound, select, percent {Coverage must be between 0 and 100.} other {The value must be greater than zero.}}",
+    "DUPLICATE_IN_FILE": "This {keys} appears more than once in the file.",
+    "INVALID_DATE": "The value must be a valid YYYY-MM-DD date.",
+    "INVALID_VALUE": "The value must be one of: {expected}.",
+    "INCONSISTENT_TEST_PACK_METADATA": "Test Pack metadata must be consistent across all ISO rows.",
+    "DUPLICATE_JOINTER": "Jointer Codes must not repeat a jointer.",
+    "UT_CONFIGURATION_WARNING": "UT is calculated by the server from the active project configuration.",
+    "OVERWRITE": "This row already exists in the project and will be overwritten."
+  },
+  "applyReason": {
+    "alreadyApplied": "This import has already been applied.",
+    "closed": "This import is closed and can no longer be applied.",
+    "notValidated": "Upload and validate the file before applying it.",
+    "blockers": "{count, plural, one {# row has blocking errors that must be fixed in the source file.} other {# rows have blocking errors that must be fixed in the source file.}}",
+    "conflictsUnconfirmed": "{count, plural, one {# row overwrites existing records. Confirm the overwrite to continue.} other {# rows overwrite existing records. Confirm the overwrite to continue.}}"
+  },
+  "issueList": {
+    "empty": "No issues were found in this file.",
+    "sheet": "Sheet",
+    "row": "Row {row}"
+  },
+  "conflictDialog": {
+    "title": "Confirm overwrite",
+    "description": "{count, plural, one {# row} other {# rows}} in this file already exist in the project. Applying the import replaces the stored values with the values from the spreadsheet. This cannot be undone.",
+    "keep": "Keep existing values",
+    "overwrite": "Overwrite {count, plural, one {# row} other {# rows}}"
+  },
+  "workbench": {
+    "title": "Import {type}",
+    "downloadTemplate": "Download template",
+    "testPackNote": "Existing Test Packs can be updated only after conflict confirmation. Additional ISO membership is a manual Builder action and is never added silently by import.",
+    "summary": "{rows, plural, one {# row} other {# rows}} parsed · {errors, plural, one {# error} other {# errors}} · {overwrites, plural, one {# overwrite} other {# overwrites}}",
+    "apply": "Apply import",
+    "fileFailed": "The file could not be processed.",
+    "applyFailed": "The import could not be applied.",
+    "applied": "Applied {count, plural, one {# row} other {# rows}}."
+  },
+  "history": {
+    "title": "Import history",
+    "loading": "Loading…",
+    "empty": "No imports have been run for this project.",
+    "type": "Type",
+    "file": "File",
+    "status": "Status",
+    "rowsApplied": "Rows applied",
+    "created": "Created",
+    "download": "Download source",
+    "cancel": "Cancel",
+    "loadFailed": "History could not be loaded.",
+    "sourceGone": "The source file is no longer available.",
+    "cancelFailed": "The import could not be cancelled.",
+    "statuses": {
+      "draft": "Draft",
+      "uploaded": "Uploaded",
+      "validating": "Validating",
+      "validated": "Validated",
+      "applying": "Applying",
+      "applied": "Applied",
+      "failed": "Failed",
+      "canceled": "Canceled"
+    }
+  },
+  "spoolgenIssues": {
+    "EMPTY_FILE": "{file} contains no rows.",
+    "MISSING_COLUMN": "The required column \"{column}\" is missing from the file.",
+    "MISSING_VALUE": "\"{column}\" is required.",
+    "INVALID_NUMBER": "\"{column}\" must be a number.",
+    "ORPHAN_SPOOL": "This spool is not present in weld.txt.",
+    "ISO_MIXED_SERVICE_CLASS": "The isometric carries more than one service class.",
+    "ISO_MIXED_LINE": "The isometric carries more than one line number.",
+    "ISO_MIXED_REVISION": "The isometric carries more than one revision number.",
+    "FILE_EMPTY": "{file} is empty.",
+    "FILE_TOO_LARGE": "{file} is larger than the {limit} MB limit for SpoolGen files.",
+    "MISSING_REQUIRED_FILE": "{file} is required before a SpoolGen import can be validated."
+  },
+  "importScreen": {
+    "title": "SpoolGen import",
+    "files": "{count} of {total} files",
+    "hint": "Upload the SpoolGen export. Only weld.txt is required; each file is limited to {limit} MB.",
+    "replace": "Replace {file}",
+    "validate": "Validate files",
+    "jobCreated": "Job created. Review the decisions below before applying.",
+    "requiredFile": "weld.txt is required before a SpoolGen import can be validated.",
+    "validated": "Validated {rows, plural, one {# row} other {# rows}}: {errors, plural, one {# error} other {# errors}}, {warnings, plural, one {# warning} other {# warnings}}.",
+    "failed": "The import could not be validated."
+  },
+  "revision": {
+    "title": "Revision decisions",
+    "empty": "Validate a SpoolGen file set to see what it changes.",
+    "noChanges": "This import changes nothing.",
+    "apply": "Apply import",
+    "summary": {
+      "new": "{count} new",
+      "revised": "{count} revised",
+      "unchanged": "{count} unchanged",
+      "removed": "{count} removed"
+    },
+    "change": {
+      "new": "New",
+      "revised": "Revised",
+      "unchanged": "Unchanged",
+      "removed": "Removed"
+    },
+    "entity": {
+      "spool": "Spool",
+      "weld_joint": "Weld",
+      "support": "Support",
+      "flange_joint": "Flange joint"
+    },
+    "columns": {
+      "entity": "Entity",
+      "number": "Number",
+      "spool": "Spool",
+      "change": "Change",
+      "decision": "Decision"
+    },
+    "decisionRequired": "Decision required",
+    "notRequired": "Not required",
+    "reason": {
+      "alreadyApplied": "This import has already been applied. Start a new import to load the files again.",
+      "closed": "This import is closed and can no longer be applied.",
+      "notValidated": "Upload and validate the SpoolGen files before applying them.",
+      "blockers": "{count, plural, one {# blocking issue must be fixed in the source files before this import can be applied.} other {# blocking issues must be fixed in the source files before this import can be applied.}}",
+      "unresolved": "{count, plural, one {# item still needs a decision before this import can be applied.} other {# items still need a decision before this import can be applied.}}"
+    },
+    "applied": "Applied {count, plural, one {# definition row} other {# definition rows}}.",
+    "carried": "Carried {count, plural, one {# progress record} other {# progress records}} forward.",
+    "carryOverFailed": "Progress carry-over was not applied.",
+    "previewFailed": "The preview could not be loaded.",
+    "decisionFailed": "The decision could not be saved.",
+    "applyFailed": "The import could not be applied."
+  },
+  "browser": {
+    "isometrics": "Isometrics",
+    "history": "Revision history",
+    "spools": "Spools",
+    "removed": "Removed",
+    "welds": "Welds: {items}",
+    "supports": "Supports: {items}",
+    "flangeJoints": "Flange joints: {items}",
+    "identCodes": "Ident codes: {items}",
+    "revisionFailed": "The revision could not be loaded.",
+    "isometricsFailed": "Isometrics could not be loaded.",
+    "historyFailed": "Revision history could not be loaded."
+  },
+  "pages": {
+    "browse": "Browse",
+    "revisions": "Revision history",
+    "selectBrowse": "Select a project to browse engineering data.",
+    "selectImport": "Select a project to import SpoolGen files.",
+    "selectRevisions": "Select a project to see revision history."
+  },
+  "placeholder": {
+    "track": "Track 04 (remaining)",
+    "engineeringTransmittals": "Incoming transmittals of isometric revisions from engineering, with their acceptance decisions. The revision model is live; the transmittal document around it is the part of Track 04 still outstanding.",
+    "isoWorkflow": "Receive, check, hold, release and dispatch isometrics to fabrication. The engineering definitions and revisions behind it are live; the document workflow over them is the part of Track 04 still outstanding.",
+    "spoolingTransmittal": "Outgoing transmittals that release spooled isometrics to the shop. The revision model is live; the transmittal document around it is the part of Track 04 still outstanding."
+  }
+}

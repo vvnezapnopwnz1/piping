@@ -23,38 +23,39 @@ export interface CompositionAttempt {
 
 export function testPackFields(pressureUnit?: string | null): readonly TestPackField[] {
   return [
-    { field: "testPackNumber", label: "Test Pack number", type: "text", required: true },
-    { field: "location", label: "Location", type: "text", required: true },
-    { field: "plannedStartOn", label: "Planned start", type: "date", required: true },
-    { field: "plannedEndOn", label: "Planned end", type: "date", required: true },
-    { field: "pressure", label: "Test pressure", type: "number", required: true, unit: pressureUnit ?? undefined },
-    { field: "volumeM3", label: "Volume", type: "number", required: false, unit: "m³" },
+    { field: "testPackNumber", label: "text.testPackNumber", type: "text", required: true },
+    { field: "location", label: "text.location", type: "text", required: true },
+    { field: "plannedStartOn", label: "text.plannedStart", type: "date", required: true },
+    { field: "plannedEndOn", label: "text.plannedEnd", type: "date", required: true },
+    { field: "pressure", label: "text.testPressure", type: "number", required: true, unit: pressureUnit ?? undefined },
+    { field: "volumeM3", label: "text.volume", type: "number", required: false, unit: "m³" },
   ]
 }
 
 export const TEST_PACK_FIELDS: readonly TestPackField[] = [
-  { field: "testPackNumber", label: "Test Pack number", type: "text", required: true },
-  { field: "location", label: "Location", type: "text", required: true },
-  { field: "plannedStartOn", label: "Planned start", type: "date", required: true },
-  { field: "plannedEndOn", label: "Planned end", type: "date", required: true },
-  { field: "pressure", label: "Test pressure", type: "number", required: true, unit: "bar" },
-  { field: "volumeM3", label: "Volume", type: "number", required: false, unit: "m³" },
+  { field: "testPackNumber", label: "text.testPackNumber", type: "text", required: true },
+  { field: "location", label: "text.location", type: "text", required: true },
+  { field: "plannedStartOn", label: "text.plannedStart", type: "date", required: true },
+  { field: "plannedEndOn", label: "text.plannedEnd", type: "date", required: true },
+  { field: "pressure", label: "text.testPressure", type: "number", required: true, unit: "bar" },
+  { field: "volumeM3", label: "text.volume", type: "number", required: false, unit: "m³" },
 ]
 
 export const TEST_PACK_REFERENCE_FIELDS = [
-  { field: "systemId", label: "System" },
-  { field: "subsystemId", label: "Subsystem" },
-  { field: "serviceClassId", label: "Service class" },
-  { field: "lineServiceId", label: "Line service" },
+  { field: "systemId", label: "text.system" },
+  { field: "subsystemId", label: "text.subsystem" },
+  { field: "serviceClassId", label: "text.serviceClass" },
+  { field: "lineServiceId", label: "text.lineService" },
 ] as const
 
 /** Free text before, so two presenters could file "high", "High" and "HIGH" against one project. */
+// i18n-ignore — canonical persisted priority values; the UI translates their labels.
 export const TEST_PACK_PRIORITIES = ["Low", "Normal", "High", "Critical"] as const
 
 export const TEST_PACK_MEDIA = [
-  { value: "H", label: "Hydro" },
-  { value: "P", label: "Pneumatic" },
-  { value: "V", label: "Visual" },
+  { value: "H", label: "text.hydro" },
+  { value: "P", label: "text.pneumatic" },
+  { value: "V", label: "text.visual" },
 ] as const
 
 export const mediumLabel = (medium: string | null | undefined): string =>

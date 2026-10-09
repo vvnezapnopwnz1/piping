@@ -277,13 +277,13 @@ export function canOperateWorkflow(
   dataCurrent: boolean,
 ): { allowed: boolean; reason?: string } {
   if (!canManage) {
-    return { allowed: false, reason: "Insufficient permissions (Reader access)" }
+    return { allowed: false, reason: "text.insufficientPermissionsReaderAccess" }
   }
   if (lifecycle === "archived") {
-    return { allowed: false, reason: "Test Pack is archived and read-only" }
+    return { allowed: false, reason: "text.testPackIsArchivedAndReadOnly" }
   }
   if (!dataCurrent) {
-    return { allowed: false, reason: "Data is stale; retry refresh before recording" }
+    return { allowed: false, reason: "text.dataIsStaleRetryRefreshBeforeRecording" }
   }
   return { allowed: true }
 }

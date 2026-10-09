@@ -24,14 +24,15 @@ export interface GenerateDemoReportInput extends ReportSnapshotRequest {
 
 export type GenerateDemoReportResult =
   | { ok: true; value: { blob: Blob; fileName: string } }
-  | { ok: false; reason: string }
+  /** `detail` is the loader's own message, if it had one; the screen says what failed in the user's language. */
+  | { ok: false; reason: "unknownReport" | "failed"; detail?: string }
 
 export async function generateDemoReport(
   repository: DemoReportRepository,
   input: GenerateDemoReportInput,
 ): Promise<GenerateDemoReportResult> {
   const definition = REPORT_DEFINITIONS.find((candidate) => candidate.code === input.code)
-  if (!definition) return { ok: false, reason: `Unknown report: ${input.code}` }
+  if (!definition) return { ok: false, reason: "unknownReport" }
 
   try {
     const request: ReportSnapshotRequest = {
@@ -53,7 +54,8 @@ export async function generateDemoReport(
   } catch (cause) {
     return {
       ok: false,
-      reason: cause instanceof Error ? cause.message : "Unable to generate report",
+      reason: "failed",
+      ...(cause instanceof Error && cause.message ? { detail: cause.message } : {}),
     }
   }
 }

@@ -6,14 +6,16 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { ImportIssue } from "@/modules/imports/domain/import-issue";
+import type { StoredImportIssue } from "@/modules/imports/domain/stored-import-issue";
 import { ImportIssueList } from "@/modules/imports/ui/import-issue-list";
+import { errorDetail } from "@/i18n/format";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
 import { buildSpoolgenSubmission } from "../application/import-spooling";
 import {
   checkFileSize,
   describeFileSet,
   SPOOLGEN_FILE_ROLES,
+  SPOOLGEN_MAX_FILE_BYTES,
   type SpoolgenFileRole,
 } from "../domain/spoolgen-file";
 import {
@@ -29,6 +31,7 @@ import {
   spoolingObjectPath,
   uploadSpoolgenFile,
 } from "../infrastructure/supabase-engineering-repository";
+import { describeSpoolgenIssue } from "./spoolgen-issue-text";
 
 export function SpoolingImportScreen({
   projectId,
@@ -40,13 +43,14 @@ export function SpoolingImportScreen({
   onValidated: (jobId: string) => void;
 }) {
   const tc = useTranslations("codes");
+  const t = useTranslations("spooling");
   const fileInputs = useRef<
     Partial<Record<SpoolgenFileRole, HTMLInputElement | null>>
   >({});
   const [files, setFiles] = useState<Partial<Record<SpoolgenFileRole, File>>>(
     {},
   );
-  const [issues, setIssues] = useState<ImportIssue[]>([]);
+  const [issues, setIssues] = useState<StoredImportIssue[]>([]);
   const [busy, setBusy] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
   const presentRoles = useMemo(
@@ -67,11 +71,11 @@ export function SpoolingImportScreen({
     }
     const sizeIssue = checkFileSize(role, file.name, file.size);
     if (sizeIssue) {
-      toast.error(sizeIssue.message);
+      toast.error(describeSpoolgenIssue(t, sizeIssue));
       return;
     }
     setFiles((current) => ({ ...current, [role]: file }));
-  }, []);
+  }, [t]);
   const validate = useCallback(async () => {
     if (!canManage || busy) return;
     setBusy(true);
@@ -82,9 +86,7 @@ export function SpoolingImportScreen({
       const submission = buildSpoolgenSubmission(texts);
       if (!submission.canSubmit) {
         setIssues(submission.issues);
-        toast.error(
-          "weld.txt is required before a SpoolGen import can be validated.",
-        );
+        toast.error(t("importScreen.requiredFile"));
         return;
       }
       const client = getSupabaseBrowserClient();
@@ -113,34 +115,30 @@ export function SpoolingImportScreen({
       setJobId(job.id);
       onValidated(job.id);
       toast.success(
-        `Validated ${submission.rows.length} rows: ${counts.blockerCount} errors, ${counts.warningCount} warnings.`,
+        t("importScreen.validated", { rows: submission.rows.length, errors: counts.blockerCount, warnings: counts.warningCount }),
       );
     } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "The import could not be validated.",
-      );
+      toast.error(t("importScreen.failed"), { description: errorDetail(error) });
     } finally {
       setBusy(false);
     }
-  }, [busy, canManage, files, onValidated, presentRoles, projectId]);
+  }, [busy, canManage, files, onValidated, presentRoles, projectId, t]);
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-3">
-          SpoolGen import
+          {t("importScreen.title")}
           <Badge variant="outline">
-            {fileSet.complete
-              ? "4 of 4 files"
-              : `${presentRoles.length} of 4 files`}
+            {t("importScreen.files", {
+              count: fileSet.complete ? SPOOLGEN_FILE_ROLES.length : presentRoles.length,
+              total: SPOOLGEN_FILE_ROLES.length,
+            })}
           </Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Upload the SpoolGen export. Only weld.txt is required; each file is
-          limited to 4 MB.
+          {t("importScreen.hint", { limit: SPOOLGEN_MAX_FILE_BYTES / (1024 * 1024) })}
         </p>
         <div className="space-y-2">
           {SPOOLGEN_FILE_ROLES.map((role) => (
@@ -166,7 +164,7 @@ export function SpoolingImportScreen({
                 onClick={() => fileInputs.current[role]?.click()}
               >
                 {files[role]
-                  ? `Replace ${role}.txt`
+                  ? t("importScreen.replace", { file: `${role}.txt` })
                   : tc(`spoolgenUpload.${role}`)}
               </Button>
               {files[role] ? (
@@ -182,15 +180,17 @@ export function SpoolingImportScreen({
             onClick={validate}
             disabled={!canManage || busy || presentRoles.length === 0}
           >
-            Validate files
+            {t("importScreen.validate")}
           </Button>
           {jobId ? (
             <span className="text-sm text-muted-foreground">
-              Job created. Review the decisions below before applying.
+              {t("importScreen.jobCreated")}
             </span>
           ) : null}
         </div>
-        <ImportIssueList issues={issues} />
+        <ImportIssueList
+          issues={issues.map((issue) => ({ ...issue, message: describeSpoolgenIssue(t, issue) }))}
+        />
       </CardContent>
     </Card>
   );

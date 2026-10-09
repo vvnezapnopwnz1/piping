@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { AlertTriangle, ArrowRight, CheckCircle2, RotateCw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
@@ -29,6 +30,7 @@ import {
   shareLabel,
   shareWidth,
 } from "./home-control-room-model";
+import { describeAttention } from "./attention-text";
 import styles from "./home-control-room.module.css";
 import { ProcessMap, type AreaReadouts } from "./home-process-map";
 
@@ -90,11 +92,12 @@ const loadProjectDetails: SummaryLoader<ProjectCatalogMetadata | null> = (client
   loadProjectCatalogMetadata(client, [projectId]).then((rows) => rows[0] ?? null);
 
 function SummaryStatus({ state, subject }: { state: SummaryView<unknown>; subject: string }) {
+  const t = useTranslations("home.status");
   switch (state.status) {
     case "loading":
       return (
         <div className={styles.loading} role="status">
-          <span className="sr-only">Loading {subject} figures…</span>
+          <span className="sr-only">{t("loading", { subject })}</span>
           <span className={`${styles.skeleton} ${styles.skeletonLarge}`} aria-hidden="true" />
           <span className={`${styles.skeleton} ${styles.skeletonShort}`} aria-hidden="true" />
         </div>
@@ -102,17 +105,17 @@ function SummaryStatus({ state, subject }: { state: SummaryView<unknown>; subjec
     case "error":
       return (
         <div className={styles.errorBox}>
-          <p className={styles.errorText}>{subject} figures could not be loaded.</p>
+          <p className={styles.errorText}>{t("failed", { subject })}</p>
           <button type="button" className={styles.retry} onClick={state.retry}>
             <RotateCw aria-hidden="true" className={styles.linkIcon} />
-            Try again
+            {t("tryAgain")}
           </button>
         </div>
       );
     case "denied":
-      return <p className={styles.cardSub}>{subject} figures are outside your project access.</p>;
+      return <p className={styles.cardSub}>{t("denied", { subject })}</p>;
     case "no-project":
-      return <p className={styles.cardSub}>Select a project to see figures.</p>;
+      return <p className={styles.cardSub}>{t("noProject")}</p>;
     default:
       return null;
   }
@@ -133,6 +136,7 @@ function Figure<T>({
   note?: (data: T) => string | null;
   empty: string;
 }) {
+  const t = useTranslations("home.figure");
   if (state.status !== "ready") return <SummaryStatus state={state} subject={subject} />;
   const { value, total } = measure(state.data);
   const share = shareLabel(value, total);
@@ -142,7 +146,7 @@ function Figure<T>({
     <div className={styles.readout}>
       <p className={styles.figure}>
         <span className={styles.figureValue}>{value}</span>
-        <span className={styles.figureOf}>of {total}</span>
+        <span className={styles.figureOf}>{t("of", { total })}</span>
         <span className={styles.figureShare}>{share}</span>
       </p>
       <p className={styles.cardSub}>{unit}</p>
@@ -163,26 +167,28 @@ function Attention({
   facts: Parameters<typeof attentionItems>[0];
   hrefFor: (href: string) => string | null;
 }) {
+  const t = useTranslations("home");
   const items = attentionItems(facts);
   const loading = sources.some((source) => source.state.status === "loading");
   const failed = sources.filter((source) => source.state.status === "error");
   return (
     <section className={styles.attention} aria-labelledby="attention-title" data-help="attention">
       <h2 id="attention-title" className={styles.sectionLabel}>
-        Needs attention
+        {t("attention.title")}
       </h2>
       <ul className={styles.queue}>
         {items.map((item) => {
           const href = hrefFor(item.href);
+          const text = describeAttention(t, item);
           return (
             <li key={item.id} className={styles.queueItem}>
               <AlertTriangle aria-hidden="true" className={styles.queueIcon} />
               <div className={styles.queueText}>
-                <p className={styles.queueTitle}>{item.title}</p>
-                <p className={styles.queueDetail}>{item.detail}</p>
+                <p className={styles.queueTitle}>{text.title}</p>
+                <p className={styles.queueDetail}>{text.detail}</p>
                 {href ? (
                   <Link href={href} className={styles.queueAction}>
-                    {item.action}
+                    {text.action}
                     <ArrowRight aria-hidden="true" className={styles.linkIcon} />
                   </Link>
                 ) : null}
@@ -200,16 +206,16 @@ function Attention({
         ))}
         {loading ? (
           <li className={styles.queueItem} data-tone="loading">
-            <SummaryStatus state={{ status: "loading" }} subject="Open work" />
+            <SummaryStatus state={{ status: "loading" }} subject={t("subject.openWork")} />
           </li>
         ) : null}
         {!loading && !failed.length && !items.length ? (
           <li className={styles.queueItem} data-tone="ok">
             <CheckCircle2 aria-hidden="true" className={styles.queueIcon} />
             <div className={styles.queueText}>
-              <p className={styles.queueTitle}>Nothing is waiting</p>
+              <p className={styles.queueTitle}>{t("attention.nothingTitle")}</p>
               <p className={styles.queueDetail}>
-                No issued NDE obligation, spool short of Ready for Test or blocked test pack in your access.
+                {t("attention.nothingDetail")}
               </p>
             </div>
           </li>
@@ -220,6 +226,7 @@ function Attention({
 }
 
 function ProjectState({ access }: { access: AccessValue }) {
+  const t = useTranslations("home");
   const projectId = access.access.projectId;
   const can = access.can;
   const identity = projectIdentity(access.access);
@@ -239,46 +246,46 @@ function ProjectState({ access }: { access: AccessValue }) {
   const readouts: AreaReadouts = {
     spooling: (
       <div className={styles.readout}>
-        <p className={styles.cardValue}>Engineering baseline</p>
-        <p className={styles.figureNote}>ISO workflow and transmittals outstanding</p>
+        <p className={styles.cardValue}>{t("spooling.baseline")}</p>
+        <p className={styles.figureNote}>{t("spooling.outstanding")}</p>
       </div>
     ),
     fabrication: (
       <Figure
-        subject="Fabrication"
+        subject={t("subject.fabrication")}
         state={fabrication}
         measure={(data) => ({ value: data.completed, total: data.total })}
-        unit="spools at Laydown"
-        empty="No fabrication records yet."
+        unit={t("fabrication.unit")}
+        empty={t("fabrication.empty")}
       />
     ),
     erection: (
       <Figure
-        subject="Erection"
+        subject={t("subject.erection")}
         state={erection}
         measure={(data) => ({ value: data.readyForTest, total: data.total })}
-        unit="spools Ready for Test"
-        note={(data) => (data.remaining ? `${data.remaining} not ready yet` : null)}
-        empty="No erection records yet."
+        unit={t("erection.unit")}
+        note={(data) => (data.remaining ? t("erection.note", { count: data.remaining }) : null)}
+        empty={t("erection.empty")}
       />
     ),
     testpacks: (
       <Figure
-        subject="Test pack"
+        subject={t("subject.testPack")}
         state={testPacks}
         measure={(data) => ({ value: data.readyForTest, total: data.total })}
-        unit="test packs Ready for Test"
-        empty="No test packs yet."
+        unit={t("testPacks.unit")}
+        empty={t("testPacks.empty")}
       />
     ),
     nde: (
       <Figure
-        subject="NDE"
+        subject={t("subject.nde")}
         state={nde}
         measure={(data) => ({ value: data.inspected, total: data.total })}
-        unit="obligations have a result recorded"
-        note={(data) => `${data.issued} awaiting a result`}
-        empty="No NDE obligations yet."
+        unit={t("nde.unit")}
+        note={(data) => t("nde.note", { count: data.issued })}
+        empty={t("nde.empty")}
       />
     ),
   };
@@ -291,9 +298,9 @@ function ProjectState({ access }: { access: AccessValue }) {
   const meta = details.status === "ready" ? details.data : null;
   const lede = [
     identity.title,
-    meta?.contractor_name ? `contractor ${meta.contractor_name}` : null,
-    meta?.owner_name ? `owner ${meta.owner_name}` : null,
-    meta?.contract_number ? `contract ${meta.contract_number}` : null,
+    meta?.contractor_name ? t("lede.contractor", { name: meta.contractor_name }) : null,
+    meta?.owner_name ? t("lede.owner", { name: meta.owner_name }) : null,
+    meta?.contract_number ? t("lede.contract", { number: meta.contract_number }) : null,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -301,16 +308,16 @@ function ProjectState({ access }: { access: AccessValue }) {
   return (
     <div className={styles.room}>
       <header className={styles.head}>
-        <h1 className={styles.title}>Project state</h1>
+        <h1 className={styles.title}>{t("title")}</h1>
         {lede ? <p className={styles.lede}>{lede}</p> : null}
       </header>
       <div className={styles.layout}>
         <ProcessMap areas={areas} hrefFor={hrefFor} readouts={readouts} attention={attention} />
         <Attention
           sources={[
-            { subject: "NDE", state: nde },
-            { subject: "Erection", state: erection },
-            { subject: "Test pack", state: testPacks },
+            { subject: t("subject.nde"), state: nde },
+            { subject: t("subject.erection"), state: erection },
+            { subject: t("subject.testPack"), state: testPacks },
           ]}
           facts={{
             nde: nde.status === "ready" ? nde.data : null,
@@ -325,11 +332,12 @@ function ProjectState({ access }: { access: AccessValue }) {
 }
 
 function NoProject(): ReactNode {
+  const t = useTranslations("home");
   return (
     <div className={styles.room}>
       <header className={styles.head}>
-        <h1 className={styles.title}>Project state</h1>
-        <p className={styles.lede}>Select a project to see its process, live figures and open work.</p>
+        <h1 className={styles.title}>{t("title")}</h1>
+        <p className={styles.lede}>{t("noProject")}</p>
       </header>
     </div>
   );

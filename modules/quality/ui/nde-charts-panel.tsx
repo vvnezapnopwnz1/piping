@@ -17,18 +17,22 @@ import {
 } from "../domain/nde-charts"
 import type { NdeChartData } from "../infrastructure/supabase-quality-repository"
 
-const outcomeConfig = {
-  accepted: { label: "Accepted", color: "var(--success-fg)" },
-  rejected: { label: "Rejected", color: "var(--destructive)" },
-} satisfies ChartConfig
+function outcomeConfig(t: ReturnType<typeof useTranslations<"nde.charts">>) {
+  return {
+    accepted: { label: t("accepted"), color: "var(--success-fg)" },
+    rejected: { label: t("rejected"), color: "var(--destructive)" },
+  } satisfies ChartConfig
+}
 
-const methodConfig = {
-  pending: { label: "Pending allocation", color: "var(--neutral-fg)" },
-  allocated: { label: "Allocated", color: "var(--info-fg)" },
-  issued: { label: "Issued", color: "var(--warning-fg)" },
-  accepted: { label: "Accepted", color: "var(--success-fg)" },
-  rejected: { label: "Rejected", color: "var(--destructive)" },
-} satisfies ChartConfig
+function methodConfig(t: ReturnType<typeof useTranslations<"nde.charts">>) {
+  return {
+    pending: { label: t("pendingAllocation"), color: "var(--neutral-fg)" },
+    allocated: { label: t("allocated"), color: "var(--info-fg)" },
+    issued: { label: t("issued"), color: "var(--warning-fg)" },
+    accepted: { label: t("accepted"), color: "var(--success-fg)" },
+    rejected: { label: t("rejected"), color: "var(--destructive)" },
+  } satisfies ChartConfig
+}
 
 const workflowColors: Record<string, string> = {
   pending: "var(--neutral-fg)",
@@ -38,10 +42,11 @@ const workflowColors: Record<string, string> = {
 }
 
 function EmptyChart({ detail }: { detail: string }) {
+  const t = useTranslations("nde.charts")
   return (
     <div className="text-muted-foreground flex h-72 items-center justify-center rounded-md border border-dashed px-6 text-center text-sm">
       <div>
-        <p className="font-medium">No NDE activity recorded yet.</p>
+        <p className="font-medium">{t("noNdeActivityRecordedYet")}</p>
         <p className="mt-1 text-xs">{detail}</p>
       </div>
     </div>
@@ -55,13 +60,14 @@ export function NdeChartsPanel({
   data: NdeChartData | null
   loading: boolean
 }) {
+  const t = useTranslations("nde.charts")
   const tc = useTranslations("codes")
   const locale = useLocale()
   if (loading || !data) return <Skeleton className="h-[38rem] w-full" />
 
   const outcomes = toNdeOutcomeTrendSeries(data.outcomes, (week) => formatWeekLabel(week, locale))
   const workflow = toNdeWorkflowSeries(data.workflow, (code) => codeLabel(tc, "ndeWorkflow", code))
-  const methods = toNdeMethodSeries(data.methods)
+  const methods = toNdeMethodSeries(data.methods, (code) => codeLabel(tc, "ndeMethod", code))
   const hasOutcomes = hasNdeChartData(outcomes)
   const hasWorkflow = workflow.some((step) => step.count > 0)
   const hasMethods = methods.some(
@@ -69,17 +75,17 @@ export function NdeChartsPanel({
   )
 
   return (
-    <section className="space-y-4" aria-label="NDE quality charts">
+    <section className="space-y-4" aria-label={t("ndeQualityCharts")}>
       <Card>
         <CardHeader>
-          <CardTitle>Weekly examination outcomes</CardTitle>
+          <CardTitle>{t("weeklyExaminationOutcomes")}</CardTitle>
           <CardDescription>
-            Accepted and rejected results recorded in each ISO week. This is actual inspection activity, not a forecast.
+            {t("acceptedAndRejectedResultsRecorded")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {hasOutcomes ? (
-            <ChartContainer config={outcomeConfig} className="h-80 w-full">
+            <ChartContainer config={outcomeConfig(t)} className="h-80 w-full">
               <LineChart data={outcomes} margin={{ left: 8, right: 16, top: 8 }}>
                 <CartesianGrid vertical={false} />
                 <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} />
@@ -91,7 +97,7 @@ export function NdeChartsPanel({
               </LineChart>
             </ChartContainer>
           ) : (
-            <EmptyChart detail="Record an NDE result to see its weekly outcome trend." />
+            <EmptyChart detail={t("recordAnNdeResultTo")} />
           )}
         </CardContent>
       </Card>
@@ -99,12 +105,12 @@ export function NdeChartsPanel({
       <div className="grid gap-4 xl:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Inspection workflow</CardTitle>
-            <CardDescription>Current obligations by their next operational step.</CardDescription>
+            <CardTitle>{t("inspectionWorkflow")}</CardTitle>
+            <CardDescription>{t("currentObligationsByTheirNext")}</CardDescription>
           </CardHeader>
           <CardContent>
             {hasWorkflow ? (
-              <ChartContainer config={{ count: { label: "Obligations" } }} className="h-80 w-full">
+              <ChartContainer config={{ count: { label: t("obligations") } }} className="h-80 w-full">
                 <BarChart data={workflow} layout="vertical" margin={{ left: 20, right: 16 }}>
                   <CartesianGrid horizontal={false} />
                   <XAxis type="number" allowDecimals={false} hide />
@@ -118,19 +124,19 @@ export function NdeChartsPanel({
                 </BarChart>
               </ChartContainer>
             ) : (
-              <EmptyChart detail="Workflow positions appear after NDE obligations are generated." />
+              <EmptyChart detail={t("workflowPositionsAppearAfterNde")} />
             )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>NDT method distribution</CardTitle>
-            <CardDescription>Each method split into mutually exclusive inspection positions.</CardDescription>
+            <CardTitle>{t("ndtMethodDistribution")}</CardTitle>
+            <CardDescription>{t("eachMethodSplitIntoMutually")}</CardDescription>
           </CardHeader>
           <CardContent>
             {hasMethods ? (
-              <ChartContainer config={methodConfig} className="h-80 w-full">
+              <ChartContainer config={methodConfig(t)} className="h-80 w-full">
                 <BarChart data={methods} margin={{ left: 4, right: 16 }}>
                   <CartesianGrid vertical={false} />
                   <XAxis dataKey="method" tickLine={false} axisLine={false} tickMargin={8} />
@@ -145,7 +151,7 @@ export function NdeChartsPanel({
                 </BarChart>
               </ChartContainer>
             ) : (
-              <EmptyChart detail="Method distribution appears after the first NDE obligation is generated." />
+              <EmptyChart detail={t("methodDistributionAppearsAfterThe")} />
             )}
           </CardContent>
         </Card>

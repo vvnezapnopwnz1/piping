@@ -239,6 +239,6 @@ test("loadTestPackWorkspaceSnapshot reports Reference unavailable for inactive/d
   const res = await loadTestPackWorkspaceSnapshot(repo, "proj-1", "pack-1")
   assert.equal(res.status, "available")
   if (res.status === "available") {
-    assert.equal(res.snapshot.referenceLabels.system, "Reference unavailable")
+    assert.equal(res.snapshot.referenceLabels.system, "text.referenceUnavailable")
   }
 })

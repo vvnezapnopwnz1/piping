@@ -52,9 +52,9 @@ test("rejects invalid metadata and duplicate or blank ISO ids", () => {
 
   assert.equal(result.ok, false)
   if (result.ok) return
-  assert.equal(result.errors.testPackNumber, "Test Pack number is required")
-  assert.equal(result.errors.medium, "Test medium must be H, P, or V")
-  assert.equal(result.errors.isoIds, "ISO ids must be non-empty and unique")
+  assert.equal(result.errors.testPackNumber, "required")
+  assert.equal(result.errors.medium, "invalidMedium")
+  assert.equal(result.errors.isoIds, "invalidIsoIds")
 })
 
 test("allows omitted volume and requires ISO dates with an ordered range", () => {
@@ -66,7 +66,7 @@ test("allows omitted volume and requires ISO dates with an ordered range", () =>
   })
   assert.equal(result.ok, false)
   if (result.ok) return
-  assert.equal(result.errors.plannedEndOn, "Planned end cannot be before planned start")
+  assert.equal(result.errors.plannedEndOn, "endBeforeStart")
 })
 
 test("mutation input does not accept readiness or workflow state", () => {

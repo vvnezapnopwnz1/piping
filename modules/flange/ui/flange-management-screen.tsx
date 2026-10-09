@@ -13,7 +13,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DataTable, useTableUrlState, type DataColumn } from "@/components/ui/data-table"
+import { RecordDrawer } from "@/components/ui/record-drawer"
 import { ChangeHighlight, IdentityHeadline } from "@/components/ui/record-target"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import type { FlangeValidationCode } from "../domain/flange-progress"
 import { recordFlangeProgress } from "../application/record-flange-progress"
@@ -24,6 +26,7 @@ const today = () => new Date().toISOString().slice(0, 10)
 const text = (row: Record<string, unknown>, key: string) => String(row[key] ?? "")
 
 type FlangeColumnsTranslator = ReturnType<typeof useTranslations<"flange.columns">>
+type FlangeManagementTranslator = ReturnType<typeof useTranslations<"flange.management">>
 
 function flangeColumns(t: FlangeColumnsTranslator): ReadonlyArray<DataColumn<FlangeWorklistItem>> {
   return [
@@ -58,6 +61,64 @@ function flangeColumns(t: FlangeColumnsTranslator): ReadonlyArray<DataColumn<Fla
     cell: () => <ChevronRight className="h-4 w-4" aria-hidden="true" />,
   },
   ]
+}
+
+function display(value: string | number | null) {
+  return value ?? "—"
+}
+
+function FlangeHistoryCard({ history, t }: { history: Array<Record<string, unknown>>; t: FlangeManagementTranslator }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("history")}</CardTitle>
+        <CardDescription>{t("appendOnlyRecordsForThis")}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2 text-sm">
+          {history.map((item) => <div key={text(item, "id")} className="rounded border p-2"><div className="flex justify-between"><span>{text(item, "report_number")} · {text(item, "tag_number")}</span><Badge variant="outline">{text(item, "source_kind")}</Badge></div><div className="text-muted-foreground">{text(item, "joint_date")} {t("historyValues", { value: text(item, "jointing_value"), ut: text(item, "calculated_ut") || t("notConfigured") })}</div></div>)}
+          {history.length === 0 && <p className="text-muted-foreground">{t("noProgressHistory")}</p>}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function FlangeBrowseTabs({ flange, history, t, tcol }: { flange: FlangeWorklistItem; history: Array<Record<string, unknown>>; t: FlangeManagementTranslator; tcol: FlangeColumnsTranslator }) {
+  return (
+    <Tabs defaultValue="details" variant="underline">
+      <TabsList aria-label={t("drawerTabs")}>
+        <TabsTrigger value="details">{t("details")}</TabsTrigger>
+        <TabsTrigger value="history">{t("history")}</TabsTrigger>
+      </TabsList>
+      <TabsContent value="details">
+        <Card>
+          <CardContent className="pt-6">
+            <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+              {[
+                [tcol("flange"), flange.flangeNumber],
+                [tcol("iso"), flange.isoNumber],
+                [tcol("spool"), flange.spoolNumber],
+                [tcol("rev"), flange.revisionNumber],
+                [tcol("line"), flange.lineNumber],
+                [tcol("pds"), flange.pdsCode],
+                [tcol("rating"), flange.flangeRating],
+                [tcol("diameter"), flange.diameterInch],
+                [tcol("ut"), flange.calculatedUt],
+              ].map(([label, value]) => <div key={label}><dt className="text-muted-foreground text-xs font-medium">{label}</dt><dd className="mt-1 text-sm">{display(value)}</dd></div>)}
+              <div>
+                <dt className="text-muted-foreground text-xs font-medium">{tcol("status")}</dt>
+                <dd className="mt-1"><StatusBadge status={flange.progressState ?? "not_started"} /></dd>
+              </div>
+            </dl>
+          </CardContent>
+        </Card>
+      </TabsContent>
+      <TabsContent value="history">
+        <FlangeHistoryCard history={history} t={t} />
+      </TabsContent>
+    </Tabs>
+  )
 }
 
 export function FlangeManagementScreen({ projectId, canManage, mode = "operate" }: { projectId: string; canManage: boolean; mode?: "browse" | "operate" }) {
@@ -162,37 +223,50 @@ export function FlangeManagementScreen({ projectId, canManage, mode = "operate" 
         </Card>
       ) : null}
 
-      {selected && <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        {mode === "browse" ? null :
-        <ChangeHighlight
-          id={selected.flangeJointRevisionId}
-          announce={t("nowRecording", { flange: selected.flangeNumber ?? t("joint") })}
-        >
-        <Card>
-          <CardHeader>
-            <IdentityHeadline
-              kind={t("recordingFlangeJoint")}
-              identity={selected.flangeNumber ?? "Flange"}
-              meta={[selected.isoNumber, selected.spoolNumber, selected.flangeRating]
-                .filter(Boolean)
-                .join(" · ")}
-              status={<StatusBadge status={selected.progressState ?? "not_started"} />}
-            />
-            <CardDescription>{selected.progressState === "completed" ? t("correctionCreatesANewImmutable") : t("recordTheJointingEventOnce")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {canManage ? <>
-              <label className="block text-sm">{t("jointCategory")}<select className="mt-1 w-full rounded-md border bg-background p-2" value={jointCategoryId} onChange={(event) => setJointCategoryId(event.target.value)}><option value="">{t("selectCategory")}</option>{options.categories.map((item) => <option key={text(item, "id")} value={text(item, "id")}>{text(item, "category_code")} — {text(item, "reason")}</option>)}</select></label>
-              <label className="block text-sm">{t("torquingRequirement")}<select className="mt-1 w-full rounded-md border bg-background p-2" value={torquingRequirementId} onChange={(event) => setTorquingRequirementId(event.target.value)}><option value="">{t("selectRequirement")}</option>{options.torquingRequirements.map((item) => <option key={text(item, "id")} value={text(item, "id")}>{text(item, "code")} — {text(item, "description")}</option>)}</select></label>
-              <div className="grid gap-3 sm:grid-cols-2"><label className="text-sm">{t("jointingValue")}<Input type="number" min="0.01" value={jointingValue} onChange={(event) => setJointingValue(event.target.value)} /></label><label className="text-sm">{t("jointDate")}<Input type="date" value={jointDate} onChange={(event) => setJointDate(event.target.value)} /></label><label className="text-sm">{t("reportNumber")}<Input value={reportNumber} onChange={(event) => setReportNumber(event.target.value)} /></label><label className="text-sm">{t("tagNumber")}<Input value={tagNumber} onChange={(event) => setTagNumber(event.target.value)} /></label></div>
-              <fieldset><legend className="text-sm">{t("jointers")}</legend><div className="grid gap-1 sm:grid-cols-2">{options.jointers.map((item) => { const id = text(item, "id"); return <label key={id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={jointerIds.includes(id)} onChange={(event) => setJointerIds((current) => event.target.checked ? [...current, id] : current.filter((value) => value !== id))} />{text(item, "code")} — {text(item, "description")}</label> })}</div></fieldset>
-              <Button loading={saving} onClick={() => void submit()}>{selected.effectiveProgressId ? t("recordCorrection") : t("recordFlangeProgress")}</Button>
-            </> : <p className="text-sm text-muted-foreground">{t("youHaveReadOnlyAccess")}</p>}
-          </CardContent>
-        </Card>
-        </ChangeHighlight>}
-        <Card><CardHeader><CardTitle>{t("history")}</CardTitle><CardDescription>{t("appendOnlyRecordsForThis")}</CardDescription></CardHeader><CardContent><div className="space-y-2 text-sm">{history.map((item) => <div key={text(item, "id")} className="rounded border p-2"><div className="flex justify-between"><span>{text(item, "report_number")} · {text(item, "tag_number")}</span><Badge variant="outline">{text(item, "source_kind")}</Badge></div><div className="text-muted-foreground">{text(item, "joint_date")} {t("historyValues", { value: text(item, "jointing_value"), ut: text(item, "calculated_ut") || t("notConfigured") })}</div></div>)}{history.length === 0 && <p className="text-muted-foreground">{t("noProgressHistory")}</p>}</div></CardContent></Card>
-      </div>}
+      {selected && <RecordDrawer
+        kicker={tcol("flange")}
+        title={selected.flangeNumber ?? t("joint")}
+        meta={[selected.isoNumber, selected.spoolNumber, selected.flangeRating].filter(Boolean).join(" · ")}
+        status={<StatusBadge status={selected.progressState ?? "not_started"} />}
+        returnLabel={t("flangeWorklist")}
+        closeLabel={t("closeFlange", { flange: selected.flangeNumber ?? t("joint") })}
+        recordKind="flange"
+        onClose={() => setSelectedId(null)}
+      >
+        <div className="space-y-4 p-6" data-operation-scroll="">
+          {mode === "browse" ? <FlangeBrowseTabs key={selected.flangeJointRevisionId} flange={selected} history={history} t={t} tcol={tcol} /> :
+          <>
+          <ChangeHighlight
+            id={selected.flangeJointRevisionId}
+            announce={t("nowRecording", { flange: selected.flangeNumber ?? t("joint") })}
+          >
+          <Card>
+            <CardHeader>
+              <IdentityHeadline
+                kind={t("recordingFlangeJoint")}
+                identity={selected.flangeNumber ?? "Flange"}
+                meta={[selected.isoNumber, selected.spoolNumber, selected.flangeRating]
+                  .filter(Boolean)
+                  .join(" · ")}
+                status={<StatusBadge status={selected.progressState ?? "not_started"} />}
+              />
+              <CardDescription>{selected.progressState === "completed" ? t("correctionCreatesANewImmutable") : t("recordTheJointingEventOnce")}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {canManage ? <>
+                <label className="block text-sm">{t("jointCategory")}<select className="mt-1 w-full rounded-md border bg-background p-2" value={jointCategoryId} onChange={(event) => setJointCategoryId(event.target.value)}><option value="">{t("selectCategory")}</option>{options.categories.map((item) => <option key={text(item, "id")} value={text(item, "id")}>{text(item, "category_code")} — {text(item, "reason")}</option>)}</select></label>
+                <label className="block text-sm">{t("torquingRequirement")}<select className="mt-1 w-full rounded-md border bg-background p-2" value={torquingRequirementId} onChange={(event) => setTorquingRequirementId(event.target.value)}><option value="">{t("selectRequirement")}</option>{options.torquingRequirements.map((item) => <option key={text(item, "id")} value={text(item, "id")}>{text(item, "code")} — {text(item, "description")}</option>)}</select></label>
+                <div className="grid gap-3 sm:grid-cols-2"><label className="text-sm">{t("jointingValue")}<Input type="number" min="0.01" value={jointingValue} onChange={(event) => setJointingValue(event.target.value)} /></label><label className="text-sm">{t("jointDate")}<Input type="date" value={jointDate} onChange={(event) => setJointDate(event.target.value)} /></label><label className="text-sm">{t("reportNumber")}<Input value={reportNumber} onChange={(event) => setReportNumber(event.target.value)} /></label><label className="text-sm">{t("tagNumber")}<Input value={tagNumber} onChange={(event) => setTagNumber(event.target.value)} /></label></div>
+                <fieldset><legend className="text-sm">{t("jointers")}</legend><div className="grid gap-1 sm:grid-cols-2">{options.jointers.map((item) => { const id = text(item, "id"); return <label key={id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={jointerIds.includes(id)} onChange={(event) => setJointerIds((current) => event.target.checked ? [...current, id] : current.filter((value) => value !== id))} />{text(item, "code")} — {text(item, "description")}</label> })}</div></fieldset>
+                <Button loading={saving} onClick={() => void submit()}>{selected.effectiveProgressId ? t("recordCorrection") : t("recordFlangeProgress")}</Button>
+              </> : <p className="text-sm text-muted-foreground">{t("youHaveReadOnlyAccess")}</p>}
+            </CardContent>
+          </Card>
+          </ChangeHighlight>
+          <FlangeHistoryCard history={history} t={t} />
+          </>}
+        </div>
+      </RecordDrawer>}
     </div>
   )
 }

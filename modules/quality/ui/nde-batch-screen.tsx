@@ -4,6 +4,8 @@ import { useTranslations } from "next-intl"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 
+import { errorDetail } from "@/i18n/format"
+import { codeLabel } from "@/i18n/translator"
 import { Badge } from "@/components/ui/badge"
 import { DataTable, useTableUrlState, type DataColumn } from "@/components/ui/data-table"
 import { StatusBadge } from "@/components/ui/status-badge"
@@ -43,7 +45,9 @@ import {
   COVERAGE_REGIMES,
   NDT_METHODS,
   jointStatusLabel,
+  type BatchStatus,
   type CoverageRegime,
+  type ObligationDisposition,
 } from "../domain/nde-batch"
 
 /**
@@ -51,45 +55,78 @@ import {
  * narrows by — "show me the open RT repairs" — so all three are faceted rather than left to the
  * search box, which cannot express "one of these two".
  */
-const OBLIGATION_COLUMNS: ReadonlyArray<DataColumn<NdeObligation>> = [
-  { id: "spoolNumber", header: "Spool", value: (ob) => ob.spoolNumber, searchable: true, filter: "text", className: "font-mono" },
-  { id: "weldNumber", header: "Joint", value: (ob) => ob.weldNumber, searchable: true, filter: "text", pinned: true, alwaysVisible: true, className: "font-mono font-medium" },
-  { id: "batchNumber", header: "Batch", value: (ob) => ob.batchNumber, searchable: true, filter: "select", className: "font-mono" },
-  { id: "method", header: "Method", value: (ob) => ob.method, filter: "select", className: "font-mono uppercase" },
-  { id: "jointStatus", header: "Status (manual)", value: (ob) => jointStatusLabel(ob), filter: "select", className: "font-mono" },
-  {
-    id: "cycle",
-    header: "Cycle",
-    value: (ob) => (ob.cycleKind === "original" ? "Original" : `${ob.cycleKind} ${ob.cycleOrdinal}`),
-    filter: "select",
-    cell: (ob) => (
-      <Badge variant="outline">
-        {ob.cycleKind === "original"
-          ? "Original"
-          : `${ob.cycleKind} (${ob.cycleKind === "repair" ? "R" : "T"}${ob.cycleOrdinal})`}
-      </Badge>
-    ),
-  },
-  {
-    id: "requiredCoverage",
-    header: "Coverage",
-    numeric: true,
-    value: (ob) => ob.requiredCoverage,
-    filter: "number",
-    cell: (ob) => `${ob.requiredCoverage}%`,
-  },
-  {
-    id: "disposition",
-    header: "Disposition",
-    value: (ob) => ob.disposition,
-    filter: "select",
-    cell: (ob) => (
-      <StatusBadge status={ob.disposition} tone={ob.disposition === "satisfied" ? "success" : undefined} />
-    ),
-  },
-]
+type BatchTranslator = ReturnType<typeof useTranslations<"nde.batch">>
+type CodesTranslator = ReturnType<typeof useTranslations<"codes">>
+
+function createObligationColumns(t: BatchTranslator, tc: CodesTranslator): ReadonlyArray<DataColumn<NdeObligation>> {
+  return [
+    { id: "spoolNumber", header: t("columns.spool"), value: (ob) => ob.spoolNumber, searchable: true, filter: "text", className: "font-mono" },
+    { id: "weldNumber", header: t("columns.joint"), value: (ob) => ob.weldNumber, searchable: true, filter: "text", pinned: true, alwaysVisible: true, className: "font-mono font-medium" },
+    { id: "batchNumber", header: t("columns.batch"), value: (ob) => ob.batchNumber, searchable: true, filter: "select", className: "font-mono" },
+    { id: "method", header: t("columns.method"), value: (ob) => codeLabel(tc, "ndeMethod", ob.method), filter: "select", className: "font-mono" },
+    { id: "jointStatus", header: t("columns.manualStatus"), value: (ob) => jointStatusLabel(ob), filter: "select", className: "font-mono" },
+    {
+      id: "cycle",
+      header: t("columns.cycle"),
+      value: (ob) => ob.cycleKind === "original"
+        ? t("cycle.original")
+        : t("cycle.value", { kind: t(`cycle.${ob.cycleKind}`), ordinal: ob.cycleOrdinal }),
+      filter: "select",
+      cell: (ob) => (
+        <Badge variant="outline">
+          {ob.cycleKind === "original"
+            ? t("cycle.original")
+            : t("cycle.badge", {
+              kind: t(`cycle.${ob.cycleKind}`),
+              code: `${ob.cycleKind === "repair" ? "R" : "T"}${ob.cycleOrdinal}`,
+            })}
+        </Badge>
+      ),
+    },
+    {
+      id: "requiredCoverage",
+      header: t("columns.coverage"),
+      numeric: true,
+      value: (ob) => ob.requiredCoverage,
+      filter: "number",
+      cell: (ob) => t("coveragePercent", { percentage: ob.requiredCoverage }),
+    },
+    {
+      id: "disposition",
+      header: t("columns.disposition"),
+      value: (ob) => batchStatusLabel(t, tc, ob.disposition),
+      filter: "select",
+      cell: (ob) => (
+        <StatusBadge
+          status={ob.disposition}
+          label={batchStatusLabel(t, tc, ob.disposition)}
+          tone={ob.disposition === "satisfied" ? "success" : undefined}
+        />
+      ),
+    },
+  ]
+}
+
+function batchStatusLabel(
+  t: BatchTranslator,
+  tc: CodesTranslator,
+  status: BatchStatus | ObligationDisposition,
+): string {
+  switch (status) {
+    case "draft": return tc("status.draft")
+    case "issued": return tc("status.issued")
+    case "pending": return tc("status.pending")
+    case "rejected": return tc("status.rejected")
+    case "superseded": return tc("status.superseded")
+    case "returned": return t("batchStatus.returned")
+    case "closed": return t("batchStatus.closed")
+    case "satisfied": return t("batchStatus.satisfied")
+    case "waived": return t("batchStatus.waived")
+  }
+}
 
 export function NdeBatchScreen({ projectId }: { projectId: string }) {
+  const t = useTranslations("nde.batch")
   const tc = useTranslations("codes")
   const [batches, setBatches] = useState<NdeBatch[]>([])
   const [obligationCounts, setObligationCounts] = useState<Record<string, number>>({})
@@ -138,11 +175,11 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
       setReferentials(refs)
       setObligationCounts(counts)
     } catch (err: any) {
-      toast.error(err.message || "Failed to load NDE data")
+      toast.error(t("errors.failedToLoadNdeData"), { description: errorDetail(err) })
     } finally {
       setLoading(false)
     }
-  }, [projectId])
+  }, [projectId, t])
 
   useEffect(() => {
     void reload()
@@ -168,20 +205,20 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
         )
         setJointWelderIds(ids)
       } catch (err: any) {
-        toast.error(err.message || "Could not load the welders on this joint")
+        toast.error(t("errors.couldNotLoadTheWelders"), { description: errorDetail(err) })
       }
     },
-    [],
+    [t],
   )
 
   // Only an issued obligation can take a result, so the button is absent rather than disabled on
   // the rest — a disabled control on every row reads as a broken screen.
   const obligationColumns = useMemo(
     () => [
-      ...OBLIGATION_COLUMNS,
+      ...createObligationColumns(t, tc),
       {
         id: "action",
-        header: "Action",
+        header: t("action"),
         sortable: false,
         alwaysVisible: true,
         numeric: true,
@@ -189,12 +226,12 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
         cell: (ob: NdeObligation) =>
           ob.disposition === "issued" ? (
             <Button size="sm" variant="outline" data-help="nde-record" onClick={() => void openResultDialog(ob)}>
-              Record Result
+              {t("recordResult")}
             </Button>
           ) : null,
       } satisfies DataColumn<NdeObligation>,
     ],
-    [openResultDialog],
+    [openResultDialog, t, tc],
   )
 
   const jointWelders = referentials.welders.filter((welder) =>
@@ -224,11 +261,11 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
         null,
         crypto.randomUUID()
       )
-      toast.success("NDE Batch created successfully")
+      toast.success(t("success.ndeBatchCreated"))
       setIsCreateOpen(false)
       void reload()
     } catch (err: any) {
-      toast.error(err.message || "Could not create batch")
+      toast.error(t("errors.couldNotCreateBatch"), { description: errorDetail(err) })
     }
   }
 
@@ -237,7 +274,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
   const openAllocationPreview = async (batchId: string) => {
     const percentage = Number(targetPercentage)
     if (!Number.isFinite(percentage) || percentage <= 0 || percentage > 100) {
-      toast.error("The coverage percentage must be between 1 and 100.")
+      toast.error(t("validation.coveragePercentage"))
       return
     }
     setPreviewBatchId(batchId)
@@ -248,7 +285,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
       setPreviewCandidates(candidates)
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Could not preview allocation candidates",
+        t("errors.couldNotPreviewAllocationCandidates"), { description: errorDetail(err) },
       )
       setPreviewBatchId(null)
     } finally {
@@ -268,13 +305,11 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
         percentage,
         crypto.randomUUID(),
       )
-      toast.success(
-        `${allocated} candidate${allocated === 1 ? "" : "s"} allocated to batch at ${percentage}% coverage`,
-      )
+      toast.success(t("success.candidatesAllocated", { count: allocated, percentage }))
       setPreviewBatchId(null)
       void reload()
     } catch (err: any) {
-      toast.error(err.message || "Candidate allocation failed")
+      toast.error(t("errors.candidateAllocationFailed"), { description: errorDetail(err) })
     } finally {
       setAllocating(false)
     }
@@ -284,10 +319,10 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
     try {
       const client = getSupabaseBrowserClient()
       await issueNdeBatch(client, batchId, crypto.randomUUID())
-      toast.success("NDE Batch issued")
+      toast.success(t("success.ndeBatchIssued"))
       void reload()
     } catch (err: any) {
-      toast.error(err.message || "Issuing batch failed")
+      toast.error(t("errors.issuingBatchFailed"), { description: errorDetail(err) })
     }
   }
 
@@ -295,10 +330,10 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
     try {
       const client = getSupabaseBrowserClient()
       await closeNdeBatch(client, batchId, crypto.randomUUID())
-      toast.success("NDE Batch closed")
+      toast.success(t("success.ndeBatchClosed"))
       void reload()
     } catch (err: any) {
-      toast.error(err.message || "Closing batch failed")
+      toast.error(t("errors.closingBatchFailed"), { description: errorDetail(err) })
     }
   }
 
@@ -307,7 +342,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
     // The command refuses a rejection with no defect code (PQC42); catching it
     // here keeps the form from sending a request that can only fail.
     if (rejectionNeedsDefectCode) {
-      toast.error("A rejected result must carry a defect code.")
+      toast.error(t("validation.rejectedRequiresDefectCode"))
       return
     }
     try {
@@ -322,11 +357,11 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
         responsibleWelderId || null,
         crypto.randomUUID()
       )
-      toast.success(`Result recorded: ${outcome}`)
+      toast.success(t("success.resultRecorded", { outcome: t(`outcomeCode.${outcome}`) }))
       setSelectedObligationId(null)
       void reload()
     } catch (err: any) {
-      toast.error(err.message || "Failed to record result")
+      toast.error(t("errors.failedToRecordResult"), { description: errorDetail(err) })
     }
   }
 
@@ -336,7 +371,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl tracking-tight">NDE Batch Management</h1>
+          <h1 className="text-2xl tracking-tight">{t("ndeBatchManagement")}</h1>
         </div>
 
         {/*
@@ -355,15 +390,15 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
           }}
         >
           <DialogTrigger asChild>
-            <Button>Create Batch</Button>
+            <Button>{t("createBatch")}</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>New NDE Batch</DialogTitle>
+              <DialogTitle>{t("newNdeBatch")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">NDT Method</label>
+                <label className="text-sm font-medium">{t("ndtMethod")}</label>
                 <select
                   className="w-full rounded-md border p-2 text-sm"
                   value={method}
@@ -378,22 +413,22 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Coverage regime</label>
+                <label className="text-sm font-medium">{t("coverageRegime")}</label>
                 <select
                   className="w-full rounded-md border p-2 text-sm"
                   value={coverageRegime}
                   onChange={(e) => setCoverageRegime(e.target.value as CoverageRegime)}
                 >
                   {COVERAGE_REGIMES.map((regime) => (
-                    <option key={regime.value} value={regime.value}>
-                      {regime.label}
+                    <option key={regime} value={regime}>
+                      {t(`coverageRegimeOption.${regime}`)}
                     </option>
                   ))}
                 </select>
               </div>
 
               <Button onClick={() => void handleCreateBatch()} className="w-full">
-                Create
+                {t("create")}
               </Button>
             </div>
           </DialogContent>
@@ -405,16 +440,18 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
           role="status"
           className="border-danger-border bg-danger-bg text-danger-fg rounded-md border px-4 py-3 text-sm"
         >
-          <p className="font-medium">Penalty shoot: 100 % control in force</p>
+          <p className="font-medium">{t("penaltyShoot100ControlIn")}</p>
           <ul className="mt-1 list-disc pl-5 text-muted-foreground">
             {escalatedBatches.map((b) => (
               <li key={b.id}>
-                Batch <span className="font-mono">{b.batchNumber}</span> escalated on{" "}
-                {b.escalatedAt?.slice(0, 10)} because{" "}
-                {b.escalationReason === "four_rejections"
-                  ? "it reached four rejected joints"
-                  : "a second-level tracer was rejected"}
-                . Every remaining joint of that welder is now examined at 100 %.
+                {t.rich("escalatedBatch", {
+                  batchNumber: b.batchNumber,
+                  date: b.escalatedAt?.slice(0, 10) ?? "—",
+                  reason: b.escalationReason === "four_rejections"
+                    ? t("escalationReason.fourRejections")
+                    : t("escalationReason.secondLevelTracer"),
+                  batch: (chunks) => <span className="font-mono">{chunks}</span>,
+                })}
               </li>
             ))}
           </ul>
@@ -424,35 +461,35 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
       <div className="grid grid-cols-1 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Batches ({batches.length})</CardTitle>
+            <CardTitle>{t("batches", { count: batches.length })}</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Batch #</TableHead>
-                  <TableHead>Method</TableHead>
-                  <TableHead>Regime</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Obligations</TableHead>
-                  <TableHead>Issued On</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t("batch")}</TableHead>
+                  <TableHead>{t("method")}</TableHead>
+                  <TableHead>{t("regime")}</TableHead>
+                  <TableHead>{t("status")}</TableHead>
+                  <TableHead>{t("obligations")}</TableHead>
+                  <TableHead>{t("issuedOn")}</TableHead>
+                  <TableHead className="text-right">{t("actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {batches.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center text-muted-foreground">
-                      No NDE batches created yet.
+                      {t("noNdeBatchesCreatedYet")}
                     </TableCell>
                   </TableRow>
                 ) : (
                   batches.map((b) => (
                     <TableRow key={b.id}>
                       <TableCell className="font-mono font-medium">{b.batchNumber}</TableCell>
-                      <TableCell className="uppercase">{b.method}</TableCell>
+                      <TableCell className="uppercase">{codeLabel(tc, "ndeMethod", b.method)}</TableCell>
                       <TableCell>
-                        {b.coverageRegime === "mandatory_100" ? "100 %" : "Spot"}
+                        {t(`coverageRegimeSummary.${b.coverageRegime}`)}
                       </TableCell>
                       <TableCell>
                         <Badge
@@ -464,7 +501,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
                               : "outline"
                           }
                         >
-                          {b.status}
+                          {batchStatusLabel(t, tc, b.status)}
                         </Badge>
                       </TableCell>
                       <TableCell>{obligationCounts[b.id] ?? 0}</TableCell>
@@ -476,7 +513,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
                               type="number"
                               min={1}
                               max={100}
-                              aria-label="Coverage percentage"
+                              aria-label={t("coveragePercentage")}
                               className="inline-block w-20 align-middle"
                               value={targetPercentage}
                               onChange={(e) => setTargetPercentage(e.target.value)}
@@ -486,14 +523,14 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
                               variant="outline"
                               onClick={() => void openAllocationPreview(b.id)}
                             >
-                              Allocate Candidates
+                              {t("allocateCandidates")}
                             </Button>
                             <Button
                               size="sm"
                               variant="default"
                               onClick={() => void handleIssueBatch(b.id)}
                             >
-                              Issue Batch
+                              {t("issueBatch")}
                             </Button>
                           </>
                         )}
@@ -503,7 +540,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
                             variant="secondary"
                             onClick={() => void handleCloseBatch(b.id)}
                           >
-                            Close Batch
+                            {t("closeBatch")}
                           </Button>
                         )}
                       </TableCell>
@@ -518,8 +555,9 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
         <Card>
           <CardHeader>
             <CardTitle>
-              NDE Obligations (
-              {spoolContext ? `${visibleObligations.length} of ${obligations.length} · selected spool` : obligations.length})
+              {spoolContext
+                ? t("ndeObligationsForSpool", { shown: visibleObligations.length, total: obligations.length })
+                : t("ndeObligations", { count: obligations.length })}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -530,12 +568,12 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
               onStateChange={setObligationTable}
               rowId={(ob) => ob.id}
               loading={loading}
-              searchPlaceholder="Search joint, spool or batch…"
-              emptyTitle={spoolContext ? "No NDE obligation for the selected spool." : "No NDE obligations found."}
+              searchPlaceholder={t("searchJointSpoolOrBatch")}
+              emptyTitle={spoolContext ? t("noNdeObligationForThe") : t("noNdeObligationsFound")}
               emptyDescription={
                 spoolContext
-                  ? "Clear the selected spool in the page head to see every obligation."
-                  : "Obligations appear once a weld with an NDE requirement is recorded."
+                  ? t("clearTheSelectedSpoolIn")
+                  : t("obligationsAppearOnceAWeld")
               }
             />
           </CardContent>
@@ -550,30 +588,29 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              Allocate candidates —{" "}
-              {batches.find((b) => b.id === previewBatchId)?.batchNumber ?? "batch"}
+              {t("allocateCandidatesFor", {
+                batch: batches.find((b) => b.id === previewBatchId)?.batchNumber ?? t("batchFallback"),
+              })}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             {previewLoading ? (
-              <p className="text-sm text-muted-foreground">Loading candidate joints…</p>
+              <p className="text-sm text-muted-foreground">{t("loadingCandidateJoints")}</p>
             ) : previewCandidates.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                No candidate joints are available for this batch. Allocating would take nothing.
+                {t("noCandidateJointsAreAvailable")}
               </p>
             ) : (
               <>
                 <p className="text-sm text-muted-foreground">
-                  {previewCandidates.length} candidate joint
-                  {previewCandidates.length === 1 ? "" : "s"} at {targetPercentage}% coverage. The
-                  server picks the final set; a spot regime takes a subset of these.
+                  {t("candidatePreview", { count: previewCandidates.length, percentage: targetPercentage })}
                 </p>
                 <div className="max-h-64 overflow-y-auto rounded border">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Joint</TableHead>
-                        <TableHead>Welded On</TableHead>
+                        <TableHead>{t("joint")}</TableHead>
+                        <TableHead>{t("weldedOn")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -593,7 +630,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
               className="w-full"
               disabled={previewLoading || allocating || previewCandidates.length === 0}
             >
-              {`Allocate at ${targetPercentage}% coverage`}
+              {t("allocateAtPercentage", { percentage: targetPercentage })}
             </Button>
           </div>
         </DialogContent>
@@ -608,25 +645,28 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
           <DialogHeader>
             <DialogTitle>
               {selectedObligation
-                ? `Record NDE Result — ${selectedObligation.weldNumber} (${jointStatusLabel(selectedObligation)})`
-                : "Record NDE Result"}
+                ? t("recordNdeResultFor", {
+                  weldNumber: selectedObligation.weldNumber,
+                  status: jointStatusLabel(selectedObligation),
+                })
+                : t("recordNdeResult")}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Outcome</label>
+              <label className="text-sm font-medium">{t("outcome")}</label>
               <select
                 className="w-full rounded-md border p-2 text-sm"
                 value={outcome}
                 onChange={(e) => setOutcome(e.target.value as "accepted" | "rejected")}
               >
-                <option value="accepted">Accepted</option>
-                <option value="rejected">Rejected</option>
+                <option value="accepted">{t("accepted")}</option>
+                <option value="rejected">{t("rejected")}</option>
               </select>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Examined On</label>
+              <label className="text-sm font-medium">{t("examinedOn")}</label>
               <Input
                 type="date"
                 value={examinedOn}
@@ -635,7 +675,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Report Number</label>
+              <label className="text-sm font-medium">{t("reportNumber")}</label>
               <Input
                 placeholder="RPT-2026-001"
                 value={reportNumber}
@@ -645,13 +685,13 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
 
             {outcome === "rejected" && (
               <div className="space-y-2">
-                <label className="text-sm font-medium">Defect code</label>
+                <label className="text-sm font-medium">{t("defectCode")}</label>
                 <select
                   className="w-full rounded-md border p-2 text-sm"
                   value={defectReworkCodeId}
                   onChange={(e) => setDefectReworkCodeId(e.target.value)}
                 >
-                  <option value="">Select a defect code…</option>
+                  <option value="">{t("selectADefectCode")}</option>
                   {referentials.reworkCodes.map((code) => (
                     <option key={code.id} value={code.id}>
                       {code.code}
@@ -660,19 +700,19 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
                   ))}
                 </select>
                 <p className="text-xs text-muted-foreground">
-                  A rejected result must carry a defect code.
+                  {t("validation.rejectedRequiresDefectCode")}
                 </p>
               </div>
             )}
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Responsible welder</label>
+              <label className="text-sm font-medium">{t("responsibleWelder")}</label>
               <select
                 className="w-full rounded-md border p-2 text-sm"
                 value={responsibleWelderId}
                 onChange={(e) => setResponsibleWelderId(e.target.value)}
               >
-                <option value="">The report does not name a welder</option>
+                <option value="">{t("theReportDoesNotName")}</option>
                 {jointWelders.map((welder) => (
                   <option key={welder.id} value={welder.id}>
                     {welder.welderCode}
@@ -681,8 +721,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
                 ))}
               </select>
               <p className="text-xs text-muted-foreground">
-                Only the welders on this joint may be named. Leaving it unnamed still
-                forces the repair and its tracers, but counts no penalty against anyone.
+                {t("onlyTheWeldersOnThis")}
               </p>
             </div>
 
@@ -691,7 +730,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
               className="w-full"
               disabled={rejectionNeedsDefectCode}
             >
-              Save Result
+              {t("saveResult")}
             </Button>
           </div>
         </DialogContent>

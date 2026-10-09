@@ -1,9 +1,11 @@
 "use client";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { errorDetail } from "@/i18n/format";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
 import { materializeProgressCopies } from "@/modules/construction/infrastructure/supabase-construction-repository";
 import {
@@ -11,7 +13,7 @@ import {
   groupByIsometric,
   unresolvedItems,
 } from "../application/resolve-revision";
-import { summarizeChanges, type PreviewChangeItem } from "../domain/diff";
+import { CHANGE_TYPES, summarizeChanges, type PreviewChangeItem } from "../domain/diff";
 import type { RevisionDecision } from "../domain/revision";
 import {
   applySpoolingImportJob,
@@ -20,6 +22,7 @@ import {
   revalidateSpoolingImportJob,
 } from "../infrastructure/supabase-engineering-repository";
 import { RevisionDecisionTable } from "./revision-decision-table";
+import { describeRevisionReason } from "./revision-reason-text";
 export function RevisionWorkbench({
   jobId,
   canManage,
@@ -29,6 +32,7 @@ export function RevisionWorkbench({
   canManage: boolean;
   onApplied: () => void;
 }) {
+  const t = useTranslations("spooling");
   const [items, setItems] = useState<PreviewChangeItem[]>([]);
   const [blockers, setBlockers] = useState(0);
   const [status, setStatus] = useState("validated");
@@ -47,11 +51,9 @@ export function RevisionWorkbench({
       setItems(preview);
       setBlockers(counts.blockerCount);
     } catch (e) {
-      toast.error(
-        e instanceof Error ? e.message : "The preview could not be loaded.",
-      );
+      toast.error(t("revision.previewFailed"), { description: errorDetail(e) });
     }
-  }, [jobId]);
+  }, [jobId, t]);
   useEffect(() => {
     void refresh();
   }, [refresh]);
@@ -80,14 +82,12 @@ export function RevisionWorkbench({
         );
         await refresh();
       } catch (e) {
-        toast.error(
-          e instanceof Error ? e.message : "The decision could not be saved.",
-        );
+        toast.error(t("revision.decisionFailed"), { description: errorDetail(e) });
       } finally {
         setBusy(false);
       }
     },
-    [canManage, jobId, refresh],
+    [canManage, jobId, refresh, t],
   );
   const apply = useCallback(async () => {
     if (!jobId || !gate.allowed) return;
@@ -98,7 +98,7 @@ export function RevisionWorkbench({
         jobId,
       );
       setStatus(job.status);
-      toast.success(`Applied ${job.appliedRowCount} definition rows.`);
+      toast.success(t("revision.applied", { count: job.appliedRowCount }));
       // Plan section 3.4: the apply authorizes a carry-over, it does not perform it. The
       // command is idempotent, so a retry is harmless. An operator who may import but may
       // not record fabrication progress still gets a successful apply.
@@ -110,33 +110,27 @@ export function RevisionWorkbench({
             revisionId,
           );
         }
-        if (copied > 0) toast.success(`Carried ${copied} progress records forward.`);
+        if (copied > 0) toast.success(t("revision.carried", { count: copied }));
       } catch (carryError) {
-        toast.warning(
-          carryError instanceof Error
-            ? `Progress carry-over was not applied: ${carryError.message}`
-            : "Progress carry-over was not applied.",
-        );
+        toast.warning(t("revision.carryOverFailed"), { description: errorDetail(carryError) });
       }
       onApplied();
     } catch (e) {
-      toast.error(
-        e instanceof Error ? e.message : "The import could not be applied.",
-      );
+      toast.error(t("revision.applyFailed"), { description: errorDetail(e) });
     } finally {
       setBusy(false);
     }
-  }, [gate.allowed, jobId, onApplied]);
+  }, [gate.allowed, jobId, onApplied, t]);
   const summary = useMemo(() => summarizeChanges(items), [items]);
   if (!jobId)
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Revision decisions</CardTitle>
+          <CardTitle>{t("revision.title")}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Validate a SpoolGen file set to see what it changes.
+            {t("revision.empty")}
           </p>
         </CardContent>
       </Card>
@@ -145,10 +139,10 @@ export function RevisionWorkbench({
     <Card>
       <CardHeader>
         <CardTitle className="flex flex-wrap items-center gap-2">
-          Revision decisions<Badge variant="outline">{summary.new} new</Badge>
-          <Badge variant="outline">{summary.revised} revised</Badge>
-          <Badge variant="outline">{summary.unchanged} unchanged</Badge>
-          <Badge variant="outline">{summary.removed} removed</Badge>
+          {t("revision.title")}
+          {CHANGE_TYPES.map((change) => (
+            <Badge key={change} variant="outline">{t(`revision.summary.${change}`, { count: summary[change] })}</Badge>
+          ))}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -168,10 +162,10 @@ export function RevisionWorkbench({
             onClick={apply}
             disabled={!canManage || busy || !gate.allowed}
           >
-            Apply import
+            {t("revision.apply")}
           </Button>
           {gate.reason ? (
-            <span className="text-sm text-muted-foreground">{gate.reason}</span>
+            <span className="text-sm text-muted-foreground">{describeRevisionReason(t, gate.reason)}</span>
           ) : null}
         </div>
       </CardContent>

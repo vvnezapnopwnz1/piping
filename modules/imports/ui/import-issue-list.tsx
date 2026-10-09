@@ -1,7 +1,10 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { StatusBadge, type StatusTone } from "@/components/ui/status-badge"
-import type { ImportIssue, ImportIssueSeverity } from "../domain/import-issue"
+import type { ImportIssueSeverity, ImportRowIssue } from "../domain/import-issue"
+import type { StoredImportIssue } from "../domain/stored-import-issue"
+import { describeImportIssue } from "./import-issue-text"
 
 /**
  * Import severities are their own vocabulary — a `conflict` is not a workflow state — so they name
@@ -20,15 +23,15 @@ const SEVERITY_STYLE: Record<ImportIssueSeverity, string> = {
   warning: "bg-neutral-bg text-neutral-fg border-neutral-border",
 }
 
-const SEVERITY_LABEL: Record<ImportIssueSeverity, string> = {
-  blocker: "Error",
-  conflict: "Overwrite",
-  warning: "Warning",
-}
+/**
+ * `StoredImportIssue` rows come from the SpoolGen import in `modules/engineering`, which still sends its
+ * own sentence; they show it until that module moves to codes. Import validation never produces one.
+ */
+export function ImportIssueList({ issues }: { issues: readonly (ImportRowIssue | StoredImportIssue)[] }) {
+  const t = useTranslations("spooling")
 
-export function ImportIssueList({ issues }: { issues: readonly ImportIssue[] }) {
   if (issues.length === 0) {
-    return <p className="text-sm text-muted-foreground">No issues were found in this file.</p>
+    return <p className="text-sm text-muted-foreground">{t("issueList.empty")}</p>
   }
 
   return (
@@ -41,14 +44,14 @@ export function ImportIssueList({ issues }: { issues: readonly ImportIssue[] }) 
           <StatusBadge
             status={issue.severity}
             tone={SEVERITY_TONE[issue.severity]}
-            label={SEVERITY_LABEL[issue.severity]}
+            label={t(`severity.${issue.severity}`)}
             className="bg-transparent"
           />
           <span className="font-mono text-xs">
-            {issue.rowNumber === null ? "Sheet" : `Row ${issue.rowNumber}`}
+            {issue.rowNumber === null ? t("issueList.sheet") : t("issueList.row", { row: issue.rowNumber })}
             {issue.columnName ? ` · ${issue.columnName}` : ""}
           </span>
-          <span>{issue.message}</span>
+          <span>{"message" in issue ? issue.message : describeImportIssue(t, issue)}</span>
         </li>
       ))}
     </ul>

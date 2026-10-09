@@ -1,5 +1,7 @@
 "use client"
 
+import { useTestPackTranslations, reportTestPackError } from "@/modules/pressure-test/ui/test-pack-i18n"
+
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
@@ -53,72 +55,6 @@ type CatalogWithReadiness = TestPackCatalogRow & {
   xOpenCount?: number | null
 }
 
-const catalogColumns: DataColumn<CatalogWithReadiness>[] = [
-  {
-    id: "testPackNumber",
-    header: "Test Pack number",
-    searchable: true,
-    value: (row) => row.testPackNumber,
-  },
-  {
-    id: "revisionNo",
-    header: "Rev",
-    numeric: true,
-    value: (row) => row.revisionNo,
-  },
-  {
-    id: "lifecycle",
-    header: "Lifecycle",
-    filter: "select",
-    value: (row) => row.lifecycle,
-    cell: (row) => (
-      <Badge variant={row.lifecycle === "archived" ? "outline" : "default"}>
-        {row.lifecycle}
-      </Badge>
-    ),
-  },
-  {
-    id: "activeIsoCount",
-    header: "ISOs",
-    numeric: true,
-    value: (row) => row.activeIsoCount,
-    filter: "number",
-  },
-  {
-    id: "readiness",
-    header: "Readiness",
-    filter: "select",
-    value: (row) => (row.isRft ? "Ready For Test" : "Blocked"),
-    cell: (row) =>
-      row.isRft !== undefined ? (
-        <Badge variant={row.isRft ? "default" : "secondary"}>
-          {row.isRft ? "RFT" : "Blocked"}
-        </Badge>
-      ) : (
-        <span className="text-muted-foreground">—</span>
-      ),
-  },
-  {
-    id: "location",
-    header: "Location",
-    searchable: true,
-    filter: "select",
-    value: (row) => row.location ?? "—",
-  },
-  {
-    id: "priority",
-    header: "Priority",
-    filter: "select",
-    value: (row) => row.priority ?? "Normal",
-  },
-  {
-    id: "medium",
-    header: "Medium",
-    filter: "select",
-    value: (row) => mediumLabel(row.medium),
-  },
-]
-
 function WorkbenchDrawerHost({
   projectId,
   onCloseDrawer,
@@ -126,6 +62,8 @@ function WorkbenchDrawerHost({
   projectId: string
   onCloseDrawer: () => void
 }) {
+  const t = useTestPackTranslations()
+
   const workspace = useTestPackWorkspaceContext()
   const { snapshot, loading, error, unavailableReason, dataCurrent, refresh } = workspace
   const searchParams = useSearchParams()
@@ -178,11 +116,11 @@ function WorkbenchDrawerHost({
   if (loading && !snapshot) {
     return (
       <RecordDrawer
-        kicker="Test Pack"
-        title="Loading…"
-        meta="Fetching Test Pack facts"
-        returnLabel="Test Packs"
-        closeLabel="Close Test Pack drawer"
+        kicker={t("text.testPack")}
+        title={t("text.loading")}
+        meta={t("text.fetchingFacts")}
+        returnLabel={t("text.testPacks")}
+        closeLabel={t("text.closeDrawer")}
         recordKind="test-pack"
         onClose={onCloseDrawer}
       >
@@ -196,11 +134,11 @@ function WorkbenchDrawerHost({
   if (unavailableReason || (error && !snapshot)) {
     return (
       <RecordDrawer
-        kicker="Test Pack"
-        title="Test Pack Unavailable"
-        meta="Selection error"
-        returnLabel="Test Packs"
-        closeLabel="Close Test Pack drawer"
+        kicker={t("text.testPack")}
+        title={t("text.testPackUnavailable")}
+        meta={t("text.selectionError")}
+        returnLabel={t("text.testPacks")}
+        closeLabel={t("text.closeDrawer")}
         recordKind="test-pack"
         onClose={onCloseDrawer}
       >
@@ -209,20 +147,23 @@ function WorkbenchDrawerHost({
             <CardContent className="flex flex-col items-center justify-center p-6 text-center space-y-3">
               <AlertCircle className="h-10 w-10 text-destructive" />
               <h3 className="text-base font-semibold">
-                {unavailableReason ?? error ?? "Test Pack could not be found."}
+                {unavailableReason ? t(unavailableReason) : error ?? t("text.testPackCouldNotBeFound")}
               </h3>
               <p className="text-sm text-muted-foreground">
-                This test pack may not exist in the active project scope or the request failed.
+
+                {t("text.thisTestPackMayNotExistInThe")}
               </p>
               <div className="flex gap-2 pt-2">
                 {error && (
                   <Button size="sm" variant="outline" onClick={() => void refresh()}>
                     <RefreshCw className="mr-2 h-4 w-4" />
-                    Retry
+
+                    {t("text.retry")}
                   </Button>
                 )}
                 <Button size="sm" onClick={onCloseDrawer}>
-                  Return to list
+
+                  {t("text.returnToList")}
                 </Button>
               </div>
             </CardContent>
@@ -239,26 +180,26 @@ function WorkbenchDrawerHost({
 
   const statusNode = readiness ? (
     <Badge variant={readiness.isRft ? "default" : "secondary"}>
-      {readiness.isRft ? "Ready For Test" : "Blocked"}
+      {readiness.isRft ? t("text.readyForTest162") : t("text.blocked")}
     </Badge>
   ) : (
-    <span className="text-xs text-muted-foreground">Readiness unavailable</span>
+    <span className="text-xs text-muted-foreground">{t("text.readinessUnavailable")}</span>
   )
 
   return (
     <RecordDrawer
-      kicker="Test Pack"
+      kicker={t("text.testPack")}
       title={pack.testPackNumber}
-      meta={`rev ${pack.revisionNo} · ${pack.activeIsoCount} ISO`}
+      meta={t("text.packMeta", { revision: pack.revisionNo, count: pack.activeIsoCount })}
       status={statusNode}
-      returnLabel="Test Packs"
-      closeLabel={`Close Test Pack ${pack.testPackNumber}`}
+      returnLabel={t("text.testPacks")}
+      closeLabel={t("text.closePack", { number: pack.testPackNumber })}
       recordKind="test-pack"
       onClose={onCloseDrawer}
     >
       <div className={styles.drawerContent}>
         {/* Four areas navigation */}
-        <nav className={styles.viewNav} aria-label="Test pack areas">
+        <nav className={styles.viewNav} aria-label={t("text.testPackAreas")}>
           {TEST_PACK_VIEWS.map((view) => (
             <button
               key={view}
@@ -267,7 +208,7 @@ function WorkbenchDrawerHost({
               data-active={activeView === view ? "" : undefined}
               onClick={() => handleSelectView(view)}
             >
-              <span className="capitalize">{view}</span>
+              <span className="capitalize">{t(`view.${view}`)}</span>
             </button>
           ))}
         </nav>
@@ -330,6 +271,73 @@ function WorkbenchDrawerHost({
 }
 
 export function TestPackWorkbench({ projectId, testPackId }: TestPackWorkbenchProps) {
+  const t = useTestPackTranslations()
+  const catalogColumns: DataColumn<CatalogWithReadiness>[] = [
+  {
+    id: "testPackNumber",
+    header: t("text.testPackNumber"),
+    searchable: true,
+    value: (row) => row.testPackNumber,
+  },
+  {
+    id: "revisionNo",
+    header: t("text.rev123"),
+    numeric: true,
+    value: (row) => row.revisionNo,
+  },
+  {
+    id: "lifecycle",
+    header: t("text.lifecycle"),
+    filter: "select",
+    value: (row) => t(`codes.status.${row.lifecycle}`),
+    cell: (row) => (
+      <Badge variant={row.lifecycle === "archived" ? "outline" : "default"}>
+        {t(`codes.status.${row.lifecycle}`)}
+      </Badge>
+    ),
+  },
+  {
+    id: "activeIsoCount",
+    header: t("text.isos"),
+    numeric: true,
+    value: (row) => row.activeIsoCount,
+    filter: "number",
+  },
+  {
+    id: "readiness",
+    header: t("text.readiness"),
+    filter: "select",
+    value: (row) => (row.isRft ? t("text.readyForTest162") : t("text.blocked")),
+    cell: (row) =>
+      row.isRft !== undefined ? (
+        <Badge variant={row.isRft ? "default" : "secondary"}>
+          {row.isRft ? "RFT" : t("text.blocked")}
+        </Badge>
+      ) : (
+        <span className="text-muted-foreground">—</span>
+      ),
+  },
+  {
+    id: "location",
+    header: t("text.location"),
+    searchable: true,
+    filter: "select",
+    value: (row) => row.location ?? "—",
+  },
+  {
+    id: "priority",
+    header: t("text.priority"),
+    filter: "select",
+    value: (row) => row.priority ? t(`text.${row.priority.toLowerCase()}`) : t("text.normal"),
+  },
+  {
+    id: "medium",
+    header: t("text.medium"),
+    filter: "select",
+    value: (row) => t(mediumLabel(row.medium)),
+  },
+]
+
   const auth = useSupabaseAuth()
   const activityCode = auth.access?.activityCode
   const [catalogRows, setCatalogRows] = useState<CatalogWithReadiness[]>([])
@@ -370,7 +378,7 @@ export function TestPackWorkbench({ projectId, testPackId }: TestPackWorkbenchPr
         setCatalogRows(merged)
       })
       .catch((cause) => {
-        if (active) setError(cause instanceof Error ? cause.message : "Failed to load Test Packs")
+        if (active) setError(reportTestPackError(cause, t("text.failedToLoadTestPacks")))
       })
       .finally(() => {
         if (active) setLoading(false)
@@ -398,7 +406,7 @@ export function TestPackWorkbench({ projectId, testPackId }: TestPackWorkbenchPr
       <div className={styles.listPane}>
         <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
           <div>
-            <h1 className="text-2xl font-semibold">Test Pack Explorer</h1>
+            <h1 className="text-2xl font-semibold">{t("text.testPackExplorer")}</h1>
           </div>
         </div>
 
@@ -412,11 +420,12 @@ export function TestPackWorkbench({ projectId, testPackId }: TestPackWorkbenchPr
           rowId={(row) => row.id}
           loading={loading}
           onRowClick={(row) => handleOpenPack(row.id)}
-          emptyTitle="No test packs yet."
+          emptyTitle={t("text.noPacks")}
           emptyAction={
             <Button asChild size="sm">
               <Link href={withProject("/testpack/builder", activityCode)}>
-                Create test pack
+
+                {t("text.createTestPack")}
               </Link>
             </Button>
           }

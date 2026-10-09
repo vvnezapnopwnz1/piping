@@ -1,9 +1,11 @@
 "use client";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { errorDetail } from "@/i18n/format";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
 import {
   loadIsometrics,
@@ -20,6 +22,7 @@ export function EngineeringBrowser({
   projectId: string;
   refreshToken: number;
 }) {
+  const t = useTranslations("spooling");
   const [isos, setIsos] = useState<IsometricSummary[]>([]);
   const [selectedIso, setSelectedIso] = useState<string | null>(null);
   const [revisions, setRevisions] = useState<RevisionSummary[]>([]);
@@ -30,20 +33,16 @@ export function EngineeringBrowser({
     try {
       setSpools(await loadRevisionGraph(getSupabaseBrowserClient(), id));
     } catch (e) {
-      toast.error(
-        e instanceof Error ? e.message : "The revision could not be loaded.",
-      );
+      toast.error(t("browser.revisionFailed"), { description: errorDetail(e) });
     }
-  }, []);
+  }, [t]);
   useEffect(() => {
     void loadIsometrics(getSupabaseBrowserClient(), projectId)
       .then(setIsos)
       .catch((e) =>
-        toast.error(
-          e instanceof Error ? e.message : "Isometrics could not be loaded.",
-        ),
+        toast.error(t("browser.isometricsFailed"), { description: errorDetail(e) }),
       );
-  }, [projectId, refreshToken]);
+  }, [projectId, refreshToken, t]);
   const selectIso = useCallback(
     async (iso: IsometricSummary) => {
       setSelectedIso(iso.id);
@@ -58,20 +57,16 @@ export function EngineeringBrowser({
         const accepted = history.find((r) => r.status === "accepted");
         if (accepted) await selectRevision(accepted.id);
       } catch (e) {
-        toast.error(
-          e instanceof Error
-            ? e.message
-            : "Revision history could not be loaded.",
-        );
+        toast.error(t("browser.historyFailed"), { description: errorDetail(e) });
       }
     },
-    [selectRevision],
+    [selectRevision, t],
   );
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <Card>
         <CardHeader>
-          <CardTitle>Isometrics</CardTitle>
+          <CardTitle>{t("browser.isometrics")}</CardTitle>
         </CardHeader>
         <CardContent>
           {isos.map((iso) => (
@@ -91,7 +86,7 @@ export function EngineeringBrowser({
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Revision history</CardTitle>
+          <CardTitle>{t("browser.history")}</CardTitle>
         </CardHeader>
         <CardContent>
           {revisions.map((revision) => (
@@ -109,7 +104,7 @@ export function EngineeringBrowser({
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Spools</CardTitle>
+          <CardTitle>{t("browser.spools")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {spools.map((spool) => (
@@ -117,20 +112,20 @@ export function EngineeringBrowser({
               <div className="flex justify-between">
                 <span className="font-mono">{spool.spoolNumber}</span>
                 {spool.isRemoved ? (
-                  <Badge variant="outline">Removed</Badge>
+                  <Badge variant="outline">{t("browser.removed")}</Badge>
                 ) : null}
               </div>
               <p className="text-xs">
-                Welds: {spool.weldNumbers.join(", ") || "—"}
+                {t("browser.welds", { items: spool.weldNumbers.join(", ") || "—" })}
               </p>
               <p className="text-xs">
-                Supports: {spool.supportNumbers.join(", ") || "—"}
+                {t("browser.supports", { items: spool.supportNumbers.join(", ") || "—" })}
               </p>
               <p className="text-xs">
-                Flange joints: {spool.flangeNumbers.join(", ") || "—"}
+                {t("browser.flangeJoints", { items: spool.flangeNumbers.join(", ") || "—" })}
               </p>
               <p className="text-xs">
-                Ident codes: {spool.identCodes.join(", ") || "—"}
+                {t("browser.identCodes", { items: spool.identCodes.join(", ") || "—" })}
               </p>
             </div>
           ))}

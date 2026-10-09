@@ -26,8 +26,8 @@ test("toExecutiveOverview turns scoped aggregate distributions into Home progres
     nde: { total: 97, inspected: 62, awaitingResult: 35, issued: 20, percentInspected: 64 },
     erection: { total: 16, readyForTest: 4, remaining: 12, percentReadyForTest: 25 },
     attention: [
-      { module: "nde", count: 20, label: "NDE obligations issued to inspector" },
-      { module: "erection", count: 12, label: "Accepted spools not Ready for Test" },
+      { module: "nde", count: 20 },
+      { module: "erection", count: 12 },
     ],
   })
 })

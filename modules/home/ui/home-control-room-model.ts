@@ -76,9 +76,8 @@ export interface AttentionFacts {
 export interface AttentionItem {
   id: "nde" | "erection" | "testpacks";
   count: number;
-  title: string;
-  detail: string;
-  action: string;
+  /** Set when the row reads "count of total"; the sentence itself lives in the `home` messages. */
+  total?: number;
   href: string;
 }
 
@@ -89,37 +88,13 @@ export interface AttentionItem {
 export function attentionItems(facts: AttentionFacts): AttentionItem[] {
   const items: AttentionItem[] = [];
   if (facts.nde && facts.nde.issued > 0) {
-    const n = facts.nde.issued;
-    items.push({
-      id: "nde",
-      count: n,
-      title: `${n} NDE ${n === 1 ? "obligation" : "obligations"} awaiting a result`,
-      detail: "Issued to the inspector. An open obligation keeps its spool from Ready for Test.",
-      action: "Open issued obligations",
-      href: ISSUED_NDE_HREF,
-    });
+    items.push({ id: "nde", count: facts.nde.issued, href: ISSUED_NDE_HREF });
   }
   if (facts.erection && facts.erection.remaining > 0) {
-    const n = facts.erection.remaining;
-    items.push({
-      id: "erection",
-      count: n,
-      title: `${n} of ${facts.erection.total} spools not Ready for Test`,
-      detail: "Each row names what is still open and links to where it is recorded.",
-      action: "Open RFT readiness",
-      href: NOT_READY_FOR_TEST_HREF,
-    });
+    items.push({ id: "erection", count: facts.erection.remaining, total: facts.erection.total, href: NOT_READY_FOR_TEST_HREF });
   }
   if (facts.testPacks && facts.testPacks.blocked > 0) {
-    const n = facts.testPacks.blocked;
-    items.push({
-      id: "testpacks",
-      count: n,
-      title: `${n} of ${facts.testPacks.total} test packs not Ready for Test`,
-      detail: "Blocked by member spools or open punch items.",
-      action: "Open test packs",
-      href: "/testpack",
-    });
+    items.push({ id: "testpacks", count: facts.testPacks.blocked, total: facts.testPacks.total, href: "/testpack" });
   }
   return items;
 }

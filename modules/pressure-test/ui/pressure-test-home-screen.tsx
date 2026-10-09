@@ -1,5 +1,7 @@
 "use client"
 
+import { useTestPackTranslations, reportTestPackError } from "@/modules/pressure-test/ui/test-pack-i18n"
+
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -16,15 +18,16 @@ import {
 } from "../infrastructure/supabase-pressure-test-repository"
 import { buildTestPackHref } from "./test-pack-workspace-model"
 
-const stages = [
-  ["Line Check", "/testpack/pressure-test/line-check", "line"],
-  ["Item Clearance", "/testpack/pressure-test/item-clearance", "clearance"],
-  ["Blinding", "/testpack/pressure-test/blinding", "blinding"],
-  ["Testing / Pre-commissioning", "/testpack/pressure-test/testing-precomm", "testing"],
-  ["Reinstatement", "/testpack/pressure-test/reinstatement", "reinstatement"],
+export function PressureTestHomeScreen() {
+  const t = useTestPackTranslations()
+  const stages = [
+  [t("text.lineCheck"), "/testpack/pressure-test/line-check", "line"],
+  [t("text.itemClearance"), "/testpack/pressure-test/item-clearance", "clearance"],
+  [t("text.blinding"), "/testpack/pressure-test/blinding", "blinding"],
+  [t("text.testingPreCommissioning"), "/testpack/pressure-test/testing-precomm", "testing"],
+  [t("text.reinstatement"), "/testpack/pressure-test/reinstatement", "reinstatement"],
 ] as const
 
-export function PressureTestHomeScreen() {
   const searchParams = useSearchParams()
   const testPackId = searchParams.get("testPackId")
   const auth = useSupabaseAuth()
@@ -70,7 +73,7 @@ export function PressureTestHomeScreen() {
         })
       })
       .catch((cause) => {
-        if (active) setError(cause instanceof Error ? cause.message : "Failed to load workflow counts")
+        if (active) setError(reportTestPackError(cause, t("text.failedToLoadWorkflowCounts")))
       })
       .finally(() => {
         if (active) setLoading(false)
@@ -81,16 +84,17 @@ export function PressureTestHomeScreen() {
     }
   }, [projectId, testPackId])
 
-  if (!projectId) return <p className="text-sm text-muted-foreground">Select a project to view Pressure Test.</p>
+  if (!projectId) return <p className="text-sm text-muted-foreground">{t("text.selectAProjectToViewPressureTest")}</p>
   if (loading) return <Skeleton className="h-64 w-full" />
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Pressure Test</h1>
+        <h1 className="text-2xl font-semibold">{t("text.pressureTest")}</h1>
         <p className="text-sm text-muted-foreground">
-          Canonical order: RFT → Blinding → Testing → Y reinstatement → Pre-commissioning → Z reinstatement. Open X punches route through Item Clearance.
-          {testPackId && " Filtered for selected Test Pack."}
+
+          {t("text.canonicalOrderRftBlindingTestingYReinstatementPre")}
+          {testPackId && t("text.filteredForSelectedTestPack")}
         </p>
       </div>
 
@@ -104,7 +108,7 @@ export function PressureTestHomeScreen() {
                 <CardTitle className="text-base">{title}</CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground">
-                {counts[key]?.[0] ?? 0} open · {counts[key]?.[1] ?? 0} total
+                {t("text.workflowCounts", { open: counts[key]?.[0] ?? 0, total: counts[key]?.[1] ?? 0 })}
               </CardContent>
             </Card>
           </Link>

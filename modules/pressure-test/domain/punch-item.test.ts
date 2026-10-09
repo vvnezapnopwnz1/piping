@@ -34,8 +34,8 @@ test("requires dates, current targets and an editable description", () => {
   })
   assert.equal(result.ok, false)
   if (result.ok) return
-  assert.equal(result.errors.testPackId, "testPackId is required")
-  assert.equal(result.errors.checkingDate, "Checking date must be an ISO date")
+  assert.equal(result.errors.testPackId, "required")
+  assert.equal(result.errors.checkingDate, "invalidCheckingDate")
 })
 
 test("assignment requires unique ISO or punch targets and an active team supplied by the server", () => {

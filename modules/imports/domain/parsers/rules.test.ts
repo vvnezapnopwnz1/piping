@@ -19,6 +19,8 @@ function run() {
   assert.equal(wps[0].severity, "blocker")
   assert.equal(wps[1].rowNumber, 2)
   assert.equal(wps[1].columnName, "thickness_to_mm")
+  assert.deepEqual(wps[0], { rowNumber: 1, columnName: "diameter_to_inch", severity: "blocker", code: "INVALID_RANGE", range: "diameter" })
+  assert.deepEqual(wps[1], { rowNumber: 2, columnName: "thickness_to_mm", severity: "blocker", code: "INVALID_RANGE", range: "thickness" })
 
   // Dossier 11.9: coverages are percentages.
   const nde = applyTypeRules("nde_matrix", [
@@ -28,10 +30,11 @@ function run() {
   assert.equal(nde.length, 1)
   assert.equal(nde[0].code, "OUT_OF_RANGE")
   assert.equal(nde[0].rowNumber, 1)
+  assert.deepEqual(nde[0], { rowNumber: 1, columnName: "rt_coverage", severity: "blocker", code: "OUT_OF_RANGE", bound: "percent" })
 
   // weld_location must be one of the three supported values.
   const badLocation = applyTypeRules("nde_matrix", [row(1, { weld_location: "orbital" })])
-  assert.equal(badLocation.some((i) => i.code === "INVALID_VALUE"), true)
+  assert.deepEqual(badLocation[0], { rowNumber: 1, columnName: "weld_location", severity: "blocker", code: "INVALID_VALUE", expected: ["shop", "assembly", "field"] })
 
   // Dossier 11.10: thickness and diameter must be positive.
   const thickness = applyTypeRules("thickness_flange", [
@@ -40,6 +43,7 @@ function run() {
   ])
   assert.equal(thickness.length, 2)
   assert.equal(thickness[0].severity, "blocker")
+  assert.deepEqual(thickness[0], { rowNumber: 1, columnName: "diameter_inch", severity: "blocker", code: "OUT_OF_RANGE", bound: "positive" })
 
   // Duplicate natural keys inside one file are a blocker, not a silent last-wins.
   const dupes = applyTypeRules("piping_material_list", [
@@ -49,6 +53,7 @@ function run() {
   assert.equal(dupes.length, 1)
   assert.equal(dupes[0].code, "DUPLICATE_IN_FILE")
   assert.equal(dupes[0].rowNumber, 2)
+  assert.deepEqual(dupes[0], { rowNumber: 2, columnName: "ident_code", severity: "blocker", code: "DUPLICATE_IN_FILE", keys: ["ident_code", "trace_number"] })
 
   // PML rows with no type-specific defects produce nothing.
   assert.equal(applyTypeRules("piping_material_list", [row(1, { ident_code: "A", trace_number: "B" })]).length, 0)
@@ -60,6 +65,7 @@ function run() {
   })])
   assert.equal(flange.some((issue) => issue.code === "DUPLICATE_JOINTER" && issue.severity === "blocker"), true)
   assert.equal(flange.some((issue) => issue.code === "UT_CONFIGURATION_WARNING" && issue.severity === "warning"), true)
+  assert.deepEqual(applyTypeRules("flange_progress", [row(2, { jointing_value: 1, joint_date: "bad", jointer_codes: [] })])[0], { rowNumber: 2, columnName: "joint_date", severity: "blocker", code: "INVALID_DATE" })
   assert.equal(applyTypeRules("flange_progress", [row(2, { jointing_value: -1, joint_date: "bad", jointer_codes: [] })]).some((issue) => issue.severity === "blocker"), true)
 
   const compositionRows = [
@@ -75,7 +81,9 @@ function run() {
     }),
   ]
   const compositionIssues = applyTypeRules("test_pack_composition", compositionRows)
-  assert.equal(compositionIssues.some((issue) => issue.code === "INVALID_VALUE" && issue.columnName === "test_medium"), true)
+  assert.equal(compositionIssues.some((issue) => issue.code === "INVALID_VALUE" && issue.columnName === "test_medium" && issue.expected.join() === "H,P,V"), true)
+  assert.equal(compositionIssues.some((issue) => issue.code === "INVALID_RANGE" && issue.range === "plannedDates"), true)
+  for (const issue of compositionIssues) assert.equal("message" in issue, false)
   assert.equal(compositionIssues.some((issue) => issue.code === "INCONSISTENT_TEST_PACK_METADATA"), true)
   assert.equal(compositionIssues.some((issue) => issue.code === "INVALID_RANGE"), true)
   assert.equal(compositionIssues.some((issue) => issue.code === "OUT_OF_RANGE" && issue.columnName === "test_pressure"), true)

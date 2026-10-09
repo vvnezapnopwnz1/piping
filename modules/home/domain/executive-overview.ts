@@ -23,7 +23,7 @@ export interface ExecutiveOverview {
   fabrication: { total: number; completed: number; percentComplete: number }
   nde: { total: number; inspected: number; awaitingResult: number; issued: number; percentInspected: number }
   erection: { total: number; readyForTest: number; remaining: number; percentReadyForTest: number }
-  attention: { module: "nde" | "erection"; count: number; label: string }[]
+  attention: { module: "nde" | "erection"; count: number }[]
 }
 
 const count = (rows: readonly { spool_count?: number; obligation_count?: number }[]): number =>
@@ -42,8 +42,8 @@ export function toExecutiveOverview(input: ExecutiveOverviewInput): ExecutiveOve
   const remaining = Math.max(erectionTotal - readyForTest, 0)
   const attention: ExecutiveOverview["attention"] = []
 
-  if (ndeIssued) attention.push({ module: "nde", count: ndeIssued, label: "NDE obligations issued to inspector" })
-  if (remaining) attention.push({ module: "erection", count: remaining, label: "Accepted spools not Ready for Test" })
+  if (ndeIssued) attention.push({ module: "nde", count: ndeIssued })
+  if (remaining) attention.push({ module: "erection", count: remaining })
 
   return {
     fabrication: { total: fabricationTotal, completed: fabricationCompleted, percentComplete: ratio(fabricationCompleted, fabricationTotal) },

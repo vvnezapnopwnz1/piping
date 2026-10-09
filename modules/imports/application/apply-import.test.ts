@@ -22,7 +22,7 @@ function run() {
     {
       allowed: false,
       requiresConfirmation: false,
-      reason: "3 rows have blocking errors that must be fixed in the source file.",
+      reason: { code: "blockers", count: 3 },
     }
   )
 
@@ -36,7 +36,7 @@ function run() {
     {
       allowed: false,
       requiresConfirmation: true,
-      reason: "2 rows overwrite existing records. Confirm the overwrite to continue.",
+      reason: { code: "conflictsUnconfirmed", count: 2 },
     }
   )
 
@@ -50,7 +50,7 @@ function run() {
     {
       allowed: false,
       requiresConfirmation: false,
-      reason: "This import has already been applied.",
+      reason: { code: "alreadyApplied" },
     }
   )
 
@@ -64,8 +64,13 @@ function run() {
     {
       allowed: false,
       requiresConfirmation: false,
-      reason: "Upload and validate the file before applying it.",
+      reason: { code: "notValidated" },
     }
+  )
+
+  assert.deepEqual(
+    describeApplyGate({ status: "canceled", blockerCount: 0, conflictCount: 0, conflictsConfirmed: false }),
+    { allowed: false, requiresConfirmation: false, reason: { code: "closed" } }
   )
 
   console.log("All apply-import.test.ts assertions passed!")
