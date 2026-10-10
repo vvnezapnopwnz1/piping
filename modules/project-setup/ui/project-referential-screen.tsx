@@ -1,5 +1,7 @@
 "use client"
 
+import { useTranslations } from "next-intl"
+
 import { useCallback, useEffect, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { AlertCircle, RefreshCw } from "lucide-react"
@@ -29,6 +31,7 @@ export function ProjectReferentialScreen({
   projectId: string
   canManage?: boolean
 }) {
+  const t = useTranslations("projectSetup.projectReferential")
   const [readiness, setReadiness] = useState<ProjectSetupReadiness | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -84,11 +87,11 @@ export function ProjectReferentialScreen({
       const result = await loadProjectSetupReadiness(client, projectId)
       setReadiness(result)
     } catch (err: any) {
-      setError(err.message || "Failed to load project setup readiness")
+      setError(err.message || t("failedToLoad"))
     } finally {
       setLoading(false)
     }
-  }, [projectId])
+  }, [projectId, t])
 
   useEffect(() => {
     fetchReadiness()
@@ -102,10 +105,10 @@ export function ProjectReferentialScreen({
         <CardContent className="pt-6">
           <div className="flex items-center gap-3 text-destructive">
             <AlertCircle className="h-5 w-5" />
-            <p className="font-medium">{error || "Readiness state unavailable"}</p>
+            <p className="font-medium">{error || t("unavailable")}</p>
           </div>
           <Button variant="outline" className="mt-4" onClick={fetchReadiness}>
-            <RefreshCw className="mr-2 h-4 w-4" /> Retry
+            <RefreshCw className="mr-2 h-4 w-4" /> {t("retry")}
           </Button>
         </CardContent>
       </Card>
@@ -123,12 +126,12 @@ export function ProjectReferentialScreen({
         className="w-full"
       >
         <TabsList>
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="fabrication">Welding & Quality</TabsTrigger>
-          <TabsTrigger value="testpack">Testpack & Tracking</TabsTrigger>
-          <TabsTrigger value="spooling">Spooling & Painting</TabsTrigger>
-          <TabsTrigger value="system">System Referentials</TabsTrigger>
-          <TabsTrigger value="weights">Progress Weights</TabsTrigger>
+          <TabsTrigger value="general">{t("tabs.general")}</TabsTrigger>
+          <TabsTrigger value="fabrication">{t("tabs.fabrication")}</TabsTrigger>
+          <TabsTrigger value="testpack">{t("tabs.testpack")}</TabsTrigger>
+          <TabsTrigger value="spooling">{t("tabs.spooling")}</TabsTrigger>
+          <TabsTrigger value="system">{t("tabs.system")}</TabsTrigger>
+          <TabsTrigger value="weights">{t("tabs.weights")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="mt-6">
@@ -146,7 +149,7 @@ export function ProjectReferentialScreen({
               keeps its own editor rather than joining the generic referential tabs above. */}
           <Card>
             <CardHeader>
-              <CardTitle>Welding Procedures (WPS)</CardTitle>
+              <CardTitle>{t("wpsCardTitle")}</CardTitle>
             </CardHeader>
             <CardContent>
               <SupabaseWpsTab />

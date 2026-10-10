@@ -8,7 +8,7 @@ import {
 assert.equal(normalizeReferenceCode("  pds-a  "), "PDS-A")
 assert.deepEqual(
   validateReferenceIdentity({ code: " ", description: "Area" }),
-  { ok: false, errors: { code: "Code is required" } }
+  { ok: false, errors: { code: { code: "required" } } }
 )
 assert.deepEqual(getReferenceStatusActions("active"), [
   "deactivate",

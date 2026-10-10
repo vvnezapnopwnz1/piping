@@ -42,6 +42,9 @@ import ruDocuments from "@/messages/ru/documents.json"
 import enSettings from "@/messages/en/settings.json"
 import ruSettings from "@/messages/ru/settings.json"
 
+import enProjectSetup from "@/messages/en/projectSetup.json"
+import ruProjectSetup from "@/messages/ru/projectSetup.json"
+
 import type { Locale } from "./locale"
 
 export type MessageTree = { [key: string]: string | MessageTree }
@@ -67,6 +70,7 @@ export const en = {
   projects: enProjects,
   documents: enDocuments,
   settings: enSettings,
+  projectSetup: enProjectSetup,
 }
 
 export type Messages = typeof en
@@ -90,6 +94,7 @@ export const ru: { [N in Namespace]?: MessageTree } = {
   projects: ruProjects,
   documents: ruDocuments,
   settings: ruSettings,
+  projectSetup: ruProjectSetup,
 }
 
 /** `base` with every key `override` has in the same shape; stray or misshapen keys are dropped. */

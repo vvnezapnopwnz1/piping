@@ -23,6 +23,8 @@ import {
   saveProgressWeightsRpc,
   type LoadedProgressWeights,
 } from "../infrastructure/supabase-progress-weights-repository"
+import { formatSetupFieldIssue } from "./setup-field-issue"
+
 import {
   validatePhaseWeights,
   type ProgressWeightPhase,
@@ -31,6 +33,8 @@ import {
 
 export function ProgressWeightsScreen({ projectId, canManage = true }: { projectId: string; canManage?: boolean }) {
   const tc = useTranslations("codes")
+  const t = useTranslations("projectSetup.progressWeights")
+  const tIssues = useTranslations("projectSetup.issues")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<LoadedProgressWeights | null>(null)
@@ -62,11 +66,11 @@ export function ProgressWeightsScreen({ projectId, canManage = true }: { project
       }
     } catch (err: any) {
       if (currentVersion === requestVersionRef.current) {
-        setError(err.message || "Failed to load progress weights")
+        setError(err.message || t("failedToLoad"))
         setLoading(false)
       }
     }
-  }, [projectId, activePhase])
+  }, [projectId, activePhase, t])
 
   useEffect(() => {
     fetchWeights()
@@ -108,8 +112,9 @@ export function ProgressWeightsScreen({ projectId, canManage = true }: { project
     const validation = validatePhaseWeights(activePhase, items, data?.assemblyEnabled ?? false)
     if (!validation.ok) {
       const firstError = Object.values(validation.errors)[0]
-      setValidationError(firstError)
-      toast.error(firstError)
+      const msg = formatSetupFieldIssue(tIssues, firstError)
+      setValidationError(msg)
+      toast.error(msg)
       return
     }
 
@@ -131,9 +136,9 @@ export function ProgressWeightsScreen({ projectId, canManage = true }: { project
             }
           : null
       )
-      toast.success(`${tc(`progressPhase.${activePhase}`)} progress weights saved successfully`)
+      toast.success(t("saveSuccess", { phase: tc(`progressPhase.${activePhase}`) }))
     } catch (err: any) {
-      toast.error(err.message || "Failed to save progress weights")
+      toast.error(err.message || t("saveFailed"))
     } finally {
       setIsSaving(false)
     }
@@ -150,7 +155,7 @@ export function ProgressWeightsScreen({ projectId, canManage = true }: { project
             <p className="font-medium">{error}</p>
           </div>
           <Button variant="outline" className="mt-4" onClick={fetchWeights}>
-            <RefreshCw className="mr-2 h-4 w-4" /> Retry
+            <RefreshCw className="mr-2 h-4 w-4" /> {t("retry")}
           </Button>
         </CardContent>
       </Card>
@@ -162,7 +167,7 @@ export function ProgressWeightsScreen({ projectId, canManage = true }: { project
       {!canManage && (
         <div className="bg-warning-bg text-warning-fg border-warning-border flex items-center gap-2 rounded-md border p-3 text-sm">
           <ShieldAlert className="h-4 w-4 shrink-0" />
-          <span>Project manager rights required to update progress weights. Read-only mode active.</span>
+          <span>{t("readOnlyNotice")}</span>
         </div>
       )}
 
@@ -178,7 +183,7 @@ export function ProgressWeightsScreen({ projectId, canManage = true }: { project
                 {tc(`progressPhase.${phase}`)}
                 {phase === "assembly" && !data?.assemblyEnabled && (
                   <Badge variant="outline" className="text-warning-fg border-warning-border ml-2 text-xs">
-                    Disabled
+                    {t("disabled")}
                   </Badge>
                 )}
               </TabsTrigger>
@@ -190,22 +195,22 @@ export function ProgressWeightsScreen({ projectId, canManage = true }: { project
       {isAssemblyDisabled && (
         <div className="bg-warning-bg text-warning-fg border-warning-border flex items-center gap-2 rounded-md border p-3 text-sm">
           <AlertTriangle className="h-4 w-4 shrink-0" />
-          <span>Assembly phase is disabled in Project Settings for this project.</span>
+          <span>{t("assemblyDisabled")}</span>
         </div>
       )}
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <div>
-            <CardTitle>{tc(`progressPhase.${activePhase}`)} Progress Weights</CardTitle>
+            <CardTitle>{t("cardTitle", { phase: tc(`progressPhase.${activePhase}`) })}</CardTitle>
             <CardDescription>
-              Assign activity progress weight percentages. Total must equal exactly 100%.
+              {t("cardDescription")}
             </CardDescription>
           </div>
 
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 font-mono text-sm font-semibold">
-              <span>Total:</span>
+              <span>{t("total")}</span>
               <span className={isTotalValid ? "text-success-fg" : "text-warning-fg"}>
                 {currentTotal.toFixed(2)}%
               </span>
@@ -218,7 +223,7 @@ export function ProgressWeightsScreen({ projectId, canManage = true }: { project
 
             {canManage && !isAssemblyDisabled && (
               <Button onClick={handleSave} disabled={isSaving || !isTotalValid}>
-                <Save className="mr-2 h-4 w-4" /> Save Weights
+                <Save className="mr-2 h-4 w-4" /> {t("save")}
               </Button>
             )}
           </div>
@@ -235,7 +240,7 @@ export function ProgressWeightsScreen({ projectId, canManage = true }: { project
               <div key={index} className="flex items-center gap-3">
                 <div className="flex-1">
                   <Input
-                    placeholder="Activity Code (e.g. FITUP)"
+                    placeholder={t("activityPlaceholder")}
                     value={item.activity}
                     onChange={(e) => handleItemChange(index, "activity", e.target.value.toUpperCase())}
                     disabled={isSaving || isAssemblyDisabled || !canManage}
@@ -247,7 +252,7 @@ export function ProgressWeightsScreen({ projectId, canManage = true }: { project
                     step="0.01"
                     min="0"
                     max="100"
-                    placeholder="Weight %"
+                    placeholder={t("weightPlaceholder")}
                     value={item.weight}
                     onChange={(e) => handleItemChange(index, "weight", parseFloat(e.target.value) || 0)}
                     disabled={isSaving || isAssemblyDisabled || !canManage}
@@ -269,7 +274,7 @@ export function ProgressWeightsScreen({ projectId, canManage = true }: { project
 
           {canManage && !isAssemblyDisabled && (
             <Button variant="outline" size="sm" onClick={handleAddItem} disabled={isSaving}>
-              <Plus className="mr-2 h-4 w-4" /> Add Activity
+              <Plus className="mr-2 h-4 w-4" /> {t("addActivity")}
             </Button>
           )}
         </CardContent>

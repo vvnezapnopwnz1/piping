@@ -1,6 +1,8 @@
 "use client"
 
 import { useTranslations } from "next-intl"
+import { formatFieldErrors } from "./setup-field-issue"
+
 import { useCallback, useEffect, useRef, useState } from "react"
 import { AlertCircle, Plus, RefreshCw, Search } from "lucide-react"
 import { toast } from "sonner"
@@ -65,6 +67,8 @@ export function ExecutionReferenceTabs({
 }) {
   const tc = useTranslations("codes")
   const [loading, setLoading] = useState(true)
+  const tIssues = useTranslations("projectSetup.issues")
+
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<LoadedExecutionReferences | null>(null)
   const [activeTab, setActiveTab] = useState<string>("teams")
@@ -182,7 +186,7 @@ export function ExecutionReferenceTabs({
 
   const handleAddLocationCategory = async () => {
     const validation = validateReferenceIdentity({ code: locationCategoryCode, description: locationCategoryDescription })
-    if (!validation.ok) { setLocationErrors(validation.errors); return }
+    if (!validation.ok) { setLocationErrors(formatFieldErrors(tIssues, validation.errors)); return }
     setIsSubmittingLocation(true)
     try {
       await createLocationCategory(getSupabaseBrowserClient(), projectId, validation.value)
@@ -251,7 +255,7 @@ export function ExecutionReferenceTabs({
   const handleAddSystem = async () => {
     const validation = validateReferenceIdentity({ code: sysCode, description: sysDesc })
     if (!validation.ok) {
-      setSysErrors(validation.errors)
+      setSysErrors(formatFieldErrors(tIssues, validation.errors))
       return
     }
     setIsSubmittingSystem(true)
@@ -300,7 +304,7 @@ export function ExecutionReferenceTabs({
   const handleAddLineService = async () => {
     const validation = validateReferenceIdentity({ code: lsCode, description: lsDesc })
     if (!validation.ok) {
-      setLsErrors(validation.errors)
+      setLsErrors(formatFieldErrors(tIssues, validation.errors))
       return
     }
     setIsSubmittingLineService(true)

@@ -39,9 +39,9 @@ const orphanAreaClassification = validateAreaClassificationInput({
   unitId: null,
 })
 assert.equal(orphanAreaClassification.ok, false)
-assert.equal(
+assert.deepEqual(
   orphanAreaClassification.ok === false && orphanAreaClassification.errors.unitId,
-  "Unit is required"
+  { code: "required" }
 )
 
 const validAreaClassification = validateAreaClassificationInput({

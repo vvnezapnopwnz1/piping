@@ -1,4 +1,4 @@
-import { validateReferenceIdentity, type ReferenceValidation, type ReferenceStatus } from "./reference"
+import { validateReferenceIdentity, type ReferenceValidation, type ReferenceStatus, type SetupFieldIssue } from "./reference"
 
 export interface ServiceClassInput {
   code: string
@@ -153,13 +153,13 @@ export interface JointCategory {
   status: ReferenceStatus
 }
 
-export function validateServiceClassInput(input: ServiceClassInput): ReferenceValidation<ServiceClassInput> {
+export function validateServiceClassInput(input: ServiceClassInput): ReferenceValidation<ServiceClassInput, SetupFieldIssue> {
   const base = validateReferenceIdentity({ code: input.code, description: input.description || input.code })
   if (!base.ok) return base
-  const errors: Record<string, string> = {}
+  const errors: Record<string, SetupFieldIssue> = {}
 
   if (!input.materialTypeId) {
-    errors.materialTypeId = "Material type is required"
+    errors.materialTypeId = { code: "required" }
   }
 
   if (Object.keys(errors).length > 0) return { ok: false, errors }
@@ -175,7 +175,7 @@ export function validateServiceClassInput(input: ServiceClassInput): ReferenceVa
   }
 }
 
-export function validateWeldTypeInput(input: WeldTypeInput): ReferenceValidation<WeldTypeInput> {
+export function validateWeldTypeInput(input: WeldTypeInput): ReferenceValidation<WeldTypeInput, SetupFieldIssue> {
   const base = validateReferenceIdentity(input)
   if (!base.ok) return base
 
@@ -190,19 +190,19 @@ export function validateWeldTypeInput(input: WeldTypeInput): ReferenceValidation
   }
 }
 
-export function validateWelderQualificationInput(input: WelderQualificationInput): ReferenceValidation<WelderQualificationInput> {
-  const errors: Record<string, string> = {}
+export function validateWelderQualificationInput(input: WelderQualificationInput): ReferenceValidation<WelderQualificationInput, SetupFieldIssue> {
+  const errors: Record<string, SetupFieldIssue> = {}
   const code = input.welderCode.trim().toUpperCase()
   const name = input.fullName.trim()
 
-  if (!code) errors.welderCode = "Welder code is required"
-  if (!name) errors.fullName = "Full name is required"
-  if (!input.subcontractorId) errors.subcontractorId = "Subcontractor is required"
-  if (!input.expiresOn) errors.expiresOn = "Expiry date is required"
+  if (!code) errors.welderCode = { code: "required" }
+  if (!name) errors.fullName = { code: "required" }
+  if (!input.subcontractorId) errors.subcontractorId = { code: "required" }
+  if (!input.expiresOn) errors.expiresOn = { code: "required" }
 
   const normalizedWps = Array.from(new Set(input.wpsIds.filter((id) => !!id)))
   if (normalizedWps.length === 0) {
-    errors.wpsIds = "At least one approved WPS is required"
+    errors.wpsIds = { code: "at_least_one_wps" }
   }
 
   if (Object.keys(errors).length > 0) return { ok: false, errors }
@@ -221,12 +221,12 @@ export function validateWelderQualificationInput(input: WelderQualificationInput
   }
 }
 
-export function validateNdeMatrixRuleInput(input: NdeMatrixRuleInput): ReferenceValidation<NdeMatrixRuleInput> {
-  const errors: Record<string, string> = {}
-  if (!input.serviceClassId) errors.serviceClassId = "Service class is required"
-  if (!input.weldTypeId) errors.weldTypeId = "Weld type is required"
+export function validateNdeMatrixRuleInput(input: NdeMatrixRuleInput): ReferenceValidation<NdeMatrixRuleInput, SetupFieldIssue> {
+  const errors: Record<string, SetupFieldIssue> = {}
+  if (!input.serviceClassId) errors.serviceClassId = { code: "required" }
+  if (!input.weldTypeId) errors.weldTypeId = { code: "required" }
   if (!["shop", "assembly", "field"].includes(input.weldLocation)) {
-    errors.weldLocation = "Location must be shop, assembly, or field"
+    errors.weldLocation = { code: "invalid_location" }
   }
 
   const coverages = [
@@ -240,12 +240,12 @@ export function validateNdeMatrixRuleInput(input: NdeMatrixRuleInput): Reference
 
   for (const c of coverages) {
     if (typeof c.val !== "number" || isNaN(c.val) || c.val < 0 || c.val > 100) {
-      errors[c.name] = "Coverage percentage must be between 0 and 100"
+      errors[c.name] = { code: "range", min: 0, max: 100 }
     }
   }
 
   if (input.pwhtThicknessThreshold !== null && (typeof input.pwhtThicknessThreshold !== "number" || input.pwhtThicknessThreshold <= 0)) {
-    errors.pwhtThicknessThreshold = "PWHT thickness threshold must be positive"
+    errors.pwhtThicknessThreshold = { code: "positive" }
   }
 
   if (Object.keys(errors).length > 0) return { ok: false, errors }
@@ -260,17 +260,17 @@ export function validateNdeMatrixRuleInput(input: NdeMatrixRuleInput): Reference
   }
 }
 
-export function validateThicknessFlangeRuleInput(input: ThicknessFlangeRuleInput): ReferenceValidation<ThicknessFlangeRuleInput> {
-  const errors: Record<string, string> = {}
-  if (!input.serviceClassId) errors.serviceClassId = "Service class is required"
+export function validateThicknessFlangeRuleInput(input: ThicknessFlangeRuleInput): ReferenceValidation<ThicknessFlangeRuleInput, SetupFieldIssue> {
+  const errors: Record<string, SetupFieldIssue> = {}
+  if (!input.serviceClassId) errors.serviceClassId = { code: "required" }
   if (typeof input.diameterInch !== "number" || input.diameterInch <= 0) {
-    errors.diameterInch = "Diameter must be positive"
+    errors.diameterInch = { code: "positive" }
   }
   if (typeof input.thicknessMm !== "number" || input.thicknessMm < 0) {
-    errors.thicknessMm = "Thickness must be non-negative"
+    errors.thicknessMm = { code: "non_negative" }
   }
   const rating = input.flangeRating.trim()
-  if (!rating) errors.flangeRating = "Flange rating is required"
+  if (!rating) errors.flangeRating = { code: "required" }
 
   if (Object.keys(errors).length > 0) return { ok: false, errors }
 
@@ -286,15 +286,15 @@ export function validateThicknessFlangeRuleInput(input: ThicknessFlangeRuleInput
   }
 }
 
-export function validatePipingMaterialRecordInput(input: PipingMaterialRecordInput): ReferenceValidation<PipingMaterialRecordInput> {
-  const errors: Record<string, string> = {}
+export function validatePipingMaterialRecordInput(input: PipingMaterialRecordInput): ReferenceValidation<PipingMaterialRecordInput, SetupFieldIssue> {
+  const errors: Record<string, SetupFieldIssue> = {}
   const mrr = input.mrrNumber.trim()
   const ident = input.identCode.trim().toUpperCase()
   const trace = input.traceNumber.trim()
 
-  if (!mrr) errors.mrrNumber = "MRR number is required"
-  if (!ident) errors.identCode = "Ident code is required"
-  if (!trace) errors.traceNumber = "Trace/Heat number is required"
+  if (!mrr) errors.mrrNumber = { code: "required" }
+  if (!ident) errors.identCode = { code: "required" }
+  if (!trace) errors.traceNumber = { code: "required" }
 
   if (Object.keys(errors).length > 0) return { ok: false, errors }
 
@@ -305,26 +305,26 @@ export function validatePipingMaterialRecordInput(input: PipingMaterialRecordInp
   }
 }
 
-export function validateReworkCodeInput(input: ReworkCodeInput): ReferenceValidation<ReworkCodeInput> {
+export function validateReworkCodeInput(input: ReworkCodeInput): ReferenceValidation<ReworkCodeInput, SetupFieldIssue> {
   const base = validateReferenceIdentity(input)
   if (!base.ok) return base
   return { ok: true, value: base.value, errors: {} }
 }
 
-export function validateJointCategoryInput(input: JointCategoryInput): ReferenceValidation<JointCategoryInput> {
-  const errors: Record<string, string> = {}
+export function validateJointCategoryInput(input: JointCategoryInput): ReferenceValidation<JointCategoryInput, SetupFieldIssue> {
+  const errors: Record<string, SetupFieldIssue> = {}
   const def = input.jointDefinition.trim()
   const code = input.categoryCode.trim().toUpperCase()
   const reason = input.reason.trim()
 
-  if (!def) errors.jointDefinition = "Joint definition is required"
-  if (!code) errors.categoryCode = "Category code is required"
-  if (!reason) errors.reason = "Reason is required"
+  if (!def) errors.jointDefinition = { code: "required" }
+  if (!code) errors.categoryCode = { code: "required" }
+  if (!reason) errors.reason = { code: "required" }
   if (!["before_pressure_test", "before_precommissioning", "after_precommissioning"].includes(input.timing)) {
-    errors.timing = "Invalid timing value"
+    errors.timing = { code: "invalid_timing" }
   }
   if (input.coefficient !== null && (typeof input.coefficient !== "number" || input.coefficient < 0)) {
-    errors.coefficient = "Coefficient must be non-negative"
+    errors.coefficient = { code: "non_negative" }
   }
 
   if (Object.keys(errors).length > 0) return { ok: false, errors }

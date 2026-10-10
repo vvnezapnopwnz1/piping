@@ -14,6 +14,9 @@
  * Joint categories are project-scoped inputs for Track 09 flange progress.
  */
 
+import { useTranslations } from "next-intl"
+import { formatFieldErrors } from "./setup-field-issue"
+
 import { useCallback, useEffect, useRef, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { AlertCircle, AlertTriangle, Plus, RefreshCw } from "lucide-react"
@@ -83,6 +86,8 @@ export function WeldingQualityTabs({
   value?: WeldingQualityTab
   onValueChange?: (tab: WeldingQualityTab) => void
 }) {
+  const tIssues = useTranslations("projectSetup.issues")
+
   const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
@@ -226,7 +231,7 @@ export function WeldingQualityTabs({
     })
 
     if (!validation.ok) {
-      setScErrors(validation.errors)
+      setScErrors(formatFieldErrors(tIssues, validation.errors))
       return
     }
 
@@ -265,7 +270,7 @@ export function WeldingQualityTabs({
     })
 
     if (!validation.ok) {
-      setWtErrors(validation.errors)
+      setWtErrors(formatFieldErrors(tIssues, validation.errors))
       return
     }
 
@@ -307,7 +312,7 @@ export function WeldingQualityTabs({
     })
 
     if (!validation.ok) {
-      setWelderErrors(validation.errors)
+      setWelderErrors(formatFieldErrors(tIssues, validation.errors))
       return
     }
 
@@ -356,7 +361,7 @@ export function WeldingQualityTabs({
     })
 
     if (!validation.ok) {
-      setThickErrors(validation.errors)
+      setThickErrors(formatFieldErrors(tIssues, validation.errors))
       return
     }
 
@@ -394,7 +399,7 @@ export function WeldingQualityTabs({
     const validation = validateReworkCodeInput({ code: reworkCode, description: reworkDesc })
 
     if (!validation.ok) {
-      setReworkErrors(validation.errors)
+      setReworkErrors(formatFieldErrors(tIssues, validation.errors))
       return
     }
 
@@ -441,7 +446,7 @@ export function WeldingQualityTabs({
     })
 
     if (!validation.ok) {
-      setNdeErrors(validation.errors)
+      setNdeErrors(formatFieldErrors(tIssues, validation.errors))
       return
     }
 
@@ -477,7 +482,7 @@ export function WeldingQualityTabs({
     })
 
     if (!validation.ok) {
-      setPmlErrors(validation.errors)
+      setPmlErrors(formatFieldErrors(tIssues, validation.errors))
       return
     }
 
@@ -519,7 +524,7 @@ export function WeldingQualityTabs({
       coefficient: jointCoefficient.trim() ? Number(jointCoefficient) : null,
     })
     if (!validation.ok) {
-      setJointCategoryErrors(validation.errors)
+      setJointCategoryErrors(formatFieldErrors(tIssues, validation.errors))
       return
     }
 

@@ -1,6 +1,9 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { useTranslations } from "next-intl"
+import { formatFieldErrors } from "./setup-field-issue"
+
 import { AlertCircle, Plus, RefreshCw, Search } from "lucide-react"
 import { toast } from "sonner"
 
@@ -62,6 +65,8 @@ export function ProjectGeographyTabs({
   canManage: boolean
 }) {
   const [loading, setLoading] = useState(true)
+  const tIssues = useTranslations("projectSetup.issues")
+
   const [error, setError] = useState<string | null>(null)
   const [geography, setGeography] = useState<LoadedProjectGeography | null>(null)
   const [activeTab, setActiveTab] = useState<GeographyTab>("subcontractors")
@@ -144,7 +149,7 @@ export function ProjectGeographyTabs({
     })
 
     if (!validation.ok) {
-      setSubErrors(validation.errors)
+      setSubErrors(formatFieldErrors(tIssues, validation.errors))
       return
     }
 
@@ -181,7 +186,7 @@ export function ProjectGeographyTabs({
     const validation = validateUnitInput({ code: unitCode, description: unitDesc })
 
     if (!validation.ok) {
-      setUnitErrors(validation.errors)
+      setUnitErrors(formatFieldErrors(tIssues, validation.errors))
       return
     }
 
@@ -219,7 +224,7 @@ export function ProjectGeographyTabs({
     })
 
     if (!validation.ok) {
-      setAcErrors(validation.errors)
+      setAcErrors(formatFieldErrors(tIssues, validation.errors))
       return
     }
 
@@ -281,7 +286,7 @@ export function ProjectGeographyTabs({
     )
 
     if (!validation.ok) {
-      setPdsErrors(validation.errors)
+      setPdsErrors(formatFieldErrors(tIssues, validation.errors))
       return
     }
 

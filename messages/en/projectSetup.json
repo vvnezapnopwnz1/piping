@@ -1,0 +1,235 @@
+{
+  "readiness": {
+    "incomplete": "Setup incomplete — {count, plural, one {# referential} other {# referentials}} missing",
+    "readyForImport": "Ready for engineering import",
+    "notReadyForImport": "Not ready for engineering import",
+    "descReady": "Everything the ISO, spool and weld import reads is in place. The referentials below are still needed before execution.",
+    "descNotReady": "The ISO, spool and weld import reads these referentials, so engineering data cannot be loaded until they exist.",
+    "requirements": {
+      "material_types": "Material Types",
+      "subcontractors": "Subcontractors",
+      "pds_areas": "PDS Areas",
+      "service_classes": "Service Classes",
+      "weld_types": "Weld Types",
+      "welding_procedures": "Welding Procedures",
+      "welder_qualifications": "Welder Qualifications",
+      "nde_matrix_shop": "NDE Matrix — Shop",
+      "nde_matrix_assembly": "NDE Matrix — Assembly",
+      "nde_matrix_field": "NDE Matrix — Field",
+      "thickness_flange_rules": "Thickness / Flange Rules",
+      "piping_material_records": "Project Piping Material List",
+      "teams": "Project Teams",
+      "systems": "Systems",
+      "subsystems": "Subsystems",
+      "line_services": "Line Services",
+      "locations": "Tracking Locations",
+      "pressure_unit": "Pressure Unit",
+      "progress_weights_prefabrication": "Prefabrication Weights",
+      "progress_weights_painting": "Painting Weights",
+      "progress_weights_assembly": "Assembly Weights",
+      "progress_weights_erection": "Erection Weights",
+      "spooling_material_types": "Spooling Material Types",
+      "spooling_material_classes": "Spooling Material Classes",
+      "spooling_checklist": "Spooling Checklist",
+      "ral_codes": "RAL Codes",
+      "paint_matrix": "Paint Matrix",
+      "devices": "Tracking Devices",
+      "unknown": "Unknown setup requirement ({code})"
+    }
+  },
+  "projectReferential": {
+    "failedToLoad": "Failed to load project setup readiness",
+    "unavailable": "Readiness state unavailable",
+    "retry": "Retry",
+    "tabs": {
+      "general": "General",
+      "fabrication": "Welding & Quality",
+      "testpack": "Testpack & Tracking",
+      "spooling": "Spooling & Painting",
+      "system": "System Referentials",
+      "weights": "Progress Weights"
+    },
+    "wpsCardTitle": "Welding Procedures (WPS)"
+  },
+  "progressWeights": {
+    "failedToLoad": "Failed to load progress weights",
+    "retry": "Retry",
+    "saveSuccess": "{phase} progress weights saved successfully",
+    "saveFailed": "Failed to save progress weights",
+    "readOnlyNotice": "Project manager rights required to update progress weights. Read-only mode active.",
+    "disabled": "Disabled",
+    "assemblyDisabled": "Assembly phase is disabled in Project Settings for this project.",
+    "cardTitle": "{phase} Progress Weights",
+    "cardDescription": "Assign activity progress weight percentages. Total must equal exactly 100%.",
+    "total": "Total:",
+    "save": "Save Weights",
+    "activityPlaceholder": "Activity Code (e.g. FITUP)",
+    "weightPlaceholder": "Weight %",
+    "addActivity": "Add Activity"
+  },
+  "adminPages": {
+    "projectReferentialTitle": "Admin · Project Referential",
+    "projectReferentialDesc": "Project-level master data for spooling, fabrication, erection, testpack, tracking, and painting.",
+    "selectProjectReferential": "Select a project to manage its referentials.",
+    "progressWeightsTitle": "Admin · Progress Weights",
+    "progressWeightsDesc": "Configure progress weight allocations across project phases.",
+    "selectProjectWeights": "Select a project to manage its progress weights.",
+    "systemReferentialTitle": "Admin · System Referential",
+    "systemReferentialDesc": "Cross-project referentials maintained at system-admin scope."
+  },
+  "issues": {
+    "required": "This field is required",
+    "positive": "Value must be positive",
+    "non_negative": "Value must be non-negative",
+    "positive_integer": "Must be a positive integer",
+    "not_blank": "Must not be blank",
+    "greater_or_equal": "Must be >= {minField}",
+    "range": "Must be between {min} and {max}",
+    "invalid_location": "Location must be shop, assembly, or field",
+    "invalid_timing": "Invalid timing value",
+    "invalid_team_type": "Invalid team type",
+    "invalid_pressure_unit": "Invalid pressure unit",
+    "at_least_one_subcontractor": "At least one ownership subcontractor (Shop, Assembly, or Field) is required",
+    "at_least_one_wps": "At least one approved WPS is required",
+    "at_least_one_item": "At least one activity weight is required",
+    "activity_blank": "Activity code cannot be blank",
+    "weight_range": "Weight must be between 0 and 100",
+    "phase_not_enabled": "{phase} phase is not enabled for this project",
+    "total_not_hundred": "Progress weights total must be exactly 100% (current total: {total}%)",
+    "fields": {
+      "code": {
+        "required": "Code is required"
+      },
+      "description": {
+        "required": "Description is required"
+      },
+      "unitId": {
+        "required": "Unit is required"
+      },
+      "diameterFromInch": {
+        "positive": "Diameter from must be positive"
+      },
+      "diameterToInch": {
+        "greater_or_equal": "Diameter to must be >= diameter from"
+      },
+      "thicknessFromMm": {
+        "non_negative": "Thickness from must be non-negative"
+      },
+      "thicknessToMm": {
+        "greater_or_equal": "Thickness to must be >= thickness from"
+      },
+      "filmCount": {
+        "positive_integer": "Film count must be a positive integer"
+      },
+      "coefficientDiameter": {
+        "positive": "Coefficient diameter must be positive"
+      },
+      "coefficientRating": {
+        "positive": "Coefficient rating must be positive"
+      },
+      "flangeRating": {
+        "not_blank": "Flange rating must not be blank",
+        "required": "Flange rating is required"
+      },
+      "materialTypeId": {
+        "required": "Material type is required"
+      },
+      "welderCode": {
+        "required": "Welder code is required"
+      },
+      "fullName": {
+        "required": "Full name is required"
+      },
+      "subcontractorId": {
+        "required": "Subcontractor is required"
+      },
+      "expiresOn": {
+        "required": "Expiry date is required"
+      },
+      "serviceClassId": {
+        "required": "Service class is required"
+      },
+      "weldTypeId": {
+        "required": "Weld type is required"
+      },
+      "coverage": {
+        "range": "Coverage percentage must be between 0 and 100"
+      },
+      "pwhtThicknessThreshold": {
+        "positive": "PWHT thickness threshold must be positive"
+      },
+      "diameterInch": {
+        "positive": "Diameter must be positive"
+      },
+      "thicknessMm": {
+        "non_negative": "Thickness must be non-negative"
+      },
+      "mrrNumber": {
+        "required": "MRR number is required"
+      },
+      "identCode": {
+        "required": "Ident code is required"
+      },
+      "traceNumber": {
+        "required": "Trace/Heat number is required"
+      },
+      "jointDefinition": {
+        "required": "Joint definition is required"
+      },
+      "categoryCode": {
+        "required": "Category code is required"
+      },
+      "reason": {
+        "required": "Reason is required"
+      },
+      "coefficient": {
+        "non_negative": "Coefficient must be non-negative"
+      },
+      "systemId": {
+        "required": "Parent system is required"
+      },
+      "categoryId": {
+        "required": "Location category is required"
+      },
+      "capacity": {
+        "positive_integer": "Location capacity must be a positive integer"
+      },
+      "activity": {
+        "required": "Activity code is required"
+      },
+      "projectUt": {
+        "positive": "Project UT must be a positive number"
+      },
+      "standardReference": {
+        "required": "Standard reference is required"
+      },
+      "membershipId": {
+        "required": "Project member is required"
+      },
+      "deviceId": {
+        "required": "Tracking device is required"
+      },
+      "externalClassCode": {
+        "required": "External class code is required"
+      },
+      "lineServiceId": {
+        "required": "Line service is required"
+      },
+      "ralCodeId": {
+        "required": "RAL code is required"
+      },
+      "intermediateCoatCount": {
+        "range": "Intermediate coat count must be between 0 and 20"
+      },
+      "finalCoatCount": {
+        "range": "Final coat count must be between 0 and 20"
+      },
+      "requiredFinalDftMicrons": {
+        "positive": "Required final DFT must be positive"
+      },
+      "defaultSubcontractorId": {
+        "required": "Default subcontractor is required when Assembly is enabled"
+      }
+    }
+  }
+}

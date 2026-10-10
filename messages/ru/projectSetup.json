@@ -1,0 +1,235 @@
+{
+  "readiness": {
+    "incomplete": "Настройка не завершена — не заполнен {count, plural, one {# справочник} few {# справочника} many {# справочников} other {# справочника}}",
+    "readyForImport": "Готов к инженерному импорту",
+    "notReadyForImport": "Не готов к инженерному импорту",
+    "descReady": "Всё необходимое для импорта изометрий, катушек и стыков заполнено. Справочники ниже понадобятся до начала работ.",
+    "descNotReady": "Импорт изометрий, катушек и стыков использует эти справочники; инженерные данные нельзя загрузить без них.",
+    "requirements": {
+      "material_types": "Типы материалов",
+      "subcontractors": "Субподрядчики",
+      "pds_areas": "Зоны PDS",
+      "service_classes": "Классы эксплуатации",
+      "weld_types": "Типы стыков",
+      "welding_procedures": "Технологические карты сварки (WPS)",
+      "welder_qualifications": "Допуски сварщиков",
+      "nde_matrix_shop": "Матрица NDE — цех",
+      "nde_matrix_assembly": "Матрица NDE — сборка",
+      "nde_matrix_field": "Матрица NDE — монтаж",
+      "thickness_flange_rules": "Правила толщин и фланцев",
+      "piping_material_records": "Ведомость материалов трубопроводов (PML)",
+      "teams": "Бригады проекта",
+      "systems": "Системы",
+      "subsystems": "Подсистемы",
+      "line_services": "Службы линий",
+      "locations": "Места хранения",
+      "pressure_unit": "Единица давления",
+      "progress_weights_prefabrication": "Веса изготовления",
+      "progress_weights_painting": "Веса покраски",
+      "progress_weights_assembly": "Веса сборки",
+      "progress_weights_erection": "Веса монтажа",
+      "spooling_material_types": "Типы материалов раскроя",
+      "spooling_material_classes": "Классы материалов раскроя",
+      "spooling_checklist": "Чек-лист раскроя",
+      "ral_codes": "Цвета RAL",
+      "paint_matrix": "Матрица покраски",
+      "devices": "Устройства учёта",
+      "unknown": "Неизвестное требование настройки ({code})"
+    }
+  },
+  "projectReferential": {
+    "failedToLoad": "Не удалось загрузить готовность настройки проекта",
+    "unavailable": "Состояние готовности недоступно",
+    "retry": "Повторить",
+    "tabs": {
+      "general": "Общие",
+      "fabrication": "Сварка и качество",
+      "testpack": "Тест-пакет и перемещения",
+      "spooling": "Раскрой и покраска",
+      "system": "Системные справочники",
+      "weights": "Веса прогресса"
+    },
+    "wpsCardTitle": "Технологические карты сварки (WPS)"
+  },
+  "progressWeights": {
+    "failedToLoad": "Не удалось загрузить веса прогресса",
+    "retry": "Повторить",
+    "saveSuccess": "Веса прогресса для этапа «{phase}» сохранены",
+    "saveFailed": "Не удалось сохранить веса прогресса",
+    "readOnlyNotice": "Для изменения весов прогресса нужны права руководителя проекта. Включён режим только чтения.",
+    "disabled": "Отключено",
+    "assemblyDisabled": "Этап сборки отключён в настройках этого проекта.",
+    "cardTitle": "Веса прогресса: {phase}",
+    "cardDescription": "Задайте проценты веса операций. Сумма должна быть ровно 100%.",
+    "total": "Итого:",
+    "save": "Сохранить веса",
+    "activityPlaceholder": "Код операции (например, FITUP)",
+    "weightPlaceholder": "Вес %",
+    "addActivity": "Добавить операцию"
+  },
+  "adminPages": {
+    "projectReferentialTitle": "Администрирование · Справочники проекта",
+    "projectReferentialDesc": "Справочники уровня проекта для раскроя, изготовления, монтажа, тест-пакетов, перемещений и покраски.",
+    "selectProjectReferential": "Выберите проект для управления справочниками.",
+    "progressWeightsTitle": "Администрирование · Веса прогресса",
+    "progressWeightsDesc": "Настройка распределения весов прогресса по этапам проекта.",
+    "selectProjectWeights": "Выберите проект для управления весами прогресса.",
+    "systemReferentialTitle": "Администрирование · Системные справочники",
+    "systemReferentialDesc": "Межпроектные справочники уровня системного администратора."
+  },
+  "issues": {
+    "required": "Обязательное поле",
+    "positive": "Значение должно быть положительным",
+    "non_negative": "Значение не может быть отрицательным",
+    "positive_integer": "Должно быть целым положительным числом",
+    "not_blank": "Не может быть пустым",
+    "greater_or_equal": "Значение должно быть не меньше {minField}",
+    "range": "Значение должно быть от {min} до {max}",
+    "invalid_location": "Расположение должно быть shop, assembly или field",
+    "invalid_timing": "Недопустимое значение момента контроля",
+    "invalid_team_type": "Недопустимый тип бригады",
+    "invalid_pressure_unit": "Недопустимая единица давления",
+    "at_least_one_subcontractor": "Требуется хотя бы один субподрядчик (цех, сборка или монтаж)",
+    "at_least_one_wps": "Требуется хотя бы одна утверждённая технологическая карта (WPS)",
+    "at_least_one_item": "Требуется хотя бы один вес операции",
+    "activity_blank": "Код операции не может быть пустым",
+    "weight_range": "Вес должен быть от 0 до 100",
+    "phase_not_enabled": "Этап «{phase}» не включён для этого проекта",
+    "total_not_hundred": "Сумма весов должна быть ровно 100% (сейчас: {total}%)",
+    "fields": {
+      "code": {
+        "required": "Код обязателен"
+      },
+      "description": {
+        "required": "Описание обязательно"
+      },
+      "unitId": {
+        "required": "Узел обязателен"
+      },
+      "diameterFromInch": {
+        "positive": "Диаметр от должен быть положительным"
+      },
+      "diameterToInch": {
+        "greater_or_equal": "Диаметр до должен быть >= диаметра от"
+      },
+      "thicknessFromMm": {
+        "non_negative": "Толщина от не может быть отрицательной"
+      },
+      "thicknessToMm": {
+        "greater_or_equal": "Толщина до должна быть >= толщины от"
+      },
+      "filmCount": {
+        "positive_integer": "Количество плёнок должно быть целым положительным числом"
+      },
+      "coefficientDiameter": {
+        "positive": "Коэффициент диаметра должен быть положительным"
+      },
+      "coefficientRating": {
+        "positive": "Коэффициент давления должен быть положительным"
+      },
+      "flangeRating": {
+        "not_blank": "Класс давления фланца не может быть пустым",
+        "required": "Класс давления фланца обязателен"
+      },
+      "materialTypeId": {
+        "required": "Тип материала обязателен"
+      },
+      "welderCode": {
+        "required": "Код сварщика обязателен"
+      },
+      "fullName": {
+        "required": "ФИО обязательно"
+      },
+      "subcontractorId": {
+        "required": "Субподрядчик обязателен"
+      },
+      "expiresOn": {
+        "required": "Срок действия обязателен"
+      },
+      "serviceClassId": {
+        "required": "Класс эксплуатации обязателен"
+      },
+      "weldTypeId": {
+        "required": "Тип стыка обязателен"
+      },
+      "coverage": {
+        "range": "Процент контроля должен быть от 0 до 100"
+      },
+      "pwhtThicknessThreshold": {
+        "positive": "Порог толщины для PWHT должен быть положительным"
+      },
+      "diameterInch": {
+        "positive": "Диаметр должен быть положительным"
+      },
+      "thicknessMm": {
+        "non_negative": "Толщина не может быть отрицательной"
+      },
+      "mrrNumber": {
+        "required": "Номер MRR обязателен"
+      },
+      "identCode": {
+        "required": "Код Ident обязателен"
+      },
+      "traceNumber": {
+        "required": "Номер плавки/трассировки обязателен"
+      },
+      "jointDefinition": {
+        "required": "Определение стыка обязательно"
+      },
+      "categoryCode": {
+        "required": "Код категории обязателен"
+      },
+      "reason": {
+        "required": "Причина обязательна"
+      },
+      "coefficient": {
+        "non_negative": "Коэффициент не может быть отрицательным"
+      },
+      "systemId": {
+        "required": "Родительская система обязательна"
+      },
+      "categoryId": {
+        "required": "Категория места хранения обязательна"
+      },
+      "capacity": {
+        "positive_integer": "Вместимость места хранения должна быть целым положительным числом"
+      },
+      "activity": {
+        "required": "Код операции обязателен"
+      },
+      "projectUt": {
+        "positive": "UT проекта должен быть положительным числом"
+      },
+      "standardReference": {
+        "required": "Стандартная ссылка обязательна"
+      },
+      "membershipId": {
+        "required": "Участник проекта обязателен"
+      },
+      "deviceId": {
+        "required": "Устройство учёта обязательно"
+      },
+      "externalClassCode": {
+        "required": "Внешний код класса обязателен"
+      },
+      "lineServiceId": {
+        "required": "Служба линии обязательна"
+      },
+      "ralCodeId": {
+        "required": "Код RAL обязателен"
+      },
+      "intermediateCoatCount": {
+        "range": "Количество промежуточных слоёв должно быть от 0 до 20"
+      },
+      "finalCoatCount": {
+        "range": "Количество финишных слоёв должно быть от 0 до 20"
+      },
+      "requiredFinalDftMicrons": {
+        "positive": "Требуемая финишная толщина DFT должна быть положительной"
+      },
+      "defaultSubcontractorId": {
+        "required": "Субподрядчик по умолчанию обязателен при включённой сборке"
+      }
+    }
+  }
+}

@@ -137,35 +137,35 @@ export interface AssemblySettings {
 
 export function validateDeviceInput(input: DeviceInput): ReferenceValidation<DeviceInput> {
   const base = validateReferenceIdentity(input)
-  if (!base.ok) return base
+  if (!base.ok) return { ok: false, errors: { code: base.errors.code?.code || "required", description: base.errors.description?.code || "required" } }
   return { ok: true, value: base.value, errors: {} }
 }
 
 export function validateDeviceUserInput(input: DeviceUserInput): ReferenceValidation<DeviceUserInput> {
-  if (!input.membershipId) return { ok: false, errors: { membershipId: "Project member is required" } }
-  if (!input.deviceId) return { ok: false, errors: { deviceId: "Tracking device is required" } }
+  if (!input.membershipId) return { ok: false, errors: { membershipId: "required" } }
+  if (!input.deviceId) return { ok: false, errors: { deviceId: "required" } }
   return { ok: true, value: input, errors: {} }
 }
 
 export function validateSpoolingMaterialClassInput(input: SpoolingMaterialClassInput): ReferenceValidation<SpoolingMaterialClassInput> {
   const ext = input.externalClassCode.trim().toUpperCase()
-  if (!ext) return { ok: false, errors: { externalClassCode: "External class code is required" } }
-  if (!input.materialTypeId) return { ok: false, errors: { materialTypeId: "Material type is required" } }
+  if (!ext) return { ok: false, errors: { externalClassCode: "required" } }
+  if (!input.materialTypeId) return { ok: false, errors: { materialTypeId: "required" } }
   return { ok: true, value: { externalClassCode: ext, materialTypeId: input.materialTypeId }, errors: {} }
 }
 
 export function validatePaintMatrixInput(input: PaintMatrixInput): ReferenceValidation<PaintMatrixInput> {
   const errors: Record<string, string> = {}
-  if (!input.lineServiceId) errors.lineServiceId = "Line service is required"
-  if (!input.ralCodeId) errors.ralCodeId = "RAL code is required"
+  if (!input.lineServiceId) errors.lineServiceId = "required"
+  if (!input.ralCodeId) errors.ralCodeId = "required"
   if (typeof input.intermediateCoatCount !== "number" || input.intermediateCoatCount < 0 || input.intermediateCoatCount > 20) {
-    errors.intermediateCoatCount = "Intermediate coat count must be between 0 and 20"
+    errors.intermediateCoatCount = "out_of_range"
   }
   if (typeof input.finalCoatCount !== "number" || input.finalCoatCount < 0 || input.finalCoatCount > 20) {
-    errors.finalCoatCount = "Final coat count must be between 0 and 20"
+    errors.finalCoatCount = "out_of_range"
   }
   if (typeof input.requiredFinalDftMicrons !== "number" || input.requiredFinalDftMicrons <= 0) {
-    errors.requiredFinalDftMicrons = "Required final DFT must be positive"
+    errors.requiredFinalDftMicrons = "positive"
   }
 
   if (Object.keys(errors).length > 0) return { ok: false, errors }
@@ -175,7 +175,7 @@ export function validatePaintMatrixInput(input: PaintMatrixInput): ReferenceVali
 
 export function validateAssemblySettingsInput(input: AssemblySettingsInput): ReferenceValidation<AssemblySettingsInput> {
   if (input.enabled && !input.defaultSubcontractorId) {
-    return { ok: false, errors: { defaultSubcontractorId: "Default subcontractor is required when Assembly is enabled" } }
+    return { ok: false, errors: { defaultSubcontractorId: "required" } }
   }
   return { ok: true, value: input, errors: {} }
 }

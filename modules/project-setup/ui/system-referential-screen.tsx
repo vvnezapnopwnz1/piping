@@ -1,6 +1,9 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { useTranslations } from "next-intl"
+import { formatFieldErrors } from "./setup-field-issue"
+
 import { AlertCircle, Edit2, MoreHorizontal, Plus, RefreshCw, ShieldAlert } from "lucide-react"
 import { toast } from "sonner"
 
@@ -49,6 +52,8 @@ import { ReferenceStatusBadge } from "./reference-status-badge"
 import { validateReferenceIdentity, getReferenceStatusActions } from "../domain/reference"
 
 export function SystemReferentialScreen() {
+  const tIssues = useTranslations("projectSetup.issues")
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<LoadedSystemReferentials | null>(null)
@@ -113,7 +118,7 @@ export function SystemReferentialScreen() {
     e.preventDefault()
     const validation = validateReferenceIdentity({ code: addCode, description: addDescription })
     if (!validation.ok) {
-      setAddErrors(validation.errors)
+      setAddErrors(formatFieldErrors(tIssues, validation.errors))
       return
     }
 
@@ -150,7 +155,7 @@ export function SystemReferentialScreen() {
       description: torquingDescription,
     })
     if (!validation.ok) {
-      setTorquingErrors(validation.errors)
+      setTorquingErrors(formatFieldErrors(tIssues, validation.errors))
       return
     }
 
@@ -183,7 +188,7 @@ export function SystemReferentialScreen() {
       coefficientRating: Number(utCoefficientRating),
     })
     if (!validation.ok) {
-      setUtErrors(validation.errors)
+      setUtErrors(formatFieldErrors(tIssues, validation.errors))
       return
     }
 
@@ -220,7 +225,7 @@ export function SystemReferentialScreen() {
     if (!editingEntry) return
     const validation = validateReferenceIdentity({ code: editCode, description: editDescription })
     if (!validation.ok) {
-      setEditErrors(validation.errors)
+      setEditErrors(formatFieldErrors(tIssues, validation.errors))
       return
     }
 

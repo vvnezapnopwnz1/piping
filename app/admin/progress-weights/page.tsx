@@ -1,18 +1,21 @@
 "use client"
 
+import { useTranslations } from "next-intl"
+
 import { AdminPageHeader } from "@/components/admin/admin-module-ui"
 import { ProgressWeightsScreen } from "@/modules/project-setup/ui/progress-weights-screen"
 import { useSupabaseAuth } from "@/contexts/supabase-auth-context"
 
 export default function ProgressWeightsPage() {
+  const t = useTranslations("projectSetup.adminPages")
   const { access } = useSupabaseAuth()
   const activeProjectId = access?.projectId
 
   return (
     <div className="space-y-4">
       <AdminPageHeader
-        title="Admin · Progress Weights"
-        description="Configure progress weight allocations across project phases."
+        title={t("progressWeightsTitle")}
+        description={t("progressWeightsDesc")}
       />
 
       {activeProjectId ? (
@@ -22,9 +25,10 @@ export default function ProgressWeightsPage() {
         />
       ) : (
         <p className="text-muted-foreground text-sm">
-          Select a project to manage its progress weights.
+          {t("selectProjectWeights")}
         </p>
       )}
     </div>
   )
 }
+

@@ -1,18 +1,21 @@
 "use client"
 
+import { useTranslations } from "next-intl"
+
 import { AdminPageHeader } from "@/components/admin/admin-module-ui"
 import { useSupabaseAuth } from "@/contexts/supabase-auth-context"
 import { ProjectReferentialScreen } from "@/modules/project-setup/ui/project-referential-screen"
 
 export default function ProjectReferentialPage() {
+  const t = useTranslations("projectSetup.adminPages")
   const auth = useSupabaseAuth()
   const activeProjectId = auth?.access?.projectId
 
   return (
     <div className="space-y-4">
       <AdminPageHeader
-        title="Admin · Project Referential"
-        description="Project-level master data for spooling, fabrication, erection, testpack, tracking, and painting."
+        title={t("projectReferentialTitle")}
+        description={t("projectReferentialDesc")}
       />
 
       {activeProjectId ? (
@@ -24,9 +27,10 @@ export default function ProjectReferentialPage() {
         />
       ) : (
         <p className="text-muted-foreground text-sm">
-          Select a project to manage its referentials.
+          {t("selectProjectReferential")}
         </p>
       )}
     </div>
   )
 }
+

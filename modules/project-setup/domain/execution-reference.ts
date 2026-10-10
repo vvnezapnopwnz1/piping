@@ -133,30 +133,30 @@ export const FLANGE_JOINTING_ACTIVITY = "FLANGE_JOINTING"
 
 export function validateProjectTeamInput(input: ProjectTeamInput): ReferenceValidation<ProjectTeamInput> {
   const base = validateReferenceIdentity(input)
-  if (!base.ok) return base
+  if (!base.ok) return { ok: false, errors: { code: base.errors.code?.code || "required", description: base.errors.description?.code || "required" } }
   if (!["line_check", "blinding", "finishing", "reinstatement", "jointer"].includes(input.teamType)) {
-    return { ok: false, errors: { teamType: "Invalid team type" } }
+    return { ok: false, errors: { teamType: "invalid_team_type" } }
   }
   return { ok: true, value: { ...base.value, teamType: input.teamType }, errors: {} }
 }
 
 export function validateSubsystemInput(input: ProjectSubsystemInput): ReferenceValidation<ProjectSubsystemInput> {
   const base = validateReferenceIdentity(input)
-  if (!base.ok) return base
+  if (!base.ok) return { ok: false, errors: { code: base.errors.code?.code || "required", description: base.errors.description?.code || "required" } }
   if (!input.systemId) {
-    return { ok: false, errors: { systemId: "Parent system is required" } }
+    return { ok: false, errors: { systemId: "required" } }
   }
   return { ok: true, value: { ...base.value, systemId: input.systemId }, errors: {} }
 }
 
 export function validateLocationInput(input: LocationInput): ReferenceValidation<LocationInput> {
   const base = validateReferenceIdentity(input)
-  if (!base.ok) return base
+  if (!base.ok) return { ok: false, errors: { code: base.errors.code?.code || "required", description: base.errors.description?.code || "required" } }
   if (!input.categoryId) {
-    return { ok: false, errors: { categoryId: "Location category is required" } }
+    return { ok: false, errors: { categoryId: "required" } }
   }
   if (!Number.isInteger(input.capacity) || input.capacity <= 0) {
-    return { ok: false, errors: { capacity: "Location capacity must be a positive integer" } }
+    return { ok: false, errors: { capacity: "positive_integer" } }
   }
   return {
     ok: true,
@@ -172,33 +172,33 @@ export function validateLocationInput(input: LocationInput): ReferenceValidation
 
 export function validateLocationCapacity(capacity: number): ReferenceValidation<{ capacity: number }> {
   if (!Number.isInteger(capacity) || capacity <= 0) {
-    return { ok: false, errors: { capacity: "Location capacity must be a positive integer" } }
+    return { ok: false, errors: { capacity: "positive_integer" } }
   }
   return { ok: true, value: { capacity }, errors: {} }
 }
 
 export function validatePressureUnitInput(input: PressureUnitInput): ReferenceValidation<PressureUnitInput> {
   if (!["bar", "psi", "kpa", "mpascal"].includes(input.unit)) {
-    return { ok: false, errors: { unit: "Invalid pressure unit" } }
+    return { ok: false, errors: { unit: "invalid_pressure_unit" } }
   }
   return { ok: true, value: input, errors: {} }
 }
 
 export function validateUnitTimeReferenceInput(input: UnitTimeReferenceInput): ReferenceValidation<UnitTimeReferenceInput> {
   const code = input.activity.trim().toUpperCase()
-  if (!code) return { ok: false, errors: { activity: "Activity code is required" } }
+  if (!code) return { ok: false, errors: { activity: "required" } }
   if (typeof input.projectUt !== "number" || !Number.isFinite(input.projectUt) || input.projectUt <= 0) {
-    return { ok: false, errors: { projectUt: "Project UT must be a positive number" } }
+    return { ok: false, errors: { projectUt: "positive" } }
   }
   const standardReference = input.standardReference.trim()
   if (!standardReference) {
-    return { ok: false, errors: { standardReference: "Standard reference is required" } }
+    return { ok: false, errors: { standardReference: "required" } }
   }
   return { ok: true, value: { activity: code, projectUt: input.projectUt, standardReference }, errors: {} }
 }
 
 export function validatePunchCodeInput(input: PunchCodeInput): ReferenceValidation<PunchCodeInput> {
   const base = validateReferenceIdentity(input)
-  if (!base.ok) return base
+  if (!base.ok) return { ok: false, errors: { code: base.errors.code?.code || "required", description: base.errors.description?.code || "required" } }
   return { ok: true, value: base.value, errors: {} }
 }

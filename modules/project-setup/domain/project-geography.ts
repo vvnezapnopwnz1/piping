@@ -1,4 +1,4 @@
-import { validateReferenceIdentity, type ReferenceValidation, type ReferenceStatus } from "./reference"
+import { validateReferenceIdentity, type ReferenceValidation, type ReferenceStatus, type SetupFieldIssue } from "./reference"
 
 export interface Subcontractor {
   id: string
@@ -77,7 +77,7 @@ export interface PdsAreaInput {
   customValues: Record<string, string | number | boolean | null>
 }
 
-export function validateSubcontractorInput(input: SubcontractorInput): ReferenceValidation<SubcontractorInput> {
+export function validateSubcontractorInput(input: SubcontractorInput): ReferenceValidation<SubcontractorInput, SetupFieldIssue> {
   const base = validateReferenceIdentity(input)
   if (!base.ok) return base
   return {
@@ -91,7 +91,7 @@ export function validateSubcontractorInput(input: SubcontractorInput): Reference
   }
 }
 
-export function validateUnitInput(input: UnitInput): ReferenceValidation<UnitInput> {
+export function validateUnitInput(input: UnitInput): ReferenceValidation<UnitInput, SetupFieldIssue> {
   return validateReferenceIdentity(input)
 }
 
@@ -101,13 +101,13 @@ export function validateUnitInput(input: UnitInput): ReferenceValidation<UnitInp
  * form insists on a unit. Cross-project units are refused by the
  * `assert_same_project_reference('unit_id', 'project_units')` trigger.
  */
-export function validateAreaClassificationInput(input: AreaClassificationInput): ReferenceValidation<AreaClassificationInput> {
+export function validateAreaClassificationInput(input: AreaClassificationInput): ReferenceValidation<AreaClassificationInput, SetupFieldIssue> {
   const base = validateReferenceIdentity(input)
-  const errors: Record<string, string> = base.ok ? {} : { ...base.errors }
+  const errors: Record<string, SetupFieldIssue> = base.ok ? {} : { ...base.errors }
 
   const unitId = input.unitId || null
   if (!unitId) {
-    errors.unitId = "Unit is required"
+    errors.unitId = { code: "required" }
   }
 
   if (!base.ok || Object.keys(errors).length > 0) {
@@ -128,13 +128,13 @@ export function validateAreaClassificationInput(input: AreaClassificationInput):
 export function validatePdsAreaInput(
   input: PdsAreaInput,
   allowedCustomKeys: string[] = []
-): ReferenceValidation<PdsAreaInput> {
+): ReferenceValidation<PdsAreaInput, SetupFieldIssue> {
   const base = validateReferenceIdentity(input)
-  const errors: Record<string, string> = base.ok ? {} : { ...base.errors }
+  const errors: Record<string, SetupFieldIssue> = base.ok ? {} : { ...base.errors }
 
   const hasSubcontractor = !!(input.shopSubcontractorId || input.assemblySubcontractorId || input.fieldSubcontractorId)
   if (!hasSubcontractor) {
-    errors.subcontractors = "At least one ownership subcontractor (Shop, Assembly, or Field) is required"
+    errors.subcontractors = { code: "at_least_one_subcontractor" }
   }
 
   const sanitizedCustomValues: Record<string, string | number | boolean | null> = {}

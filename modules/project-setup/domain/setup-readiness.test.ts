@@ -6,12 +6,12 @@ import {
 
 // Known code resolution
 const sub = getRequirementDetails("subcontractors")
-assert.equal(sub.label, "Subcontractors")
+assert.equal(sub.code, "subcontractors")
 assert.equal(sub.tab, "general")
 
 // Unknown code fallback
 const unk = getRequirementDetails("non_existent_code")
-assert.equal(unk.label, "Unknown setup requirement (non_existent_code)")
+assert.equal(unk.code, "non_existent_code")
 assert.equal(unk.tab, "general")
 
 // Gate B readiness evaluation

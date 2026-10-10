@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { CheckCircle2, AlertTriangle, ArrowRight } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -17,6 +18,7 @@ export function SetupReadinessPanel({
   readiness: ProjectSetupReadiness
   onNavigateTab?: (tab: string) => void
 }) {
+  const t = useTranslations("projectSetup.readiness")
   if (readiness.missingCodes.length === 0) return null
 
   // Only the import gate is worth a badge: the card is on screen precisely because setup is
@@ -28,8 +30,7 @@ export function SetupReadinessPanel({
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-4">
           <CardTitle className="text-base font-semibold">
-            Setup incomplete — {readiness.missingCodes.length}{" "}
-            {readiness.missingCodes.length === 1 ? "referential" : "referentials"} missing
+            {t("incomplete", { count: readiness.missingCodes.length })}
           </CardTitle>
           <Badge
             variant="outline"
@@ -40,26 +41,28 @@ export function SetupReadinessPanel({
             }
           >
             {isGateBReady ? <CheckCircle2 className="mr-1 h-3 w-3" /> : <AlertTriangle className="mr-1 h-3 w-3" />}
-            {isGateBReady ? "Ready for engineering import" : "Not ready for engineering import"}
+            {isGateBReady ? t("readyForImport") : t("notReadyForImport")}
           </Badge>
         </div>
         <CardDescription>
-          {isGateBReady
-            ? "Everything the ISO, spool and weld import reads is in place. The referentials below are still needed before execution."
-            : "The ISO, spool and weld import reads these referentials, so engineering data cannot be loaded until they exist."}
+          {isGateBReady ? t("descReady") : t("descNotReady")}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex flex-wrap gap-2">
           {readiness.missingCodes.map((code) => {
             const req = getRequirementDetails(code)
+            const tAny = t as any
+            const label = tAny.has(`requirements.${req.code}`)
+              ? tAny(`requirements.${req.code}`)
+              : t("requirements.unknown", { code: req.code })
             return (
               <button
                 key={code}
                 onClick={() => onNavigateTab && onNavigateTab(req.tab)}
                 className="inline-flex items-center gap-1.5 rounded-md border bg-background px-2.5 py-1 text-xs font-medium hover:bg-accent transition-colors"
               >
-                <span>{req.label}</span>
+                <span>{label}</span>
                 <ArrowRight className="h-3 w-3 text-muted-foreground" />
               </button>
             )
@@ -69,3 +72,4 @@ export function SetupReadinessPanel({
     </Card>
   )
 }
+
