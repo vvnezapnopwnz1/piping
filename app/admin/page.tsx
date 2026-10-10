@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 import {
   AdminCardGrid,
   AdminPageHeader,
@@ -11,41 +15,40 @@ import {
 } from "@/components/ui/card";
 
 export default function AdminPage() {
+  const t = useTranslations("admin.overview");
+
   return (
     <div className="space-y-4">
       <AdminPageHeader
-        title="Admin · Overview"
-        description="Setup workspace for project definition, master data, access mapping, and import configuration."
+        title={t("title")}
+        description={t("description")}
       />
 
       <AdminCardGrid
         items={[
           {
-            title: "Project Definition",
-            description: "Create and configure the active project record.",
+            title: t("cards.projectDefinition.title"),
+            description: t("cards.projectDefinition.description"),
             href: "/admin/project-definition",
           },
           {
-            title: "System Referential",
-            description:
-              "Maintain cross-project references for system-admin scope.",
+            title: t("cards.systemReferential.title"),
+            description: t("cards.systemReferential.description"),
             href: "/admin/system-referential",
           },
           {
-            title: "Project Referential",
-            description:
-              "Manage project-level master data used by all modules.",
+            title: t("cards.projectReferential.title"),
+            description: t("cards.projectReferential.description"),
             href: "/admin/project-referential",
           },
           {
-            title: "Access Rights",
-            description:
-              "Review roles, PipeQC mappings, and subcontractor scoping.",
+            title: t("cards.accessRights.title"),
+            description: t("cards.accessRights.description"),
             href: "/admin/access-rights",
           },
           {
-            title: "Import Settings",
-            description: "Prepare Excel/template import configuration.",
+            title: t("cards.importSettings.title"),
+            description: t("cards.importSettings.description"),
             href: "/admin/import-settings",
           },
         ]}
@@ -53,36 +56,36 @@ export default function AdminPage() {
 
       <Card className="border-border">
         <CardHeader>
-          <CardTitle className="text-base">Setup sequence</CardTitle>
+          <CardTitle className="text-base">{t("sequence.title")}</CardTitle>
           <CardDescription>
-            Recommended order for configuring PipeQC before operational use.
+            {t("sequence.description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <ol className="grid gap-3 text-sm text-foreground md:grid-cols-4">
             <li className="rounded-lg border border-border bg-muted p-3">
               <div className="text-xs font-semibold uppercase text-muted-foreground">
-                Step 1
+                {t("sequence.step1Label")}
               </div>
-              Project definition
+              {t("sequence.step1Text")}
             </li>
             <li className="rounded-lg border border-border bg-muted p-3">
               <div className="text-xs font-semibold uppercase text-muted-foreground">
-                Step 2
+                {t("sequence.step2Label")}
               </div>
-              System and project referentials
+              {t("sequence.step2Text")}
             </li>
             <li className="rounded-lg border border-border bg-muted p-3">
               <div className="text-xs font-semibold uppercase text-muted-foreground">
-                Step 3
+                {t("sequence.step3Label")}
               </div>
-              Access rights
+              {t("sequence.step3Text")}
             </li>
             <li className="rounded-lg border border-border bg-muted p-3">
               <div className="text-xs font-semibold uppercase text-muted-foreground">
-                Step 4
+                {t("sequence.step4Label")}
               </div>
-              Import settings
+              {t("sequence.step4Text")}
             </li>
           </ol>
         </CardContent>

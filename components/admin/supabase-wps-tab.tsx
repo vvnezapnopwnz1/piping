@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useSupabaseAuth } from "@/contexts/supabase-auth-context";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
 import {
@@ -12,7 +13,6 @@ import {
 } from "@/lib/supabase/welding-procedures";
 import {
   getWeldingProcedureStatusActions,
-  toWeldingProcedureErrorMessage,
   type WeldingProcedure,
   type WeldingProcedureInput,
   type WpsStatus,
@@ -43,7 +43,18 @@ const EMPTY_WPS_FORM: WeldingProcedureInput = {
   approvedOn: "",
 };
 
+function formatWpsError(t: ReturnType<typeof useTranslations<"admin.wps">>, error: string | undefined): string | null {
+  if (!error) return null;
+  if (error === "Required") return t("errors.required");
+  if (error === "Required/Invalid") return t("errors.requiredInvalid");
+  if (error === "Invalid range") return t("errors.invalidRange");
+  return error;
+}
+
 export function SupabaseWpsTab() {
+  const t = useTranslations("admin.wps");
+  const tc = useTranslations("codes");
+  const tCommon = useTranslations("common");
   const { access } = useSupabaseAuth();
   const [data, setData] = useState<LoadedWeldingProcedures | null>(null);
   const [loading, setLoading] = useState(true);
@@ -106,8 +117,8 @@ export function SupabaseWpsTab() {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-muted-foreground">
         <AlertCircle className="mb-4 h-8 w-8 text-destructive" />
-        <p className="mb-4">Failed to load WPS data.</p>
-        <Button onClick={() => loadData(activeProjectId)}>Retry</Button>
+        <p className="mb-4">{t("loadFailed")}</p>
+        <Button onClick={() => loadData(activeProjectId)}>{t("retry")}</Button>
       </div>
     );
   }
@@ -153,15 +164,15 @@ export function SupabaseWpsTab() {
       if (editingWps) {
         const updated = await updateWeldingProcedure(supabase, activeProjectId, editingWps.id, validation.value);
         setData({ ...data, procedures: data.procedures.map(p => p.id === updated.id ? updated : p) });
-        toast.success("WPS updated successfully");
+        toast.success(t("updated"));
       } else {
         const created = await createWeldingProcedure(supabase, activeProjectId, validation.value);
         setData({ ...data, procedures: [...data.procedures, created] });
-        toast.success("WPS created successfully");
+        toast.success(t("created"));
       }
       setDialogOpen(false);
     } catch {
-      toast.error(toWeldingProcedureErrorMessage());
+      toast.error(t("errors.saveFailed"));
     } finally {
       setSubmitting(false);
     }
@@ -172,9 +183,9 @@ export function SupabaseWpsTab() {
       const supabase = getSupabaseBrowserClient();
       const updated = await setWeldingProcedureStatus(supabase, activeProjectId, wpsId, status);
       setData({ ...data, procedures: data.procedures.map(p => p.id === updated.id ? updated : p) });
-      toast.success("WPS status updated");
+      toast.success(t("statusUpdated"));
     } catch {
-      toast.error(toWeldingProcedureErrorMessage());
+      toast.error(t("errors.saveFailed"));
     }
   };
 
@@ -184,22 +195,22 @@ export function SupabaseWpsTab() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-medium">Welding Procedures</h3>
-          <p className="text-sm text-muted-foreground">Manage project-specific welding procedures.</p>
+          <h3 className="text-lg font-medium">{t("title")}</h3>
+          <p className="text-sm text-muted-foreground">{t("description")}</p>
         </div>
         <Button
           onClick={handleOpenCreate}
           disabled={!data.canEdit || missingPrerequisites}
         >
           <Plus className="mr-2 h-4 w-4" />
-          Add WPS
+          {t("addWps")}
         </Button>
       </div>
 
       {!data.canEdit && (
         <div className="bg-warning-bg border-warning-border rounded-md border p-4">
           <p className="text-warning-fg text-sm">
-            You do not have permission to administer this project. Form actions are disabled.
+            {t("noAdminPermission")}
           </p>
         </div>
       )}
@@ -207,7 +218,7 @@ export function SupabaseWpsTab() {
       {missingPrerequisites && (
         <div className="bg-warning-bg border-warning-border rounded-md border p-4">
           <p className="text-warning-fg text-sm">
-            Cannot create WPS. Ensure active Material Types and Subcontractors exist in this project.
+            {t("cannotCreateWpsPrerequisites")}
           </p>
         </div>
       )}
@@ -215,7 +226,7 @@ export function SupabaseWpsTab() {
       {data.procedures.length === 0 ? (
         <Card className="border-border bg-muted border-dashed">
           <CardContent className="flex flex-col items-center justify-center p-12 text-muted-foreground">
-            <p>No welding procedures found for this project.</p>
+            <p>{t("noProceduresFound")}</p>
           </CardContent>
         </Card>
       ) : (
@@ -223,13 +234,13 @@ export function SupabaseWpsTab() {
           <table className="w-full text-sm">
             <thead className="bg-muted">
               <tr className="border-b border-border">
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Code</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Process</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Material / Subcontractor</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Ranges</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Revision / Date</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
-                <th className="px-4 py-3 text-right font-medium text-muted-foreground">Actions</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t("columns.code")}</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t("columns.process")}</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t("columns.materialSubcontractor")}</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t("columns.ranges")}</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t("columns.revisionDate")}</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">{t("columns.status")}</th>
+                <th className="px-4 py-3 text-right font-medium text-muted-foreground">{t("columns.actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -258,7 +269,7 @@ export function SupabaseWpsTab() {
                   </td>
                   <td className="px-4 py-3">
                     <Badge variant={wps.status === 'active' ? 'default' : wps.status === 'inactive' ? 'secondary' : 'outline'}>
-                      {wps.status}
+                      {tc(`status.${wps.status}`)}
                     </Badge>
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -269,17 +280,17 @@ export function SupabaseWpsTab() {
                             <Edit2 className="h-4 w-4 text-muted-foreground" />
                           </Button>
                           {getWeldingProcedureStatusActions(wps.status).includes('deactivate') && (
-                            <Button variant="ghost" size="icon" onClick={() => handleStatusChange(wps.id, 'inactive')} title="Deactivate">
+                            <Button variant="ghost" size="icon" onClick={() => handleStatusChange(wps.id, 'inactive')} title={t("actions.deactivate")}>
                               <Pause className="h-4 w-4 text-muted-foreground" />
                             </Button>
                           )}
                           {getWeldingProcedureStatusActions(wps.status).includes('reactivate') && (
-                            <Button variant="ghost" size="icon" onClick={() => handleStatusChange(wps.id, 'active')} title="Reactivate">
+                            <Button variant="ghost" size="icon" onClick={() => handleStatusChange(wps.id, 'active')} title={t("actions.reactivate")}>
                               <Play className="h-4 w-4 text-muted-foreground" />
                             </Button>
                           )}
                           {getWeldingProcedureStatusActions(wps.status).includes('archive') && (
-                            <Button variant="ghost" size="icon" onClick={() => setArchiveConfirmOpen({ open: true, wps })} title="Archive">
+                            <Button variant="ghost" size="icon" onClick={() => setArchiveConfirmOpen({ open: true, wps })} title={t("actions.archive")}>
                               <Archive className="h-4 w-4 text-muted-foreground" />
                             </Button>
                           )}
@@ -297,32 +308,32 @@ export function SupabaseWpsTab() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>{editingWps ? "Edit WPS" : "Add WPS"}</DialogTitle>
+            <DialogTitle>{editingWps ? t("editWps") : t("addWps")}</DialogTitle>
             <DialogDescription>
-              Enter the details for the welding procedure.
+              {t("dialogDescription")}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Code *</Label>
+                <Label>{t("fields.code")}</Label>
                 <Input
                   value={formData.code}
                   onChange={(e) => setFormData({...formData, code: e.target.value})}
                 />
-                {formErrors.code && <p className="text-xs text-destructive">{formErrors.code}</p>}
+                {formErrors.code && <p className="text-xs text-destructive">{formatWpsError(t, formErrors.code)}</p>}
               </div>
               <div className="space-y-2">
-                <Label>Process *</Label>
+                <Label>{t("fields.process")}</Label>
                 <Input
                   value={formData.process}
                   onChange={(e) => setFormData({...formData, process: e.target.value})}
                 />
-                {formErrors.process && <p className="text-xs text-destructive">{formErrors.process}</p>}
+                {formErrors.process && <p className="text-xs text-destructive">{formatWpsError(t, formErrors.process)}</p>}
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Description</Label>
+              <Label>{t("fields.description")}</Label>
               <Input
                 value={formData.description}
                 onChange={(e) => setFormData({...formData, description: e.target.value})}
@@ -330,10 +341,10 @@ export function SupabaseWpsTab() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Material Type *</Label>
+                <Label>{t("fields.materialType")}</Label>
                 <Select value={formData.materialTypeId} onValueChange={(val) => setFormData({...formData, materialTypeId: val})}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select Material Type" />
+                    <SelectValue placeholder={t("fields.selectMaterialType")} />
                   </SelectTrigger>
                   <SelectContent>
                     {data.materialTypes.map(m => (
@@ -341,13 +352,13 @@ export function SupabaseWpsTab() {
                     ))}
                   </SelectContent>
                 </Select>
-                {formErrors.materialTypeId && <p className="text-xs text-destructive">{formErrors.materialTypeId}</p>}
+                {formErrors.materialTypeId && <p className="text-xs text-destructive">{formatWpsError(t, formErrors.materialTypeId)}</p>}
               </div>
               <div className="space-y-2">
-                <Label>Subcontractor *</Label>
+                <Label>{t("fields.subcontractor")}</Label>
                 <Select value={formData.subcontractorId} onValueChange={(val) => setFormData({...formData, subcontractorId: val})}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select Subcontractor" />
+                    <SelectValue placeholder={t("fields.selectSubcontractor")} />
                   </SelectTrigger>
                   <SelectContent>
                     {data.subcontractors.map(s => (
@@ -355,49 +366,49 @@ export function SupabaseWpsTab() {
                     ))}
                   </SelectContent>
                 </Select>
-                {formErrors.subcontractorId && <p className="text-xs text-destructive">{formErrors.subcontractorId}</p>}
+                {formErrors.subcontractorId && <p className="text-xs text-destructive">{formatWpsError(t, formErrors.subcontractorId)}</p>}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Diameter From *</Label>
+                <Label>{t("fields.diameterFrom")}</Label>
                 <Input type="number" value={formData.diameterFrom} onChange={(e) => setFormData({...formData, diameterFrom: e.target.value})} />
               </div>
               <div className="space-y-2">
-                <Label>Diameter To *</Label>
+                <Label>{t("fields.diameterTo")}</Label>
                 <Input type="number" value={formData.diameterTo} onChange={(e) => setFormData({...formData, diameterTo: e.target.value})} />
               </div>
             </div>
-            {formErrors.diameter && <p className="text-xs text-destructive mt-0">{formErrors.diameter}</p>}
+            {formErrors.diameter && <p className="text-xs text-destructive mt-0">{formatWpsError(t, formErrors.diameter)}</p>}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Thickness From *</Label>
+                <Label>{t("fields.thicknessFrom")}</Label>
                 <Input type="number" value={formData.thicknessFrom} onChange={(e) => setFormData({...formData, thicknessFrom: e.target.value})} />
               </div>
               <div className="space-y-2">
-                <Label>Thickness To *</Label>
+                <Label>{t("fields.thicknessTo")}</Label>
                 <Input type="number" value={formData.thicknessTo} onChange={(e) => setFormData({...formData, thicknessTo: e.target.value})} />
               </div>
             </div>
-            {formErrors.thickness && <p className="text-xs text-destructive mt-0">{formErrors.thickness}</p>}
+            {formErrors.thickness && <p className="text-xs text-destructive mt-0">{formatWpsError(t, formErrors.thickness)}</p>}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Revision *</Label>
+                <Label>{t("fields.revision")}</Label>
                 <Input value={formData.revision} onChange={(e) => setFormData({...formData, revision: e.target.value})} />
-                {formErrors.revision && <p className="text-xs text-destructive">{formErrors.revision}</p>}
+                {formErrors.revision && <p className="text-xs text-destructive">{formatWpsError(t, formErrors.revision)}</p>}
               </div>
               <div className="space-y-2">
-                <Label>Approval Date *</Label>
+                <Label>{t("fields.approvalDate")}</Label>
                 <Input type="date" value={formData.approvedOn} onChange={(e) => setFormData({...formData, approvedOn: e.target.value})} />
-                {formErrors.approvedOn && <p className="text-xs text-destructive">{formErrors.approvedOn}</p>}
+                {formErrors.approvedOn && <p className="text-xs text-destructive">{formatWpsError(t, formErrors.approvedOn)}</p>}
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={submitting}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={submitting}>{tCommon("actions.cancel")}</Button>
             <Button onClick={handleSubmit} disabled={submitting}>
               {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save
+              {tCommon("actions.save")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -406,13 +417,13 @@ export function SupabaseWpsTab() {
       <Dialog open={archiveConfirmOpen.open} onOpenChange={(open) => !open && setArchiveConfirmOpen({ open: false, wps: null })}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Archive WPS</DialogTitle>
+            <DialogTitle>{t("archiveDialog.title")}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to archive this WPS? It will remain visible but inactive.
+              {t("archiveDialog.description")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setArchiveConfirmOpen({ open: false, wps: null })}>Cancel</Button>
+            <Button variant="outline" onClick={() => setArchiveConfirmOpen({ open: false, wps: null })}>{tCommon("actions.cancel")}</Button>
             <Button
               variant="destructive"
               onClick={() => {
@@ -422,7 +433,7 @@ export function SupabaseWpsTab() {
                 }
               }}
             >
-              Archive
+              {t("archiveDialog.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>

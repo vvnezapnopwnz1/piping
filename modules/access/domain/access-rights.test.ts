@@ -27,26 +27,32 @@ for (const input of [
     functionalRoles: [],
     subcontractorIds: ["sub-a"],
     pdsAreaIds: ["pds-a"],
-    field: "functionalRoles",
+    field: "functionalRoles" as const,
+    code: "at_least_one_functional_role" as const,
   },
   {
     accessRole: "subcontractor" as const,
     functionalRoles: ["nde_inspector" as const],
     subcontractorIds: [],
     pdsAreaIds: ["pds-a"],
-    field: "subcontractorIds",
+    field: "subcontractorIds" as const,
+    code: "at_least_one_subcontractor" as const,
   },
   {
     accessRole: "subcontractor" as const,
     functionalRoles: ["nde_inspector" as const],
     subcontractorIds: ["sub-a"],
     pdsAreaIds: [],
-    field: "pdsAreaIds",
+    field: "pdsAreaIds" as const,
+    code: "at_least_one_pds_area" as const,
   },
 ] as const) {
   const result = validateAccessMemberInput(input)
   assert.equal(result.ok, false)
-  if (!result.ok) assert.ok(result.fieldErrors[input.field])
+  if (!result.ok) {
+    assert.ok(result.fieldErrors[input.field])
+    assert.equal(result.fieldErrors[input.field], input.code)
+  }
 }
 
 const subcontractor = validateAccessMemberInput({

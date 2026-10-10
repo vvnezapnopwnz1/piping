@@ -1,0 +1,107 @@
+{
+  "overview": {
+    "title": "Admin · Overview",
+    "description": "Setup workspace for project definition, master data, access mapping, and import configuration.",
+    "cards": {
+      "projectDefinition": {
+        "title": "Project Definition",
+        "description": "Create and configure the active project record."
+      },
+      "systemReferential": {
+        "title": "System Referential",
+        "description": "Maintain cross-project references for system-admin scope."
+      },
+      "projectReferential": {
+        "title": "Project Referential",
+        "description": "Manage project-level master data used by all modules."
+      },
+      "accessRights": {
+        "title": "Access Rights",
+        "description": "Review roles, PipeQC mappings, and subcontractor scoping."
+      },
+      "importSettings": {
+        "title": "Import Settings",
+        "description": "Prepare Excel/template import configuration."
+      }
+    },
+    "sequence": {
+      "title": "Setup sequence",
+      "description": "Recommended order for configuring PipeQC before operational use.",
+      "step1Label": "Step 1",
+      "step1Text": "Project definition",
+      "step2Label": "Step 2",
+      "step2Text": "System and project referentials",
+      "step3Label": "Step 3",
+      "step3Text": "Access rights",
+      "step4Label": "Step 4",
+      "step4Text": "Import settings"
+    }
+  },
+  "imports": {
+    "selectProject": "Select a project to run imports."
+  },
+  "moduleUi": {
+    "open": "Open",
+    "demoReferencePlaceholder": "Demo reference placeholder",
+    "importDescription": "Excel/template import configuration.",
+    "comingSoon": "Coming soon",
+    "notImplemented": "Not implemented / planned",
+    "uploadPlaceholder": "Upload placeholder",
+    "selectFile": "Select file"
+  },
+  "wps": {
+    "title": "Welding Procedures",
+    "description": "Manage project-specific welding procedures.",
+    "addWps": "Add WPS",
+    "editWps": "Edit WPS",
+    "dialogDescription": "Enter the details for the welding procedure.",
+    "loadFailed": "Failed to load WPS data.",
+    "retry": "Retry",
+    "updated": "WPS updated successfully",
+    "created": "WPS created successfully",
+    "statusUpdated": "WPS status updated",
+    "noAdminPermission": "You do not have permission to administer this project. Form actions are disabled.",
+    "cannotCreateWpsPrerequisites": "Cannot create WPS. Ensure active Material Types and Subcontractors exist in this project.",
+    "noProceduresFound": "No welding procedures found for this project.",
+    "columns": {
+      "code": "Code",
+      "process": "Process",
+      "materialSubcontractor": "Material / Subcontractor",
+      "ranges": "Ranges",
+      "revisionDate": "Revision / Date",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "actions": {
+      "deactivate": "Deactivate",
+      "reactivate": "Reactivate",
+      "archive": "Archive"
+    },
+    "fields": {
+      "code": "Code *",
+      "process": "Process *",
+      "description": "Description",
+      "materialType": "Material Type *",
+      "selectMaterialType": "Select Material Type",
+      "subcontractor": "Subcontractor *",
+      "selectSubcontractor": "Select Subcontractor",
+      "diameterFrom": "Diameter From *",
+      "diameterTo": "Diameter To *",
+      "thicknessFrom": "Thickness From *",
+      "thicknessTo": "Thickness To *",
+      "revision": "Revision *",
+      "approvalDate": "Approval Date *"
+    },
+    "errors": {
+      "required": "Required",
+      "requiredInvalid": "Required/Invalid",
+      "invalidRange": "Invalid range",
+      "saveFailed": "Unable to save WPS changes. Please try again."
+    },
+    "archiveDialog": {
+      "title": "Archive WPS",
+      "description": "Are you sure you want to archive this WPS? It will remain visible but inactive.",
+      "confirm": "Archive"
+    }
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "page": {
+    "title": "Admin · Access Rights",
+    "description": "Manage project memberships, access roles, functional roles and explicit subcontractor/PDS scope.",
+    "sectionLabel": "Access Rights"
+  },
+  "rightsScreen": {
+    "description": "Manage existing PipeQC users, their access roles, functional roles and explicit scope.",
+    "addMember": "Add member",
+    "toast": {
+      "accessUpdated": "Access updated",
+      "memberAdded": "Member added",
+      "memberActivated": "Member activated",
+      "memberDeactivated": "Member deactivated"
+    },
+    "errors": {
+      "updateAccess": "Unable to update access",
+      "loadMatrix": "Unable to load access matrix",
+      "loadMatrixDescription": "Check your access or retry the page."
+    }
+  },
+  "membersTable": {
+    "columns": {
+      "member": "Member",
+      "access": "Access",
+      "functionalRoles": "Functional roles",
+      "subcontractorScope": "Subcontractor scope",
+      "pdsScope": "PDS scope",
+      "status": "Status"
+    },
+    "projectWide": "Project-wide",
+    "ownMembershipAdminOnly": "Only a platform administrator can change their own membership.",
+    "actions": {
+      "edit": "Edit",
+      "deactivate": "Deactivate",
+      "activate": "Activate"
+    },
+    "emptyList": "No project memberships found."
+  },
+  "memberDialog": {
+    "editTitle": "Edit access",
+    "addTitle": "Add project member",
+    "addDescription": "Use the exact email of an existing PipeQC user.",
+    "email": "Email",
+    "accessRole": "Access role",
+    "functionalRoles": "Functional roles",
+    "subcontractorScope": "Subcontractor scope",
+    "pdsScope": "PDS area scope",
+    "validation": {
+      "atLeastOneFunctionalRole": "Select at least one functional role.",
+      "atLeastOneSubcontractor": "Select at least one subcontractor.",
+      "atLeastOnePdsArea": "Select at least one PDS area."
+    }
+  }
+}

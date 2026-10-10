@@ -1,12 +1,14 @@
 "use client"
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { Plus } from "lucide-react"
 import { toast } from "sonner"
 
+import { errorDetail } from "@/i18n/format"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@/components/ui/skeleton"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { createRequestVersion } from "@/lib/request-version"
 import { useSupabaseAuth } from "@/contexts/supabase-auth-context"
@@ -17,6 +19,7 @@ import { AccessMembersTable } from "./access-members-table"
 import type { AccessMemberSaveState } from "./access-member-dialog-state"
 
 export function AccessRightsScreen({ projectId, isPlatformAdmin }: { projectId: string; isPlatformAdmin: boolean }) {
+  const t = useTranslations("access.rightsScreen")
   const { user, reloadAccess } = useSupabaseAuth()
   const requestVersion = React.useRef(createRequestVersion())
   const [rows, setRows] = React.useState<AccessMemberRow[]>([])
@@ -41,17 +44,56 @@ export function AccessRightsScreen({ projectId, isPlatformAdmin }: { projectId: 
       }
       await load()
       reloadAccess()
-      toast.success(editing ? "Access updated" : "Member added")
+      toast.success(editing ? t("toast.accessUpdated") : t("toast.memberAdded"))
       return "saved"
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Unable to update access")
+      toast.error(t("errors.updateAccess"), { description: errorDetail(error) })
       return "failed"
     } finally {
       setSaving(false)
     }
   }
-  const setActive = async (row: AccessMemberRow, active: boolean) => { setSaving(true); try { await setProjectMemberActive(getSupabaseBrowserClient(), row.membershipId, active); await load(); reloadAccess(); toast.success(active ? "Member activated" : "Member deactivated") } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to update access") } finally { setSaving(false) } }
+  const setActive = async (row: AccessMemberRow, active: boolean) => {
+    setSaving(true)
+    try {
+      await setProjectMemberActive(getSupabaseBrowserClient(), row.membershipId, active)
+      await load()
+      reloadAccess()
+      toast.success(active ? t("toast.memberActivated") : t("toast.memberDeactivated"))
+    } catch (error) {
+      toast.error(t("errors.updateAccess"), { description: errorDetail(error) })
+    } finally {
+      setSaving(false)
+    }
+  }
   if (status === "loading") return <Skeleton className="h-64 w-full" />
-  if (status === "load_error") return <Alert variant="destructive"><AlertTitle>Unable to load access matrix</AlertTitle><AlertDescription>Check your access or retry the page.</AlertDescription></Alert>
-  return <div className="space-y-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm text-muted-foreground">Manage existing PipeQC users, their access roles, functional roles and explicit scope.</p><Button size="sm" onClick={() => { setEditing(null); setDialogOpen(true) }} disabled={saving}><Plus className="mr-1 size-4" />Add member</Button></div><AccessMembersTable rows={rows} currentUserId={user?.id} isPlatformAdmin={isPlatformAdmin} saving={saving} onEdit={(row) => { setEditing(row); setDialogOpen(true) }} onSetActive={setActive} /><AccessMemberDialog open={dialogOpen} member={editing} subcontractors={subcontractors} pdsAreas={pdsAreas} saving={saving} onOpenChange={setDialogOpen} onSave={save} /></div>
+  if (status === "load_error") return <Alert variant="destructive"><AlertTitle>{t("errors.loadMatrix")}</AlertTitle><AlertDescription>{t("errors.loadMatrixDescription")}</AlertDescription></Alert>
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm text-muted-foreground">{t("description")}</p>
+        <Button size="sm" onClick={() => { setEditing(null); setDialogOpen(true) }} disabled={saving}>
+          <Plus className="mr-1 size-4" />
+          {t("addMember")}
+        </Button>
+      </div>
+      <AccessMembersTable
+        rows={rows}
+        currentUserId={user?.id}
+        isPlatformAdmin={isPlatformAdmin}
+        saving={saving}
+        onEdit={(row) => { setEditing(row); setDialogOpen(true) }}
+        onSetActive={setActive}
+      />
+      <AccessMemberDialog
+        open={dialogOpen}
+        member={editing}
+        subcontractors={subcontractors}
+        pdsAreas={pdsAreas}
+        saving={saving}
+        onOpenChange={setDialogOpen}
+        onSave={save}
+      />
+    </div>
+  )
 }

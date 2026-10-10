@@ -15,14 +15,19 @@ export interface AccessMemberRow extends AccessMemberInput {
   isActive: boolean
 }
 
-type AccessMemberField =
+export type AccessMemberField =
   | "functionalRoles"
   | "subcontractorIds"
   | "pdsAreaIds"
 
+export type AccessMemberIssueCode =
+  | "at_least_one_functional_role"
+  | "at_least_one_subcontractor"
+  | "at_least_one_pds_area"
+
 export type AccessMemberValidationResult =
   | { ok: true; value: AccessMemberInput }
-  | { ok: false; fieldErrors: Partial<Record<AccessMemberField, string>> }
+  | { ok: false; fieldErrors: Partial<Record<AccessMemberField, AccessMemberIssueCode>> }
 
 function uniqueStable<Value>(values: readonly Value[]): Value[] {
   return [...new Set(values)]
@@ -53,15 +58,15 @@ export function validateAccessMemberInput(input: {
     return { ok: true, value }
   }
 
-  const fieldErrors: Partial<Record<AccessMemberField, string>> = {}
+  const fieldErrors: Partial<Record<AccessMemberField, AccessMemberIssueCode>> = {}
   if (value.functionalRoles.length === 0) {
-    fieldErrors.functionalRoles = "Select at least one functional role."
+    fieldErrors.functionalRoles = "at_least_one_functional_role"
   }
   if (value.subcontractorIds.length === 0) {
-    fieldErrors.subcontractorIds = "Select at least one subcontractor."
+    fieldErrors.subcontractorIds = "at_least_one_subcontractor"
   }
   if (value.pdsAreaIds.length === 0) {
-    fieldErrors.pdsAreaIds = "Select at least one PDS area."
+    fieldErrors.pdsAreaIds = "at_least_one_pds_area"
   }
 
   return Object.keys(fieldErrors).length > 0
