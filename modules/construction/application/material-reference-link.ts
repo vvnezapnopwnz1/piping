@@ -9,8 +9,7 @@ export function materialReferenceHref(input: {
   from: string
 }): string {
   const params = new URLSearchParams({
-    tab: "fabrication",
-    reference: "pml",
+    ref: "pml",
     spool: input.spoolRevisionId,
     material: input.bomRowId,
     ident: input.identCode,

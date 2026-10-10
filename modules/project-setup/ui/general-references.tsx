@@ -8,7 +8,6 @@ import { AlertCircle, Plus, RefreshCw, Search } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Card,
   CardContent,
@@ -39,6 +38,7 @@ import {
   type LoadedProjectGeography,
 } from "../infrastructure/supabase-project-geography-repository"
 import { ReferenceStatusBadge } from "./reference-status-badge"
+import { type ReferenceKeyOf } from "./reference-catalog"
 import {
   validateSubcontractorInput,
   validateUnitInput,
@@ -55,14 +55,14 @@ const NO_SELECTION = "__none__"
 const optionalId = (value: string): string | null =>
   value === "" || value === NO_SELECTION ? null : value
 
-type GeographyTab = "subcontractors" | "units" | "pds"
-
-export function ProjectGeographyTabs({
+export function GeneralReferences({
   projectId,
   canManage,
+  reference,
 }: {
   projectId: string
   canManage: boolean
+  reference: ReferenceKeyOf<"general">
 }) {
   const t = useTranslations("projectSetup.projectGeography")
   const tIssues = useTranslations("projectSetup.issues")
@@ -70,7 +70,6 @@ export function ProjectGeographyTabs({
 
   const [error, setError] = useState<string | null>(null)
   const [geography, setGeography] = useState<LoadedProjectGeography | null>(null)
-  const [activeTab, setActiveTab] = useState<GeographyTab>("subcontractors")
 
   // Search filters
   const [subSearch, setSubSearch] = useState("")
@@ -363,26 +362,9 @@ export function ProjectGeographyTabs({
   )
 
   return (
-    <Tabs
-      value={activeTab}
-      onValueChange={(value) => setActiveTab(value as GeographyTab)}
-      variant="underline"
-      className="space-y-4"
-    >
-      <TabsList>
-        <TabsTrigger value="subcontractors">
-          {t("tabs.subcontractors", { count: geography?.subcontractors.length ?? 0 })}
-        </TabsTrigger>
-        <TabsTrigger value="units">
-          {t("tabs.units", { count: geography?.areaClassifications.length ?? 0 })}
-        </TabsTrigger>
-        <TabsTrigger value="pds">
-          {t("tabs.pds", { count: geography?.pdsAreas.length ?? 0 })}
-        </TabsTrigger>
-      </TabsList>
-
+    <>
       {/* Subcontractors View */}
-      <TabsContent value="subcontractors">
+      {reference === "subcontractors" && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
@@ -439,11 +421,10 @@ export function ProjectGeographyTabs({
             </div>
           </CardContent>
         </Card>
-      </TabsContent>
+      )}
 
       {/* Units & Area Classifications View */}
-      <TabsContent value="units">
-        <div className="space-y-4">
+      {reference === "units" && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
@@ -489,7 +470,9 @@ export function ProjectGeographyTabs({
             </div>
           </CardContent>
         </Card>
+      )}
 
+      {reference === "area-classifications" && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
@@ -546,11 +529,10 @@ export function ProjectGeographyTabs({
             </div>
           </CardContent>
         </Card>
-        </div>
-      </TabsContent>
+      )}
 
       {/* PDS Areas View */}
-      <TabsContent value="pds">
+      {reference === "pds-areas" && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
@@ -611,7 +593,7 @@ export function ProjectGeographyTabs({
             </div>
           </CardContent>
         </Card>
-      </TabsContent>
+      )}
 
       {/* Add Subcontractor Dialog */}
       <Dialog open={isAddSubOpen} onOpenChange={setIsAddSubOpen}>
@@ -964,6 +946,6 @@ export function ProjectGeographyTabs({
           </form>
         </DialogContent>
       </Dialog>
-    </Tabs>
+    </>
   )
 }

@@ -41,15 +41,47 @@
     "failedToLoad": "Failed to load project setup readiness",
     "unavailable": "Readiness state unavailable",
     "retry": "Retry",
-    "tabs": {
+    "navigatorLabel": "Project references",
+    "chooseReference": "Reference",
+    "referenceIncomplete": "Not filled in",
+    "groups": {
       "general": "General",
-      "fabrication": "Welding & Quality",
+      "welding": "Welding & Quality",
       "testpack": "Testpack & Tracking",
-      "spooling": "Spooling & Painting",
-      "system": "System Referentials",
-      "weights": "Progress Weights"
+      "spooling": "Spooling & Painting"
     },
-    "wpsCardTitle": "Welding Procedures (WPS)"
+    "references": {
+      "subcontractors": "Subcontractors",
+      "units": "Units",
+      "area-classifications": "Area Classifications",
+      "pds-areas": "PDS Areas",
+      "service-classes": "Service Classes",
+      "weld-types": "Weld Types",
+      "welders": "Welders",
+      "wps": "WPS",
+      "nde": "NDE Matrix",
+      "thickness": "Thickness & Flanges",
+      "pml": "PML Records",
+      "rework": "Rework Codes",
+      "joint-categories": "Joint Categories",
+      "teams": "Teams",
+      "punch-codes": "Punch Codes",
+      "systems": "Systems",
+      "subsystems": "Subsystems",
+      "line-services": "Line Services",
+      "unit-time": "Unit of Time",
+      "location-categories": "Location Categories",
+      "locations": "Locations",
+      "pressure-unit": "Pressure Unit",
+      "spooling-material-types": "Material Types",
+      "spooling-material-classes": "Material Classes",
+      "spooling-checklist": "Spooling Checklist",
+      "ral-codes": "RAL Colors",
+      "paint-matrix": "Paint Matrix",
+      "assembly": "Assembly",
+      "devices": "Devices",
+      "pda-users": "PDA Users"
+    }
   },
   "progressWeights": {
     "failedToLoad": "Failed to load progress weights",
@@ -457,12 +489,6 @@
     "punchCodeDeactivateFailed": "Failed to deactivate punch code",
     "dataUnavailable": "Data unavailable",
     "retry": "Retry",
-    "tabs": {
-      "teams": "Teams ({count})",
-      "testPack": "Test Pack",
-      "tracking": "Tracking",
-      "pressure": "Pressure"
-    },
     "teamsTitle": "Project Teams",
     "teamsDesc": "Line check, blinding, finishing, reinstatement, and jointer teams.",
     "addTeam": "Add Team",
@@ -559,12 +585,6 @@
     "assemblySettingsFailed": "Failed to save assembly settings",
     "dataUnavailable": "Data unavailable",
     "retry": "Retry",
-    "tabs": {
-      "spooling": "Spooling",
-      "painting": "Painting",
-      "assembly": "Assembly",
-      "devices": "Devices ({count})"
-    },
     "spoolingMaterialTypesTitle": "Spooling Material Types",
     "spoolingMaterialTypesDesc": "Project-scoped spooling material definitions.",
     "noSpoolingMaterialTypes": "No spooling material types defined.",
@@ -634,11 +654,6 @@
     "pdsAreaAdded": "PDS Area \"{code}\" added successfully",
     "pdsAreaFailed": "Failed to add PDS area",
     "retry": "Retry",
-    "tabs": {
-      "subcontractors": "Subcontractors ({count})",
-      "units": "Units & Area Classifications ({count})",
-      "pds": "PDS Areas ({count})"
-    },
     "subcontractorsTitle": "Project Subcontractors",
     "subcontractorsDesc": "Company registry for shop, assembly, and field execution.",
     "addSubcontractor": "Add Subcontractor",

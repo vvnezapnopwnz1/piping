@@ -28,7 +28,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import {
   loadExecutionReferences,
@@ -55,15 +54,18 @@ import {
 } from "../domain/execution-reference"
 import { validateReferenceIdentity } from "../domain/reference"
 import { ReferenceStatusBadge } from "./reference-status-badge"
+import { type ReferenceKeyOf } from "./reference-catalog"
 
 const TEAM_TYPES: readonly ProjectTeamType[] = ["line_check", "blinding", "finishing", "reinstatement", "jointer"]
 
-export function ExecutionReferenceTabs({
+export function TestpackReferences({
   projectId,
   canManage,
+  reference,
 }: {
   projectId: string
   canManage: boolean
+  reference: ReferenceKeyOf<"testpack">
 }) {
   const tc = useTranslations("codes")
   const [loading, setLoading] = useState(true)
@@ -73,7 +75,6 @@ export function ExecutionReferenceTabs({
 
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<LoadedExecutionReferences | null>(null)
-  const [activeTab, setActiveTab] = useState<string>("teams")
   const requestVersionRef = useRef(0)
 
   // Team dialog state
@@ -419,16 +420,9 @@ export function ExecutionReferenceTabs({
   )
 
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="w-full overflow-x-auto whitespace-nowrap">
-        <TabsTrigger value="teams">{t("tabs.teams", { count: data.teams.length })}</TabsTrigger>
-        <TabsTrigger value="testpack">{t("tabs.testPack")}</TabsTrigger>
-        <TabsTrigger value="tracking">{t("tabs.tracking")}</TabsTrigger>
-        <TabsTrigger value="pressure">{t("tabs.pressure")}</TabsTrigger>
-      </TabsList>
-
+    <>
       {/* ─── Teams ─── */}
-      <TabsContent value="teams" className="mt-4 space-y-4">
+      {reference === "teams" && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -483,8 +477,10 @@ export function ExecutionReferenceTabs({
             )}
           </CardContent>
         </Card>
+      )}
 
-        {/* Punch codes */}
+      {/* ─── Punch codes ─── */}
+      {reference === "punch-codes" && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <div>
@@ -522,11 +518,10 @@ export function ExecutionReferenceTabs({
             )}
           </CardContent>
         </Card>
-      </TabsContent>
+      )}
 
-      {/* ─── Test Pack: Systems, Subsystems, Line Services ─── */}
-      <TabsContent value="testpack" className="mt-4 space-y-4">
-        {/* Systems */}
+      {/* ─── Systems ─── */}
+      {reference === "systems" && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -559,8 +554,10 @@ export function ExecutionReferenceTabs({
             )}
           </CardContent>
         </Card>
+      )}
 
-        {/* Subsystems */}
+      {/* ─── Subsystems ─── */}
+      {reference === "subsystems" && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -601,8 +598,10 @@ export function ExecutionReferenceTabs({
             )}
           </CardContent>
         </Card>
+      )}
 
-        {/* Line Services */}
+      {/* ─── Line Services ─── */}
+      {reference === "line-services" && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -635,8 +634,10 @@ export function ExecutionReferenceTabs({
             )}
           </CardContent>
         </Card>
+      )}
 
-        {/* Unit of Time References */}
+      {/* ─── Unit of Time References ─── */}
+      {reference === "unit-time" && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <div>
@@ -668,10 +669,10 @@ export function ExecutionReferenceTabs({
             )}
           </CardContent>
         </Card>
-      </TabsContent>
+      )}
 
       {/* ─── Tracking: Location Categories & Locations ─── */}
-      <TabsContent value="tracking" className="mt-4 space-y-4">
+      {reference === "location-categories" && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between gap-3">
@@ -697,7 +698,9 @@ export function ExecutionReferenceTabs({
             )}
           </CardContent>
         </Card>
+      )}
 
+      {reference === "locations" && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between gap-3">
@@ -735,10 +738,10 @@ export function ExecutionReferenceTabs({
             )}
           </CardContent>
         </Card>
-      </TabsContent>
+      )}
 
       {/* ─── Pressure Unit ─── */}
-      <TabsContent value="pressure" className="mt-4">
+      {reference === "pressure-unit" && (
         <Card>
           <CardHeader>
             <CardTitle>{t("pressureUnitTitle")}</CardTitle>
@@ -755,7 +758,7 @@ export function ExecutionReferenceTabs({
             )}
           </CardContent>
         </Card>
-      </TabsContent>
+      )}
 
       {/* ─── Dialogs ─── */}
 
@@ -977,6 +980,6 @@ export function ExecutionReferenceTabs({
           </form>
         </DialogContent>
       </Dialog>
-    </Tabs>
+    </>
   )
 }

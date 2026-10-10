@@ -41,15 +41,47 @@
     "failedToLoad": "Не удалось загрузить готовность настройки проекта",
     "unavailable": "Состояние готовности недоступно",
     "retry": "Повторить",
-    "tabs": {
+    "navigatorLabel": "Справочники проекта",
+    "chooseReference": "Справочник",
+    "referenceIncomplete": "Не заполнено",
+    "groups": {
       "general": "Общие",
-      "fabrication": "Сварка и качество",
+      "welding": "Сварка и качество",
       "testpack": "Тест-пакет и перемещения",
-      "spooling": "Раскрой и покраска",
-      "system": "Системные справочники",
-      "weights": "Веса прогресса"
+      "spooling": "Раскрой и покраска"
     },
-    "wpsCardTitle": "Технологические карты сварки (WPS)"
+    "references": {
+      "subcontractors": "Субподрядчики",
+      "units": "Технологические узлы",
+      "area-classifications": "Классификации зон",
+      "pds-areas": "Зоны PDS",
+      "service-classes": "Классы эксплуатации",
+      "weld-types": "Типы стыков",
+      "welders": "Сварщики",
+      "wps": "WPS",
+      "nde": "Матрица NDE",
+      "thickness": "Толщины и фланцы",
+      "pml": "Записи PML",
+      "rework": "Коды дефектов",
+      "joint-categories": "Категории стыков",
+      "teams": "Бригады",
+      "punch-codes": "Коды замечаний",
+      "systems": "Системы",
+      "subsystems": "Подсистемы",
+      "line-services": "Службы линий",
+      "unit-time": "Единицы времени",
+      "location-categories": "Категории мест хранения",
+      "locations": "Места хранения",
+      "pressure-unit": "Единица давления",
+      "spooling-material-types": "Типы материалов",
+      "spooling-material-classes": "Классы материалов",
+      "spooling-checklist": "Чек-лист раскроя",
+      "ral-codes": "Цвета RAL",
+      "paint-matrix": "Матрица покраски",
+      "assembly": "Сборка",
+      "devices": "Устройства",
+      "pda-users": "Пользователи ТСД"
+    }
   },
   "progressWeights": {
     "failedToLoad": "Не удалось загрузить веса прогресса",
@@ -457,12 +489,6 @@
     "punchCodeDeactivateFailed": "Не удалось деактивировать код замечания",
     "dataUnavailable": "Данные недоступны",
     "retry": "Повторить",
-    "tabs": {
-      "teams": "Бригады ({count})",
-      "testPack": "Тест-пакет",
-      "tracking": "Перемещения",
-      "pressure": "Давление"
-    },
     "teamsTitle": "Бригады проекта",
     "teamsDesc": "Бригады обхода линии, глушения, финишных работ, обратной сборки и сборки соединений.",
     "addTeam": "Добавить бригаду",
@@ -559,12 +585,6 @@
     "assemblySettingsFailed": "Не удалось сохранить настройки сборки",
     "dataUnavailable": "Данные недоступны",
     "retry": "Повторить",
-    "tabs": {
-      "spooling": "Раскрой",
-      "painting": "Покраска",
-      "assembly": "Сборка",
-      "devices": "Устройства ({count})"
-    },
     "spoolingMaterialTypesTitle": "Типы материалов раскроя",
     "spoolingMaterialTypesDesc": "Определения материалов раскроя для проекта.",
     "noSpoolingMaterialTypes": "Типы материалов раскроя пока не определены.",
@@ -634,11 +654,6 @@
     "pdsAreaAdded": "Зона PDS «{code}» добавлена",
     "pdsAreaFailed": "Не удалось добавить зону PDS",
     "retry": "Повторить",
-    "tabs": {
-      "subcontractors": "Субподрядчики ({count})",
-      "units": "Узлы и классификации зон ({count})",
-      "pds": "Зоны PDS ({count})"
-    },
     "subcontractorsTitle": "Субподрядчики проекта",
     "subcontractorsDesc": "Реестр компаний для выполнения работ в цехе, на сборке и на монтаже.",
     "addSubcontractor": "Добавить субподрядчика",

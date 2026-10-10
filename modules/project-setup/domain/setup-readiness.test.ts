@@ -1,18 +1,5 @@
 import assert from "node:assert/strict"
-import {
-  evaluateReadinessStatus,
-  getRequirementDetails,
-} from "./setup-readiness"
-
-// Known code resolution
-const sub = getRequirementDetails("subcontractors")
-assert.equal(sub.code, "subcontractors")
-assert.equal(sub.tab, "general")
-
-// Unknown code fallback
-const unk = getRequirementDetails("non_existent_code")
-assert.equal(unk.code, "non_existent_code")
-assert.equal(unk.tab, "general")
+import { evaluateReadinessStatus } from "./setup-readiness"
 
 // Gate B readiness evaluation
 const gateB = evaluateReadinessStatus(["subcontractors"])
@@ -24,3 +11,4 @@ assert.equal(adminComplete.isGateBReady, true)
 assert.equal(adminComplete.isAdminDone, true)
 
 console.log("All setup-readiness.test.ts assertions passed!")
+

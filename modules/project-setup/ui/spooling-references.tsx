@@ -28,7 +28,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import {
   loadExtendedReferences,
@@ -45,20 +44,22 @@ import {
   type DeviceUserCandidate,
 } from "../domain/extended-reference"
 import { ReferenceStatusBadge } from "./reference-status-badge"
+import type { ReferenceKeyOf } from "./reference-catalog"
 
-export function ExtendedReferenceTabs({
+export function SpoolingReferences({
   projectId,
   canManage,
+  reference,
 }: {
   projectId: string
   canManage: boolean
+  reference: ReferenceKeyOf<"spooling">
 }) {
   const t = useTranslations("projectSetup.extendedReference")
   const tIssues = useTranslations("projectSetup.issues")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<LoadedExtendedReferences | null>(null)
-  const [activeTab, setActiveTab] = useState<string>("spooling")
   const requestVersionRef = useRef(0)
 
   // Device dialog state
@@ -183,17 +184,9 @@ export function ExtendedReferenceTabs({
   }
 
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="w-full overflow-x-auto whitespace-nowrap">
-        <TabsTrigger value="spooling">{t("tabs.spooling")}</TabsTrigger>
-        <TabsTrigger value="painting">{t("tabs.painting")}</TabsTrigger>
-        <TabsTrigger value="assembly">{t("tabs.assembly")}</TabsTrigger>
-        <TabsTrigger value="devices">{t("tabs.devices", { count: data.devices.length })}</TabsTrigger>
-      </TabsList>
-
-      {/* ─── Spooling ─── */}
-      <TabsContent value="spooling" className="mt-4 space-y-4">
-        {/* Spooling Material Types */}
+    <>
+      {/* ─── Spooling Material Types ─── */}
+      {reference === "spooling-material-types" && (
         <Card>
           <CardHeader>
             <CardTitle>{t("spoolingMaterialTypesTitle")}</CardTitle>
@@ -217,8 +210,10 @@ export function ExtendedReferenceTabs({
             )}
           </CardContent>
         </Card>
+      )}
 
-        {/* Spooling Material Classes */}
+      {/* ─── Spooling Material Classes ─── */}
+      {reference === "spooling-material-classes" && (
         <Card>
           <CardHeader>
             <CardTitle>{t("spoolingMaterialClassesTitle")}</CardTitle>
@@ -242,8 +237,10 @@ export function ExtendedReferenceTabs({
             )}
           </CardContent>
         </Card>
+      )}
 
-        {/* Spooling Checklist */}
+      {/* ─── Spooling Checklist ─── */}
+      {reference === "spooling-checklist" && (
         <Card>
           <CardHeader>
             <CardTitle>{t("spoolingChecklistTitle")}</CardTitle>
@@ -269,11 +266,10 @@ export function ExtendedReferenceTabs({
             )}
           </CardContent>
         </Card>
-      </TabsContent>
+      )}
 
-      {/* ─── Painting ─── */}
-      <TabsContent value="painting" className="mt-4 space-y-4">
-        {/* RAL Codes */}
+      {/* ─── RAL Codes ─── */}
+      {reference === "ral-codes" && (
         <Card>
           <CardHeader>
             <CardTitle>{t("ralCodesTitle")}</CardTitle>
@@ -298,8 +294,10 @@ export function ExtendedReferenceTabs({
             )}
           </CardContent>
         </Card>
+      )}
 
-        {/* Paint Matrix */}
+      {/* ─── Paint Matrix ─── */}
+      {reference === "paint-matrix" && (
         <Card>
           <CardHeader>
             <CardTitle>{t("paintMatrixTitle")}</CardTitle>
@@ -327,10 +325,10 @@ export function ExtendedReferenceTabs({
             )}
           </CardContent>
         </Card>
-      </TabsContent>
+      )}
 
       {/* ─── Assembly ─── */}
-      <TabsContent value="assembly" className="mt-4">
+      {reference === "assembly" && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -385,10 +383,10 @@ export function ExtendedReferenceTabs({
             </div>
           </CardContent>
         </Card>
-      </TabsContent>
+      )}
 
       {/* ─── Devices ─── */}
-      <TabsContent value="devices" className="mt-4 space-y-4">
+      {reference === "devices" && (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -426,8 +424,10 @@ export function ExtendedReferenceTabs({
             )}
           </CardContent>
         </Card>
+      )}
 
-        {/* Device Users */}
+      {/* Device Users */}
+      {reference === "pda-users" && (
         <Card>
           <CardHeader>
             <CardTitle>{t("pdaUsersTitle")}</CardTitle>
@@ -458,7 +458,7 @@ export function ExtendedReferenceTabs({
             )}
           </CardContent>
         </Card>
-      </TabsContent>
+      )}
 
       {/* ─── Add Device Dialog ─── */}
       <Dialog open={isAddDeviceOpen} onOpenChange={(open) => { if (!open) { setIsAddDeviceOpen(false); setDevCode(""); setDevDesc(""); setDevErrors({}) } }}>
@@ -485,6 +485,6 @@ export function ExtendedReferenceTabs({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Tabs>
+    </>
   )
 }

@@ -64,7 +64,7 @@ for (const path of sources) {
 // product unusable without a seeding script (T02-D2).
 {
   const welding = withoutComments(
-    readFileSync("modules/project-setup/ui/welding-quality-tabs.tsx", "utf8"),
+    readFileSync("modules/project-setup/ui/welding-references.tsx", "utf8"),
   )
   for (const handler of [
     "handleCreateServiceClass",
@@ -77,7 +77,7 @@ for (const path of sources) {
   ]) {
     assert.ok(
       welding.includes(`onSubmit={${handler}}`),
-      `welding-quality-tabs.tsx defines ${handler} but no form submits it`,
+      `welding-references.tsx defines ${handler} but no form submits it`,
     )
   }
 
@@ -86,7 +86,7 @@ for (const path of sources) {
   ] as const) {
     assert.ok(
       welding.includes(`onSubmit={${handler}}`),
-      `welding-quality-tabs.tsx defines ${handler} but no form submits it (${label})`,
+      `welding-references.tsx defines ${handler} but no form submits it (${label})`,
     )
   }
 
@@ -114,7 +114,7 @@ for (const path of sources) {
   }
 
   const execution = withoutComments(
-    readFileSync("modules/project-setup/ui/execution-reference-tabs.tsx", "utf8"),
+    readFileSync("modules/project-setup/ui/testpack-references.tsx", "utf8"),
   )
   assert.ok(
     execution.includes("onSubmit={handleAddUnitTimeReference}"),
@@ -138,7 +138,7 @@ for (const path of sources) {
   )
 
   const extended = withoutComments(
-    readFileSync("modules/project-setup/ui/extended-reference-tabs.tsx", "utf8"),
+    readFileSync("modules/project-setup/ui/spooling-references.tsx", "utf8"),
   )
   assert.ok(
     extended.includes("onClick={handleAssignDeviceUser}"),
@@ -150,7 +150,7 @@ for (const path of sources) {
 // the area actually is rather than silently submitting the defaults (T02-D1).
 {
   const geography = withoutComments(
-    readFileSync("modules/project-setup/ui/project-geography-tabs.tsx", "utf8"),
+    readFileSync("modules/project-setup/ui/general-references.tsx", "utf8"),
   )
   // A control, not a setter call: `setAreaClassId` was already being *reset* after submit, which
   // is why `no-unused-vars` stayed silent about a field the dialog never offered. What matters is
@@ -163,7 +163,7 @@ for (const path of sources) {
   ] as const) {
     assert.ok(
       geography.includes(binding),
-      `project-geography-tabs.tsx submits ${state} but binds no control to it — the value would always be its default`,
+      `general-references.tsx submits ${state} but binds no control to it — the value would always be its default`,
     )
   }
 
@@ -176,7 +176,7 @@ for (const path of sources) {
   ] as const) {
     assert.ok(
       geography.includes(`onSubmit={${handler}}`),
-      `project-geography-tabs.tsx has no ${label} create form`,
+      `general-references.tsx has no ${label} create form`,
     )
   }
 

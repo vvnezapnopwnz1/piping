@@ -24,7 +24,7 @@ import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { SupabaseWpsTab } from "@/components/admin/supabase-wps-tab"
 import {
   Card,
   CardContent,
@@ -70,21 +70,16 @@ import {
   evaluateNdeMatrixCoverage,
 } from "../domain/welding-quality-reference"
 import { ReferenceStatusBadge } from "./reference-status-badge"
+import type { ReferenceKeyOf } from "./reference-catalog"
 
-export type WeldingQualityTab = 
-    "service-classes" | "weld-types" | "welders" | "nde" | "thickness" | "pml" | "rework" | "joint-categories"
-  
-
-export function WeldingQualityTabs({
+export function WeldingReferences({
   projectId,
   canManage,
-  value,
-  onValueChange,
+  reference,
 }: {
   projectId: string
   canManage: boolean
-  value?: WeldingQualityTab
-  onValueChange?: (tab: WeldingQualityTab) => void
+  reference: ReferenceKeyOf<"welding">
 }) {
   const t = useTranslations("projectSetup.weldingQuality")
 
@@ -98,19 +93,6 @@ export function WeldingQualityTabs({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<LoadedWeldingQualityReferences | null>(null)
-  const [internalTab, setInternalTab] = useState<WeldingQualityTab>("service-classes")
-  const activeTab = value ?? internalTab
-
-  const handleTabChange = useCallback(
-    (nextTab: string) => {
-      const typed = nextTab as WeldingQualityTab
-      if (value === undefined) {
-        setInternalTab(typed)
-      }
-      onValueChange?.(typed)
-    },
-    [value, onValueChange],
-  )
 
   // Add Service Class Dialog
   const [isAddScOpen, setIsAddScOpen] = useState(false)
@@ -583,50 +565,9 @@ export function WeldingQualityTabs({
   )
 
   return (
-    <Tabs
-      value={activeTab}
-      onValueChange={handleTabChange}
-      variant="underline"
-      className="space-y-4"
-    >
-      <TabsList>
-        <TabsTrigger value="service-classes">
-          {t("tabs.serviceClasses", { count: data?.serviceClasses.length ?? 0 })}
-        </TabsTrigger>
-        <TabsTrigger value="weld-types">
-          {t("tabs.weldTypes", { count: data?.weldTypes.length ?? 0 })}
-        </TabsTrigger>
-        <TabsTrigger value="welders">
-          {t("tabs.welders", { count: data?.welderQualifications.length ?? 0 })}
-        </TabsTrigger>
-        <TabsTrigger value="nde">
-          <span>{t("tabs.nde", { count: data?.ndeMatrixRules.length ?? 0 })}</span>
-          {ndeCoverage.missingTuples.length > 0 ? (
-            <Badge variant="outline" className="text-warning-fg border-warning-border text-xs">
-              {t("tabs.ndeIncomplete", { count: ndeCoverage.missingTuples.length })}
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="text-success-fg border-success-border text-xs">
-              {t("tabs.ndeComplete")}
-            </Badge>
-          )}
-        </TabsTrigger>
-        <TabsTrigger value="thickness">
-          {t("tabs.thickness", { count: data?.thicknessFlangeRules.length ?? 0 })}
-        </TabsTrigger>
-        <TabsTrigger value="pml">
-          {t("tabs.pml", { count: data?.pipingMaterialRecords.length ?? 0 })}
-        </TabsTrigger>
-        <TabsTrigger value="rework">
-          {t("tabs.rework", { count: data?.reworkCodes.length ?? 0 })}
-        </TabsTrigger>
-        <TabsTrigger value="joint-categories">
-          {t("tabs.jointCategories", { count: data?.jointCategories.length ?? 0 })}
-        </TabsTrigger>
-      </TabsList>
-
+    <div className="space-y-4">
       {/* Service Classes View */}
-      <TabsContent value="service-classes">
+      {reference === "service-classes" && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
@@ -672,10 +613,10 @@ export function WeldingQualityTabs({
             </div>
           </CardContent>
         </Card>
-      </TabsContent>
+      )}
 
       {/* Weld Types View */}
-      <TabsContent value="weld-types">
+      {reference === "weld-types" && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
@@ -729,10 +670,10 @@ export function WeldingQualityTabs({
             </div>
           </CardContent>
         </Card>
-      </TabsContent>
+      )}
 
       {/* Welders View */}
-      <TabsContent value="welders">
+      {reference === "welders" && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
@@ -792,14 +733,28 @@ export function WeldingQualityTabs({
             </div>
           </CardContent>
         </Card>
-      </TabsContent>
+      )}
+
+      {/* WPS View */}
+      {reference === "wps" && <SupabaseWpsTab />}
 
       {/* NDE Matrix View */}
-      <TabsContent value="nde">
+      {reference === "nde" && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
-              <CardTitle>{t("ndeTitle")}</CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle>{t("ndeTitle")}</CardTitle>
+                {ndeCoverage.missingTuples.length > 0 ? (
+                  <Badge variant="outline" className="text-warning-fg border-warning-border text-xs">
+                    {t("tabs.ndeIncomplete", { count: ndeCoverage.missingTuples.length })}
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-success-fg border-success-border text-xs">
+                    {t("tabs.ndeComplete")}
+                  </Badge>
+                )}
+              </div>
               <CardDescription>{t("ndeDesc")}</CardDescription>
             </div>
             {canManage && (
@@ -869,10 +824,10 @@ export function WeldingQualityTabs({
             </div>
           </CardContent>
         </Card>
-      </TabsContent>
+      )}
 
       {/* Thickness / Flange Rules View */}
-      <TabsContent value="thickness">
+      {reference === "thickness" && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
@@ -922,10 +877,10 @@ export function WeldingQualityTabs({
             </div>
           </CardContent>
         </Card>
-      </TabsContent>
+      )}
 
       {/* PML Records View */}
-      <TabsContent value="pml">
+      {reference === "pml" && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
@@ -987,10 +942,10 @@ export function WeldingQualityTabs({
             </div>
           </CardContent>
         </Card>
-      </TabsContent>
+      )}
 
       {/* Rework Codes View */}
-      <TabsContent value="rework">
+      {reference === "rework" && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
@@ -1036,10 +991,10 @@ export function WeldingQualityTabs({
             </div>
           </CardContent>
         </Card>
-      </TabsContent>
+      )}
 
       {/* Joint Categories View */}
-      <TabsContent value="joint-categories">
+      {reference === "joint-categories" && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <div>
@@ -1089,7 +1044,7 @@ export function WeldingQualityTabs({
             </div>
           </CardContent>
         </Card>
-      </TabsContent>
+      )}
 
       {/* Add Service Class Dialog */}
       <Dialog open={isAddScOpen} onOpenChange={setIsAddScOpen}>
@@ -1767,6 +1722,6 @@ export function WeldingQualityTabs({
           </form>
         </DialogContent>
       </Dialog>
-    </Tabs>
+    </div>
   )
 }

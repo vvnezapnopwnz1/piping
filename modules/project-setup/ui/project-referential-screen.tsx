@@ -3,26 +3,30 @@
 import { useTranslations } from "next-intl"
 
 import { useCallback, useEffect, useState } from "react"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import { AlertCircle, RefreshCw } from "lucide-react"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { SupabaseWpsTab } from "@/components/admin/supabase-wps-tab"
+import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { loadProjectSetupReadiness } from "../infrastructure/supabase-setup-readiness-repository"
 import type { ProjectSetupReadiness } from "../domain/setup-readiness"
 import { SetupReadinessPanel } from "./setup-readiness-panel"
-import { SystemReferentialScreen } from "./system-referential-screen"
-import { ProjectGeographyTabs } from "./project-geography-tabs"
-import { WeldingQualityTabs } from "./welding-quality-tabs"
-import { ExecutionReferenceTabs } from "./execution-reference-tabs"
-import { ExtendedReferenceTabs } from "./extended-reference-tabs"
-import { ProgressWeightsScreen } from "./progress-weights-screen"
-
-const TABS = ["general", "fabrication", "testpack", "spooling", "system", "weights"]
+import { ReferenceNavigator } from "./reference-navigator"
+import { GeneralReferences } from "./general-references"
+import { WeldingReferences } from "./welding-references"
+import { TestpackReferences } from "./testpack-references"
+import { SpoolingReferences } from "./spooling-references"
+import {
+  REFERENCE_PARAM,
+  parseReferenceKey,
+  referenceGroupOf,
+  referenceQuery,
+  referencesMissingData,
+  type ReferenceKey,
+  type ReferenceKeyOf,
+} from "./reference-catalog"
 
 export function ProjectReferentialScreen({
   projectId,
@@ -35,49 +39,13 @@ export function ProjectReferentialScreen({
   const [readiness, setReadiness] = useState<ProjectSetupReadiness | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  // The tab belongs in the address bar. `SetupReadinessPanel` links straight at a referential,
-  // and a readiness item that cannot be linked to is a readiness item somebody has to be told how
-  // to find. It also makes the back button out of a dialog land on the tab it left.
-  const router = useRouter()
+
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const activeTab = TABS.includes(searchParams.get("tab") ?? "") ? searchParams.get("tab")! : "general"
-  const setActiveTab = useCallback(
-    (tab: string) => {
-      const params = new URLSearchParams(searchParams.toString())
-      if (tab === "general") params.delete("tab")
-      else params.set("tab", tab)
-      const query = params.toString()
-      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-    },
-    [pathname, router, searchParams],
-  )
 
-  const VALID_REFERENCES = [
-    "service-classes",
-    "weld-types",
-    "welders",
-    "nde",
-    "thickness",
-    "pml",
-    "rework",
-    "joint-categories",
-  ]
-  const rawReference = searchParams.get("reference")
-  const activeReference = VALID_REFERENCES.includes(rawReference ?? "")
-    ? (rawReference as any)
-    : undefined
-
-  const setActiveReference = useCallback(
-    (ref: string) => {
-      const params = new URLSearchParams(searchParams.toString())
-      if (ref === "service-classes") params.delete("reference")
-      else params.set("reference", ref)
-      const query = params.toString()
-      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-    },
-    [pathname, router, searchParams],
-  )
+  const active = parseReferenceKey(searchParams.get(REFERENCE_PARAM))
+  const hrefFor = (key: ReferenceKey) => `${pathname}?${referenceQuery(new URLSearchParams(searchParams.toString()), key)}`
+  const group = referenceGroupOf(active)
 
   const fetchReadiness = useCallback(async () => {
     setLoading(true)
@@ -117,62 +85,24 @@ export function ProjectReferentialScreen({
 
   return (
     <div className="space-y-6">
-      <SetupReadinessPanel readiness={readiness} onNavigateTab={setActiveTab} />
-
-      <Tabs
-        value={activeTab}
-        onValueChange={setActiveTab}
-        variant="underline"
-        className="w-full"
-      >
-        <TabsList>
-          <TabsTrigger value="general">{t("tabs.general")}</TabsTrigger>
-          <TabsTrigger value="fabrication">{t("tabs.fabrication")}</TabsTrigger>
-          <TabsTrigger value="testpack">{t("tabs.testpack")}</TabsTrigger>
-          <TabsTrigger value="spooling">{t("tabs.spooling")}</TabsTrigger>
-          <TabsTrigger value="system">{t("tabs.system")}</TabsTrigger>
-          <TabsTrigger value="weights">{t("tabs.weights")}</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="general" className="mt-6">
-          <ProjectGeographyTabs projectId={projectId} canManage={canManage} />
-        </TabsContent>
-
-        <TabsContent value="fabrication" className="mt-6 space-y-6">
-          <WeldingQualityTabs
-            projectId={projectId}
-            canManage={canManage}
-            value={activeReference}
-            onValueChange={setActiveReference}
-          />
-          {/* WPS is a range qualification with its own optimistic-concurrency contract, so it
-              keeps its own editor rather than joining the generic referential tabs above. */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("wpsCardTitle")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <SupabaseWpsTab />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="testpack" className="mt-6">
-          <ExecutionReferenceTabs projectId={projectId} canManage={canManage} />
-        </TabsContent>
-
-        <TabsContent value="spooling" className="mt-6">
-          <ExtendedReferenceTabs projectId={projectId} canManage={canManage} />
-        </TabsContent>
-
-        <TabsContent value="system" className="mt-6">
-          <SystemReferentialScreen />
-        </TabsContent>
-
-        <TabsContent value="weights" className="mt-6">
-          <ProgressWeightsScreen projectId={projectId} canManage={canManage} />
-        </TabsContent>
-      </Tabs>
+      <SetupReadinessPanel readiness={readiness} hrefForReference={hrefFor} />
+      <div className="grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)]">
+        <ReferenceNavigator active={active} missing={referencesMissingData(readiness.missingCodes)} hrefFor={hrefFor} />
+        <div className="min-w-0">
+          {group === "general" && (
+            <GeneralReferences projectId={projectId} canManage={canManage} reference={active as ReferenceKeyOf<"general">} />
+          )}
+          {group === "welding" && (
+            <WeldingReferences projectId={projectId} canManage={canManage} reference={active as ReferenceKeyOf<"welding">} />
+          )}
+          {group === "testpack" && (
+            <TestpackReferences projectId={projectId} canManage={canManage} reference={active as ReferenceKeyOf<"testpack">} />
+          )}
+          {group === "spooling" && (
+            <SpoolingReferences projectId={projectId} canManage={canManage} reference={active as ReferenceKeyOf<"spooling">} />
+          )}
+        </div>
+      </div>
     </div>
   )
 }

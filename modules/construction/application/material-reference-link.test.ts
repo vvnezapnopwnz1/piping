@@ -16,8 +16,8 @@ test("materialReferenceHref constructs correct project referential URL with cont
   assert.equal(path, "/admin/project-referential")
 
   const params = new URLSearchParams(queryString)
-  assert.equal(params.get("tab"), "fabrication")
-  assert.equal(params.get("reference"), "pml")
+  assert.equal(params.get("ref"), "pml")
+  assert.equal(params.get("tab"), null)
   assert.equal(params.get("spool"), "spool-rev-123")
   assert.equal(params.get("material"), "bom-row-456")
   assert.equal(params.get("ident"), "IDN-100")
