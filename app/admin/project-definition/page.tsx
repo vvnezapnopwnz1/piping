@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
+
 import { toast } from "sonner";
 
 import { AdminPageHeader } from "@/components/admin/admin-module-ui";
@@ -84,6 +86,8 @@ const emptyCreationForm: ProjectCreationForm = {
 };
 
 export default function ProjectDefinitionPage() {
+  const t = useTranslations("projectSetup.projectDefinition");
+
   const { access, user, reloadAccess, selectProject, synchronizeProjectDisplay } =
     useSupabaseAuth();
 
@@ -186,7 +190,7 @@ export default function ProjectDefinitionPage() {
     const validation = validateProjectDefinition(toProjectDefinitionInput(form));
     if (!validation.isValid) {
       setActivityError(validation.errors.activityCode ?? "");
-      toast.error("Please correct the project definition fields");
+      toast.error(t("correctFields"));
       return;
     }
 
@@ -204,9 +208,9 @@ export default function ProjectDefinitionPage() {
         title: saved.projectTitle,
       });
       setActivityError("");
-      toast.success("Project definition saved");
+      toast.success(t("saved"));
     } catch {
-      toast.error("Unable to save project definition. Please try again.");
+      toast.error(t("unableToSave"));
     } finally {
       setIsSaving(false);
     }
@@ -241,10 +245,10 @@ export default function ProjectDefinitionPage() {
       selectProject(created.id);
       setIsCreateOpen(false);
       setCreateForm(emptyCreationForm);
-      toast.success(`Project ${created.activityCode} created`);
+      toast.success(t("created", { title: created.activityCode }));
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Unable to create the project",
+        error instanceof Error ? error.message : t("unableToCreate"),
       );
     } finally {
       setIsCreating(false);
@@ -256,14 +260,14 @@ export default function ProjectDefinitionPage() {
     try {
       const client = getSupabaseBrowserClient();
       const res = await uploadProjectLogo(client, access.projectId, brandType, file);
-      toast.success(`${brandType === "owner" ? "Owner" : "Contractor"} logo uploaded successfully`);
+      toast.success(t("logoUploaded", { role: brandType === "owner" ? t("owner") : t("contractor") }));
       if (brandType === "owner") {
         updateForm("ownerLogoUrl", res.signedUrl);
       } else {
         updateForm("contractorLogoUrl", res.signedUrl);
       }
     } catch (err: any) {
-      toast.error(err.message || "Failed to upload logo");
+      toast.error(err.message || t("failedToUploadLogo"));
     }
   };
 
@@ -273,43 +277,42 @@ export default function ProjectDefinitionPage() {
   return (
     <div className="space-y-4">
       <AdminPageHeader
-        title="Admin · Project Definition"
-        description="Create and configure project identity, parties, logos, and maximum transit timing."
+        title={t("headerTitle")}
+        description={t("headerDesc")}
       />
 
       {canCreateProject ? (
         <Card className="border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <div>
-              <CardTitle className="text-base">Create a new project</CardTitle>
+              <CardTitle className="text-base">{t("newProjectTitle")}</CardTitle>
               <CardDescription>
-                You are filed as the new project&apos;s Project Admin and it becomes your active
-                project. Existing projects are not affected.
+                {t("newProjectDesc")}
               </CardDescription>
             </div>
-            <Button onClick={() => setIsCreateOpen(true)}>Create Project</Button>
+            <Button onClick={() => setIsCreateOpen(true)}>{t("createProject")}</Button>
           </CardHeader>
         </Card>
       ) : null}
 
       {isLoading ? (
         <ProjectDefinitionMessage
-          title="Loading project definition"
-          description="Retrieving the current project settings."
+          title={t("loadingTitle")}
+          description={t("loadingDesc")}
         />
       ) : null}
 
       {loadError ? (
         <Card className="border-border">
           <CardHeader>
-            <CardTitle className="text-base">Unable to load project definition</CardTitle>
+            <CardTitle className="text-base">{t("unableToLoadTitle")}</CardTitle>
             <CardDescription>
-              Please try again. If the problem persists, contact your project administrator.
+              {t("unableToLoadDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Button onClick={() => setLoadAttempt((attempt) => attempt + 1)}>
-              Retry
+              {t("retry")}
             </Button>
           </CardContent>
         </Card>
@@ -319,27 +322,27 @@ export default function ProjectDefinitionPage() {
         <>
           <Card className="border-border">
             <CardHeader>
-              <CardTitle className="text-base">Currently saved</CardTitle>
+              <CardTitle className="text-base">{t("currentlySaved")}</CardTitle>
               <CardDescription>
-                Last updated {formatDate(displayedDefinition.updatedAt)}
+                {t("lastUpdated", { time: formatDate(displayedDefinition.updatedAt) })}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <dl className="grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-3">
-                <SummaryItem label="Activity Code">
+                <SummaryItem label={t("activityCode")}>
                   <span className="font-mono">{displayedDefinition.activityCode}</span>
                 </SummaryItem>
-                <SummaryItem label="Project Title">
+                <SummaryItem label={t("projectTitle")}>
                   {displayedDefinition.projectTitle}
                 </SummaryItem>
-                <SummaryItem label="Max Transit Time">
-                  {displayedDefinition.maxTransitTimeDays} days
+                <SummaryItem label={t("maxTransitTime")}>
+                  {t("daysCount", { count: displayedDefinition.maxTransitTimeDays })}
                 </SummaryItem>
-                <SummaryItem label="Owner">{displayedDefinition.owner}</SummaryItem>
-                <SummaryItem label="Contractor">
+                <SummaryItem label={t("owner")}>{displayedDefinition.owner}</SummaryItem>
+                <SummaryItem label={t("contractor")}>
                   {displayedDefinition.contractor}
                 </SummaryItem>
-                <SummaryItem label="Owner Logo">
+                <SummaryItem label={t("ownerLogo")}>
                   {displayedDefinition.ownerLogoUrl ? (
                     <a
                       className="text-primary underline truncate inline-block max-w-full"
@@ -353,7 +356,7 @@ export default function ProjectDefinitionPage() {
                     <span className="text-muted-foreground">—</span>
                   )}
                 </SummaryItem>
-                <SummaryItem label="Contractor Logo">
+                <SummaryItem label={t("contractorLogo")}>
                   {displayedDefinition.contractorLogoUrl ? (
                     <a
                       className="text-primary underline truncate inline-block max-w-full"
@@ -373,11 +376,11 @@ export default function ProjectDefinitionPage() {
 
           <Card className="border-border">
             <CardHeader>
-              <CardTitle className="text-base">Edit project record</CardTitle>
+              <CardTitle className="text-base">{t("editProjectRecord")}</CardTitle>
               <CardDescription>
                 {isReadOnly
-                  ? "You have read-only access to this project definition."
-                  : "Update identity fields, logos and the maximum transit time used by the spool tracking module."}
+                  ? t("readOnlyNotice")
+                  : t("editNotice")}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -397,7 +400,7 @@ export default function ProjectDefinitionPage() {
               {!isReadOnly ? (
                 <div className="mt-6 flex justify-end">
                   <Button onClick={handleSave} disabled={isSaving}>
-                    {isSaving ? <SavingLabel /> : "Save project definition"}
+                    {isSaving ? <SavingLabel text={t("saving")} /> : t("saveProjectDefinition")}
                   </Button>
                 </div>
               ) : null}
@@ -410,17 +413,16 @@ export default function ProjectDefinitionPage() {
         <DialogContent>
           <form onSubmit={handleCreateProject}>
             <DialogHeader>
-              <DialogTitle>Create Project</DialogTitle>
+              <DialogTitle>{t("createProject")}</DialogTitle>
               <DialogDescription>
-                Logos are uploaded after the project exists. Status and identity are assigned by
-                the server.
+                {t("createDialogDesc")}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-3">
               <CreationField
                 id="cp-activity"
-                label="Activity Code"
-                placeholder="e.g. TRACK-SETUP-CHECK"
+                label={t("activityCode")}
+                placeholder={t("activityCodePlaceholder")}
                 value={createForm.activityCode}
                 error={createErrors.activityCode}
                 disabled={isCreating}
@@ -433,8 +435,8 @@ export default function ProjectDefinitionPage() {
               />
               <CreationField
                 id="cp-title"
-                label="Project Title"
-                placeholder="Setup check"
+                label={t("projectTitle")}
+                placeholder={t("projectTitlePlaceholder")}
                 value={createForm.projectTitle}
                 error={createErrors.projectTitle}
                 disabled={isCreating}
@@ -444,8 +446,8 @@ export default function ProjectDefinitionPage() {
               />
               <CreationField
                 id="cp-owner"
-                label="Owner"
-                placeholder="Owner company"
+                label={t("owner")}
+                placeholder={t("ownerPlaceholder")}
                 value={createForm.owner}
                 error={createErrors.owner}
                 disabled={isCreating}
@@ -455,8 +457,8 @@ export default function ProjectDefinitionPage() {
               />
               <CreationField
                 id="cp-contractor"
-                label="Contractor"
-                placeholder="EPC contractor"
+                label={t("contractor")}
+                placeholder={t("contractorPlaceholder")}
                 value={createForm.contractor}
                 error={createErrors.contractor}
                 disabled={isCreating}
@@ -466,7 +468,7 @@ export default function ProjectDefinitionPage() {
               />
               <CreationField
                 id="cp-contract-number"
-                label="Contract Number (optional)"
+                label={t("contractNumberOptional")}
                 placeholder="e.g. C-1"
                 value={createForm.contractNumber}
                 disabled={isCreating}
@@ -476,7 +478,7 @@ export default function ProjectDefinitionPage() {
               />
               <CreationField
                 id="cp-transit"
-                label="Maximum Transit Time (days)"
+                label={t("maxTransitTimeDays")}
                 type="number"
                 value={createForm.maxTransitTimeDays}
                 error={createErrors.maxTransitTimeDays}
@@ -496,10 +498,10 @@ export default function ProjectDefinitionPage() {
                 onClick={() => setIsCreateOpen(false)}
                 disabled={isCreating}
               >
-                Cancel
+                {t("cancel")}
               </Button>
               <Button type="submit" disabled={isCreating}>
-                {isCreating ? <SavingLabel /> : "Create Project"}
+                {isCreating ? <SavingLabel text={t("saving")} /> : t("createProject")}
               </Button>
             </DialogFooter>
           </form>
@@ -583,16 +585,17 @@ function ProjectDefinitionFields({
   ) => void;
   onUploadLogo?: (brandType: "owner" | "contractor", file: File) => Promise<void>;
 }) {
+  const t = useTranslations("projectSetup.projectDefinition");
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <div className="grid gap-1.5">
-        <Label htmlFor="pd-activity">Activity Code</Label>
+        <Label htmlFor="pd-activity">{t("activityCode")}</Label>
         <Input
           id="pd-activity"
           value={form.activityCode}
           onChange={(event) => onActivityChange(event.target.value)}
           onBlur={onActivityBlur}
-          placeholder="e.g. PQ-001"
+          placeholder={t("editActivityPlaceholder")}
           className={activityError ? "border-destructive" : ""}
           disabled={disabled}
         />
@@ -600,41 +603,41 @@ function ProjectDefinitionFields({
       </div>
 
       <div className="grid gap-1.5">
-        <Label htmlFor="pd-title">Project Title</Label>
+        <Label htmlFor="pd-title">{t("projectTitle")}</Label>
         <Input
           id="pd-title"
           value={form.projectTitle}
           onChange={(event) => onChange("projectTitle", event.target.value)}
-          placeholder="PipeQC Demo Project"
+          placeholder={t("editTitlePlaceholder")}
           disabled={disabled}
         />
       </div>
 
       <div className="grid gap-1.5">
-        <Label htmlFor="pd-owner">Owner</Label>
+        <Label htmlFor="pd-owner">{t("owner")}</Label>
         <Input
           id="pd-owner"
           value={form.owner}
           onChange={(event) => onChange("owner", event.target.value)}
-          placeholder="Owner company"
+          placeholder={t("ownerPlaceholder")}
           disabled={disabled}
         />
       </div>
 
       <div className="grid gap-1.5">
-        <Label htmlFor="pd-contractor">Contractor</Label>
+        <Label htmlFor="pd-contractor">{t("contractor")}</Label>
         <Input
           id="pd-contractor"
           value={form.contractor}
           onChange={(event) => onChange("contractor", event.target.value)}
-          placeholder="EPC contractor"
+          placeholder={t("contractorPlaceholder")}
           disabled={disabled}
         />
       </div>
 
       <>
           <div className="grid gap-1.5">
-            <Label htmlFor="pd-owner-logo-file">Owner Logo (Image Upload)</Label>
+            <Label htmlFor="pd-owner-logo-file">{t("ownerLogoUpload")}</Label>
             <Input
               id="pd-owner-logo-file"
               type="file"
@@ -648,12 +651,12 @@ function ProjectDefinitionFields({
               }}
             />
             {form.ownerLogoUrl && (
-              <p className="text-xs text-muted-foreground truncate">Current: {form.ownerLogoUrl}</p>
+              <p className="text-xs text-muted-foreground truncate">{t("currentLogo", { name: form.ownerLogoUrl })}</p>
             )}
           </div>
 
           <div className="grid gap-1.5">
-            <Label htmlFor="pd-contractor-logo-file">Contractor Logo (Image Upload)</Label>
+            <Label htmlFor="pd-contractor-logo-file">{t("contractorLogoUpload")}</Label>
             <Input
               id="pd-contractor-logo-file"
               type="file"
@@ -667,13 +670,13 @@ function ProjectDefinitionFields({
               }}
             />
             {form.contractorLogoUrl && (
-              <p className="text-xs text-muted-foreground truncate">Current: {form.contractorLogoUrl}</p>
+              <p className="text-xs text-muted-foreground truncate">{t("currentLogo", { name: form.contractorLogoUrl })}</p>
             )}
           </div>
       </>
 
       <div className="grid gap-1.5">
-        <Label htmlFor="pd-transit">Maximum Transit Time (days)</Label>
+        <Label htmlFor="pd-transit">{t("maxTransitTimeDays")}</Label>
         <Input
           id="pd-transit"
           type="number"
@@ -683,18 +686,19 @@ function ProjectDefinitionFields({
           disabled={disabled}
         />
         <p className="text-[11px] text-muted-foreground">
-          Days before a spool transit is flagged overdue.
+          {t("maxTransitDaysHint")}
         </p>
       </div>
     </div>
   );
 }
 
-function SavingLabel() {
+function SavingLabel({ text }: { text?: string }) {
+  const t = useTranslations("projectSetup.projectDefinition");
   return (
     <span className="flex items-center gap-1.5">
       <span className="h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-      Saving…
+      {text ?? t("saving")}
     </span>
   );
 }

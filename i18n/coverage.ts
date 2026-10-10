@@ -53,6 +53,13 @@ export const I18N_DONE_PATHS: readonly string[] = [
   "app/reports",
   "app/settings",
   "app/documentation",
+  "modules/project-setup/ui",
+  "modules/project-setup/domain",
+  "app/admin/project-definition",
+  "app/admin/project-referential",
+  "app/admin/system-referential",
+  "app/admin/progress-weights",
+  "app/admin/import-settings",
 ]
 
-export const RU_COMPLETE_NAMESPACES: readonly Namespace[] = ["common", "codes", "shell", "nav", "help", "auth", "fabrication", "erection", "flange", "nde", "testPack", "spooling", "home", "projects", "documents", "settings"]
+export const RU_COMPLETE_NAMESPACES: readonly Namespace[] = ["common", "codes", "shell", "nav", "help", "auth", "fabrication", "erection", "flange", "nde", "testPack", "spooling", "home", "projects", "documents", "settings", "projectSetup"]

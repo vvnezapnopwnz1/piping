@@ -52,6 +52,7 @@ import { ReferenceStatusBadge } from "./reference-status-badge"
 import { validateReferenceIdentity, getReferenceStatusActions } from "../domain/reference"
 
 export function SystemReferentialScreen() {
+  const t = useTranslations("projectSetup.systemReferential")
   const tIssues = useTranslations("projectSetup.issues")
 
   const [loading, setLoading] = useState(true)
@@ -104,11 +105,11 @@ export function SystemReferentialScreen() {
       }
     } catch (err: any) {
       if (currentVersion === requestVersionRef.current) {
-        setError(err.message || "Failed to load system referentials")
+        setError(err.message || t("failedToLoad"))
         setLoading(false)
       }
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     fetchReferentials()
@@ -140,9 +141,9 @@ export function SystemReferentialScreen() {
       )
       setAddCode("")
       setAddDescription("")
-      toast.success(`Material type "${newEntry.code}" added successfully`)
+      toast.success(t("materialTypeAdded", { code: newEntry.code }))
     } catch (err: any) {
-      toast.error(err.message || "Failed to add material type")
+      toast.error(err.message || t("materialTypeFailed"))
     } finally {
       setIsAdding(false)
     }
@@ -170,9 +171,9 @@ export function SystemReferentialScreen() {
       )
       setTorquingCode("")
       setTorquingDescription("")
-      toast.success(`Torquing requirement "${entry.code}" added successfully`)
+      toast.success(t("torquingAdded", { code: entry.code }))
     } catch (err: any) {
-      toast.error(err.message || "Failed to add torquing requirement")
+      toast.error(err.message || t("torquingFailed"))
     } finally {
       setIsAddingTorquing(false)
     }
@@ -206,9 +207,9 @@ export function SystemReferentialScreen() {
       setUtFlangeRating("")
       setUtCoefficientDiameter("")
       setUtCoefficientRating("")
-      toast.success("UT calculation rule added successfully")
+      toast.success(t("utRuleAdded"))
     } catch (err: any) {
-      toast.error(err.message || "Failed to add UT calculation rule")
+      toast.error(err.message || t("utRuleFailed"))
     } finally {
       setIsAddingUt(false)
     }
@@ -247,9 +248,9 @@ export function SystemReferentialScreen() {
           : null
       )
       setEditingEntry(null)
-      toast.success(`Material type "${updated.code}" updated successfully`)
+      toast.success(t("materialTypeUpdated", { code: updated.code }))
     } catch (err: any) {
-      toast.error(err.message || "Failed to update material type")
+      toast.error(err.message || t("materialTypeUpdateFailed"))
     } finally {
       setIsUpdating(false)
     }
@@ -276,9 +277,9 @@ export function SystemReferentialScreen() {
             }
           : null
       )
-      toast.success(`Material type "${updated.code}" set to ${nextStatus}`)
+      toast.success(t("materialTypeStatusSet", { code: updated.code, status: nextStatus }))
     } catch (err: any) {
-      toast.error(err.message || "Failed to update status")
+      toast.error(err.message || t("statusUpdateFailed"))
     } finally {
       setStatusInFlightId(null)
     }
@@ -302,7 +303,7 @@ export function SystemReferentialScreen() {
             <p className="font-medium">{error}</p>
           </div>
           <Button variant="outline" className="mt-4" onClick={fetchReferentials}>
-            <RefreshCw className="mr-2 h-4 w-4" /> Retry
+            <RefreshCw className="mr-2 h-4 w-4" /> {t("retry")}
           </Button>
         </CardContent>
       </Card>
@@ -316,24 +317,24 @@ export function SystemReferentialScreen() {
       {!canManage && (
         <div className="bg-warning-bg text-warning-fg border-warning-border flex items-center gap-2 rounded-md border p-3 text-sm">
           <ShieldAlert className="h-4 w-4 shrink-0" />
-          <span>Platform administrator rights are required to manage System Referentials. Read-only mode active.</span>
+          <span>{t("readOnlyNotice")}</span>
         </div>
       )}
 
       {/* Material Types */}
       <Card>
         <CardHeader>
-          <CardTitle>Material Types</CardTitle>
-          <CardDescription>Global material classification list used across all projects.</CardDescription>
+          <CardTitle>{t("materialTypesTitle")}</CardTitle>
+          <CardDescription>{t("materialTypesDesc")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {canManage && (
             <form onSubmit={handleAddMaterialType} className="flex flex-col sm:flex-row gap-3 items-end">
               <div className="space-y-1.5 flex-1">
-                <Label htmlFor="code">Code</Label>
+                <Label htmlFor="code">{t("code")}</Label>
                 <Input
                   id="code"
-                  placeholder="e.g. CS"
+                  placeholder={t("codePlaceholder")}
                   value={addCode}
                   onChange={(e) => setAddCode(e.target.value)}
                   disabled={isAdding}
@@ -341,10 +342,10 @@ export function SystemReferentialScreen() {
                 {addErrors.code && <p className="text-xs text-destructive">{addErrors.code}</p>}
               </div>
               <div className="space-y-1.5 flex-[2]">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">{t("description")}</Label>
                 <Input
                   id="description"
-                  placeholder="e.g. Carbon Steel"
+                  placeholder={t("descPlaceholder")}
                   value={addDescription}
                   onChange={(e) => setAddDescription(e.target.value)}
                   disabled={isAdding}
@@ -352,7 +353,7 @@ export function SystemReferentialScreen() {
                 {addErrors.description && <p className="text-xs text-destructive">{addErrors.description}</p>}
               </div>
               <Button type="submit" disabled={isAdding}>
-                <Plus className="mr-2 h-4 w-4" /> Add Material Type
+                <Plus className="mr-2 h-4 w-4" /> {t("addMaterialType")}
               </Button>
             </form>
           )}
@@ -361,17 +362,17 @@ export function SystemReferentialScreen() {
             <table className="w-full text-sm">
               <thead className="bg-muted/50 border-b text-left">
                 <tr>
-                  <th className="p-3 font-medium">Code</th>
-                  <th className="p-3 font-medium">Description</th>
-                  <th className="p-3 font-medium">Status</th>
-                  {canManage && <th className="p-3 font-medium text-right">Actions</th>}
+                  <th className="p-3 font-medium">{t("columns.code")}</th>
+                  <th className="p-3 font-medium">{t("columns.description")}</th>
+                  <th className="p-3 font-medium">{t("columns.status")}</th>
+                  {canManage && <th className="p-3 font-medium text-right">{t("columns.actions")}</th>}
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {(data?.materialTypes ?? []).length === 0 ? (
                   <tr>
                     <td colSpan={canManage ? 4 : 3} className="p-4 text-center text-muted-foreground">
-                      No material types found.
+                      {t("noMaterialTypes")}
                     </td>
                   </tr>
                 ) : (
@@ -396,7 +397,7 @@ export function SystemReferentialScreen() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => handleOpenEdit(entry)}>
-                                <Edit2 className="mr-2 h-4 w-4" /> Edit
+                                <Edit2 className="mr-2 h-4 w-4" /> {t("edit")}
                               </DropdownMenuItem>
                               {getReferenceStatusActions(entry.status).map((action) => (
                                 <DropdownMenuItem
@@ -404,10 +405,10 @@ export function SystemReferentialScreen() {
                                   onClick={() => handleStatusAction(entry, action)}
                                 >
                                   {action === "deactivate"
-                                    ? "Deactivate"
+                                    ? t("actions.deactivate")
                                     : action === "archive"
-                                    ? "Archive"
-                                    : "Reactivate"}
+                                    ? t("actions.archive")
+                                    : t("actions.reactivate")}
                                 </DropdownMenuItem>
                               ))}
                             </DropdownMenuContent>
@@ -427,32 +428,32 @@ export function SystemReferentialScreen() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <div>
-            <CardTitle>Film Quantity Rules</CardTitle>
-            <CardDescription>System-wide radiography film count rules (read-only).</CardDescription>
+            <CardTitle>{t("filmRulesTitle")}</CardTitle>
+            <CardDescription>{t("filmRulesDesc")}</CardDescription>
           </div>
-          <Badge variant="outline">System Rule</Badge>
+          <Badge variant="outline">{t("systemRuleBadge")}</Badge>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 border-b text-left">
                 <tr>
-                  <th className="p-3 font-medium">Diameter Range (in)</th>
-                  <th className="p-3 font-medium">Thickness Range (mm)</th>
-                  <th className="p-3 font-medium">Film Count</th>
+                  <th className="p-3 font-medium">{t("columns.diameterRangeIn")}</th>
+                  <th className="p-3 font-medium">{t("columns.thicknessRangeMm")}</th>
+                  <th className="p-3 font-medium">{t("columns.filmCount")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {(data?.filmQuantityRules ?? []).length === 0 ? (
                   <tr>
                     <td colSpan={3} className="p-4 text-center text-muted-foreground">
-                      No film quantity rules configured.
+                      {t("noFilmRules")}
                     </td>
                   </tr>
                 ) : (
                   (data?.filmQuantityRules ?? []).map((rule) => (
                     <tr key={rule.id}>
-                      <td className="p-3 font-mono">{rule.diameterFromInch}&quot; – {rule.diameterToInch}&quot;</td>
+                      <td className="p-3 font-mono">{`${rule.diameterFromInch}" – ${rule.diameterToInch}"`}</td>
                       <td className="p-3 font-mono">{rule.thicknessFromMm} – {rule.thicknessToMm} mm</td>
                       <td className="p-3 font-mono font-medium">{rule.filmCount}</td>
                     </tr>
@@ -468,39 +469,39 @@ export function SystemReferentialScreen() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <div>
-            <CardTitle>UT Calculation Rules</CardTitle>
-            <CardDescription>System-wide ultrasonic thickness assessment rules.</CardDescription>
+            <CardTitle>{t("utRulesTitle")}</CardTitle>
+            <CardDescription>{t("utRulesDesc")}</CardDescription>
           </div>
-          <Badge variant="outline">System Rule</Badge>
+          <Badge variant="outline">{t("systemRuleBadge")}</Badge>
         </CardHeader>
         <CardContent>
           {canManage && (
             <form onSubmit={handleAddUtCalculationRule} className="mb-4 grid gap-3 rounded-md border p-3 md:grid-cols-5">
               <div className="space-y-1.5">
-                <Label htmlFor="ut-diameter-from">Diameter from (in)</Label>
+                <Label htmlFor="ut-diameter-from">{t("diameterFromIn")}</Label>
                 <Input id="ut-diameter-from" type="number" step="0.001" value={utDiameterFrom} onChange={(e) => setUtDiameterFrom(e.target.value)} disabled={isAddingUt} />
                 {utErrors.diameterFromInch && <p className="text-xs text-destructive">{utErrors.diameterFromInch}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="ut-diameter-to">Diameter to (in)</Label>
+                <Label htmlFor="ut-diameter-to">{t("diameterToIn")}</Label>
                 <Input id="ut-diameter-to" type="number" step="0.001" value={utDiameterTo} onChange={(e) => setUtDiameterTo(e.target.value)} disabled={isAddingUt} />
                 {utErrors.diameterToInch && <p className="text-xs text-destructive">{utErrors.diameterToInch}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="ut-flange-rating">Flange rating (optional)</Label>
+                <Label htmlFor="ut-flange-rating">{t("flangeRatingOptional")}</Label>
                 <Input id="ut-flange-rating" placeholder="e.g. 150#" value={utFlangeRating} onChange={(e) => setUtFlangeRating(e.target.value)} disabled={isAddingUt} />
                 {utErrors.flangeRating && <p className="text-xs text-destructive">{utErrors.flangeRating}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="ut-coefficient-diameter">Diameter coefficient</Label>
+                <Label htmlFor="ut-coefficient-diameter">{t("diameterCoeff")}</Label>
                 <Input id="ut-coefficient-diameter" type="number" step="0.001" value={utCoefficientDiameter} onChange={(e) => setUtCoefficientDiameter(e.target.value)} disabled={isAddingUt} />
                 {utErrors.coefficientDiameter && <p className="text-xs text-destructive">{utErrors.coefficientDiameter}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="ut-coefficient-rating">Rating coefficient</Label>
+                <Label htmlFor="ut-coefficient-rating">{t("ratingCoeff")}</Label>
                 <Input id="ut-coefficient-rating" type="number" step="0.001" value={utCoefficientRating} onChange={(e) => setUtCoefficientRating(e.target.value)} disabled={isAddingUt} />
                 {utErrors.coefficientRating && <p className="text-xs text-destructive">{utErrors.coefficientRating}</p>}
-                <Button type="submit" className="w-full" loading={isAddingUt}>Add UT Calculation Rule</Button>
+                <Button type="submit" className="w-full" loading={isAddingUt}>{t("addUtRule")}</Button>
               </div>
             </form>
           )}
@@ -508,24 +509,24 @@ export function SystemReferentialScreen() {
             <table className="w-full text-sm">
               <thead className="bg-muted/50 border-b text-left">
                 <tr>
-                  <th className="p-3 font-medium">Diameter Range (in)</th>
-                  <th className="p-3 font-medium">Flange Rating</th>
-                  <th className="p-3 font-medium">Coeff. Diameter</th>
-                  <th className="p-3 font-medium">Coeff. Rating</th>
+                  <th className="p-3 font-medium">{t("columns.diameterRangeIn")}</th>
+                  <th className="p-3 font-medium">{t("columns.flangeRating")}</th>
+                  <th className="p-3 font-medium">{t("columns.coeffDiameter")}</th>
+                  <th className="p-3 font-medium">{t("columns.coeffRating")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {(data?.utCalculationRules ?? []).length === 0 ? (
                   <tr>
                     <td colSpan={4} className="p-4 text-center text-muted-foreground">
-                      No UT calculation rules configured.
+                      {t("noUtRules")}
                     </td>
                   </tr>
                 ) : (
                   (data?.utCalculationRules ?? []).map((rule) => (
                     <tr key={rule.id}>
-                      <td className="p-3 font-mono">{rule.diameterFromInch}&quot; – {rule.diameterToInch}&quot;</td>
-                      <td className="p-3 font-mono">{rule.flangeRating || "Any"}</td>
+                      <td className="p-3 font-mono">{`${rule.diameterFromInch}" – ${rule.diameterToInch}"`}</td>
+                      <td className="p-3 font-mono">{rule.flangeRating || t("anyRating")}</td>
                       <td className="p-3 font-mono">{rule.coefficientDiameter}</td>
                       <td className="p-3 font-mono">{rule.coefficientRating}</td>
                     </tr>
@@ -541,25 +542,25 @@ export function SystemReferentialScreen() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <div>
-            <CardTitle>Torquing Requirements</CardTitle>
-            <CardDescription>System-wide jointing methods used by Flange Management.</CardDescription>
+            <CardTitle>{t("torquingTitle")}</CardTitle>
+            <CardDescription>{t("torquingDesc")}</CardDescription>
           </div>
-          <Badge variant="outline">System Standard</Badge>
+          <Badge variant="outline">{t("systemStandardBadge")}</Badge>
         </CardHeader>
         <CardContent>
           {canManage && (
             <form onSubmit={handleAddTorquingRequirement} className="mb-4 flex flex-col items-end gap-3 rounded-md border p-3 sm:flex-row">
               <div className="w-full space-y-1.5 sm:flex-1">
-                <Label htmlFor="torquing-code">Code</Label>
-                <Input id="torquing-code" placeholder="e.g. TORQUE-MANUAL" value={torquingCode} onChange={(e) => setTorquingCode(e.target.value)} disabled={isAddingTorquing} />
+                <Label htmlFor="torquing-code">{t("code")}</Label>
+                <Input id="torquing-code" placeholder={t("torquingCodePlaceholder")} value={torquingCode} onChange={(e) => setTorquingCode(e.target.value)} disabled={isAddingTorquing} />
                 {torquingErrors.code && <p className="text-xs text-destructive">{torquingErrors.code}</p>}
               </div>
               <div className="w-full space-y-1.5 sm:flex-[2]">
-                <Label htmlFor="torquing-description">Description</Label>
-                <Input id="torquing-description" placeholder="Manual torqueing" value={torquingDescription} onChange={(e) => setTorquingDescription(e.target.value)} disabled={isAddingTorquing} />
+                <Label htmlFor="torquing-description">{t("description")}</Label>
+                <Input id="torquing-description" placeholder={t("torquingDescPlaceholder")} value={torquingDescription} onChange={(e) => setTorquingDescription(e.target.value)} disabled={isAddingTorquing} />
                 {torquingErrors.description && <p className="text-xs text-destructive">{torquingErrors.description}</p>}
               </div>
-              <Button type="submit" loading={isAddingTorquing}>Add Torquing Requirement</Button>
+              <Button type="submit" loading={isAddingTorquing}>{t("addTorquing")}</Button>
             </form>
           )}
           <div className="flex flex-wrap gap-2">
@@ -579,12 +580,12 @@ export function SystemReferentialScreen() {
       <Dialog open={!!editingEntry} onOpenChange={(open) => !open && setEditingEntry(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Material Type</DialogTitle>
-            <DialogDescription>Modify material type code or description.</DialogDescription>
+            <DialogTitle>{t("editDialogTitle")}</DialogTitle>
+            <DialogDescription>{t("editDialogDesc")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label htmlFor="edit-code">Code</Label>
+              <Label htmlFor="edit-code">{t("code")}</Label>
               <Input
                 id="edit-code"
                 value={editCode}
@@ -594,7 +595,7 @@ export function SystemReferentialScreen() {
               {editErrors.code && <p className="text-xs text-destructive">{editErrors.code}</p>}
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="edit-desc">Description</Label>
+              <Label htmlFor="edit-desc">{t("description")}</Label>
               <Input
                 id="edit-desc"
                 value={editDescription}
@@ -608,10 +609,10 @@ export function SystemReferentialScreen() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingEntry(null)} disabled={isUpdating}>
-              Cancel
+              {t("cancel")}
             </Button>
             <Button onClick={handleSaveEdit} disabled={isUpdating}>
-              Save Changes
+              {t("saveChanges")}
             </Button>
           </DialogFooter>
         </DialogContent>

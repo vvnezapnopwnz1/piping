@@ -64,8 +64,9 @@ export function ProjectGeographyTabs({
   projectId: string
   canManage: boolean
 }) {
-  const [loading, setLoading] = useState(true)
+  const t = useTranslations("projectSetup.projectGeography")
   const tIssues = useTranslations("projectSetup.issues")
+  const [loading, setLoading] = useState(true)
 
   const [error, setError] = useState<string | null>(null)
   const [geography, setGeography] = useState<LoadedProjectGeography | null>(null)
@@ -130,11 +131,11 @@ export function ProjectGeographyTabs({
       }
     } catch (err: any) {
       if (currentVersion === requestVersionRef.current) {
-        setError(err.message || "Failed to load project geography")
+        setError(err.message || t("failedToLoad"))
         setLoading(false)
       }
     }
-  }, [projectId])
+  }, [projectId, t])
 
   useEffect(() => {
     fetchGeography()
@@ -173,9 +174,9 @@ export function ProjectGeographyTabs({
       setSubCode("")
       setSubDesc("")
       setSubContact("")
-      toast.success(`Subcontractor "${newSub.code}" added successfully`)
+      toast.success(t("subcontractorAdded", { code: newSub.code }))
     } catch (err: any) {
-      toast.error(err.message || "Failed to add subcontractor")
+      toast.error(err.message || t("subcontractorFailed"))
     } finally {
       setIsSubmittingSub(false)
     }
@@ -207,9 +208,9 @@ export function ProjectGeographyTabs({
       setIsAddUnitOpen(false)
       setUnitCode("")
       setUnitDesc("")
-      toast.success(`Unit "${newUnit.code}" added successfully`)
+      toast.success(t("unitAdded", { code: newUnit.code }))
     } catch (err: any) {
-      toast.error(err.message || "Failed to add unit")
+      toast.error(err.message || t("unitFailed"))
     } finally {
       setIsSubmittingUnit(false)
     }
@@ -254,9 +255,9 @@ export function ProjectGeographyTabs({
       setAcCode("")
       setAcDesc("")
       setAcUnitId("")
-      toast.success(`Area classification "${newAc.code}" added successfully`)
+      toast.success(t("areaClassificationAdded", { code: newAc.code }))
     } catch (err: any) {
-      toast.error(err.message || "Failed to add area classification")
+      toast.error(err.message || t("areaClassificationFailed"))
     } finally {
       setIsSubmittingAc(false)
     }
@@ -315,9 +316,9 @@ export function ProjectGeographyTabs({
       setIsUnitFlag(false)
       setIsRackFlag(false)
       setPdsCustomValues({})
-      toast.success(`PDS Area "${newPds.code}" added successfully`)
+      toast.success(t("pdsAreaAdded", { code: newPds.code }))
     } catch (err: any) {
-      toast.error(err.message || "Failed to add PDS area")
+      toast.error(err.message || t("pdsAreaFailed"))
     } finally {
       setIsSubmittingPds(false)
     }
@@ -334,7 +335,7 @@ export function ProjectGeographyTabs({
             <p className="font-medium">{error}</p>
           </div>
           <Button variant="outline" className="mt-4" onClick={fetchGeography}>
-            <RefreshCw className="mr-2 h-4 w-4" /> Retry
+            <RefreshCw className="mr-2 h-4 w-4" /> {t("retry")}
           </Button>
         </CardContent>
       </Card>
@@ -370,13 +371,13 @@ export function ProjectGeographyTabs({
     >
       <TabsList>
         <TabsTrigger value="subcontractors">
-          Subcontractors ({geography?.subcontractors.length ?? 0})
+          {t("tabs.subcontractors", { count: geography?.subcontractors.length ?? 0 })}
         </TabsTrigger>
         <TabsTrigger value="units">
-          Units & Area Classifications ({geography?.areaClassifications.length ?? 0})
+          {t("tabs.units", { count: geography?.areaClassifications.length ?? 0 })}
         </TabsTrigger>
         <TabsTrigger value="pds">
-          PDS Areas ({geography?.pdsAreas.length ?? 0})
+          {t("tabs.pds", { count: geography?.pdsAreas.length ?? 0 })}
         </TabsTrigger>
       </TabsList>
 
@@ -385,12 +386,12 @@ export function ProjectGeographyTabs({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
-              <CardTitle>Project Subcontractors</CardTitle>
-              <CardDescription>Company registry for shop, assembly, and field execution.</CardDescription>
+              <CardTitle>{t("subcontractorsTitle")}</CardTitle>
+              <CardDescription>{t("subcontractorsDesc")}</CardDescription>
             </div>
             {canManage && (
               <Button size="sm" onClick={() => setIsAddSubOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> Add Subcontractor
+                <Plus className="mr-2 h-4 w-4" /> {t("addSubcontractor")}
               </Button>
             )}
           </CardHeader>
@@ -398,7 +399,7 @@ export function ProjectGeographyTabs({
             <div className="relative w-72">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
-                placeholder="Search subcontractors..."
+                placeholder={t("searchSubcontractors")}
                 value={subSearch}
                 onChange={(e) => setSubSearch(e.target.value)}
                 className="pl-8 text-xs h-8"
@@ -408,17 +409,17 @@ export function ProjectGeographyTabs({
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 border-b text-left">
                   <tr>
-                    <th className="p-3 font-medium">Code</th>
-                    <th className="p-3 font-medium">Description</th>
-                    <th className="p-3 font-medium">Contact Details</th>
-                    <th className="p-3 font-medium">Status</th>
+                    <th className="p-3 font-medium">{t("columns.code")}</th>
+                    <th className="p-3 font-medium">{t("columns.description")}</th>
+                    <th className="p-3 font-medium">{t("columns.contactDetails")}</th>
+                    <th className="p-3 font-medium">{t("columns.status")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {filteredSubs.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="p-4 text-center text-muted-foreground">
-                        No subcontractors found.
+                        {t("noSubcontractors")}
                       </td>
                     </tr>
                   ) : (
@@ -446,12 +447,12 @@ export function ProjectGeographyTabs({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
-              <CardTitle>Units</CardTitle>
-              <CardDescription>Process units an area classification can belong to.</CardDescription>
+              <CardTitle>{t("unitsTitle")}</CardTitle>
+              <CardDescription>{t("unitsDesc")}</CardDescription>
             </div>
             {canManage && (
               <Button size="sm" onClick={() => setIsAddUnitOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> Add Unit
+                <Plus className="mr-2 h-4 w-4" /> {t("addUnit")}
               </Button>
             )}
           </CardHeader>
@@ -460,16 +461,16 @@ export function ProjectGeographyTabs({
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 border-b text-left">
                   <tr>
-                    <th className="p-3 font-medium">Unit Code</th>
-                    <th className="p-3 font-medium">Description</th>
-                    <th className="p-3 font-medium">Status</th>
+                    <th className="p-3 font-medium">{t("columns.unitCode")}</th>
+                    <th className="p-3 font-medium">{t("columns.description")}</th>
+                    <th className="p-3 font-medium">{t("columns.status")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {(geography?.units ?? []).length === 0 ? (
                     <tr>
                       <td colSpan={3} className="p-4 text-center text-muted-foreground">
-                        No units configured.
+                        {t("noUnits")}
                       </td>
                     </tr>
                   ) : (
@@ -492,8 +493,8 @@ export function ProjectGeographyTabs({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
-              <CardTitle>Area Classifications</CardTitle>
-              <CardDescription>Geographic area breakdown, each one owned by a unit.</CardDescription>
+              <CardTitle>{t("areaClassificationsTitle")}</CardTitle>
+              <CardDescription>{t("areaClassificationsDesc")}</CardDescription>
             </div>
             {canManage && (
               <Button
@@ -502,11 +503,11 @@ export function ProjectGeographyTabs({
                 disabled={activeUnits.length === 0}
                 title={
                   activeUnits.length === 0
-                    ? "Add an active unit first — an area classification must belong to one"
+                    ? t("addActiveUnitFirst")
                     : undefined
                 }
               >
-                <Plus className="mr-2 h-4 w-4" /> Add Area Classification
+                <Plus className="mr-2 h-4 w-4" /> {t("addAreaClassification")}
               </Button>
             )}
           </CardHeader>
@@ -515,17 +516,17 @@ export function ProjectGeographyTabs({
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 border-b text-left">
                   <tr>
-                    <th className="p-3 font-medium">Area Code</th>
-                    <th className="p-3 font-medium">Description</th>
-                    <th className="p-3 font-medium">Associated Unit</th>
-                    <th className="p-3 font-medium">Status</th>
+                    <th className="p-3 font-medium">{t("columns.areaCode")}</th>
+                    <th className="p-3 font-medium">{t("columns.description")}</th>
+                    <th className="p-3 font-medium">{t("columns.associatedUnit")}</th>
+                    <th className="p-3 font-medium">{t("columns.status")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {(geography?.areaClassifications ?? []).length === 0 ? (
                     <tr>
                       <td colSpan={4} className="p-4 text-center text-muted-foreground">
-                        No area classifications configured.
+                        {t("noAreaClassifications")}
                       </td>
                     </tr>
                   ) : (
@@ -553,12 +554,12 @@ export function ProjectGeographyTabs({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
-              <CardTitle>PDS Areas</CardTitle>
-              <CardDescription>Plant breakdown structure with shop, assembly, and field ownership.</CardDescription>
+              <CardTitle>{t("pdsTitle")}</CardTitle>
+              <CardDescription>{t("pdsDesc")}</CardDescription>
             </div>
             {canManage && (
               <Button size="sm" onClick={() => setIsAddPdsOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> Add PDS Area
+                <Plus className="mr-2 h-4 w-4" /> {t("addPdsArea")}
               </Button>
             )}
           </CardHeader>
@@ -566,7 +567,7 @@ export function ProjectGeographyTabs({
             <div className="relative w-72">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
-                placeholder="Search PDS areas..."
+                placeholder={t("searchPdsAreas")}
                 value={pdsSearch}
                 onChange={(e) => setPdsSearch(e.target.value)}
                 className="pl-8 text-xs h-8"
@@ -576,19 +577,19 @@ export function ProjectGeographyTabs({
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 border-b text-left">
                   <tr>
-                    <th className="p-3 font-medium">PDS Code</th>
-                    <th className="p-3 font-medium">Description</th>
-                    <th className="p-3 font-medium">Shop Sub</th>
-                    <th className="p-3 font-medium">Assembly Sub</th>
-                    <th className="p-3 font-medium">Field Sub</th>
-                    <th className="p-3 font-medium">Status</th>
+                    <th className="p-3 font-medium">{t("columns.pdsCode")}</th>
+                    <th className="p-3 font-medium">{t("columns.description")}</th>
+                    <th className="p-3 font-medium">{t("columns.shopSub")}</th>
+                    <th className="p-3 font-medium">{t("columns.assemblySub")}</th>
+                    <th className="p-3 font-medium">{t("columns.fieldSub")}</th>
+                    <th className="p-3 font-medium">{t("columns.status")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {filteredPds.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="p-4 text-center text-muted-foreground">
-                        No PDS areas found.
+                        {t("noPdsAreas")}
                       </td>
                     </tr>
                   ) : (
@@ -617,15 +618,15 @@ export function ProjectGeographyTabs({
         <DialogContent>
           <form onSubmit={handleCreateSub}>
             <DialogHeader>
-              <DialogTitle>Add Subcontractor</DialogTitle>
-              <DialogDescription>Register a new contractor company for this project.</DialogDescription>
+              <DialogTitle>{t("dialogs.addSubcontractorTitle")}</DialogTitle>
+              <DialogDescription>{t("dialogs.addSubcontractorDesc")}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-3">
               <div className="space-y-1.5">
-                <Label htmlFor="sub-code">Code</Label>
+                <Label htmlFor="sub-code">{t("columns.code")}</Label>
                 <Input
                   id="sub-code"
-                  placeholder="e.g. SUB-01"
+                  placeholder={t("dialogs.subCodePlaceholder")}
                   value={subCode}
                   onChange={(e) => setSubCode(e.target.value)}
                   disabled={isSubmittingSub}
@@ -633,10 +634,10 @@ export function ProjectGeographyTabs({
                 {subErrors.code && <p className="text-xs text-destructive">{subErrors.code}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="sub-desc">Description / Company Name</Label>
+                <Label htmlFor="sub-desc">{t("dialogs.subDescLabel")}</Label>
                 <Input
                   id="sub-desc"
-                  placeholder="e.g. Quality Piping LLC"
+                  placeholder={t("dialogs.subDescPlaceholder")}
                   value={subDesc}
                   onChange={(e) => setSubDesc(e.target.value)}
                   disabled={isSubmittingSub}
@@ -644,10 +645,10 @@ export function ProjectGeographyTabs({
                 {subErrors.description && <p className="text-xs text-destructive">{subErrors.description}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="sub-contact">Contact Details (Optional)</Label>
+                <Label htmlFor="sub-contact">{t("dialogs.contactDetailsOptional")}</Label>
                 <Input
                   id="sub-contact"
-                  placeholder="e.g. info@qpiping.test"
+                  placeholder={t("dialogs.contactDetailsPlaceholder")}
                   value={subContact}
                   onChange={(e) => setSubContact(e.target.value)}
                   disabled={isSubmittingSub}
@@ -656,10 +657,10 @@ export function ProjectGeographyTabs({
             </div>
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => setIsAddSubOpen(false)} disabled={isSubmittingSub}>
-                Cancel
+                {t("dialogs.cancel")}
               </Button>
               <Button type="submit" disabled={isSubmittingSub}>
-                Add Subcontractor
+                {t("dialogs.addSubcontractorTitle")}
               </Button>
             </DialogFooter>
           </form>
@@ -671,12 +672,12 @@ export function ProjectGeographyTabs({
         <DialogContent>
           <form onSubmit={handleCreateUnit}>
             <DialogHeader>
-              <DialogTitle>Add Unit</DialogTitle>
-              <DialogDescription>Register a process unit for this project.</DialogDescription>
+              <DialogTitle>{t("dialogs.addUnitTitle")}</DialogTitle>
+              <DialogDescription>{t("dialogs.addUnitDesc")}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-3">
               <div className="space-y-1.5">
-                <Label htmlFor="unit-code">Code</Label>
+                <Label htmlFor="unit-code">{t("columns.code")}</Label>
                 <Input
                   id="unit-code"
                   placeholder="e.g. U-100"
@@ -687,10 +688,10 @@ export function ProjectGeographyTabs({
                 {unitErrors.code && <p className="text-xs text-destructive">{unitErrors.code}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="unit-desc">Description</Label>
+                <Label htmlFor="unit-desc">{t("columns.description")}</Label>
                 <Input
                   id="unit-desc"
-                  placeholder="e.g. Process Unit 100"
+                  placeholder={t("dialogs.unitDescPlaceholder")}
                   value={unitDesc}
                   onChange={(e) => setUnitDesc(e.target.value)}
                   disabled={isSubmittingUnit}
@@ -707,10 +708,10 @@ export function ProjectGeographyTabs({
                 onClick={() => setIsAddUnitOpen(false)}
                 disabled={isSubmittingUnit}
               >
-                Cancel
+                {t("dialogs.cancel")}
               </Button>
               <Button type="submit" disabled={isSubmittingUnit}>
-                Add Unit
+                {t("dialogs.addUnitTitle")}
               </Button>
             </DialogFooter>
           </form>
@@ -722,17 +723,17 @@ export function ProjectGeographyTabs({
         <DialogContent>
           <form onSubmit={handleCreateAreaClassification}>
             <DialogHeader>
-              <DialogTitle>Add Area Classification</DialogTitle>
+              <DialogTitle>{t("dialogs.addAreaClassificationTitle")}</DialogTitle>
               <DialogDescription>
-                Classify an area inside a unit. PDS areas are then filed under this classification.
+                {t("dialogs.addAreaClassificationDesc")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-3">
               <div className="space-y-1.5">
-                <Label htmlFor="ac-code">Code</Label>
+                <Label htmlFor="ac-code">{t("columns.code")}</Label>
                 <Input
                   id="ac-code"
-                  placeholder="e.g. AC-01"
+                  placeholder={t("dialogs.acCodePlaceholder")}
                   value={acCode}
                   onChange={(e) => setAcCode(e.target.value)}
                   disabled={isSubmittingAc}
@@ -740,10 +741,10 @@ export function ProjectGeographyTabs({
                 {acErrors.code && <p className="text-xs text-destructive">{acErrors.code}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="ac-desc">Description</Label>
+                <Label htmlFor="ac-desc">{t("columns.description")}</Label>
                 <Input
                   id="ac-desc"
-                  placeholder="e.g. Above-ground process area"
+                  placeholder={t("dialogs.acDescPlaceholder")}
                   value={acDesc}
                   onChange={(e) => setAcDesc(e.target.value)}
                   disabled={isSubmittingAc}
@@ -753,10 +754,10 @@ export function ProjectGeographyTabs({
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label>Unit</Label>
+                <Label>{t("dialogs.unitLabel")}</Label>
                 <Select value={acUnitId} onValueChange={setAcUnitId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select unit" />
+                    <SelectValue placeholder={t("dialogs.selectUnit")} />
                   </SelectTrigger>
                   <SelectContent>
                     {activeUnits.map((unit) => (
@@ -776,10 +777,10 @@ export function ProjectGeographyTabs({
                 onClick={() => setIsAddAcOpen(false)}
                 disabled={isSubmittingAc}
               >
-                Cancel
+                {t("dialogs.cancel")}
               </Button>
               <Button type="submit" disabled={isSubmittingAc}>
-                Add Area Classification
+                {t("dialogs.addAreaClassificationTitle")}
               </Button>
             </DialogFooter>
           </form>
@@ -791,8 +792,8 @@ export function ProjectGeographyTabs({
         <DialogContent className="max-w-lg">
           <form onSubmit={handleCreatePds}>
             <DialogHeader>
-              <DialogTitle>Add PDS Area</DialogTitle>
-              <DialogDescription>Define a PDS area and assign execution subcontractors.</DialogDescription>
+              <DialogTitle>{t("dialogs.addPdsTitle")}</DialogTitle>
+              <DialogDescription>{t("dialogs.addPdsDesc")}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-3 max-h-[60vh] overflow-y-auto pr-1">
               {pdsErrors.subcontractors && (
@@ -802,10 +803,10 @@ export function ProjectGeographyTabs({
               )}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="pds-code">Code</Label>
+                  <Label htmlFor="pds-code">{t("columns.code")}</Label>
                   <Input
                     id="pds-code"
-                    placeholder="e.g. PDS-100"
+                    placeholder={t("dialogs.pdsCodePlaceholder")}
                     value={pdsCode}
                     onChange={(e) => setPdsCode(e.target.value)}
                     disabled={isSubmittingPds}
@@ -813,10 +814,10 @@ export function ProjectGeographyTabs({
                   {pdsErrors.code && <p className="text-xs text-destructive">{pdsErrors.code}</p>}
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="pds-desc">Description</Label>
+                  <Label htmlFor="pds-desc">{t("columns.description")}</Label>
                   <Input
                     id="pds-desc"
-                    placeholder="e.g. Process Area 100"
+                    placeholder={t("dialogs.pdsDescPlaceholder")}
                     value={pdsDesc}
                     onChange={(e) => setPdsDesc(e.target.value)}
                     disabled={isSubmittingPds}
@@ -826,10 +827,10 @@ export function ProjectGeographyTabs({
               </div>
 
               <div className="space-y-1.5">
-                <Label>Shop Subcontractor</Label>
+                <Label>{t("dialogs.shopSubcontractor")}</Label>
                 <Select value={shopSubId} onValueChange={setShopSubId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select shop subcontractor" />
+                    <SelectValue placeholder={t("dialogs.selectShopSubcontractor")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={NO_SELECTION}>(None)</SelectItem>
@@ -843,10 +844,10 @@ export function ProjectGeographyTabs({
               </div>
 
               <div className="space-y-1.5">
-                <Label>Assembly Subcontractor</Label>
+                <Label>{t("dialogs.assemblySubcontractor")}</Label>
                 <Select value={assemblySubId} onValueChange={setAssemblySubId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select assembly subcontractor" />
+                    <SelectValue placeholder={t("dialogs.selectAssemblySubcontractor")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={NO_SELECTION}>(None)</SelectItem>
@@ -860,10 +861,10 @@ export function ProjectGeographyTabs({
               </div>
 
               <div className="space-y-1.5">
-                <Label>Field Subcontractor</Label>
+                <Label>{t("dialogs.fieldSubcontractor")}</Label>
                 <Select value={fieldSubId} onValueChange={setFieldSubId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select field subcontractor" />
+                    <SelectValue placeholder={t("dialogs.selectFieldSubcontractor")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={NO_SELECTION}>(None)</SelectItem>
@@ -877,10 +878,10 @@ export function ProjectGeographyTabs({
               </div>
 
               <div className="space-y-1.5">
-                <Label>Area Classification</Label>
+                <Label>{t("dialogs.areaClassification")}</Label>
                 <Select value={areaClassId} onValueChange={setAreaClassId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select area classification" />
+                    <SelectValue placeholder={t("dialogs.selectAreaClassification")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={NO_SELECTION}>(None)</SelectItem>
@@ -899,7 +900,7 @@ export function ProjectGeographyTabs({
                   was filed as above-ground, not a unit and not a rack, whatever it was. PDS area
                   is a scoping dimension for access rights, so those defaults were not harmless. */}
               <div className="space-y-1.5">
-                <Label>Environment</Label>
+                <Label>{t("dialogs.environment")}</Label>
                 <Select
                   value={env}
                   onValueChange={(value) => setEnv(value as "above_ground" | "underground")}
@@ -908,8 +909,8 @@ export function ProjectGeographyTabs({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="above_ground">Above ground</SelectItem>
-                    <SelectItem value="underground">Underground</SelectItem>
+                    <SelectItem value="above_ground">{t("dialogs.aboveGround")}</SelectItem>
+                    <SelectItem value="underground">{t("dialogs.underground")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -923,7 +924,7 @@ export function ProjectGeographyTabs({
                     disabled={isSubmittingPds}
                   />
                   <Label htmlFor="pds-is-unit" className="font-normal">
-                    This area is a process unit
+                    {t("dialogs.isProcessUnit")}
                   </Label>
                 </div>
                 <div className="flex items-center gap-2">
@@ -934,7 +935,7 @@ export function ProjectGeographyTabs({
                     disabled={isSubmittingPds}
                   />
                   <Label htmlFor="pds-is-rack" className="font-normal">
-                    This area is a pipe rack
+                    {t("dialogs.isPipeRack")}
                   </Label>
                 </div>
               </div>
@@ -947,17 +948,17 @@ export function ProjectGeographyTabs({
                     onChange={(e) =>
                       setPdsCustomValues((prev) => ({ ...prev, [field.fieldKey]: e.target.value }))
                     }
-                    placeholder={`Enter ${field.label}`}
+                    placeholder={t("dialogs.enterCustom", { name: field.label })}
                   />
                 </div>
               ))}
             </div>
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => setIsAddPdsOpen(false)} disabled={isSubmittingPds}>
-                Cancel
+                {t("dialogs.cancel")}
               </Button>
               <Button type="submit" disabled={isSubmittingPds}>
-                Add PDS Area
+                {t("dialogs.addPdsTitle")}
               </Button>
             </DialogFooter>
           </form>
