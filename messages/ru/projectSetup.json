@@ -41,6 +41,7 @@
     "failedToLoad": "Не удалось загрузить готовность настройки проекта",
     "unavailable": "Состояние готовности недоступно",
     "retry": "Повторить",
+    "importFromExcel": "Загрузить из Excel",
     "navigatorLabel": "Справочники проекта",
     "chooseReference": "Справочник",
     "referenceIncomplete": "Не заполнено",

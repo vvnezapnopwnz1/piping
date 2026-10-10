@@ -1,15 +1,19 @@
 "use client"
 
 import { useCallback, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { useTranslations } from "next-intl"
 
 import { useOptionalAccess } from "@/modules/access/ui/access-context"
+import { parseImportType } from "@/modules/imports/domain/import-type"
 import { ImportHistory } from "@/modules/imports/ui/import-history"
 import { ImportWorkbench } from "@/modules/imports/ui/import-workbench"
 
 export default function ImportsPage() {
   const t = useTranslations("admin.imports")
   const access = useOptionalAccess()
+  const searchParams = useSearchParams()
+  const initialType = parseImportType(searchParams.get("type"))
   const [refreshToken, setRefreshToken] = useState(0)
   const onApplied = useCallback(() => setRefreshToken((token) => token + 1), [])
 
@@ -24,7 +28,7 @@ export default function ImportsPage() {
 
   return (
     <div className="space-y-4">
-      <ImportWorkbench projectId={projectId} canManage={canManage} onApplied={onApplied} />
+      <ImportWorkbench projectId={projectId} canManage={canManage} onApplied={onApplied} initialType={initialType ?? undefined} />
       <ImportHistory projectId={projectId} canManage={canManage} refreshToken={refreshToken} />
     </div>
   )

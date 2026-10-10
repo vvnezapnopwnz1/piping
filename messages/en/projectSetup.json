@@ -41,6 +41,7 @@
     "failedToLoad": "Failed to load project setup readiness",
     "unavailable": "Readiness state unavailable",
     "retry": "Retry",
+    "importFromExcel": "Upload from Excel",
     "navigatorLabel": "Project references",
     "chooseReference": "Reference",
     "referenceIncomplete": "Not filled in",

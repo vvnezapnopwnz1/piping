@@ -13,6 +13,10 @@ export const IMPORT_TYPES = [
 
 export type ImportType = (typeof IMPORT_TYPES)[number]
 
+export function parseImportType(raw: string | null): ImportType | null {
+  return raw && (IMPORT_TYPES as readonly string[]).includes(raw) ? (raw as ImportType) : null
+}
+
 export type ImportColumnKind = "text" | "number" | "textList"
 
 export interface ImportColumn {

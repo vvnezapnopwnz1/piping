@@ -45,13 +45,15 @@ export function ImportWorkbench({
   projectId,
   canManage,
   onApplied,
+  initialType,
 }: {
   projectId: string
   canManage: boolean
   onApplied: () => void
+  initialType?: ImportType
 }) {
   const t = useTranslations("spooling")
-  const [importType, setImportType] = useState<ImportType>("piping_material_list")
+  const [importType, setImportType] = useState<ImportType>(initialType ?? "piping_material_list")
   const [jobId, setJobId] = useState<string | null>(null)
   const [rows, setRows] = useState<ParsedRow[]>([])
   const [issues, setIssues] = useState<ImportRowIssue[]>([])

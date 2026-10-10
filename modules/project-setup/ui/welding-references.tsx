@@ -74,6 +74,7 @@ import {
 import { ReferenceStatusBadge } from "./reference-status-badge"
 import type { ReferenceKeyOf } from "./reference-catalog"
 import { ReferencePane, ReferenceTable } from "./reference-pane"
+import { ReferenceImportLink } from "./reference-import-link"
 
 type WeldingT = ReturnType<typeof useTranslations<"projectSetup.weldingQuality">>
 
@@ -752,9 +753,12 @@ export function WeldingReferences({
           description={t("weldersDesc")}
           count={data.welderQualifications.length}
           actions={canManage ? (
-            <Button size="sm" onClick={() => setIsAddWelderOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" /> {t("addWelder")}
-            </Button>
+            <>
+              <ReferenceImportLink reference={reference} />
+              <Button size="sm" onClick={() => setIsAddWelderOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> {t("addWelder")}
+              </Button>
+            </>
           ) : null}
         >
           <ReferenceTable
@@ -788,9 +792,12 @@ export function WeldingReferences({
             )
           }
           actions={canManage ? (
-            <Button size="sm" onClick={() => setIsAddNdeOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" /> {t("addNdeRule")}
-            </Button>
+            <>
+              <ReferenceImportLink reference={reference} />
+              <Button size="sm" onClick={() => setIsAddNdeOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> {t("addNdeRule")}
+              </Button>
+            </>
           ) : null}
         >
           {ndeCoverage.missingTuples.length > 0 && (
@@ -818,9 +825,12 @@ export function WeldingReferences({
           description={t("thicknessDesc")}
           count={data.thicknessFlangeRules.length}
           actions={canManage ? (
-            <Button size="sm" onClick={() => setIsAddThickOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" /> {t("addThicknessRule")}
-            </Button>
+            <>
+              <ReferenceImportLink reference={reference} />
+              <Button size="sm" onClick={() => setIsAddThickOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> {t("addThicknessRule")}
+              </Button>
+            </>
           ) : null}
         >
           <ReferenceTable
@@ -840,9 +850,12 @@ export function WeldingReferences({
           description={t("pmlDesc")}
           count={data.pipingMaterialRecords.length}
           actions={canManage ? (
-            <Button size="sm" onClick={() => setIsAddPmlOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" /> {t("addPmlRecord")}
-            </Button>
+            <>
+              <ReferenceImportLink reference={reference} />
+              <Button size="sm" onClick={() => setIsAddPmlOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> {t("addPmlRecord")}
+              </Button>
+            </>
           ) : null}
         >
           {identFilter && (
