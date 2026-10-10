@@ -24,14 +24,8 @@ import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { type DataColumn } from "@/components/ui/data-table"
 import { SupabaseWpsTab } from "@/components/admin/supabase-wps-tab"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 import {
   Dialog,
   DialogContent,
@@ -68,9 +62,150 @@ import {
   validateReworkCodeInput,
   validateJointCategoryInput,
   evaluateNdeMatrixCoverage,
+  type ServiceClass,
+  type WeldType,
+  type WelderQualification,
+  type NdeMatrixRule,
+  type ThicknessFlangeRule,
+  type PipingMaterialRecord,
+  type ReworkCode,
+  type JointCategory,
 } from "../domain/welding-quality-reference"
 import { ReferenceStatusBadge } from "./reference-status-badge"
 import type { ReferenceKeyOf } from "./reference-catalog"
+import { ReferencePane, ReferenceTable } from "./reference-pane"
+
+type WeldingT = ReturnType<typeof useTranslations<"projectSetup.weldingQuality">>
+
+function serviceClassColumns(t: WeldingT): ReadonlyArray<DataColumn<ServiceClass>> {
+  return [
+    { id: "code", header: t("columns.classCode"), value: (row) => row.code, searchable: true, alwaysVisible: true, className: "font-mono font-medium" },
+    { id: "description", header: t("columns.description"), value: (row) => row.description ?? "", searchable: true, cell: (row) => row.description || "—" },
+    { id: "status", header: t("columns.status"), value: (row) => row.status, cell: (row) => <ReferenceStatusBadge status={row.status} /> },
+  ]
+}
+
+function weldTypeColumns(t: WeldingT): ReadonlyArray<DataColumn<WeldType>> {
+  return [
+    { id: "code", header: t("columns.weldCode"), value: (row) => row.code, searchable: true, alwaysVisible: true, className: "font-mono font-medium" },
+    { id: "description", header: t("columns.description"), value: (row) => row.description, searchable: true },
+    {
+      id: "countsInDiaInch",
+      header: t("columns.countsInDiaInch"),
+      value: (row) => (row.countsInDiaInch ? t("badges.yes") : t("badges.no")),
+      cell: (row) =>
+        row.countsInDiaInch ? (
+          <Badge variant="outline" className="text-success-fg border-success-border">
+            {t("badges.yes")}
+          </Badge>
+        ) : (
+          <Badge variant="secondary">{t("badges.no")}</Badge>
+        ),
+    },
+    { id: "status", header: t("columns.status"), value: (row) => row.status, cell: (row) => <ReferenceStatusBadge status={row.status} /> },
+  ]
+}
+
+function welderColumns(t: WeldingT): ReadonlyArray<DataColumn<WelderQualification>> {
+  return [
+    { id: "welderCode", header: t("columns.welderStencil"), value: (row) => row.welderCode, searchable: true, alwaysVisible: true, className: "font-mono font-medium" },
+    { id: "fullName", header: t("columns.fullName"), value: (row) => row.fullName, searchable: true },
+    { id: "subcontractor", header: t("columns.subcontractor"), value: (row) => row.subcontractorCode ?? "", searchable: true, cell: (row) => row.subcontractorCode || "—", className: "font-mono" },
+    { id: "certificate", header: t("columns.certificate"), value: (row) => row.certificateNumber ?? "", searchable: true, cell: (row) => row.certificateNumber || "—", className: "font-mono" },
+    { id: "expiresOn", header: t("columns.expiresOn"), value: (row) => row.expiresOn, className: "font-mono" },
+    {
+      id: "qualified",
+      header: t("columns.qualified"),
+      value: (row) => (row.isCurrentlyQualified ? t("badges.valid") : t("badges.expired")),
+      cell: (row) =>
+        row.isCurrentlyQualified ? (
+          <Badge className="bg-success-bg text-success-fg border-success-border">
+            {t("badges.valid")}
+          </Badge>
+        ) : (
+          <Badge variant="destructive">{t("badges.expired")}</Badge>
+        ),
+    },
+    { id: "status", header: t("columns.status"), value: (row) => row.status, cell: (row) => <ReferenceStatusBadge status={row.status} /> },
+  ]
+}
+function ndeMatrixColumns(t: WeldingT): ReadonlyArray<DataColumn<NdeMatrixRule>> {
+  return [
+    { id: "serviceClass", header: t("columns.serviceClass"), value: (row) => row.serviceClassCode ?? "", searchable: true, alwaysVisible: true, cell: (row) => row.serviceClassCode || "—", className: "font-mono font-medium" },
+    { id: "weldType", header: t("columns.weldType"), value: (row) => row.weldTypeCode ?? "", searchable: true, cell: (row) => row.weldTypeCode || "—", className: "font-mono" },
+    {
+      id: "location",
+      header: t("columns.location"),
+      value: (row) => (row.weldLocation === "shop" ? t("dialogs.locationShop") : row.weldLocation === "field" ? t("dialogs.locationField") : row.weldLocation),
+      cell: (row) => (
+        <span className="capitalize">
+          {row.weldLocation === "shop" ? t("dialogs.locationShop") : row.weldLocation === "field" ? t("dialogs.locationField") : row.weldLocation}
+        </span>
+      ),
+    },
+    { id: "rtCoverage", header: t("columns.rtCoverage"), value: (row) => row.rtCoverage, cell: (row) => `${row.rtCoverage}%`, className: "font-mono" },
+    { id: "utCoverage", header: t("columns.utCoverage"), value: (row) => row.utCoverage, cell: (row) => `${row.utCoverage}%`, className: "font-mono" },
+    { id: "mtCoverage", header: t("columns.mtCoverage"), value: (row) => row.mtCoverage, cell: (row) => `${row.mtCoverage}%`, className: "font-mono" },
+    { id: "ptCoverage", header: t("columns.ptCoverage"), value: (row) => row.ptCoverage, cell: (row) => `${row.ptCoverage}%`, className: "font-mono" },
+    { id: "pmiCoverage", header: t("columns.pmiCoverage"), value: (row) => row.pmiCoverage, cell: (row) => `${row.pmiCoverage}%`, className: "font-mono" },
+    {
+      id: "pwhtReq",
+      header: t("columns.pwhtReq"),
+      value: (row) =>
+        row.pwhtRequired
+          ? row.pwhtThicknessThreshold
+            ? t("badges.greaterMm", { threshold: row.pwhtThicknessThreshold })
+            : t("badges.always")
+          : t("badges.no"),
+      cell: (row) =>
+        row.pwhtRequired
+          ? row.pwhtThicknessThreshold
+            ? t("badges.greaterMm", { threshold: row.pwhtThicknessThreshold })
+            : t("badges.always")
+          : t("badges.no"),
+      className: "font-mono",
+    },
+    { id: "status", header: t("columns.status"), value: (row) => row.status, cell: (row) => <ReferenceStatusBadge status={row.status} /> },
+  ]
+}
+
+function thicknessFlangeColumns(t: WeldingT): ReadonlyArray<DataColumn<ThicknessFlangeRule>> {
+  return [
+    { id: "serviceClass", header: t("columns.serviceClass"), value: (row) => row.serviceClassCode ?? "", searchable: true, alwaysVisible: true, cell: (row) => row.serviceClassCode || "—", className: "font-mono font-medium" },
+    { id: "diameterInch", header: t("columns.diameterIn"), value: (row) => row.diameterInch, cell: (row) => `${row.diameterInch}"`, className: "font-mono" },
+    { id: "thicknessMm", header: t("columns.thicknessMm"), value: (row) => row.thicknessMm, cell: (row) => <>{row.thicknessMm} mm</>, className: "font-mono" },
+    { id: "flangeRating", header: t("columns.flangeRating"), value: (row) => row.flangeRating, searchable: true, className: "font-mono" },
+    { id: "status", header: t("columns.status"), value: (row) => row.status, cell: (row) => <ReferenceStatusBadge status={row.status} /> },
+  ]
+}
+
+function pipingMaterialColumns(t: WeldingT): ReadonlyArray<DataColumn<PipingMaterialRecord>> {
+  return [
+    { id: "mrrNumber", header: t("columns.mrrNumber"), value: (row) => row.mrrNumber, searchable: true, alwaysVisible: true, className: "font-mono font-medium" },
+    { id: "identCode", header: t("columns.identCode"), value: (row) => row.identCode, searchable: true, className: "font-mono" },
+    { id: "traceHeatNumber", header: t("columns.traceHeatNumber"), value: (row) => row.traceNumber, searchable: true, className: "font-mono" },
+    { id: "status", header: t("columns.status"), value: (row) => row.status, cell: (row) => <ReferenceStatusBadge status={row.status} /> },
+  ]
+}
+
+function reworkCodeColumns(t: WeldingT): ReadonlyArray<DataColumn<ReworkCode>> {
+  return [
+    { id: "code", header: t("columns.code"), value: (row) => row.code, searchable: true, alwaysVisible: true, className: "font-mono font-medium" },
+    { id: "description", header: t("columns.description"), value: (row) => row.description, searchable: true },
+    { id: "status", header: t("columns.status"), value: (row) => row.status, cell: (row) => <ReferenceStatusBadge status={row.status} /> },
+  ]
+}
+
+function jointCategoryColumns(t: WeldingT): ReadonlyArray<DataColumn<JointCategory>> {
+  return [
+    { id: "jointDefinition", header: t("columns.jointDefinition"), value: (row) => row.jointDefinition, searchable: true, alwaysVisible: true, className: "font-medium" },
+    { id: "timing", header: t("columns.timing"), value: (row) => row.timing, className: "text-muted-foreground" },
+    { id: "categoryCode", header: t("columns.categoryCode"), value: (row) => row.categoryCode, searchable: true, className: "font-mono" },
+    { id: "reason", header: t("columns.reason"), value: (row) => row.reason, searchable: true },
+    { id: "status", header: t("columns.status"), value: (row) => row.status, cell: (row) => <ReferenceStatusBadge status={row.status} /> },
+  ]
+}
+
 
 export function WeldingReferences({
   projectId,
@@ -535,23 +670,23 @@ export function WeldingReferences({
 
   if (error) {
     return (
-      <Card className="border-destructive/50 bg-destructive/5">
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-3 text-destructive">
-            <AlertCircle className="h-5 w-5" />
-            <p className="font-medium">{error}</p>
-          </div>
-          <Button variant="outline" className="mt-4" onClick={fetchReferences}>
-            <RefreshCw className="mr-2 h-4 w-4" /> {t("retry")}
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-6">
+        <div className="flex items-center gap-3 text-destructive">
+          <AlertCircle className="h-5 w-5" />
+          <p className="font-medium">{error}</p>
+        </div>
+        <Button variant="outline" className="mt-4" onClick={fetchReferences}>
+          <RefreshCw className="mr-2 h-4 w-4" /> {t("retry")}
+        </Button>
+      </div>
     )
   }
 
-  const activeServiceClasses = (data?.serviceClasses ?? []).filter((sc) => sc.status === "active")
-  const activeWeldTypes = (data?.weldTypes ?? []).filter((wt) => wt.status === "active")
-  const activeNdeRules = (data?.ndeMatrixRules ?? []).filter((r) => r.status === "active")
+  if (!data) return null
+
+  const activeServiceClasses = data.serviceClasses.filter((sc) => sc.status === "active")
+  const activeWeldTypes = data.weldTypes.filter((wt) => wt.status === "active")
+  const activeNdeRules = data.ndeMatrixRules.filter((r) => r.status === "active")
 
   const ndeCoverage = evaluateNdeMatrixCoverage(
     activeServiceClasses.map((sc) => sc.id),
@@ -565,174 +700,71 @@ export function WeldingReferences({
   )
 
   return (
-    <div className="space-y-4">
+    <>
       {/* Service Classes View */}
       {reference === "service-classes" && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle>{t("serviceClassesTitle")}</CardTitle>
-              <CardDescription>{t("serviceClassesDesc")}</CardDescription>
-            </div>
-            {canManage && (
-              <Button size="sm" onClick={() => setIsAddScOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> {t("addServiceClass")}
-              </Button>
-            )}
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-md border overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 border-b text-left">
-                  <tr>
-                    <th className="p-3 font-medium">{t("columns.classCode")}</th>
-                    <th className="p-3 font-medium">{t("columns.description")}</th>
-                    <th className="p-3 font-medium">{t("columns.status")}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {(data?.serviceClasses ?? []).length === 0 ? (
-                    <tr>
-                      <td colSpan={3} className="p-4 text-center text-muted-foreground">
-                        {t("empty.serviceClasses")}
-                      </td>
-                    </tr>
-                  ) : (
-                    (data?.serviceClasses ?? []).map((sc) => (
-                      <tr key={sc.id}>
-                        <td className="p-3 font-mono font-medium">{sc.code}</td>
-                        <td className="p-3">{sc.description || "—"}</td>
-                        <td className="p-3">
-                          <ReferenceStatusBadge status={sc.status} />
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        <ReferencePane
+          title={t("serviceClassesTitle")}
+          description={t("serviceClassesDesc")}
+          count={data.serviceClasses.length}
+          actions={canManage ? (
+            <Button size="sm" onClick={() => setIsAddScOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> {t("addServiceClass")}
+            </Button>
+          ) : null}
+        >
+          <ReferenceTable
+            key={reference}
+            columns={serviceClassColumns(t)}
+            rows={data.serviceClasses}
+            rowId={(row) => row.id}
+            emptyTitle={t("empty.serviceClasses")}
+          />
+        </ReferencePane>
       )}
 
       {/* Weld Types View */}
       {reference === "weld-types" && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle>{t("weldTypesTitle")}</CardTitle>
-              <CardDescription>{t("weldTypesDesc")}</CardDescription>
-            </div>
-            {canManage && (
-              <Button size="sm" onClick={() => setIsAddWtOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> {t("addWeldType")}
-              </Button>
-            )}
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-md border overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 border-b text-left">
-                  <tr>
-                    <th className="p-3 font-medium">{t("columns.weldCode")}</th>
-                    <th className="p-3 font-medium">{t("columns.description")}</th>
-                    <th className="p-3 font-medium">{t("columns.countsInDiaInch")}</th>
-                    <th className="p-3 font-medium">{t("columns.status")}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {(data?.weldTypes ?? []).length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="p-4 text-center text-muted-foreground">
-                        {t("empty.weldTypes")}
-                      </td>
-                    </tr>
-                  ) : (
-                    (data?.weldTypes ?? []).map((wt) => (
-                      <tr key={wt.id}>
-                        <td className="p-3 font-mono font-medium">{wt.code}</td>
-                        <td className="p-3">{wt.description}</td>
-                        <td className="p-3">
-                          {wt.countsInDiaInch ? (
-                            <Badge variant="outline" className="text-success-fg border-success-border">{t("badges.yes")}</Badge>
-                          ) : (
-                            <Badge variant="secondary">{t("badges.no")}</Badge>
-                          )}
-                        </td>
-                        <td className="p-3">
-                          <ReferenceStatusBadge status={wt.status} />
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        <ReferencePane
+          title={t("weldTypesTitle")}
+          description={t("weldTypesDesc")}
+          count={data.weldTypes.length}
+          actions={canManage ? (
+            <Button size="sm" onClick={() => setIsAddWtOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> {t("addWeldType")}
+            </Button>
+          ) : null}
+        >
+          <ReferenceTable
+            key={reference}
+            columns={weldTypeColumns(t)}
+            rows={data.weldTypes}
+            rowId={(row) => row.id}
+            emptyTitle={t("empty.weldTypes")}
+          />
+        </ReferencePane>
       )}
 
       {/* Welders View */}
       {reference === "welders" && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle>{t("weldersTitle")}</CardTitle>
-              <CardDescription>{t("weldersDesc")}</CardDescription>
-            </div>
-            {canManage && (
-              <Button size="sm" onClick={() => setIsAddWelderOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> {t("addWelder")}
-              </Button>
-            )}
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-md border overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 border-b text-left">
-                  <tr>
-                    <th className="p-3 font-medium">{t("columns.welderStencil")}</th>
-                    <th className="p-3 font-medium">{t("columns.fullName")}</th>
-                    <th className="p-3 font-medium">{t("columns.subcontractor")}</th>
-                    <th className="p-3 font-medium">{t("columns.certificate")}</th>
-                    <th className="p-3 font-medium">{t("columns.expiresOn")}</th>
-                    <th className="p-3 font-medium">{t("columns.qualified")}</th>
-                    <th className="p-3 font-medium">{t("columns.status")}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {(data?.welderQualifications ?? []).length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="p-4 text-center text-muted-foreground">
-                        {t("empty.welders")}
-                      </td>
-                    </tr>
-                  ) : (
-                    (data?.welderQualifications ?? []).map((w) => (
-                      <tr key={w.id}>
-                        <td className="p-3 font-mono font-medium">{w.welderCode}</td>
-                        <td className="p-3">{w.fullName}</td>
-                        <td className="p-3 font-mono">{w.subcontractorCode || "—"}</td>
-                        <td className="p-3 font-mono">{w.certificateNumber || "—"}</td>
-                        <td className="p-3 font-mono">{w.expiresOn}</td>
-                        <td className="p-3">
-                          {w.isCurrentlyQualified ? (
-                            <Badge className="bg-success-bg text-success-fg border-success-border">{t("badges.valid")}</Badge>
-                          ) : (
-                            <Badge variant="destructive">{t("badges.expired")}</Badge>
-                          )}
-                        </td>
-                        <td className="p-3">
-                          <ReferenceStatusBadge status={w.status} />
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        <ReferencePane
+          title={t("weldersTitle")}
+          description={t("weldersDesc")}
+          count={data.welderQualifications.length}
+          actions={canManage ? (
+            <Button size="sm" onClick={() => setIsAddWelderOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> {t("addWelder")}
+            </Button>
+          ) : null}
+        >
+          <ReferenceTable
+            key={reference}
+            columns={welderColumns(t)}
+            rows={data.welderQualifications}
+            rowId={(row) => row.id}
+            emptyTitle={t("empty.welders")}
+          />
+        </ReferencePane>
       )}
 
       {/* WPS View */}
@@ -740,310 +772,143 @@ export function WeldingReferences({
 
       {/* NDE Matrix View */}
       {reference === "nde" && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <CardTitle>{t("ndeTitle")}</CardTitle>
-                {ndeCoverage.missingTuples.length > 0 ? (
-                  <Badge variant="outline" className="text-warning-fg border-warning-border text-xs">
-                    {t("tabs.ndeIncomplete", { count: ndeCoverage.missingTuples.length })}
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="text-success-fg border-success-border text-xs">
-                    {t("tabs.ndeComplete")}
-                  </Badge>
-                )}
-              </div>
-              <CardDescription>{t("ndeDesc")}</CardDescription>
+        <ReferencePane
+          title={t("ndeTitle")}
+          description={t("ndeDesc")}
+          count={data.ndeMatrixRules.length}
+          status={
+            ndeCoverage.missingTuples.length > 0 ? (
+              <Badge variant="outline" className="text-warning-fg border-warning-border text-xs">
+                {t("ndeCoverageIncomplete", { count: ndeCoverage.missingTuples.length })}
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-success-fg border-success-border text-xs">
+                {t("ndeCoverageComplete")}
+              </Badge>
+            )
+          }
+          actions={canManage ? (
+            <Button size="sm" onClick={() => setIsAddNdeOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> {t("addNdeRule")}
+            </Button>
+          ) : null}
+        >
+          {ndeCoverage.missingTuples.length > 0 && (
+            <div className="bg-warning-bg text-warning-fg border-warning-border flex items-center gap-2 rounded-md border p-3 text-sm">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <span>
+                {t("missingNdeCoverage", { count: ndeCoverage.missingTuples.length })}
+              </span>
             </div>
-            {canManage && (
-              <Button size="sm" onClick={() => setIsAddNdeOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> {t("addNdeRule")}
-              </Button>
-            )}
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {ndeCoverage.missingTuples.length > 0 && (
-              <div className="bg-warning-bg text-warning-fg border-warning-border flex items-center gap-2 rounded-md border p-3 text-sm">
-                <AlertTriangle className="h-4 w-4 shrink-0" />
-                <span>
-                  {t("missingNdeCoverage", { count: ndeCoverage.missingTuples.length })}
-                </span>
-              </div>
-            )}
-            <div className="rounded-md border overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 border-b text-left">
-                  <tr>
-                    <th className="p-3 font-medium">{t("columns.serviceClass")}</th>
-                    <th className="p-3 font-medium">{t("columns.weldType")}</th>
-                    <th className="p-3 font-medium">{t("columns.location")}</th>
-                    <th className="p-3 font-medium">{t("columns.rtCoverage")}</th>
-                    <th className="p-3 font-medium">{t("columns.utCoverage")}</th>
-                    <th className="p-3 font-medium">{t("columns.mtCoverage")}</th>
-                    <th className="p-3 font-medium">{t("columns.ptCoverage")}</th>
-                    <th className="p-3 font-medium">{t("columns.pmiCoverage")}</th>
-                    <th className="p-3 font-medium">{t("columns.pwhtReq")}</th>
-                    <th className="p-3 font-medium">{t("columns.status")}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {(data?.ndeMatrixRules ?? []).length === 0 ? (
-                    <tr>
-                      <td colSpan={10} className="p-4 text-center text-muted-foreground">
-                        {t("empty.nde")}
-                      </td>
-                    </tr>
-                  ) : (
-                    (data?.ndeMatrixRules ?? []).map((nde) => (
-                      <tr key={nde.id}>
-                        <td className="p-3 font-mono font-medium">{nde.serviceClassCode || "—"}</td>
-                        <td className="p-3 font-mono">{nde.weldTypeCode || "—"}</td>
-                        <td className="p-3 capitalize">{nde.weldLocation === "shop" ? t("dialogs.locationShop") : nde.weldLocation === "field" ? t("dialogs.locationField") : nde.weldLocation}</td>
-                        <td className="p-3 font-mono">{nde.rtCoverage}%</td>
-                        <td className="p-3 font-mono">{nde.utCoverage}%</td>
-                        <td className="p-3 font-mono">{nde.mtCoverage}%</td>
-                        <td className="p-3 font-mono">{nde.ptCoverage}%</td>
-                        <td className="p-3 font-mono">{nde.pmiCoverage}%</td>
-                        <td className="p-3 font-mono">
-                          {nde.pwhtRequired
-                            ? nde.pwhtThicknessThreshold
-                              ? t("badges.greaterMm", { threshold: nde.pwhtThicknessThreshold })
-                              : t("badges.always")
-                            : t("badges.no")}
-                        </td>
-                        <td className="p-3">
-                          <ReferenceStatusBadge status={nde.status} />
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+          )}
+          <ReferenceTable
+            key={reference}
+            columns={ndeMatrixColumns(t)}
+            rows={data.ndeMatrixRules}
+            rowId={(row) => row.id}
+            emptyTitle={t("empty.nde")}
+          />
+        </ReferencePane>
       )}
 
       {/* Thickness / Flange Rules View */}
       {reference === "thickness" && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle>{t("thicknessTitle")}</CardTitle>
-              <CardDescription>{t("thicknessDesc")}</CardDescription>
-            </div>
-            {canManage && (
-              <Button size="sm" onClick={() => setIsAddThickOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> {t("addThicknessRule")}
-              </Button>
-            )}
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-md border overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 border-b text-left">
-                  <tr>
-                    <th className="p-3 font-medium">{t("columns.serviceClass")}</th>
-                    <th className="p-3 font-medium">{t("columns.diameterIn")}</th>
-                    <th className="p-3 font-medium">{t("columns.thicknessMm")}</th>
-                    <th className="p-3 font-medium">{t("columns.flangeRating")}</th>
-                    <th className="p-3 font-medium">{t("columns.status")}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {(data?.thicknessFlangeRules ?? []).length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="p-4 text-center text-muted-foreground">
-                        {t("empty.thickness")}
-                      </td>
-                    </tr>
-                  ) : (
-                    (data?.thicknessFlangeRules ?? []).map((rule) => (
-                      <tr key={rule.id}>
-                        <td className="p-3 font-mono font-medium">{rule.serviceClassCode || "—"}</td>
-                        <td className="p-3 font-mono">{rule.diameterInch}&quot;</td>
-                        <td className="p-3 font-mono">{rule.thicknessMm} mm</td>
-                        <td className="p-3 font-mono">{rule.flangeRating}</td>
-                        <td className="p-3">
-                          <ReferenceStatusBadge status={rule.status} />
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        <ReferencePane
+          title={t("thicknessTitle")}
+          description={t("thicknessDesc")}
+          count={data.thicknessFlangeRules.length}
+          actions={canManage ? (
+            <Button size="sm" onClick={() => setIsAddThickOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> {t("addThicknessRule")}
+            </Button>
+          ) : null}
+        >
+          <ReferenceTable
+            key={reference}
+            columns={thicknessFlangeColumns(t)}
+            rows={data.thicknessFlangeRules}
+            rowId={(row) => row.id}
+            emptyTitle={t("empty.thickness")}
+          />
+        </ReferencePane>
       )}
 
       {/* PML Records View */}
       {reference === "pml" && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle>{t("pmlTitle")}</CardTitle>
-              <CardDescription>{t("pmlDesc")}</CardDescription>
-            </div>
-            {canManage && (
-              <Button size="sm" onClick={() => setIsAddPmlOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> {t("addPmlRecord")}
-              </Button>
-            )}
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {identFilter && (
-              <div className="flex items-center justify-between rounded-md border border-sky-200 bg-sky-50 dark:border-sky-900 dark:bg-sky-950/50 p-3 text-sm text-sky-900 dark:text-sky-200">
-                <div className="flex items-center gap-2">
-                  <span>
-                    {t("filterByIdent")} <span className="font-mono font-semibold">{identFilter}</span>
-                  </span>
-                </div>
-                <Button size="sm" variant="outline" onClick={handleClearIdentFilter}>
-                  {t("clearFilter")}
-                </Button>
+        <ReferencePane
+          title={t("pmlTitle")}
+          description={t("pmlDesc")}
+          count={data.pipingMaterialRecords.length}
+          actions={canManage ? (
+            <Button size="sm" onClick={() => setIsAddPmlOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> {t("addPmlRecord")}
+            </Button>
+          ) : null}
+        >
+          {identFilter && (
+            <div className="flex items-center justify-between rounded-md border border-sky-200 bg-sky-50 dark:border-sky-900 dark:bg-sky-950/50 p-3 text-sm text-sky-900 dark:text-sky-200">
+              <div className="flex items-center gap-2">
+                <span>
+                  {t("filterByIdent")} <span className="font-mono font-semibold">{identFilter}</span>
+                </span>
               </div>
-            )}
-            <div className="rounded-md border overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 border-b text-left">
-                  <tr>
-                    <th className="p-3 font-medium">{t("columns.mrrNumber")}</th>
-                    <th className="p-3 font-medium">{t("columns.identCode")}</th>
-                    <th className="p-3 font-medium">{t("columns.traceHeatNumber")}</th>
-                    <th className="p-3 font-medium">{t("columns.status")}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {(data?.pipingMaterialRecords ?? []).length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="p-4 text-center text-muted-foreground">
-                        {identFilter
-                          ? t("empty.pmlMatching", { ident: identFilter })
-                          : t("empty.pml")}
-                      </td>
-                    </tr>
-                  ) : (
-                    (data?.pipingMaterialRecords ?? []).map((pml) => (
-                      <tr key={pml.id}>
-                        <td className="p-3 font-mono font-medium">{pml.mrrNumber}</td>
-                        <td className="p-3 font-mono">{pml.identCode}</td>
-                        <td className="p-3 font-mono">{pml.traceNumber}</td>
-                        <td className="p-3">
-                          <ReferenceStatusBadge status={pml.status} />
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+              <Button size="sm" variant="outline" onClick={handleClearIdentFilter}>
+                {t("clearFilter")}
+              </Button>
             </div>
-          </CardContent>
-        </Card>
+          )}
+          <ReferenceTable
+            key={reference}
+            columns={pipingMaterialColumns(t)}
+            rows={data.pipingMaterialRecords}
+            rowId={(row) => row.id}
+            emptyTitle={identFilter ? t("empty.pmlMatching", { ident: identFilter }) : t("empty.pml")}
+          />
+        </ReferencePane>
       )}
 
       {/* Rework Codes View */}
       {reference === "rework" && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle>{t("reworkTitle")}</CardTitle>
-              <CardDescription>{t("reworkDesc")}</CardDescription>
-            </div>
-            {canManage && (
-              <Button size="sm" onClick={() => setIsAddReworkOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> {t("addDefectCode")}
-              </Button>
-            )}
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-md border overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 border-b text-left">
-                  <tr>
-                    <th className="p-3 font-medium">{t("columns.code")}</th>
-                    <th className="p-3 font-medium">{t("columns.description")}</th>
-                    <th className="p-3 font-medium">{t("columns.status")}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {(data?.reworkCodes ?? []).length === 0 ? (
-                    <tr>
-                      <td colSpan={3} className="p-4 text-center text-muted-foreground">
-                        {t("empty.rework")}
-                      </td>
-                    </tr>
-                  ) : (
-                    (data?.reworkCodes ?? []).map((rw) => (
-                      <tr key={rw.id}>
-                        <td className="p-3 font-mono font-medium">{rw.code}</td>
-                        <td className="p-3">{rw.description}</td>
-                        <td className="p-3">
-                          <ReferenceStatusBadge status={rw.status} />
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        <ReferencePane
+          title={t("reworkTitle")}
+          description={t("reworkDesc")}
+          count={data.reworkCodes.length}
+          actions={canManage ? (
+            <Button size="sm" onClick={() => setIsAddReworkOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> {t("addDefectCode")}
+            </Button>
+          ) : null}
+        >
+          <ReferenceTable
+            key={reference}
+            columns={reworkCodeColumns(t)}
+            rows={data.reworkCodes}
+            rowId={(row) => row.id}
+            emptyTitle={t("empty.rework")}
+          />
+        </ReferencePane>
       )}
 
       {/* Joint Categories View */}
       {reference === "joint-categories" && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <div>
-              <CardTitle>{t("jointCategoriesTitle")}</CardTitle>
-              <CardDescription>{t("jointCategoriesDesc")}</CardDescription>
-            </div>
-            {canManage && (
-              <Button size="sm" onClick={() => setIsAddJointCategoryOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> {t("addJointCategory")}
-              </Button>
-            )}
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-md border overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 border-b text-left">
-                  <tr>
-                    <th className="p-3 font-medium">{t("columns.jointDefinition")}</th>
-                    <th className="p-3 font-medium">{t("columns.timing")}</th>
-                    <th className="p-3 font-medium">{t("columns.categoryCode")}</th>
-                    <th className="p-3 font-medium">{t("columns.reason")}</th>
-                    <th className="p-3 font-medium">{t("columns.status")}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {(data?.jointCategories ?? []).length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="p-4 text-center text-muted-foreground">
-                        {t("empty.jointCategories")}
-                      </td>
-                    </tr>
-                  ) : (
-                    (data?.jointCategories ?? []).map((jc) => (
-                      <tr key={jc.id}>
-                        <td className="p-3 font-medium">{jc.jointDefinition}</td>
-                        <td className="p-3 text-muted-foreground">{jc.timing}</td>
-                        <td className="p-3 font-mono">{jc.categoryCode}</td>
-                        <td className="p-3">{jc.reason}</td>
-                        <td className="p-3">
-                          <ReferenceStatusBadge status={jc.status} />
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        <ReferencePane
+          title={t("jointCategoriesTitle")}
+          description={t("jointCategoriesDesc")}
+          count={data.jointCategories.length}
+          actions={canManage ? (
+            <Button size="sm" onClick={() => setIsAddJointCategoryOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> {t("addJointCategory")}
+            </Button>
+          ) : null}
+        >
+          <ReferenceTable
+            key={reference}
+            columns={jointCategoryColumns(t)}
+            rows={data.jointCategories}
+            rowId={(row) => row.id}
+            emptyTitle={t("empty.jointCategories")}
+          />
+        </ReferencePane>
       )}
 
       {/* Add Service Class Dialog */}
@@ -1722,6 +1587,6 @@ export function WeldingReferences({
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   )
 }
