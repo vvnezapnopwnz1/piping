@@ -520,6 +520,20 @@
     "pressureUnitDesc": "Project-scoped pressure unit. One per project.",
     "activeForProject": "Active for this project",
     "noPressureUnit": "No pressure unit selected.",
+    "columns": {
+      "code": "Code",
+      "description": "Description",
+      "status": "Status",
+      "teamType": "Team type",
+      "system": "System",
+      "activity": "Activity",
+      "projectUt": "Project UT",
+      "standardReference": "Standard reference",
+      "category": "Category",
+      "progressColumns": "Progress columns",
+      "capacity": "Capacity",
+      "actions": "Actions"
+    },
     "dialogs": {
       "addLocationCategoryTitle": "Add Location Category",
       "addLocationCategoryDesc": "Create a project-scoped tracking location category.",

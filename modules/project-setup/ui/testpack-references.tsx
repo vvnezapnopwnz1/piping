@@ -3,19 +3,13 @@
 import { useTranslations } from "next-intl"
 import { formatFieldErrors } from "./setup-field-issue"
 
-import { useCallback, useEffect, useRef, useState } from "react"
-import { AlertCircle, Plus, RefreshCw, Search } from "lucide-react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { AlertCircle, Plus, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { type DataColumn } from "@/components/ui/data-table"
 import {
   Dialog,
   DialogContent,
@@ -51,10 +45,173 @@ import {
   validateLocationInput,
   validateLocationCapacity,
   type ProjectTeamType,
+  type ProjectTeam,
+  type ProjectSystem,
+  type ProjectSubsystem,
+  type LineService,
+  type LocationCategory,
+  type Location,
+  type UnitTimeReference,
+  type PunchCode,
 } from "../domain/execution-reference"
 import { validateReferenceIdentity } from "../domain/reference"
 import { ReferenceStatusBadge } from "./reference-status-badge"
 import { type ReferenceKeyOf } from "./reference-catalog"
+import { ReferencePane, ReferenceTable } from "./reference-pane"
+
+type ExecutionT = ReturnType<typeof useTranslations<"projectSetup.executionReference">>
+type CodesT = ReturnType<typeof useTranslations<"codes">>
+
+function teamColumns(t: ExecutionT, tc: CodesT): ReadonlyArray<DataColumn<ProjectTeam>> {
+  return [
+    { id: "code", header: t("columns.code"), value: (row) => row.code, searchable: true, alwaysVisible: true, className: "font-mono font-medium" },
+    { id: "description", header: t("columns.description"), value: (row) => row.description, searchable: true },
+    {
+      id: "teamType",
+      header: t("columns.teamType"),
+      value: (row) => tc(`teamType.${row.teamType}`),
+      searchable: true,
+      cell: (row) => (
+        <Badge variant="outline" className="text-xs">
+          {tc(`teamType.${row.teamType}`)}
+        </Badge>
+      ),
+    },
+    { id: "status", header: t("columns.status"), value: (row) => row.status, cell: (row) => <ReferenceStatusBadge status={row.status} /> },
+  ]
+}
+
+function punchCodeColumns(
+  t: ExecutionT,
+  canManage: boolean,
+  handleDeactivatePunchCode: (id: string) => void,
+): ReadonlyArray<DataColumn<PunchCode>> {
+  const columns: DataColumn<PunchCode>[] = [
+    { id: "code", header: t("columns.code"), value: (row) => row.code, searchable: true, alwaysVisible: true, className: "font-mono font-medium" },
+    { id: "description", header: t("columns.description"), value: (row) => row.description, searchable: true },
+    { id: "status", header: t("columns.status"), value: (row) => row.status, cell: (row) => <ReferenceStatusBadge status={row.status} /> },
+  ]
+  if (canManage) {
+    columns.push({
+      id: "actions",
+      header: t("columns.actions"),
+      sortable: false,
+      value: () => "",
+      cell: (row) =>
+        row.status === "active" ? (
+          <Button variant="outline" size="sm" onClick={() => void handleDeactivatePunchCode(row.id)}>
+            {t("deactivate")}
+          </Button>
+        ) : null,
+    })
+  }
+  return columns
+}
+
+function systemColumns(t: ExecutionT): ReadonlyArray<DataColumn<ProjectSystem>> {
+  return [
+    { id: "code", header: t("columns.code"), value: (row) => row.code, searchable: true, alwaysVisible: true, className: "font-mono font-medium" },
+    { id: "description", header: t("columns.description"), value: (row) => row.description, searchable: true },
+    { id: "status", header: t("columns.status"), value: (row) => row.status, cell: (row) => <ReferenceStatusBadge status={row.status} /> },
+  ]
+}
+
+function subsystemColumns(t: ExecutionT): ReadonlyArray<DataColumn<ProjectSubsystem>> {
+  return [
+    { id: "code", header: t("columns.code"), value: (row) => row.code, searchable: true, alwaysVisible: true, className: "font-mono font-medium" },
+    { id: "description", header: t("columns.description"), value: (row) => row.description, searchable: true },
+    {
+      id: "system",
+      header: t("columns.system"),
+      value: (row) => row.systemCode ?? "",
+      searchable: true,
+      cell: (row) => (row.systemCode ? <Badge variant="secondary">{row.systemCode}</Badge> : "—"),
+    },
+    { id: "status", header: t("columns.status"), value: (row) => row.status, cell: (row) => <ReferenceStatusBadge status={row.status} /> },
+  ]
+}
+
+function lineServiceColumns(t: ExecutionT): ReadonlyArray<DataColumn<LineService>> {
+  return [
+    { id: "code", header: t("columns.code"), value: (row) => row.code, searchable: true, alwaysVisible: true, className: "font-mono font-medium" },
+    { id: "description", header: t("columns.description"), value: (row) => row.description, searchable: true },
+    { id: "status", header: t("columns.status"), value: (row) => row.status, cell: (row) => <ReferenceStatusBadge status={row.status} /> },
+  ]
+}
+
+function unitTimeColumns(t: ExecutionT): ReadonlyArray<DataColumn<UnitTimeReference>> {
+  return [
+    { id: "activity", header: t("columns.activity"), value: (row) => row.activity, searchable: true, alwaysVisible: true, className: "font-mono font-medium" },
+    { id: "projectUt", header: t("columns.projectUt"), value: (row) => row.projectUt, numeric: true },
+    { id: "standardReference", header: t("columns.standardReference"), value: (row) => row.standardReference, searchable: true, cell: (row) => row.standardReference || "—", className: "text-muted-foreground" },
+    { id: "status", header: t("columns.status"), value: (row) => row.status, cell: (row) => <ReferenceStatusBadge status={row.status} /> },
+  ]
+}
+
+function locationCategoryColumns(t: ExecutionT): ReadonlyArray<DataColumn<LocationCategory>> {
+  return [
+    { id: "code", header: t("columns.code"), value: (row) => row.code, searchable: true, alwaysVisible: true, className: "font-mono font-medium" },
+    { id: "description", header: t("columns.description"), value: (row) => row.description, searchable: true },
+    { id: "status", header: t("columns.status"), value: (row) => row.status, cell: (row) => <ReferenceStatusBadge status={row.status} /> },
+  ]
+}
+
+function locationColumns(
+  t: ExecutionT,
+  canManage: boolean,
+  onEditCapacity: (loc: Location) => void,
+): ReadonlyArray<DataColumn<Location>> {
+  const columns: DataColumn<Location>[] = [
+    { id: "code", header: t("columns.code"), value: (row) => row.code, searchable: true, alwaysVisible: true, className: "font-mono font-medium" },
+    { id: "description", header: t("columns.description"), value: (row) => row.description, searchable: true },
+    {
+      id: "category",
+      header: t("columns.category"),
+      value: (row) => row.categoryCode ?? "",
+      searchable: true,
+      cell: (row) => (row.categoryCode ? <Badge variant="secondary">{row.categoryCode}</Badge> : "—"),
+    },
+    {
+      id: "progressColumns",
+      header: t("columns.progressColumns"),
+      value: (row) => row.mappedProgressColumns.join(", "),
+      searchable: true,
+      cell: (row) =>
+        row.mappedProgressColumns.length > 0 ? (
+          <Badge variant="outline" className="text-xs">
+            {row.mappedProgressColumns.join(", ")}
+          </Badge>
+        ) : (
+          "—"
+        ),
+    },
+    {
+      id: "capacity",
+      header: t("columns.capacity"),
+      value: (row) => row.capacity ?? t("notConfigured"),
+      cell: (row) => (
+        <Badge variant={row.capacity === null ? "outline" : "secondary"}>
+          {row.capacity ?? t("notConfigured")}
+        </Badge>
+      ),
+    },
+    { id: "status", header: t("columns.status"), value: (row) => row.status, cell: (row) => <ReferenceStatusBadge status={row.status} /> },
+  ]
+  if (canManage) {
+    columns.push({
+      id: "actions",
+      header: t("columns.actions"),
+      sortable: false,
+      value: () => "",
+      cell: (row) => (
+        <Button size="sm" variant="outline" onClick={() => onEditCapacity(row)}>
+          {t("editCapacity")}
+        </Button>
+      ),
+    })
+  }
+  return columns
+}
 
 const TEAM_TYPES: readonly ProjectTeamType[] = ["line_check", "blinding", "finishing", "reinstatement", "jointer"]
 
@@ -135,9 +292,6 @@ export function TestpackReferences({
   const [capacityLocationId, setCapacityLocationId] = useState<string | null>(null)
   const [capacityValue, setCapacityValue] = useState("")
   const [isSubmittingLocation, setIsSubmittingLocation] = useState(false)
-
-  // Search
-  const [teamSearch, setTeamSearch] = useState("")
 
   const fetchAll = useCallback(async () => {
     const version = ++requestVersionRef.current
@@ -384,7 +538,7 @@ export function TestpackReferences({
     }
   }
 
-  const handleDeactivatePunchCode = async (id: string) => {
+  const handleDeactivatePunchCode = useCallback(async (id: string) => {
     try {
       await setPunchCodeStatus(getSupabaseBrowserClient(), projectId, id, "inactive")
       setData((prev) => prev ? {
@@ -395,369 +549,267 @@ export function TestpackReferences({
     } catch (err: any) {
       toast.error(err.message || t("punchCodeDeactivateFailed"))
     }
-  }
+  }, [projectId, t])
+
+  const teamsCols = useMemo(() => teamColumns(t, tc), [t, tc])
+  const punchCodesCols = useMemo(
+    () => punchCodeColumns(t, canManage, (id) => void handleDeactivatePunchCode(id)),
+    [t, canManage, handleDeactivatePunchCode],
+  )
+  const systemsCols = useMemo(() => systemColumns(t), [t])
+  const subsystemsCols = useMemo(() => subsystemColumns(t), [t])
+  const lineServicesCols = useMemo(() => lineServiceColumns(t), [t])
+  const unitTimeCols = useMemo(() => unitTimeColumns(t), [t])
+  const locationCategoriesCols = useMemo(() => locationCategoryColumns(t), [t])
+  const locationsCols = useMemo(
+    () =>
+      locationColumns(t, canManage, (loc) => {
+        setCapacityLocationId(loc.id)
+        setCapacityValue(loc.capacity?.toString() ?? "")
+      }),
+    [t, canManage],
+  )
 
   if (loading) return <Skeleton className="h-64 w-full" />
-  if (error || !data) {
+  if (error) {
     return (
-      <Card className="border-destructive/50 bg-destructive/5">
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-3 text-destructive">
-            <AlertCircle className="h-5 w-5" />
-            <p className="font-medium">{error || t("dataUnavailable")}</p>
-          </div>
-          <Button variant="outline" className="mt-4" onClick={fetchAll}>
-            <RefreshCw className="mr-2 h-4 w-4" /> {t("retry")}
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-6">
+        <div className="flex items-center gap-3 text-destructive">
+          <AlertCircle className="h-5 w-5" />
+          <p className="font-medium">{error}</p>
+        </div>
+        <Button variant="outline" className="mt-4" onClick={fetchAll}>
+          <RefreshCw className="mr-2 h-4 w-4" /> {t("retry")}
+        </Button>
+      </div>
     )
   }
+  if (!data) return null
 
   const activeSystems = data.systems.filter((s) => s.status === "active")
-  const filteredTeams = data.teams.filter((t) =>
-    !teamSearch || t.code.toLowerCase().includes(teamSearch.toLowerCase()) || t.description.toLowerCase().includes(teamSearch.toLowerCase())
-  )
 
   return (
     <>
       {/* ─── Teams ─── */}
       {reference === "teams" && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>{t("teamsTitle")}</CardTitle>
-                <CardDescription>{t("teamsDesc")}</CardDescription>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="ghost" size="icon" onClick={fetchAll}>
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
-                {canManage && (
-                  <Button size="sm" onClick={() => setIsAddTeamOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" /> {t("addTeam")}
-                  </Button>
-                )}
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="mb-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder={t("filterTeams")}
-                  value={teamSearch}
-                  onChange={(e) => setTeamSearch(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            {filteredTeams.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-6 text-center">{t("noTeams")}</p>
-            ) : (
-              <div className="space-y-2">
-                {filteredTeams.map((team) => (
-                  <div
-                    key={team.id}
-                    className="flex items-center justify-between rounded-md border p-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <code className="text-xs font-mono bg-muted px-2 py-1 rounded">{team.code}</code>
-                      <span className="text-sm">{team.description}</span>
-                      <Badge variant="outline" className="text-xs">
-                        {tc(`teamType.${team.teamType}`)}
-                      </Badge>
-                    </div>
-                    <ReferenceStatusBadge status={team.status} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <ReferencePane
+          title={t("teamsTitle")}
+          description={t("teamsDesc")}
+          count={data.teams.length}
+          actions={
+            canManage ? (
+              <Button size="sm" onClick={() => setIsAddTeamOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> {t("addTeam")}
+              </Button>
+            ) : null
+          }
+        >
+          <ReferenceTable
+            key={reference}
+            columns={teamsCols}
+            rows={data.teams}
+            rowId={(row) => row.id}
+            emptyTitle={t("noTeams")}
+          />
+        </ReferencePane>
       )}
 
       {/* ─── Punch codes ─── */}
       {reference === "punch-codes" && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <div>
-              <CardTitle>{t("punchCodesTitle")}</CardTitle>
-              <CardDescription>{t("punchCodesDesc")}</CardDescription>
-            </div>
-            {canManage && (
+        <ReferencePane
+          title={t("punchCodesTitle")}
+          description={t("punchCodesDesc")}
+          count={data.punchCodes.length}
+          actions={
+            canManage ? (
               <Button size="sm" onClick={() => setIsAddPunchCodeOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" /> {t("addPunchCode")}
               </Button>
-            )}
-          </CardHeader>
-          <CardContent>
-            {data.punchCodes.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-4 text-center">{t("noPunchCodes")}</p>
-            ) : (
-              <div className="space-y-2">
-                {data.punchCodes.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between rounded-md border p-3">
-                    <div className="flex items-center gap-3">
-                      <code className="text-xs font-mono bg-muted px-2 py-1 rounded">{item.code}</code>
-                      <span className="text-sm">{item.description}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <ReferenceStatusBadge status={item.status} />
-                      {canManage && item.status === "active" && (
-                        <Button variant="outline" size="sm" onClick={() => void handleDeactivatePunchCode(item.id)}>
-                          {t("deactivate")}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            ) : null
+          }
+        >
+          <ReferenceTable
+            key={reference}
+            columns={punchCodesCols}
+            rows={data.punchCodes}
+            rowId={(row) => row.id}
+            emptyTitle={t("noPunchCodes")}
+          />
+        </ReferencePane>
       )}
 
       {/* ─── Systems ─── */}
       {reference === "systems" && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>{t("systemsTitle")}</CardTitle>
-                <CardDescription>{t("systemsDesc")}</CardDescription>
-              </div>
-              {canManage && (
-                <Button size="sm" onClick={() => setIsAddSystemOpen(true)}>
-                  <Plus className="mr-2 h-4 w-4" /> {t("addSystem")}
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {data.systems.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-4 text-center">{t("noSystems")}</p>
-            ) : (
-              <div className="space-y-2">
-                {data.systems.map((sys) => (
-                  <div key={sys.id} className="flex items-center justify-between rounded-md border p-3">
-                    <div className="flex items-center gap-3">
-                      <code className="text-xs font-mono bg-muted px-2 py-1 rounded">{sys.code}</code>
-                      <span className="text-sm">{sys.description}</span>
-                    </div>
-                    <ReferenceStatusBadge status={sys.status} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <ReferencePane
+          title={t("systemsTitle")}
+          description={t("systemsDesc")}
+          count={data.systems.length}
+          actions={
+            canManage ? (
+              <Button size="sm" onClick={() => setIsAddSystemOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> {t("addSystem")}
+              </Button>
+            ) : null
+          }
+        >
+          <ReferenceTable
+            key={reference}
+            columns={systemsCols}
+            rows={data.systems}
+            rowId={(row) => row.id}
+            emptyTitle={t("noSystems")}
+          />
+        </ReferencePane>
       )}
 
       {/* ─── Subsystems ─── */}
       {reference === "subsystems" && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>{t("subsystemsTitle")}</CardTitle>
-                <CardDescription>{t("subsystemsDesc")}</CardDescription>
-              </div>
-              {canManage && (
-                <Button
-                  size="sm"
-                  disabled={activeSystems.length === 0}
-                  onClick={() => {
-                    setSubSystemId(activeSystems[0]?.id ?? "")
-                    setIsAddSubsystemOpen(true)
-                  }}
-                >
-                  <Plus className="mr-2 h-4 w-4" /> {t("addSubsystem")}
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {data.subsystems.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-4 text-center">{t("noSubsystems")}</p>
-            ) : (
-              <div className="space-y-2">
-                {data.subsystems.map((sub) => (
-                  <div key={sub.id} className="flex items-center justify-between rounded-md border p-3">
-                    <div className="flex items-center gap-3">
-                      <code className="text-xs font-mono bg-muted px-2 py-1 rounded">{sub.code}</code>
-                      <span className="text-sm">{sub.description}</span>
-                      {sub.systemCode && <Badge variant="secondary">{sub.systemCode}</Badge>}
-                    </div>
-                    <ReferenceStatusBadge status={sub.status} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <ReferencePane
+          title={t("subsystemsTitle")}
+          description={t("subsystemsDesc")}
+          count={data.subsystems.length}
+          actions={
+            canManage ? (
+              <Button
+                size="sm"
+                disabled={activeSystems.length === 0}
+                onClick={() => {
+                  setSubSystemId(activeSystems[0]?.id ?? "")
+                  setIsAddSubsystemOpen(true)
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" /> {t("addSubsystem")}
+              </Button>
+            ) : null
+          }
+        >
+          <ReferenceTable
+            key={reference}
+            columns={subsystemsCols}
+            rows={data.subsystems}
+            rowId={(row) => row.id}
+            emptyTitle={t("noSubsystems")}
+          />
+        </ReferencePane>
       )}
 
       {/* ─── Line Services ─── */}
       {reference === "line-services" && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>{t("lineServicesTitle")}</CardTitle>
-                <CardDescription>{t("lineServicesDesc")}</CardDescription>
-              </div>
-              {canManage && (
-                <Button size="sm" onClick={() => setIsAddLineServiceOpen(true)}>
-                  <Plus className="mr-2 h-4 w-4" /> {t("addLineService")}
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {data.lineServices.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-4 text-center">{t("noLineServices")}</p>
-            ) : (
-              <div className="space-y-2">
-                {data.lineServices.map((ls) => (
-                  <div key={ls.id} className="flex items-center justify-between rounded-md border p-3">
-                    <div className="flex items-center gap-3">
-                      <code className="text-xs font-mono bg-muted px-2 py-1 rounded">{ls.code}</code>
-                      <span className="text-sm">{ls.description}</span>
-                    </div>
-                    <ReferenceStatusBadge status={ls.status} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <ReferencePane
+          title={t("lineServicesTitle")}
+          description={t("lineServicesDesc")}
+          count={data.lineServices.length}
+          actions={
+            canManage ? (
+              <Button size="sm" onClick={() => setIsAddLineServiceOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> {t("addLineService")}
+              </Button>
+            ) : null
+          }
+        >
+          <ReferenceTable
+            key={reference}
+            columns={lineServicesCols}
+            rows={data.lineServices}
+            rowId={(row) => row.id}
+            emptyTitle={t("noLineServices")}
+          />
+        </ReferencePane>
       )}
 
       {/* ─── Unit of Time References ─── */}
       {reference === "unit-time" && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <div>
-              <CardTitle>{t("unitTimeTitle")}</CardTitle>
-              <CardDescription>{t("unitTimeDesc")}</CardDescription>
-            </div>
-            {canManage && (
+        <ReferencePane
+          title={t("unitTimeTitle")}
+          description={t("unitTimeDesc")}
+          count={data.unitTimeReferences.length}
+          actions={
+            canManage ? (
               <Button size="sm" onClick={() => setIsAddUnitTimeOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" /> {t("addFlangeUnitTime")}
               </Button>
-            )}
-          </CardHeader>
-          <CardContent>
-            {data.unitTimeReferences.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-4 text-center">{t("noUnitTime")}</p>
-            ) : (
-              <div className="space-y-2">
-                {data.unitTimeReferences.map((ut) => (
-                  <div key={ut.id} className="flex items-center justify-between rounded-md border p-3">
-                    <div className="flex items-center gap-3">
-                      <code className="text-xs font-mono bg-muted px-2 py-1 rounded">{ut.activity}</code>
-                      <span className="text-sm">UT: {ut.projectUt}</span>
-                      <span className="text-xs text-muted-foreground">{ut.standardReference}</span>
-                    </div>
-                    <ReferenceStatusBadge status={ut.status} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            ) : null
+          }
+        >
+          <ReferenceTable
+            key={reference}
+            columns={unitTimeCols}
+            rows={data.unitTimeReferences}
+            rowId={(row) => row.id}
+            emptyTitle={t("noUnitTime")}
+          />
+        </ReferencePane>
       )}
 
       {/* ─── Tracking: Location Categories & Locations ─── */}
       {reference === "location-categories" && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between gap-3">
-              <div><CardTitle>{t("locationCategoriesTitle")}</CardTitle><CardDescription>{t("locationCategoriesDesc")}</CardDescription></div>
-              {canManage && <Button size="sm" onClick={() => setIsAddLocationCategoryOpen(true)}><Plus className="mr-2 h-4 w-4" /> {t("addCategory")}</Button>}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {data.locationCategories.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-4 text-center">{t("noLocationCategories")}</p>
-            ) : (
-              <div className="space-y-2">
-                {data.locationCategories.map((cat) => (
-                  <div key={cat.id} className="flex items-center justify-between rounded-md border p-3">
-                    <div className="flex items-center gap-3">
-                      <code className="text-xs font-mono bg-muted px-2 py-1 rounded">{cat.code}</code>
-                      <span className="text-sm">{cat.description}</span>
-                    </div>
-                    <ReferenceStatusBadge status={cat.status} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <ReferencePane
+          title={t("locationCategoriesTitle")}
+          description={t("locationCategoriesDesc")}
+          count={data.locationCategories.length}
+          actions={
+            canManage ? (
+              <Button size="sm" onClick={() => setIsAddLocationCategoryOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> {t("addCategory")}
+              </Button>
+            ) : null
+          }
+        >
+          <ReferenceTable
+            key={reference}
+            columns={locationCategoriesCols}
+            rows={data.locationCategories}
+            rowId={(row) => row.id}
+            emptyTitle={t("noLocationCategories")}
+          />
+        </ReferencePane>
       )}
 
       {reference === "locations" && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between gap-3">
-              <div><CardTitle>{t("locationsTitle")}</CardTitle><CardDescription>{t("locationsDesc")}</CardDescription></div>
-              {canManage && <Button size="sm" onClick={() => { setLocationCategoryId(data.locationCategories[0]?.id ?? ""); setIsAddLocationOpen(true) }} disabled={data.locationCategories.length === 0}><Plus className="mr-2 h-4 w-4" /> {t("addLocation")}</Button>}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {data.locations.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-4 text-center">{t("noLocations")}</p>
-            ) : (
-              <div className="space-y-2">
-                {data.locations.map((loc) => (
-                  <div key={loc.id} className="flex items-center justify-between rounded-md border p-3">
-                    <div className="flex items-center gap-3">
-                      <code className="text-xs font-mono bg-muted px-2 py-1 rounded">{loc.code}</code>
-                      <span className="text-sm">{loc.description}</span>
-                      {loc.categoryCode && <Badge variant="secondary">{loc.categoryCode}</Badge>}
-                      {loc.mappedProgressColumns.length > 0 && (
-                        <Badge variant="outline" className="text-xs">
-                          {loc.mappedProgressColumns.join(", ")}
-                        </Badge>
-                      )}
-                      <Badge variant={loc.capacity === null ? "outline" : "secondary"}>
-                        {t("capacityLabel")} {loc.capacity ?? t("notConfigured")}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {canManage && <Button size="sm" variant="outline" onClick={() => { setCapacityLocationId(loc.id); setCapacityValue(loc.capacity?.toString() ?? "") }}>{t("editCapacity")}</Button>}
-                      <ReferenceStatusBadge status={loc.status} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <ReferencePane
+          title={t("locationsTitle")}
+          description={t("locationsDesc")}
+          count={data.locations.length}
+          actions={
+            canManage ? (
+              <Button
+                size="sm"
+                onClick={() => {
+                  setLocationCategoryId(data.locationCategories[0]?.id ?? "")
+                  setIsAddLocationOpen(true)
+                }}
+                disabled={data.locationCategories.length === 0}
+              >
+                <Plus className="mr-2 h-4 w-4" /> {t("addLocation")}
+              </Button>
+            ) : null
+          }
+        >
+          <ReferenceTable
+            key={reference}
+            columns={locationsCols}
+            rows={data.locations}
+            rowId={(row) => row.id}
+            emptyTitle={t("noLocations")}
+          />
+        </ReferencePane>
       )}
 
       {/* ─── Pressure Unit ─── */}
       {reference === "pressure-unit" && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("pressureUnitTitle")}</CardTitle>
-            <CardDescription>{t("pressureUnitDesc")}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {data.pressureUnit ? (
-              <div className="flex items-center gap-3 p-3 border rounded-md">
-                <Badge variant="default">{data.pressureUnit.unit.toUpperCase()}</Badge>
-                <span className="text-sm text-muted-foreground">{t("activeForProject")}</span>
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-sm py-4 text-center">{t("noPressureUnit")}</p>
-            )}
-          </CardContent>
-        </Card>
+        <ReferencePane
+          title={t("pressureUnitTitle")}
+          description={t("pressureUnitDesc")}
+        >
+          {data.pressureUnit ? (
+            <div className="flex items-center gap-3 p-3 border rounded-md">
+              <Badge variant="default">{data.pressureUnit.unit.toUpperCase()}</Badge>
+              <span className="text-sm text-muted-foreground">{t("activeForProject")}</span>
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-sm py-4 text-center">{t("noPressureUnit")}</p>
+          )}
+        </ReferencePane>
       )}
 
       {/* ─── Dialogs ─── */}

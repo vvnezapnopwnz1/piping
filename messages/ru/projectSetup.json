@@ -520,6 +520,20 @@
     "pressureUnitDesc": "Единица давления проекта. Одна на проект.",
     "activeForProject": "Активна для этого проекта",
     "noPressureUnit": "Единица давления не выбрана.",
+    "columns": {
+      "code": "Код",
+      "description": "Описание",
+      "status": "Статус",
+      "teamType": "Тип бригады",
+      "system": "Система",
+      "activity": "Операция",
+      "projectUt": "UT проекта",
+      "standardReference": "Стандартная ссылка",
+      "category": "Категория",
+      "progressColumns": "Колонки прогресса",
+      "capacity": "Вместимость",
+      "actions": "Действия"
+    },
     "dialogs": {
       "addLocationCategoryTitle": "Добавить категорию мест хранения",
       "addLocationCategoryDesc": "Создайте категорию мест хранения для проекта.",
