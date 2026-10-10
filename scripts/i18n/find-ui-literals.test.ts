@@ -49,3 +49,19 @@ test("translated areas hold no hard-coded English", () => {
   const found = findUiLiterals(I18N_DONE_PATHS).map((literal) => `${literal.file}:${literal.line} ${literal.text}`)
   assert.deepEqual(found, [])
 })
+
+import { existsSync, readdirSync } from "node:fs"
+
+/** Every folder that holds screen code: the app, shared components, config, and each module's ui, application and domain. */
+function screenRoots(): string[] {
+  const layers = readdirSync("modules", { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .flatMap((entry) => ["ui", "application", "domain"].map((layer) => `modules/${entry.name}/${layer}`))
+    .filter((path) => existsSync(path))
+  return ["app", "components", "config", "contexts", ...layers]
+}
+
+test("every screen folder is checked as a whole", () => {
+  assert.deepEqual(screenRoots().filter((root) => !I18N_DONE_PATHS.includes(root)), [])
+})
+

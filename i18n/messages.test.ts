@@ -78,3 +78,8 @@ test("Russian messages use the glossary terms", () => {
     for (const { pattern, use } of BANNED_RU_TERMS) assert.doesNotMatch(message, pattern, `${key}: use «${use}»`)
   }
 })
+
+test("every namespace is finished in Russian", () => {
+  assert.deepEqual([...RU_COMPLETE_NAMESPACES].sort(), Object.keys(en).sort())
+})
+

@@ -80,6 +80,15 @@ loader against these rules. The reasoning and the open findings are in
 
 When a plan touches `supabase/`, load the `supabase-postgres-best-practices` skill first.
 
+## Interface text: English and Russian
+
+Every string a person reads lives in `messages/en/<area>.json` and `messages/ru/<area>.json`, never
+in a `.tsx`. `npm run test:unit` fails on hard-coded English in screen code
+(`scripts/i18n/find-ui-literals.ts`) and on a Russian file that misses a key, an argument or a
+plural branch (`i18n/messages.test.ts`). Domain and application code return codes; the interface
+picks the words. Russian terms follow `docs/i18n/glossary-ru.md`. Server error messages are still
+English and are shown under a translated title (`errorDetail` in `i18n/format.ts`).
+
 ## RLS: a narrowing check must be RESTRICTIVE
 
 PERMISSIVE policies combine with **OR**. A row filter that is meant to narrow access
