@@ -4,25 +4,16 @@ import type {
   TrackingEventRow,
   TrackingWorklistRow,
 } from "../domain/tracking"
+import enTracking from "@/messages/en/tracking.json"
 
-const TRACKING_ERROR_MESSAGES: Record<string, string> = {
-  PQS01: "The spool or location is not available in this project.",
-  PQS02: "The spool does not have one current accepted revision.",
-  PQS03: "The tracking operator or assigned device is not valid.",
-  PQS04: "Departure requires the spool at the selected location.",
-  PQS05: "Arrival requires the spool to be in transit.",
-  PQS06: "The tracking event details are invalid.",
-  PQS07: "The correction target is missing or already corrected.",
-  PQS08: "This tracking action conflicts with an earlier request.",
-  PQS09: "Tracking history is append-only.",
-}
+const TRACKING_ERROR_MESSAGES: Record<string, string> = enTracking.errors
 
 export function normalizeTrackingError(cause: unknown): Error {
   const code = typeof cause === "object" && cause !== null && "code" in cause
     ? String(cause.code)
     : ""
   if (TRACKING_ERROR_MESSAGES[code]) return new Error(TRACKING_ERROR_MESSAGES[code])
-  return cause instanceof Error ? cause : new Error("Unable to complete the tracking action.")
+  return cause instanceof Error ? cause : new Error(enTracking.errors.generic)
 }
 
 export function createTrackingIdempotencyKey(prefix = "browser"): string {

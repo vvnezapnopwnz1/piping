@@ -1,7 +1,7 @@
 "use client"
 
 import { codeLabel } from "@/i18n/translator"
-import { useTranslations } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import { Pencil } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -25,6 +25,7 @@ export function AccessMembersTable({
 }) {
   const t = useTranslations("access.membersTable")
   const tc = useTranslations("codes")
+  const locale = useLocale()
 
   const columnHeaders = [
     t("columns.member"),
@@ -56,7 +57,9 @@ export function AccessMembersTable({
                   <Badge variant="outline">{codeLabel(tc, "accessRole", row.accessRole)}</Badge>
                 </td>
                 <td className="px-3 py-2 text-xs">
-                  {row.functionalRoles.map((role) => codeLabel(tc, "functionalRole", role)).join(", ") || "—"}
+                  {locale === "ru"
+                    ? row.functionalRoles.map((role) => codeLabel(tc, "functionalRole", role)).join(", ") || "—"
+                    : row.functionalRoles.join(", ") || "—"}
                 </td>
                 <td className="px-3 py-2 text-xs">
                   {row.subcontractorIds.join(", ") || t("projectWide")}

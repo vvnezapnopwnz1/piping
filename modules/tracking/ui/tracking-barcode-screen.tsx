@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { Download, RefreshCw } from "lucide-react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -16,6 +17,7 @@ import type { TrackingWorklistRow } from "../domain/tracking"
 import { loadTrackingWorklist } from "../infrastructure/supabase-tracking-repository"
 
 export function TrackingBarcodeScreen({ projectId, projectCode }: { projectId: string; projectCode: string }) {
+  const t = useTranslations("tracking")
   const loader = React.useRef(createLatestProjectLoader<TrackingWorklistRow[]>())
   const [result, setResult] = React.useState<{ projectId: string; rows: TrackingWorklistRow[] } | null>(null)
   const [errorProjectId, setErrorProjectId] = React.useState<string | null>(null)
@@ -27,7 +29,7 @@ export function TrackingBarcodeScreen({ projectId, projectCode }: { projectId: s
     void requestLoader.run(projectId, () => loadTrackingWorklist(getSupabaseBrowserClient(), projectId), (rows) => { setResult({ projectId, rows }); setSelected(new Set()); setErrorProjectId(null) }).catch(() => setErrorProjectId(projectId))
     return () => requestLoader.invalidate()
   }, [projectId, refreshToken])
-  if (errorProjectId === projectId) return <Alert variant="destructive"><AlertTitle>Unable to load spool barcodes</AlertTitle><AlertDescription>Check project access and retry.</AlertDescription></Alert>
+  if (errorProjectId === projectId) return <Alert variant="destructive"><AlertTitle>{t("barcodes.loadError")}</AlertTitle><AlertDescription>{t("barcodes.loadErrorDescription")}</AlertDescription></Alert>
   if (!result || result.projectId !== projectId) return <Skeleton className="h-64 w-full" />
   const rows = result.rows
   const toggle = (spoolId: string) =>
@@ -45,7 +47,7 @@ export function TrackingBarcodeScreen({ projectId, projectCode }: { projectId: s
   const barcodeColumns: ReadonlyArray<DataColumn<TrackingWorklistRow>> = [
     {
       id: "select",
-      header: "Select",
+      header: t("barcodes.select"),
       sortable: false,
       alwaysVisible: true,
       // Sorting on the flag brings the current selection to the top, which is how forty scattered
@@ -55,41 +57,41 @@ export function TrackingBarcodeScreen({ projectId, projectCode }: { projectId: s
       headerClassName: "w-16",
       cell: (row) => (
         <Checkbox
-          aria-label={`Select ${row.spoolNumber}`}
+          aria-label={t("barcodes.selectSpool", { spoolNumber: row.spoolNumber })}
           checked={selected.has(row.spoolId)}
           onCheckedChange={() => toggle(row.spoolId)}
         />
       ),
     },
-    { id: "spoolNumber", header: "Spool", value: (row) => row.spoolNumber, searchable: true, filter: "text", pinned: true, alwaysVisible: true, className: "font-mono text-xs" },
-    { id: "isoNumber", header: "ISO", value: (row) => row.isoNumber, searchable: true, filter: "text", className: "font-mono text-xs" },
-    { id: "pdsAreaCode", header: "Area", value: (row) => row.pdsAreaCode, searchable: true, filter: "select", cell: (row) => row.pdsAreaCode ?? "Not configured" },
+    { id: "spoolNumber", header: t("barcodes.spool"), value: (row) => row.spoolNumber, searchable: true, filter: "text", pinned: true, alwaysVisible: true, className: "font-mono text-xs" },
+    { id: "isoNumber", header: t("barcodes.iso"), value: (row) => row.isoNumber, searchable: true, filter: "text", className: "font-mono text-xs" },
+    { id: "pdsAreaCode", header: t("barcodes.area"), value: (row) => row.pdsAreaCode, searchable: true, filter: "select", cell: (row) => row.pdsAreaCode ?? t("notConfigured") },
     {
       id: "currentLocationCode",
-      header: "Current location",
-      value: (row) => (row.isInTransit ? "In transit" : (row.currentLocationCode ?? "Not scanned")),
+      header: t("barcodes.currentLocation"),
+      value: (row) => (row.isInTransit ? t("inTransit") : (row.currentLocationCode ?? t("notScanned"))),
       searchable: true,
       filter: "select",
     },
   ]
 
   const exportWorkbook = () => {
-    const workbook = buildBarcodeWorkbook(projectCode, rows, selected)
+    const workbook = buildBarcodeWorkbook(projectCode, rows, selected, t)
     const arrayBuffer = workbook.bytes.slice().buffer as ArrayBuffer
     const url = URL.createObjectURL(new Blob([arrayBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }))
     const anchor = document.createElement("a"); anchor.href = url; anchor.download = workbook.filename; anchor.click(); URL.revokeObjectURL(url)
   }
-  return <div className="space-y-6 p-6"><div className="flex flex-wrap items-start justify-between gap-3"><div><h1 className="text-2xl font-semibold">Barcode Printing</h1><p className="text-sm text-muted-foreground">Export selected stable spool identities for external Zebra label software.</p></div><Button variant="outline" onClick={() => setRefreshToken((value) => value + 1)}><RefreshCw />Refresh</Button></div><Alert><AlertTitle>External printer workflow</AlertTitle><AlertDescription>PipeQC creates an XLSX workbook. Barcode value equals the stable spool number; printing and label layout are handled in Zebra software.</AlertDescription></Alert><Card><CardHeader><CardTitle>Spools</CardTitle><CardDescription>Select the project rows to include in the workbook.</CardDescription></CardHeader><CardContent className="space-y-4"><DataTable
+  return <div className="space-y-6 p-6"><div className="flex flex-wrap items-start justify-between gap-3"><div><h1 className="text-2xl font-semibold">{t("barcodes.title")}</h1><p className="text-sm text-muted-foreground">{t("barcodes.description")}</p></div><Button variant="outline" onClick={() => setRefreshToken((value) => value + 1)}><RefreshCw />{t("actions.refresh")}</Button></div><Alert><AlertTitle>{t("barcodes.noticeTitle")}</AlertTitle><AlertDescription>{t("barcodes.noticeDescription")}</AlertDescription></Alert><Card><CardHeader><CardTitle>{t("barcodes.cardTitle")}</CardTitle><CardDescription>{t("barcodes.cardDescription")}</CardDescription></CardHeader><CardContent className="space-y-4"><DataTable
       columns={barcodeColumns}
       rows={rows}
       state={tableState}
       onStateChange={setTableState}
       rowId={(row) => row.spoolId}
-      searchPlaceholder="Search spool, ISO, area or location…"
-      emptyTitle="No spools in this project scope."
+      searchPlaceholder={t("barcodes.searchPlaceholder")}
+      emptyTitle={t("barcodes.emptyTitle")}
       toolbarActions={
         <Button disabled={selected.size === 0} onClick={exportWorkbook}>
-          <Download />Download XLSX ({selected.size})
+          <Download />{t("actions.downloadXlsx", { count: selected.size })}
         </Button>
       }
     /></CardContent></Card></div>

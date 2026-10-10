@@ -1,6 +1,6 @@
 "use client"
 
-import { useLocale } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import { formatMoment } from "@/i18n/format"
 import * as React from "react"
 import { Printer, RefreshCw } from "lucide-react"
@@ -19,6 +19,7 @@ interface DashboardState { projectId: string; dashboard: TrackingDashboard; occu
 
 export function TrackingDashboardScreen({ projectId }: { projectId: string }) {
   const locale = useLocale()
+  const t = useTranslations("tracking")
   const loader = React.useRef(createLatestProjectLoader<DashboardState>())
   const [state, setState] = React.useState<DashboardState | null>(null)
   const [errorProjectId, setErrorProjectId] = React.useState<string | null>(null)
@@ -37,19 +38,19 @@ export function TrackingDashboardScreen({ projectId }: { projectId: string }) {
     return () => requestLoader.invalidate()
   }, [projectId, refreshToken])
 
-  if (errorProjectId === projectId) return <Alert variant="destructive"><AlertTitle>Unable to load tracking dashboard</AlertTitle><AlertDescription>Check project access and use Refresh to try again.</AlertDescription></Alert>
+  if (errorProjectId === projectId) return <Alert variant="destructive"><AlertTitle>{t("dashboard.loadError")}</AlertTitle><AlertDescription>{t("dashboard.loadErrorDescription")}</AlertDescription></Alert>
   if (!state || state.projectId !== projectId) return <Skeleton className="h-64 w-full" />
   const metrics = [
-    ["Distinct spools scanned", state.dashboard.distinctSpoolsScanned], ["Active spools", state.dashboard.activeSpools],
-    ["Scans this month", state.dashboard.scansThisMonth], ["Currently in transit", state.dashboard.inTransit], ["Overdue transit", state.dashboard.overdue],
+    [t("dashboard.metrics.distinctSpoolsScanned"), state.dashboard.distinctSpoolsScanned], [t("dashboard.metrics.activeSpools"), state.dashboard.activeSpools],
+    [t("dashboard.metrics.scansThisMonth"), state.dashboard.scansThisMonth], [t("dashboard.metrics.inTransit"), state.dashboard.inTransit], [t("dashboard.metrics.overdue"), state.dashboard.overdue],
   ] as const
   return <div className="space-y-6 p-6">
-    <div className="flex flex-wrap items-start justify-between gap-3"><div><h1 className="text-2xl font-semibold">Tracking Dashboard</h1><p className="text-sm text-muted-foreground">Project-scoped spool movement and location projections.</p></div><div className="flex gap-2"><Button variant="outline" onClick={() => setRefreshToken((value) => value + 1)}><RefreshCw />Refresh</Button><Button variant="outline" onClick={() => window.print()}><Printer />Print</Button></div></div>
+    <div className="flex flex-wrap items-start justify-between gap-3"><div><h1 className="text-2xl font-semibold">{t("dashboard.title")}</h1><p className="text-sm text-muted-foreground">{t("dashboard.description")}</p></div><div className="flex gap-2"><Button variant="outline" onClick={() => setRefreshToken((value) => value + 1)}><RefreshCw />{t("actions.refresh")}</Button><Button variant="outline" onClick={() => window.print()}><Printer />{t("actions.print")}</Button></div></div>
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">{metrics.map(([label, value]) => <Card key={label}><CardHeader><CardDescription>{label}</CardDescription><CardTitle className="text-3xl">{value}</CardTitle></CardHeader></Card>)}</div>
     <div className="grid gap-6 xl:grid-cols-2">
-      <Card><CardHeader><CardTitle>Location occupancy</CardTitle><CardDescription>Current effective location versus configured capacity.</CardDescription></CardHeader><CardContent><Table><TableHeader><TableRow><TableHead>Location</TableHead><TableHead>Category</TableHead><TableHead>Occupancy</TableHead></TableRow></TableHeader><TableBody>{state.occupancy.length === 0 ? <TableRow><TableCell colSpan={3}>No active locations.</TableCell></TableRow> : state.occupancy.map((row) => <TableRow key={row.locationId}><TableCell>{row.locationCode}</TableCell><TableCell>{row.categoryCode}</TableCell><TableCell>{row.currentCount} / {trackingCapacityLabel(row.capacity)}</TableCell></TableRow>)}</TableBody></Table></CardContent></Card>
-      <Card><CardHeader><CardTitle>Most-used dimensions</CardTitle><CardDescription>Derived from effective recorded scans.</CardDescription></CardHeader><CardContent className="grid gap-3 text-sm"><p><span className="text-muted-foreground">Device:</span> {state.dashboard.mostUsedDevice ?? "No recorded usage"}</p><p><span className="text-muted-foreground">Operator membership:</span> {state.dashboard.mostUsedOperator ?? "No recorded usage"}</p><p><span className="text-muted-foreground">Location:</span> {state.dashboard.mostUsedLocation ?? "No recorded usage"}</p></CardContent></Card>
+      <Card><CardHeader><CardTitle>{t("dashboard.occupancy.title")}</CardTitle><CardDescription>{t("dashboard.occupancy.description")}</CardDescription></CardHeader><CardContent><Table><TableHeader><TableRow><TableHead>{t("dashboard.occupancy.location")}</TableHead><TableHead>{t("dashboard.occupancy.category")}</TableHead><TableHead>{t("dashboard.occupancy.occupancy")}</TableHead></TableRow></TableHeader><TableBody>{state.occupancy.length === 0 ? <TableRow><TableCell colSpan={3}>{t("dashboard.occupancy.empty")}</TableCell></TableRow> : state.occupancy.map((row) => <TableRow key={row.locationId}><TableCell>{row.locationCode}</TableCell><TableCell>{row.categoryCode}</TableCell><TableCell>{row.currentCount} / {trackingCapacityLabel(row.capacity, t("notConfigured"))}</TableCell></TableRow>)}</TableBody></Table></CardContent></Card>
+      <Card><CardHeader><CardTitle>{t("dashboard.dimensions.title")}</CardTitle><CardDescription>{t("dashboard.dimensions.description")}</CardDescription></CardHeader><CardContent className="grid gap-3 text-sm"><p><span className="text-muted-foreground">{t("dashboard.dimensions.device")}</span> {state.dashboard.mostUsedDevice ?? t("noRecordedUsage")}</p><p><span className="text-muted-foreground">{t("dashboard.dimensions.operator")}</span> {state.dashboard.mostUsedOperator ?? t("noRecordedUsage")}</p><p><span className="text-muted-foreground">{t("dashboard.dimensions.location")}</span> {state.dashboard.mostUsedLocation ?? t("noRecordedUsage")}</p></CardContent></Card>
     </div>
-    <Card><CardHeader><CardTitle>Recent activity</CardTitle></CardHeader><CardContent><Table><TableHeader><TableRow><TableHead>Time</TableHead><TableHead>Direction</TableHead><TableHead>Spool ID</TableHead><TableHead>Source</TableHead></TableRow></TableHeader><TableBody>{state.dashboard.recentActivity.length === 0 ? <TableRow><TableCell colSpan={4}>No tracking events yet.</TableCell></TableRow> : state.dashboard.recentActivity.map((event) => <TableRow key={event.id}><TableCell>{formatMoment(event.occurredAt, locale)}</TableCell><TableCell className="uppercase">{event.direction}</TableCell><TableCell>{event.spoolId}</TableCell><TableCell>{event.source}</TableCell></TableRow>)}</TableBody></Table></CardContent></Card>
+    <Card><CardHeader><CardTitle>{t("dashboard.recentActivity.title")}</CardTitle></CardHeader><CardContent><Table><TableHeader><TableRow><TableHead>{t("dashboard.recentActivity.time")}</TableHead><TableHead>{t("dashboard.recentActivity.direction")}</TableHead><TableHead>{t("dashboard.recentActivity.spoolId")}</TableHead><TableHead>{t("dashboard.recentActivity.source")}</TableHead></TableRow></TableHeader><TableBody>{state.dashboard.recentActivity.length === 0 ? <TableRow><TableCell colSpan={4}>{t("dashboard.recentActivity.empty")}</TableCell></TableRow> : state.dashboard.recentActivity.map((event) => <TableRow key={event.id}><TableCell>{formatMoment(event.occurredAt, locale)}</TableCell><TableCell className="uppercase">{event.direction in { in: 1, out: 1, manual: 1 } ? t(`directions.${event.direction as "in" | "out" | "manual"}`) : event.direction}</TableCell><TableCell>{event.spoolId}</TableCell><TableCell>{event.source}</TableCell></TableRow>)}</TableBody></Table></CardContent></Card>
   </div>
 }

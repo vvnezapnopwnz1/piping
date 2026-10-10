@@ -150,6 +150,8 @@ export function normalizeTrackingDirection(value: unknown): TrackingDirection | 
   return normalized === "in" || normalized === "out" || normalized === "manual" ? normalized : null
 }
 
-export function trackingCapacityLabel(capacity: number | null): string {
-  return capacity === null ? "Not configured" : String(capacity)
+import enTracking from "@/messages/en/tracking.json"
+
+export function trackingCapacityLabel(capacity: number | null, fallback = enTracking.notConfigured): string {
+  return capacity === null ? fallback : String(capacity)
 }

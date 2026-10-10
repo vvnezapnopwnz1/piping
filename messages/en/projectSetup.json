@@ -795,7 +795,7 @@
     "unableToLoadDesc": "Please try again. If the problem persists, contact your project administrator.",
     "retry": "Retry",
     "currentlySaved": "Currently saved",
-    "lastUpdated": "Last updated: {time}",
+    "lastUpdated": "Last updated {time}",
     "activityCode": "Activity Code",
     "projectTitle": "Project Title",
     "maxTransitTimeDays": "Maximum Transit Time (days)",

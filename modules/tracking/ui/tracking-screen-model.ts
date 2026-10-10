@@ -1,4 +1,5 @@
 import type { TrackingDeviceUsageRow, TrackingWorklistRow } from "../domain/tracking"
+import enTracking from "@/messages/en/tracking.json"
 
 export function filterTrackingWorklist(rows: readonly TrackingWorklistRow[], query: string): TrackingWorklistRow[] {
   const needle = query.trim().toLowerCase()
@@ -13,11 +14,14 @@ export interface DesignAreaSummary {
   locations: string[]
 }
 
-export function groupActiveSpoolsByDesignArea(rows: readonly TrackingWorklistRow[]): DesignAreaSummary[] {
+export function groupActiveSpoolsByDesignArea(
+  rows: readonly TrackingWorklistRow[],
+  notConfiguredLabel = enTracking.notConfigured,
+): DesignAreaSummary[] {
   const groups = new Map<string, { count: number; locations: Set<string> }>()
   for (const row of rows) {
     if (!row.isActive) continue
-    const code = row.pdsAreaCode ?? "Not configured"
+    const code = row.pdsAreaCode ?? notConfiguredLabel
     const group = groups.get(code) ?? { count: 0, locations: new Set<string>() }
     group.count += 1
     if (row.currentLocationCode) group.locations.add(row.currentLocationCode)

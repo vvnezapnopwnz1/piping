@@ -1,0 +1,224 @@
+{
+  "notConfigured": "Not configured",
+  "inTransit": "In transit",
+  "notScanned": "Not scanned",
+  "never": "Never",
+  "noRecordedUsage": "No recorded usage",
+  "unassigned": "Unassigned",
+  "assigned": "Assigned · {id}",
+  "actions": {
+    "refresh": "Refresh",
+    "print": "Print",
+    "downloadXlsx": "Download XLSX ({count})",
+    "downloadActiveSpoolsCsv": "Download active spools CSV",
+    "downloadSubLocationsCsv": "Download sub-locations CSV",
+    "downloadPdaUsersCsv": "Download PDA users CSV",
+    "addEvent": "Add Event",
+    "addCorrection": "Add Correction",
+    "editUsers": "Edit users",
+    "cancel": "Cancel",
+    "saveEvent": "Save event"
+  },
+  "directions": {
+    "in": "In",
+    "out": "Out",
+    "manual": "Manual"
+  },
+  "export": {
+    "spoolHeaders": {
+      "isoNumber": "ISO Number",
+      "spoolNumber": "Spool Number",
+      "pdsArea": "PDS Area",
+      "constructionStatus": "Construction Status",
+      "currentLocation": "Current Location",
+      "lastEventAt": "Last Event At"
+    },
+    "locationHeaders": {
+      "locationCode": "Location Code",
+      "description": "Description",
+      "category": "Category",
+      "capacity": "Capacity",
+      "currentCount": "Current Count"
+    },
+    "pdaUserHeaders": {
+      "membershipId": "Membership ID",
+      "fullName": "Full Name",
+      "email": "Email",
+      "deviceCode": "Device Code",
+      "lastUsedAt": "Last Used At"
+    }
+  },
+  "barcodes": {
+    "title": "Barcode Printing",
+    "description": "Export selected stable spool identities for external Zebra label software.",
+    "loadError": "Unable to load spool barcodes",
+    "loadErrorDescription": "Check project access and retry.",
+    "noticeTitle": "External printer workflow",
+    "noticeDescription": "PipeQC creates an XLSX workbook. Barcode value equals the stable spool number; printing and label layout are handled in Zebra software.",
+    "cardTitle": "Spools",
+    "cardDescription": "Select the project rows to include in the workbook.",
+    "searchPlaceholder": "Search spool, ISO, area or location…",
+    "emptyTitle": "No spools in this project scope.",
+    "select": "Select",
+    "selectSpool": "Select {spoolNumber}",
+    "spool": "Spool",
+    "iso": "ISO",
+    "area": "Area",
+    "currentLocation": "Current location",
+    "headers": {
+      "spoolNumber": "Spool Number",
+      "isoNumber": "ISO Number",
+      "pdsArea": "PDS Area",
+      "currentLocation": "Current Location",
+      "barcodeValue": "Barcode Value"
+    },
+    "sheetName": "Spool Barcodes"
+  },
+  "dashboard": {
+    "title": "Tracking Dashboard",
+    "description": "Project-scoped spool movement and location projections.",
+    "loadError": "Unable to load tracking dashboard",
+    "loadErrorDescription": "Check project access and use Refresh to try again.",
+    "metrics": {
+      "distinctSpoolsScanned": "Distinct spools scanned",
+      "activeSpools": "Active spools",
+      "scansThisMonth": "Scans this month",
+      "inTransit": "Currently in transit",
+      "overdue": "Overdue transit"
+    },
+    "occupancy": {
+      "title": "Location occupancy",
+      "description": "Current effective location versus configured capacity.",
+      "location": "Location",
+      "category": "Category",
+      "occupancy": "Occupancy",
+      "empty": "No active locations."
+    },
+    "dimensions": {
+      "title": "Most-used dimensions",
+      "description": "Derived from effective recorded scans.",
+      "device": "Device:",
+      "operator": "Operator membership:",
+      "location": "Location:"
+    },
+    "recentActivity": {
+      "title": "Recent activity",
+      "time": "Time",
+      "direction": "Direction",
+      "spoolId": "Spool ID",
+      "source": "Source",
+      "empty": "No tracking events yet."
+    }
+  },
+  "devices": {
+    "title": "Mobile Device Management",
+    "description": "Recorded use and assignment entry points for project PDA devices.",
+    "loadError": "Unable to load mobile device usage",
+    "loadErrorDescription": "Check project access and retry.",
+    "cardTitle": "Device usage",
+    "cardDescription": "Counts, operator and location are derived from effective tracking events. Battery and connectivity are not collected.",
+    "table": {
+      "device": "Device",
+      "scans": "Scans",
+      "mostFrequentOperator": "Most frequent operator",
+      "mostFrequentLocation": "Most frequent location",
+      "lastUse": "Last use",
+      "assignment": "Assignment",
+      "empty": "No project devices are configured. Use Edit users to manage project devices and assignments."
+    }
+  },
+  "analysis": {
+    "title": "Tracking Data Analysis",
+    "description": "Effective locations, immutable history and project exceptions.",
+    "loadError": "Unable to load Tracking Data Analysis",
+    "loadErrorDescription": "Check access and retry.",
+    "tabs": {
+      "spools": "Spool Location",
+      "locations": "Location",
+      "design": "Design Area",
+      "consolidation": "Consolidation"
+    },
+    "table": {
+      "iso": "ISO",
+      "spool": "Spool",
+      "area": "Area",
+      "status": "Status",
+      "location": "Location",
+      "searchPlaceholder": "Search ISO, spool, area or location…",
+      "emptyTitle": "No spools in this project scope."
+    },
+    "history": {
+      "title": "{spoolNumber} history",
+      "description": "No managed spool image is available.",
+      "time": "Time",
+      "direction": "Direction",
+      "location": "Location",
+      "reason": "Reason"
+    },
+    "locationsTab": {
+      "title": "Locations",
+      "description": "Current active occupancy; erected spools are excluded.",
+      "location": "Location",
+      "category": "Category",
+      "currentCapacity": "Current / capacity",
+      "transitDepartures": "Transit departures"
+    },
+    "designTab": {
+      "title": "Design areas",
+      "description": "Active stable spools grouped by accepted PDS/design-area data. No managed design image is available.",
+      "area": "Area",
+      "activeSpools": "Active spools",
+      "locations": "Locations",
+      "inTransitNotScanned": "In transit / not scanned"
+    },
+    "consolidationTab": {
+      "inconsistencies": "Inconsistencies",
+      "overdueTransit": "Overdue transit",
+      "neverScannedActive": "Never-scanned active",
+      "exceptionsTitle": "Exceptions",
+      "noExceptions": "No current exceptions.",
+      "inconsistencyItem": "{issueCode} — spool {spoolId}",
+      "overdueItem": "Overdue transit — {spoolNumber} ({transitDays} days)",
+      "neverScannedItem": "Never scanned — {spoolNumber}"
+    },
+    "dialog": {
+      "titleEvent": "Add tracking event",
+      "titleCorrection": "Add tracking correction",
+      "description": "The saved database event is append-only. The screen refetches durable state after success.",
+      "direction": "Direction",
+      "location": "Location",
+      "device": "Device",
+      "noDevice": "No device",
+      "occurredAt": "Occurred at",
+      "compensateTarget": "Event to compensate (optional)",
+      "manualAdjustmentOnly": "Manual adjustment only",
+      "reasonRequired": "Reason (required)",
+      "reasonOptional": "Reason (optional)"
+    },
+    "toasts": {
+      "eventRecorded": "Tracking event recorded",
+      "eventFailed": "Tracking event failed",
+      "fileDownloaded": "{filename} downloaded",
+      "dataDumpFailed": "Data dump failed",
+      "exportNotAvailable": "Tracking export file is not available."
+    }
+  },
+  "routes": {
+    "selectProject": "Select a project to view Tracking.",
+    "selectProjectAnalysis": "Select a project to view Tracking Data Analysis.",
+    "selectProjectDevices": "Select a project to view mobile device usage.",
+    "selectProjectBarcodes": "Select a project to export spool barcodes."
+  },
+  "errors": {
+    "PQS01": "The spool or location is not available in this project.",
+    "PQS02": "The spool does not have one current accepted revision.",
+    "PQS03": "The tracking operator or assigned device is not valid.",
+    "PQS04": "Departure requires the spool at the selected location.",
+    "PQS05": "Arrival requires the spool to be in transit.",
+    "PQS06": "The tracking event details are invalid.",
+    "PQS07": "The correction target is missing or already corrected.",
+    "PQS08": "This tracking action conflicts with an earlier request.",
+    "PQS09": "Tracking history is append-only.",
+    "generic": "Unable to complete the tracking action."
+  }
+}
