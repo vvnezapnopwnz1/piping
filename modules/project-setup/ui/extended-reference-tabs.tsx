@@ -1,5 +1,8 @@
 "use client"
 
+import { useTranslations } from "next-intl"
+import { formatFieldErrors } from "./setup-field-issue"
+
 import { useCallback, useEffect, useRef, useState } from "react"
 import { AlertCircle, Plus, RefreshCw, Settings2 } from "lucide-react"
 import { toast } from "sonner"
@@ -50,6 +53,8 @@ export function ExtendedReferenceTabs({
   projectId: string
   canManage: boolean
 }) {
+  const t = useTranslations("projectSetup.extendedReference")
+  const tIssues = useTranslations("projectSetup.issues")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<LoadedExtendedReferences | null>(null)
@@ -88,11 +93,11 @@ export function ExtendedReferenceTabs({
         setAssemblySubId(result.assemblySettings.defaultSubcontractorId ?? "")
       }
     } catch (err: any) {
-      if (version === requestVersionRef.current) setError(err.message || "Failed to load extended references")
+      if (version === requestVersionRef.current) setError(err.message || t("failedToLoad"))
     } finally {
       if (version === requestVersionRef.current) setLoading(false)
     }
-  }, [canManage, projectId])
+  }, [canManage, projectId, t])
 
   useEffect(() => {
     fetchAll()
@@ -102,21 +107,21 @@ export function ExtendedReferenceTabs({
   const handleAddDevice = async () => {
     const validation = validateDeviceInput({ code: devCode, description: devDesc })
     if (!validation.ok) {
-      setDevErrors(validation.errors)
+      setDevErrors(formatFieldErrors(tIssues, validation.errors))
       return
     }
     setIsSubmittingDevice(true)
     try {
       const client = getSupabaseBrowserClient()
       await createDevice(client, projectId, validation.value)
-      toast.success("Device created")
+      toast.success(t("deviceCreated"))
       setIsAddDeviceOpen(false)
       setDevCode("")
       setDevDesc("")
       setDevErrors({})
       fetchAll()
     } catch (err: any) {
-      toast.error(err.message || "Failed to create device")
+      toast.error(err.message || t("deviceFailed"))
     } finally {
       setIsSubmittingDevice(false)
     }
@@ -124,16 +129,16 @@ export function ExtendedReferenceTabs({
 
   const handleAssignDeviceUser = async () => {
     const validation = validateDeviceUserInput({ membershipId: selectedMembershipId, deviceId: selectedDeviceId || null })
-    if (!validation.ok) { toast.error(Object.values(validation.errors).join(", ")); return }
+    if (!validation.ok) { toast.error(Object.values(formatFieldErrors(tIssues, validation.errors)).join(", ")); return }
     setIsSubmittingDevice(true)
     try {
       await assignDeviceUser(getSupabaseBrowserClient(), projectId, validation.value)
-      toast.success("PDA user assigned")
+      toast.success(t("pdaUserAssigned"))
       setSelectedMembershipId("")
       setSelectedDeviceId("")
       await fetchAll()
     } catch (err: any) {
-      toast.error(err.message || "Failed to assign PDA user")
+      toast.error(err.message || t("pdaUserFailed"))
     } finally {
       setIsSubmittingDevice(false)
     }
@@ -144,17 +149,17 @@ export function ExtendedReferenceTabs({
     const input = { enabled: assemblyEnabled, defaultSubcontractorId: assemblySubId || null }
     const validation = validateAssemblySettingsInput(input)
     if (!validation.ok) {
-      toast.error(Object.values(validation.errors).join(", "))
+      toast.error(Object.values(formatFieldErrors(tIssues, validation.errors)).join(", "))
       return
     }
     setIsSavingAssembly(true)
     try {
       const client = getSupabaseBrowserClient()
       await saveAssemblySettings(client, projectId, validation.value.enabled, validation.value.defaultSubcontractorId)
-      toast.success("Assembly settings saved")
+      toast.success(t("assemblySettingsSaved"))
       fetchAll()
     } catch (err: any) {
-      toast.error(err.message || "Failed to save assembly settings")
+      toast.error(err.message || t("assemblySettingsFailed"))
     } finally {
       setIsSavingAssembly(false)
     }
@@ -167,10 +172,10 @@ export function ExtendedReferenceTabs({
         <CardContent className="pt-6">
           <div className="flex items-center gap-3 text-destructive">
             <AlertCircle className="h-5 w-5" />
-            <p className="font-medium">{error || "Data unavailable"}</p>
+            <p className="font-medium">{error || t("dataUnavailable")}</p>
           </div>
           <Button variant="outline" className="mt-4" onClick={fetchAll}>
-            <RefreshCw className="mr-2 h-4 w-4" /> Retry
+            <RefreshCw className="mr-2 h-4 w-4" /> {t("retry")}
           </Button>
         </CardContent>
       </Card>
@@ -180,10 +185,10 @@ export function ExtendedReferenceTabs({
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
       <TabsList className="w-full overflow-x-auto whitespace-nowrap">
-        <TabsTrigger value="spooling">Spooling</TabsTrigger>
-        <TabsTrigger value="painting">Painting</TabsTrigger>
-        <TabsTrigger value="assembly">Assembly</TabsTrigger>
-        <TabsTrigger value="devices">Devices ({data.devices.length})</TabsTrigger>
+        <TabsTrigger value="spooling">{t("tabs.spooling")}</TabsTrigger>
+        <TabsTrigger value="painting">{t("tabs.painting")}</TabsTrigger>
+        <TabsTrigger value="assembly">{t("tabs.assembly")}</TabsTrigger>
+        <TabsTrigger value="devices">{t("tabs.devices", { count: data.devices.length })}</TabsTrigger>
       </TabsList>
 
       {/* ─── Spooling ─── */}
@@ -191,12 +196,12 @@ export function ExtendedReferenceTabs({
         {/* Spooling Material Types */}
         <Card>
           <CardHeader>
-            <CardTitle>Spooling Material Types</CardTitle>
-            <CardDescription>Project-scoped spooling material definitions.</CardDescription>
+            <CardTitle>{t("spoolingMaterialTypesTitle")}</CardTitle>
+            <CardDescription>{t("spoolingMaterialTypesDesc")}</CardDescription>
           </CardHeader>
           <CardContent>
             {data.spoolingMaterialTypes.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-4 text-center">No spooling material types defined.</p>
+              <p className="text-muted-foreground text-sm py-4 text-center">{t("noSpoolingMaterialTypes")}</p>
             ) : (
               <div className="space-y-2">
                 {data.spoolingMaterialTypes.map((mt) => (
@@ -216,12 +221,12 @@ export function ExtendedReferenceTabs({
         {/* Spooling Material Classes */}
         <Card>
           <CardHeader>
-            <CardTitle>Spooling Material Classes</CardTitle>
-            <CardDescription>External class codes mapped to material types.</CardDescription>
+            <CardTitle>{t("spoolingMaterialClassesTitle")}</CardTitle>
+            <CardDescription>{t("spoolingMaterialClassesDesc")}</CardDescription>
           </CardHeader>
           <CardContent>
             {data.spoolingMaterialClasses.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-4 text-center">No spooling material classes defined.</p>
+              <p className="text-muted-foreground text-sm py-4 text-center">{t("noSpoolingMaterialClasses")}</p>
             ) : (
               <div className="space-y-2">
                 {data.spoolingMaterialClasses.map((mc) => (
@@ -241,12 +246,12 @@ export function ExtendedReferenceTabs({
         {/* Spooling Checklist */}
         <Card>
           <CardHeader>
-            <CardTitle>Spooling Checklist</CardTitle>
-            <CardDescription>Required and optional checklist items for spooling.</CardDescription>
+            <CardTitle>{t("spoolingChecklistTitle")}</CardTitle>
+            <CardDescription>{t("spoolingChecklistDesc")}</CardDescription>
           </CardHeader>
           <CardContent>
             {data.spoolingChecklistItems.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-4 text-center">No checklist items defined.</p>
+              <p className="text-muted-foreground text-sm py-4 text-center">{t("noChecklistItems")}</p>
             ) : (
               <div className="space-y-2">
                 {data.spoolingChecklistItems.map((item) => (
@@ -254,8 +259,8 @@ export function ExtendedReferenceTabs({
                     <div className="flex items-center gap-3">
                       <code className="text-xs font-mono bg-muted px-2 py-1 rounded">{item.code}</code>
                       <span className="text-sm">{item.description}</span>
-                      {item.isRequired && <Badge variant="default">Required</Badge>}
-                      <span className="text-xs text-muted-foreground">Order: {item.sortOrder}</span>
+                      {item.isRequired && <Badge variant="default">{t("required")}</Badge>}
+                      <span className="text-xs text-muted-foreground">{t("order", { order: item.sortOrder })}</span>
                     </div>
                     <ReferenceStatusBadge status={item.status} />
                   </div>
@@ -271,12 +276,12 @@ export function ExtendedReferenceTabs({
         {/* RAL Codes */}
         <Card>
           <CardHeader>
-            <CardTitle>RAL Codes</CardTitle>
-            <CardDescription>Color references by line service.</CardDescription>
+            <CardTitle>{t("ralCodesTitle")}</CardTitle>
+            <CardDescription>{t("ralCodesDesc")}</CardDescription>
           </CardHeader>
           <CardContent>
             {data.ralCodes.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-4 text-center">No RAL codes defined.</p>
+              <p className="text-muted-foreground text-sm py-4 text-center">{t("noRalCodes")}</p>
             ) : (
               <div className="space-y-2">
                 {data.ralCodes.map((ral) => (
@@ -297,12 +302,12 @@ export function ExtendedReferenceTabs({
         {/* Paint Matrix */}
         <Card>
           <CardHeader>
-            <CardTitle>Paint Code Matrix</CardTitle>
-            <CardDescription>Blasting, primer, coats and DFT by line service and RAL.</CardDescription>
+            <CardTitle>{t("paintMatrixTitle")}</CardTitle>
+            <CardDescription>{t("paintMatrixDesc")}</CardDescription>
           </CardHeader>
           <CardContent>
             {data.paintMatrixRules.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-4 text-center">No paint matrix rules defined.</p>
+              <p className="text-muted-foreground text-sm py-4 text-center">{t("noPaintMatrixRules")}</p>
             ) : (
               <div className="space-y-2">
                 {data.paintMatrixRules.map((pm) => (
@@ -311,8 +316,8 @@ export function ExtendedReferenceTabs({
                       {pm.lineServiceCode && <Badge variant="secondary">{pm.lineServiceCode}</Badge>}
                       {pm.ralCode && <Badge variant="outline">{pm.ralCode}</Badge>}
                       <span className="text-xs">
-                        {pm.blastingRequired ? "Blast" : "No blast"} | {pm.primerRequired ? "Primer" : "No primer"} |
-                        {" "}{pm.intermediateCoatCount} int | {pm.finalCoatCount} final | {pm.requiredFinalDftMicrons}µm DFT
+                        {pm.blastingRequired ? t("blast") : t("noBlast")} | {pm.primerRequired ? t("primer") : t("noPrimer")} |
+                        {" "}{pm.intermediateCoatCount} {t("intCoats")} {pm.finalCoatCount} {t("finalCoats")} {pm.requiredFinalDftMicrons}{t("dft")}
                       </span>
                     </div>
                     <ReferenceStatusBadge status={pm.status} />
@@ -331,10 +336,10 @@ export function ExtendedReferenceTabs({
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
-                  <Settings2 className="h-5 w-5" /> Assembly Configuration
+                  <Settings2 className="h-5 w-5" /> {t("assemblyConfigTitle")}
                 </CardTitle>
                 <CardDescription>
-                  Enable or disable assembly for this project. When enabled, a default subcontractor is required.
+                  {t("assemblyConfigDesc")}
                 </CardDescription>
               </div>
             </div>
@@ -342,7 +347,7 @@ export function ExtendedReferenceTabs({
           <CardContent>
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <Label htmlFor="assembly-toggle" className="text-sm font-medium">Assembly Enabled</Label>
+                <Label htmlFor="assembly-toggle" className="text-sm font-medium">{t("assemblyEnabledLabel")}</Label>
                 <Switch
                   id="assembly-toggle"
                   checked={assemblyEnabled}
@@ -353,27 +358,27 @@ export function ExtendedReferenceTabs({
 
               {assemblyEnabled && (
                 <div>
-                  <Label htmlFor="assembly-sub">Default Subcontractor</Label>
+                  <Label htmlFor="assembly-sub">{t("defaultSubcontractorLabel")}</Label>
                   <Input
                     id="assembly-sub"
                     value={assemblySubId}
                     onChange={(e) => setAssemblySubId(e.target.value)}
-                    placeholder="Subcontractor ID"
+                    placeholder={t("subcontractorIdLabel")}
                     disabled={!canManage}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Must reference an active project subcontractor.
+                    {t("subcontractorHint")}
                   </p>
                 </div>
               )}
 
               {canManage && (
-                <Button onClick={handleSaveAssembly} loading={isSavingAssembly}>Save Assembly Settings</Button>
+                <Button onClick={handleSaveAssembly} loading={isSavingAssembly}>{t("saveAssemblySettings")}</Button>
               )}
 
               {!canManage && (
                 <p className="text-sm text-muted-foreground">
-                  Current state: {data.assemblySettings.enabled ? "Enabled" : "Disabled"}
+                  {t("currentState", { state: data.assemblySettings.enabled ? t("enabled") : t("disabled") })}
                   {data.assemblySettings.defaultSubcontractorCode && ` — ${data.assemblySettings.defaultSubcontractorCode}`}
                 </p>
               )}
@@ -388,8 +393,8 @@ export function ExtendedReferenceTabs({
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Tracking Devices</CardTitle>
-                <CardDescription>PDA and device references for tracking flows.</CardDescription>
+                <CardTitle>{t("trackingDevicesTitle")}</CardTitle>
+                <CardDescription>{t("trackingDevicesDesc")}</CardDescription>
               </div>
               <div className="flex gap-2">
                 <Button variant="ghost" size="icon" onClick={fetchAll}>
@@ -397,7 +402,7 @@ export function ExtendedReferenceTabs({
                 </Button>
                 {canManage && (
                   <Button size="sm" onClick={() => setIsAddDeviceOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" /> Add Device
+                    <Plus className="mr-2 h-4 w-4" /> {t("addDevice")}
                   </Button>
                 )}
               </div>
@@ -405,7 +410,7 @@ export function ExtendedReferenceTabs({
           </CardHeader>
           <CardContent>
             {data.devices.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-4 text-center">No devices defined.</p>
+              <p className="text-muted-foreground text-sm py-4 text-center">{t("noDevices")}</p>
             ) : (
               <div className="space-y-2">
                 {data.devices.map((dev) => (
@@ -425,19 +430,19 @@ export function ExtendedReferenceTabs({
         {/* Device Users */}
         <Card>
           <CardHeader>
-            <CardTitle>PDA Users</CardTitle>
-            <CardDescription>Project memberships linked to tracking devices.</CardDescription>
+            <CardTitle>{t("pdaUsersTitle")}</CardTitle>
+            <CardDescription>{t("pdaUsersDesc")}</CardDescription>
           </CardHeader>
           <CardContent>
             {canManage && (
               <div className="mb-4 grid gap-3 rounded-md border p-3 md:grid-cols-[1fr_1fr_auto]">
-                <label className="text-xs text-muted-foreground">Project member<select className="mt-1 h-9 w-full rounded border bg-transparent px-3 text-sm" value={selectedMembershipId} onChange={(event) => setSelectedMembershipId(event.target.value)}><option value="">Select member</option>{deviceUserCandidates.map((candidate) => <option key={candidate.membershipId} value={candidate.membershipId}>{candidate.email ?? candidate.fullName} {candidate.deviceCode ? `— ${candidate.deviceCode}` : ""}</option>)}</select></label>
-                <label className="text-xs text-muted-foreground">Tracking device<select className="mt-1 h-9 w-full rounded border bg-transparent px-3 text-sm" value={selectedDeviceId} onChange={(event) => setSelectedDeviceId(event.target.value)}><option value="">Select device</option>{data.devices.filter((device) => device.status === "active").map((device) => <option key={device.id} value={device.id}>{device.code} — {device.description}</option>)}</select></label>
-                <Button className="self-end" onClick={handleAssignDeviceUser} disabled={isSubmittingDevice || !selectedMembershipId || !selectedDeviceId}>Assign</Button>
+                <label className="text-xs text-muted-foreground">{t("projectMemberLabel")}<select className="mt-1 h-9 w-full rounded border bg-transparent px-3 text-sm" value={selectedMembershipId} onChange={(event) => setSelectedMembershipId(event.target.value)}><option value="">{t("selectMember")}</option>{deviceUserCandidates.map((candidate) => <option key={candidate.membershipId} value={candidate.membershipId}>{candidate.email ?? candidate.fullName} {candidate.deviceCode ? `— ${candidate.deviceCode}` : ""}</option>)}</select></label>
+                <label className="text-xs text-muted-foreground">{t("trackingDeviceLabel")}<select className="mt-1 h-9 w-full rounded border bg-transparent px-3 text-sm" value={selectedDeviceId} onChange={(event) => setSelectedDeviceId(event.target.value)}><option value="">{t("selectDevice")}</option>{data.devices.filter((device) => device.status === "active").map((device) => <option key={device.id} value={device.id}>{device.code} — {device.description}</option>)}</select></label>
+                <Button className="self-end" onClick={handleAssignDeviceUser} disabled={isSubmittingDevice || !selectedMembershipId || !selectedDeviceId}>{t("assign")}</Button>
               </div>
             )}
             {(canManage ? deviceUserCandidates.filter((candidate) => candidate.isAssigned) : data.deviceUsers).length === 0 ? (
-              <p className="text-muted-foreground text-sm py-4 text-center">No PDA users assigned.</p>
+              <p className="text-muted-foreground text-sm py-4 text-center">{t("noPdaUsers")}</p>
             ) : (
               <div className="space-y-2">
                 {(canManage ? deviceUserCandidates.filter((candidate) => candidate.isAssigned) : data.deviceUsers).map((du) => (
@@ -446,7 +451,7 @@ export function ExtendedReferenceTabs({
                       <span className="text-sm">{"email" in du ? du.email ?? du.fullName : du.userEmail ?? du.membershipId}</span>
                       {du.deviceCode && <Badge variant="secondary">{du.deviceCode}</Badge>}
                     </div>
-                    {"status" in du ? <ReferenceStatusBadge status={du.status} /> : <Badge>Active</Badge>}
+                    {"status" in du ? <ReferenceStatusBadge status={du.status} /> : <Badge>{t("activeBadge")}</Badge>}
                   </div>
                 ))}
               </div>
@@ -459,24 +464,24 @@ export function ExtendedReferenceTabs({
       <Dialog open={isAddDeviceOpen} onOpenChange={(open) => { if (!open) { setIsAddDeviceOpen(false); setDevCode(""); setDevDesc(""); setDevErrors({}) } }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Device</DialogTitle>
-            <DialogDescription>Register a tracking device for this project.</DialogDescription>
+            <DialogTitle>{t("dialogs.addDeviceTitle")}</DialogTitle>
+            <DialogDescription>{t("dialogs.addDeviceDesc")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="dev-code">Code</Label>
-              <Input id="dev-code" value={devCode} onChange={(e) => setDevCode(e.target.value)} placeholder="e.g. PDA-001" />
+              <Label htmlFor="dev-code">{t("dialogs.deviceCode")}</Label>
+              <Input id="dev-code" value={devCode} onChange={(e) => setDevCode(e.target.value)} placeholder={t("dialogs.deviceCodePlaceholder")} />
               {devErrors.code && <p className="text-xs text-destructive mt-1">{devErrors.code}</p>}
             </div>
             <div>
-              <Label htmlFor="dev-desc">Description</Label>
-              <Input id="dev-desc" value={devDesc} onChange={(e) => setDevDesc(e.target.value)} placeholder="Android PDA Unit #1" />
+              <Label htmlFor="dev-desc">{t("dialogs.deviceDesc")}</Label>
+              <Input id="dev-desc" value={devDesc} onChange={(e) => setDevDesc(e.target.value)} placeholder={t("dialogs.deviceDescPlaceholder")} />
               {devErrors.description && <p className="text-xs text-destructive mt-1">{devErrors.description}</p>}
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setIsAddDeviceOpen(false); setDevCode(""); setDevDesc(""); setDevErrors({}) }}>Cancel</Button>
-            <Button onClick={handleAddDevice} loading={isSubmittingDevice}>Create</Button>
+            <Button variant="outline" onClick={() => { setIsAddDeviceOpen(false); setDevCode(""); setDevDesc(""); setDevErrors({}) }}>{t("dialogs.cancel")}</Button>
+            <Button onClick={handleAddDevice} loading={isSubmittingDevice}>{t("dialogs.create")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

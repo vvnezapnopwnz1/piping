@@ -68,6 +68,8 @@ export function ExecutionReferenceTabs({
   const tc = useTranslations("codes")
   const [loading, setLoading] = useState(true)
   const tIssues = useTranslations("projectSetup.issues")
+  const t = useTranslations("projectSetup.executionReference")
+
 
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<LoadedExecutionReferences | null>(null)
@@ -145,11 +147,11 @@ export function ExecutionReferenceTabs({
       const result = await loadExecutionReferences(client, projectId)
       if (version === requestVersionRef.current) setData(result)
     } catch (err: any) {
-      if (version === requestVersionRef.current) setError(err.message || "Failed to load execution references")
+      if (version === requestVersionRef.current) setError(err.message || t("failedToLoad"))
     } finally {
       if (version === requestVersionRef.current) setLoading(false)
     }
-  }, [projectId])
+  }, [projectId, t])
 
   useEffect(() => {
     fetchAll()
@@ -166,12 +168,12 @@ export function ExecutionReferenceTabs({
     try {
       const client = getSupabaseBrowserClient()
       await createProjectTeam(client, projectId, validation.value)
-      toast.success("Team created")
+      toast.success(t("teamCreated"))
       setIsAddTeamOpen(false)
       resetTeamForm()
       fetchAll()
     } catch (err: any) {
-      toast.error(err.message || "Failed to create team")
+      toast.error(err.message || t("teamFailed"))
     } finally {
       setIsSubmittingTeam(false)
     }
@@ -190,14 +192,14 @@ export function ExecutionReferenceTabs({
     setIsSubmittingLocation(true)
     try {
       await createLocationCategory(getSupabaseBrowserClient(), projectId, validation.value)
-      toast.success("Location category created")
+      toast.success(t("locationCategoryCreated"))
       setIsAddLocationCategoryOpen(false)
       setLocationCategoryCode("")
       setLocationCategoryDescription("")
       setLocationErrors({})
       await fetchAll()
     } catch (err: any) {
-      toast.error(err.message || "Failed to create location category")
+      toast.error(err.message || t("locationCategoryFailed"))
     } finally {
       setIsSubmittingLocation(false)
     }
@@ -216,7 +218,7 @@ export function ExecutionReferenceTabs({
     setIsSubmittingLocation(true)
     try {
       await createLocation(getSupabaseBrowserClient(), projectId, validation.value)
-      toast.success("Location created")
+      toast.success(t("locationCreated"))
       setIsAddLocationOpen(false)
       setLocationCategoryId("")
       setLocationCode("")
@@ -226,7 +228,7 @@ export function ExecutionReferenceTabs({
       setLocationErrors({})
       await fetchAll()
     } catch (err: any) {
-      toast.error(err.message || "Failed to create location")
+      toast.error(err.message || t("locationFailed"))
     } finally {
       setIsSubmittingLocation(false)
     }
@@ -239,13 +241,13 @@ export function ExecutionReferenceTabs({
     setIsSubmittingLocation(true)
     try {
       await updateLocationCapacity(getSupabaseBrowserClient(), projectId, capacityLocationId, validation.value.capacity)
-      toast.success("Location capacity updated")
+      toast.success(t("locationCapacityUpdated"))
       setCapacityLocationId(null)
       setCapacityValue("")
       setLocationErrors({})
       await fetchAll()
     } catch (err: any) {
-      toast.error(err.message || "Failed to update location capacity")
+      toast.error(err.message || t("locationCapacityFailed"))
     } finally {
       setIsSubmittingLocation(false)
     }
@@ -262,14 +264,14 @@ export function ExecutionReferenceTabs({
     try {
       const client = getSupabaseBrowserClient()
       await createProjectSystem(client, projectId, { code: sysCode, description: sysDesc })
-      toast.success("System created")
+      toast.success(t("systemCreated"))
       setIsAddSystemOpen(false)
       setSysCode("")
       setSysDesc("")
       setSysErrors({})
       fetchAll()
     } catch (err: any) {
-      toast.error(err.message || "Failed to create system")
+      toast.error(err.message || t("systemFailed"))
     } finally {
       setIsSubmittingSystem(false)
     }
@@ -286,7 +288,7 @@ export function ExecutionReferenceTabs({
     try {
       const client = getSupabaseBrowserClient()
       await createProjectSubsystem(client, projectId, validation.value)
-      toast.success("Subsystem created")
+      toast.success(t("subsystemCreated"))
       setIsAddSubsystemOpen(false)
       setSubCode("")
       setSubDesc("")
@@ -294,7 +296,7 @@ export function ExecutionReferenceTabs({
       setSubErrors({})
       fetchAll()
     } catch (err: any) {
-      toast.error(err.message || "Failed to create subsystem")
+      toast.error(err.message || t("subsystemFailed"))
     } finally {
       setIsSubmittingSubsystem(false)
     }
@@ -316,14 +318,14 @@ export function ExecutionReferenceTabs({
         .select("id")
         .single()
         .then(({ error }) => { if (error) throw new Error(error.message) })
-      toast.success("Line Service created")
+      toast.success(t("lineServiceCreated"))
       setIsAddLineServiceOpen(false)
       setLsCode("")
       setLsDesc("")
       setLsErrors({})
       fetchAll()
     } catch (err: any) {
-      toast.error(err.message || "Failed to create line service")
+      toast.error(err.message || t("lineServiceFailed"))
     } finally {
       setIsSubmittingLineService(false)
     }
@@ -349,9 +351,9 @@ export function ExecutionReferenceTabs({
       setUnitTimeUt("")
       setUnitTimeStandard("")
       setIsAddUnitTimeOpen(false)
-      toast.success("Flange unit-time reference created")
+      toast.success(t("flangeUnitTimeCreated"))
     } catch (err: any) {
-      toast.error(err.message || "Failed to create flange unit-time reference")
+      toast.error(err.message || t("flangeUnitTimeFailed"))
     } finally {
       setIsSubmittingUnitTime(false)
     }
@@ -373,9 +375,9 @@ export function ExecutionReferenceTabs({
       setPunchCode("")
       setPunchDescription("")
       setIsAddPunchCodeOpen(false)
-      toast.success("Punch code created")
+      toast.success(t("punchCodeCreated"))
     } catch (err: any) {
-      toast.error(err.message || "Failed to create punch code")
+      toast.error(err.message || t("punchCodeFailed"))
     } finally {
       setIsSubmittingPunchCode(false)
     }
@@ -388,9 +390,9 @@ export function ExecutionReferenceTabs({
         ...prev,
         punchCodes: prev.punchCodes.map((item) => item.id === id ? { ...item, status: "inactive" } : item),
       } : null)
-      toast.success("Punch code deactivated")
+      toast.success(t("punchCodeDeactivated"))
     } catch (err: any) {
-      toast.error(err.message || "Failed to deactivate punch code")
+      toast.error(err.message || t("punchCodeDeactivateFailed"))
     }
   }
 
@@ -401,10 +403,10 @@ export function ExecutionReferenceTabs({
         <CardContent className="pt-6">
           <div className="flex items-center gap-3 text-destructive">
             <AlertCircle className="h-5 w-5" />
-            <p className="font-medium">{error || "Data unavailable"}</p>
+            <p className="font-medium">{error || t("dataUnavailable")}</p>
           </div>
           <Button variant="outline" className="mt-4" onClick={fetchAll}>
-            <RefreshCw className="mr-2 h-4 w-4" /> Retry
+            <RefreshCw className="mr-2 h-4 w-4" /> {t("retry")}
           </Button>
         </CardContent>
       </Card>
@@ -419,10 +421,10 @@ export function ExecutionReferenceTabs({
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
       <TabsList className="w-full overflow-x-auto whitespace-nowrap">
-        <TabsTrigger value="teams">Teams ({data.teams.length})</TabsTrigger>
-        <TabsTrigger value="testpack">Test Pack</TabsTrigger>
-        <TabsTrigger value="tracking">Tracking</TabsTrigger>
-        <TabsTrigger value="pressure">Pressure</TabsTrigger>
+        <TabsTrigger value="teams">{t("tabs.teams", { count: data.teams.length })}</TabsTrigger>
+        <TabsTrigger value="testpack">{t("tabs.testPack")}</TabsTrigger>
+        <TabsTrigger value="tracking">{t("tabs.tracking")}</TabsTrigger>
+        <TabsTrigger value="pressure">{t("tabs.pressure")}</TabsTrigger>
       </TabsList>
 
       {/* ─── Teams ─── */}
@@ -431,8 +433,8 @@ export function ExecutionReferenceTabs({
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Project Teams</CardTitle>
-                <CardDescription>Line check, blinding, finishing, reinstatement, and jointer teams.</CardDescription>
+                <CardTitle>{t("teamsTitle")}</CardTitle>
+                <CardDescription>{t("teamsDesc")}</CardDescription>
               </div>
               <div className="flex gap-2">
                 <Button variant="ghost" size="icon" onClick={fetchAll}>
@@ -440,7 +442,7 @@ export function ExecutionReferenceTabs({
                 </Button>
                 {canManage && (
                   <Button size="sm" onClick={() => setIsAddTeamOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" /> Add Team
+                    <Plus className="mr-2 h-4 w-4" /> {t("addTeam")}
                   </Button>
                 )}
               </div>
@@ -451,7 +453,7 @@ export function ExecutionReferenceTabs({
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Filter teams…"
+                  placeholder={t("filterTeams")}
                   value={teamSearch}
                   onChange={(e) => setTeamSearch(e.target.value)}
                   className="pl-10"
@@ -459,7 +461,7 @@ export function ExecutionReferenceTabs({
               </div>
             </div>
             {filteredTeams.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-6 text-center">No teams found.</p>
+              <p className="text-muted-foreground text-sm py-6 text-center">{t("noTeams")}</p>
             ) : (
               <div className="space-y-2">
                 {filteredTeams.map((team) => (
@@ -486,18 +488,18 @@ export function ExecutionReferenceTabs({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <div>
-              <CardTitle>Punch Codes</CardTitle>
-              <CardDescription>Codes available when Line Check records Category X items.</CardDescription>
+              <CardTitle>{t("punchCodesTitle")}</CardTitle>
+              <CardDescription>{t("punchCodesDesc")}</CardDescription>
             </div>
             {canManage && (
               <Button size="sm" onClick={() => setIsAddPunchCodeOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> Add Punch Code
+                <Plus className="mr-2 h-4 w-4" /> {t("addPunchCode")}
               </Button>
             )}
           </CardHeader>
           <CardContent>
             {data.punchCodes.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-4 text-center">No punch codes defined.</p>
+              <p className="text-muted-foreground text-sm py-4 text-center">{t("noPunchCodes")}</p>
             ) : (
               <div className="space-y-2">
                 {data.punchCodes.map((item) => (
@@ -510,7 +512,7 @@ export function ExecutionReferenceTabs({
                       <ReferenceStatusBadge status={item.status} />
                       {canManage && item.status === "active" && (
                         <Button variant="outline" size="sm" onClick={() => void handleDeactivatePunchCode(item.id)}>
-                          Deactivate
+                          {t("deactivate")}
                         </Button>
                       )}
                     </div>
@@ -529,19 +531,19 @@ export function ExecutionReferenceTabs({
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Systems</CardTitle>
-                <CardDescription>Top-level engineering systems.</CardDescription>
+                <CardTitle>{t("systemsTitle")}</CardTitle>
+                <CardDescription>{t("systemsDesc")}</CardDescription>
               </div>
               {canManage && (
                 <Button size="sm" onClick={() => setIsAddSystemOpen(true)}>
-                  <Plus className="mr-2 h-4 w-4" /> Add System
+                  <Plus className="mr-2 h-4 w-4" /> {t("addSystem")}
                 </Button>
               )}
             </div>
           </CardHeader>
           <CardContent>
             {data.systems.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-4 text-center">No systems defined.</p>
+              <p className="text-muted-foreground text-sm py-4 text-center">{t("noSystems")}</p>
             ) : (
               <div className="space-y-2">
                 {data.systems.map((sys) => (
@@ -563,8 +565,8 @@ export function ExecutionReferenceTabs({
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Subsystems</CardTitle>
-                <CardDescription>Must belong to an active system.</CardDescription>
+                <CardTitle>{t("subsystemsTitle")}</CardTitle>
+                <CardDescription>{t("subsystemsDesc")}</CardDescription>
               </div>
               {canManage && (
                 <Button
@@ -575,14 +577,14 @@ export function ExecutionReferenceTabs({
                     setIsAddSubsystemOpen(true)
                   }}
                 >
-                  <Plus className="mr-2 h-4 w-4" /> Add Subsystem
+                  <Plus className="mr-2 h-4 w-4" /> {t("addSubsystem")}
                 </Button>
               )}
             </div>
           </CardHeader>
           <CardContent>
             {data.subsystems.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-4 text-center">No subsystems defined.</p>
+              <p className="text-muted-foreground text-sm py-4 text-center">{t("noSubsystems")}</p>
             ) : (
               <div className="space-y-2">
                 {data.subsystems.map((sub) => (
@@ -605,19 +607,19 @@ export function ExecutionReferenceTabs({
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Line Services</CardTitle>
-                <CardDescription>Line service classifications used in test-pack and painting.</CardDescription>
+                <CardTitle>{t("lineServicesTitle")}</CardTitle>
+                <CardDescription>{t("lineServicesDesc")}</CardDescription>
               </div>
               {canManage && (
                 <Button size="sm" onClick={() => setIsAddLineServiceOpen(true)}>
-                  <Plus className="mr-2 h-4 w-4" /> Add Line Service
+                  <Plus className="mr-2 h-4 w-4" /> {t("addLineService")}
                 </Button>
               )}
             </div>
           </CardHeader>
           <CardContent>
             {data.lineServices.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-4 text-center">No line services defined.</p>
+              <p className="text-muted-foreground text-sm py-4 text-center">{t("noLineServices")}</p>
             ) : (
               <div className="space-y-2">
                 {data.lineServices.map((ls) => (
@@ -638,18 +640,18 @@ export function ExecutionReferenceTabs({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <div>
-              <CardTitle>Unit of Time References</CardTitle>
-              <CardDescription>Project UT quantities used by progress formulas.</CardDescription>
+              <CardTitle>{t("unitTimeTitle")}</CardTitle>
+              <CardDescription>{t("unitTimeDesc")}</CardDescription>
             </div>
             {canManage && (
               <Button size="sm" onClick={() => setIsAddUnitTimeOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> Add Flange Unit Time
+                <Plus className="mr-2 h-4 w-4" /> {t("addFlangeUnitTime")}
               </Button>
             )}
           </CardHeader>
           <CardContent>
             {data.unitTimeReferences.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-4 text-center">No unit time references defined.</p>
+              <p className="text-muted-foreground text-sm py-4 text-center">{t("noUnitTime")}</p>
             ) : (
               <div className="space-y-2">
                 {data.unitTimeReferences.map((ut) => (
@@ -673,13 +675,13 @@ export function ExecutionReferenceTabs({
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between gap-3">
-              <div><CardTitle>Location Categories</CardTitle><CardDescription>High-level location groupings.</CardDescription></div>
-              {canManage && <Button size="sm" onClick={() => setIsAddLocationCategoryOpen(true)}><Plus className="mr-2 h-4 w-4" /> Add Category</Button>}
+              <div><CardTitle>{t("locationCategoriesTitle")}</CardTitle><CardDescription>{t("locationCategoriesDesc")}</CardDescription></div>
+              {canManage && <Button size="sm" onClick={() => setIsAddLocationCategoryOpen(true)}><Plus className="mr-2 h-4 w-4" /> {t("addCategory")}</Button>}
             </div>
           </CardHeader>
           <CardContent>
             {data.locationCategories.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-4 text-center">No location categories defined.</p>
+              <p className="text-muted-foreground text-sm py-4 text-center">{t("noLocationCategories")}</p>
             ) : (
               <div className="space-y-2">
                 {data.locationCategories.map((cat) => (
@@ -699,13 +701,13 @@ export function ExecutionReferenceTabs({
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between gap-3">
-              <div><CardTitle>Locations</CardTitle><CardDescription>Tracking locations with progress column mapping and real capacity.</CardDescription></div>
-              {canManage && <Button size="sm" onClick={() => { setLocationCategoryId(data.locationCategories[0]?.id ?? ""); setIsAddLocationOpen(true) }} disabled={data.locationCategories.length === 0}><Plus className="mr-2 h-4 w-4" /> Add Location</Button>}
+              <div><CardTitle>{t("locationsTitle")}</CardTitle><CardDescription>{t("locationsDesc")}</CardDescription></div>
+              {canManage && <Button size="sm" onClick={() => { setLocationCategoryId(data.locationCategories[0]?.id ?? ""); setIsAddLocationOpen(true) }} disabled={data.locationCategories.length === 0}><Plus className="mr-2 h-4 w-4" /> {t("addLocation")}</Button>}
             </div>
           </CardHeader>
           <CardContent>
             {data.locations.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-4 text-center">No locations defined.</p>
+              <p className="text-muted-foreground text-sm py-4 text-center">{t("noLocations")}</p>
             ) : (
               <div className="space-y-2">
                 {data.locations.map((loc) => (
@@ -720,11 +722,11 @@ export function ExecutionReferenceTabs({
                         </Badge>
                       )}
                       <Badge variant={loc.capacity === null ? "outline" : "secondary"}>
-                        Capacity: {loc.capacity ?? "Not configured"}
+                        {t("capacityLabel")} {loc.capacity ?? t("notConfigured")}
                       </Badge>
                     </div>
                     <div className="flex items-center gap-2">
-                      {canManage && <Button size="sm" variant="outline" onClick={() => { setCapacityLocationId(loc.id); setCapacityValue(loc.capacity?.toString() ?? "") }}>Edit capacity</Button>}
+                      {canManage && <Button size="sm" variant="outline" onClick={() => { setCapacityLocationId(loc.id); setCapacityValue(loc.capacity?.toString() ?? "") }}>{t("editCapacity")}</Button>}
                       <ReferenceStatusBadge status={loc.status} />
                     </div>
                   </div>
@@ -739,17 +741,17 @@ export function ExecutionReferenceTabs({
       <TabsContent value="pressure" className="mt-4">
         <Card>
           <CardHeader>
-            <CardTitle>Pressure Unit</CardTitle>
-            <CardDescription>Project-scoped pressure unit. One per project.</CardDescription>
+            <CardTitle>{t("pressureUnitTitle")}</CardTitle>
+            <CardDescription>{t("pressureUnitDesc")}</CardDescription>
           </CardHeader>
           <CardContent>
             {data.pressureUnit ? (
               <div className="flex items-center gap-3 p-3 border rounded-md">
                 <Badge variant="default">{data.pressureUnit.unit.toUpperCase()}</Badge>
-                <span className="text-sm text-muted-foreground">Active for this project</span>
+                <span className="text-sm text-muted-foreground">{t("activeForProject")}</span>
               </div>
             ) : (
-              <p className="text-muted-foreground text-sm py-4 text-center">No pressure unit selected.</p>
+              <p className="text-muted-foreground text-sm py-4 text-center">{t("noPressureUnit")}</p>
             )}
           </CardContent>
         </Card>
@@ -759,34 +761,34 @@ export function ExecutionReferenceTabs({
 
       <Dialog open={isAddLocationCategoryOpen} onOpenChange={setIsAddLocationCategoryOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Add Location Category</DialogTitle><DialogDescription>Create a project-scoped tracking location category.</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>{t("dialogs.addLocationCategoryTitle")}</DialogTitle><DialogDescription>{t("dialogs.addLocationCategoryDesc")}</DialogDescription></DialogHeader>
           <div className="space-y-4">
-            <div><Label htmlFor="location-category-code">Code</Label><Input id="location-category-code" value={locationCategoryCode} onChange={(event) => setLocationCategoryCode(event.target.value)} />{locationErrors.code && <p className="text-xs text-destructive">{locationErrors.code}</p>}</div>
-            <div><Label htmlFor="location-category-description">Description</Label><Input id="location-category-description" value={locationCategoryDescription} onChange={(event) => setLocationCategoryDescription(event.target.value)} />{locationErrors.description && <p className="text-xs text-destructive">{locationErrors.description}</p>}</div>
+            <div><Label htmlFor="location-category-code">{t("dialogs.codeLabel")}</Label><Input id="location-category-code" value={locationCategoryCode} onChange={(event) => setLocationCategoryCode(event.target.value)} />{locationErrors.code && <p className="text-xs text-destructive">{locationErrors.code}</p>}</div>
+            <div><Label htmlFor="location-category-description">{t("dialogs.descLabel")}</Label><Input id="location-category-description" value={locationCategoryDescription} onChange={(event) => setLocationCategoryDescription(event.target.value)} />{locationErrors.description && <p className="text-xs text-destructive">{locationErrors.description}</p>}</div>
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setIsAddLocationCategoryOpen(false)}>Cancel</Button><Button onClick={handleAddLocationCategory} disabled={isSubmittingLocation}>Create</Button></DialogFooter>
+          <DialogFooter><Button variant="outline" onClick={() => setIsAddLocationCategoryOpen(false)}>{t("dialogs.cancel")}</Button><Button onClick={handleAddLocationCategory} disabled={isSubmittingLocation}>{t("dialogs.create")}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isAddLocationOpen} onOpenChange={setIsAddLocationOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Add Tracking Location</DialogTitle><DialogDescription>Capacity is required for new locations.</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>{t("dialogs.addLocationTitle")}</DialogTitle><DialogDescription>{t("dialogs.addLocationDesc")}</DialogDescription></DialogHeader>
           <div className="space-y-4">
-            <div><Label htmlFor="location-category">Category</Label><Select value={locationCategoryId} onValueChange={setLocationCategoryId}><SelectTrigger id="location-category"><SelectValue placeholder="Select category" /></SelectTrigger><SelectContent>{data.locationCategories.map((category) => <SelectItem key={category.id} value={category.id}>{category.code} — {category.description}</SelectItem>)}</SelectContent></Select>{locationErrors.categoryId && <p className="text-xs text-destructive">{locationErrors.categoryId}</p>}</div>
-            <div><Label htmlFor="location-code">Code</Label><Input id="location-code" value={locationCode} onChange={(event) => setLocationCode(event.target.value)} />{locationErrors.code && <p className="text-xs text-destructive">{locationErrors.code}</p>}</div>
-            <div><Label htmlFor="location-description">Description</Label><Input id="location-description" value={locationDescription} onChange={(event) => setLocationDescription(event.target.value)} />{locationErrors.description && <p className="text-xs text-destructive">{locationErrors.description}</p>}</div>
-            <div><Label htmlFor="location-capacity">Capacity</Label><Input id="location-capacity" type="number" min="1" value={locationCapacity} onChange={(event) => setLocationCapacity(event.target.value)} />{locationErrors.capacity && <p className="text-xs text-destructive">{locationErrors.capacity}</p>}</div>
-            <div><Label htmlFor="location-progress">Progress columns</Label><Input id="location-progress" value={locationProgressColumns} onChange={(event) => setLocationProgressColumns(event.target.value)} placeholder="start_fab, erected" /></div>
+            <div><Label htmlFor="location-category">{t("dialogs.categoryLabel")}</Label><Select value={locationCategoryId} onValueChange={setLocationCategoryId}><SelectTrigger id="location-category"><SelectValue placeholder={t("dialogs.selectCategory")} /></SelectTrigger><SelectContent>{data.locationCategories.map((category) => <SelectItem key={category.id} value={category.id}>{category.code} — {category.description}</SelectItem>)}</SelectContent></Select>{locationErrors.categoryId && <p className="text-xs text-destructive">{locationErrors.categoryId}</p>}</div>
+            <div><Label htmlFor="location-code">{t("dialogs.codeLabel")}</Label><Input id="location-code" value={locationCode} onChange={(event) => setLocationCode(event.target.value)} />{locationErrors.code && <p className="text-xs text-destructive">{locationErrors.code}</p>}</div>
+            <div><Label htmlFor="location-description">{t("dialogs.descLabel")}</Label><Input id="location-description" value={locationDescription} onChange={(event) => setLocationDescription(event.target.value)} />{locationErrors.description && <p className="text-xs text-destructive">{locationErrors.description}</p>}</div>
+            <div><Label htmlFor="location-capacity">{t("dialogs.capacityFieldLabel")}</Label><Input id="location-capacity" type="number" min="1" value={locationCapacity} onChange={(event) => setLocationCapacity(event.target.value)} />{locationErrors.capacity && <p className="text-xs text-destructive">{locationErrors.capacity}</p>}</div>
+            <div><Label htmlFor="location-progress">{t("dialogs.progressColumnsLabel")}</Label><Input id="location-progress" value={locationProgressColumns} onChange={(event) => setLocationProgressColumns(event.target.value)} placeholder={t("dialogs.progressColumnsPlaceholder")} /></div>
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setIsAddLocationOpen(false)}>Cancel</Button><Button onClick={handleAddLocation} disabled={isSubmittingLocation}>Create</Button></DialogFooter>
+          <DialogFooter><Button variant="outline" onClick={() => setIsAddLocationOpen(false)}>{t("dialogs.cancel")}</Button><Button onClick={handleAddLocation} disabled={isSubmittingLocation}>{t("dialogs.create")}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Dialog open={capacityLocationId !== null} onOpenChange={(open) => { if (!open) { setCapacityLocationId(null); setCapacityValue(""); setLocationErrors({}) } }}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Edit Location Capacity</DialogTitle><DialogDescription>Repair a legacy location or update its operating capacity.</DialogDescription></DialogHeader>
-          <div><Label htmlFor="edit-location-capacity">Capacity</Label><Input id="edit-location-capacity" type="number" min="1" value={capacityValue} onChange={(event) => setCapacityValue(event.target.value)} />{locationErrors.capacity && <p className="text-xs text-destructive">{locationErrors.capacity}</p>}</div>
-          <DialogFooter><Button variant="outline" onClick={() => setCapacityLocationId(null)}>Cancel</Button><Button onClick={handleUpdateLocationCapacity} disabled={isSubmittingLocation}>Save</Button></DialogFooter>
+          <DialogHeader><DialogTitle>{t("dialogs.editCapacityTitle")}</DialogTitle><DialogDescription>{t("dialogs.editCapacityDesc")}</DialogDescription></DialogHeader>
+          <div><Label htmlFor="edit-location-capacity">{t("dialogs.capacityFieldLabel")}</Label><Input id="edit-location-capacity" type="number" min="1" value={capacityValue} onChange={(event) => setCapacityValue(event.target.value)} />{locationErrors.capacity && <p className="text-xs text-destructive">{locationErrors.capacity}</p>}</div>
+          <DialogFooter><Button variant="outline" onClick={() => setCapacityLocationId(null)}>{t("dialogs.cancel")}</Button><Button onClick={handleUpdateLocationCapacity} disabled={isSubmittingLocation}>{t("dialogs.save")}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -794,22 +796,22 @@ export function ExecutionReferenceTabs({
       <Dialog open={isAddTeamOpen} onOpenChange={(open) => { if (!open) { setIsAddTeamOpen(false); resetTeamForm() } }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Project Team</DialogTitle>
-            <DialogDescription>Create a new team for this project.</DialogDescription>
+            <DialogTitle>{t("dialogs.addTeamTitle")}</DialogTitle>
+            <DialogDescription>{t("dialogs.addTeamDesc")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="team-code">Code</Label>
-              <Input id="team-code" value={teamCode} onChange={(e) => setTeamCode(e.target.value)} placeholder="e.g. LC-01" />
+              <Label htmlFor="team-code">{t("dialogs.codeLabel")}</Label>
+              <Input id="team-code" value={teamCode} onChange={(e) => setTeamCode(e.target.value)} placeholder={t("dialogs.teamCodePlaceholder")} />
               {teamErrors.code && <p className="text-xs text-destructive mt-1">{teamErrors.code}</p>}
             </div>
             <div>
-              <Label htmlFor="team-desc">Description</Label>
-              <Input id="team-desc" value={teamDesc} onChange={(e) => setTeamDesc(e.target.value)} placeholder="Line Check Team Alpha" />
+              <Label htmlFor="team-desc">{t("dialogs.descLabel")}</Label>
+              <Input id="team-desc" value={teamDesc} onChange={(e) => setTeamDesc(e.target.value)} placeholder={t("dialogs.teamDescPlaceholder")} />
               {teamErrors.description && <p className="text-xs text-destructive mt-1">{teamErrors.description}</p>}
             </div>
             <div>
-              <Label htmlFor="team-type">Team Type</Label>
+              <Label htmlFor="team-type">{t("dialogs.teamTypeLabel")}</Label>
               <Select value={teamType} onValueChange={(v) => setTeamType(v as ProjectTeamType)}>
                 <SelectTrigger id="team-type"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -822,8 +824,8 @@ export function ExecutionReferenceTabs({
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setIsAddTeamOpen(false); resetTeamForm() }}>Cancel</Button>
-            <Button onClick={handleAddTeam} loading={isSubmittingTeam}>Create</Button>
+            <Button variant="outline" onClick={() => { setIsAddTeamOpen(false); resetTeamForm() }}>{t("dialogs.cancel")}</Button>
+            <Button onClick={handleAddTeam} loading={isSubmittingTeam}>{t("dialogs.create")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -832,24 +834,24 @@ export function ExecutionReferenceTabs({
       <Dialog open={isAddSystemOpen} onOpenChange={(open) => { if (!open) { setIsAddSystemOpen(false); setSysCode(""); setSysDesc(""); setSysErrors({}) } }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add System</DialogTitle>
-            <DialogDescription>Create a top-level engineering system.</DialogDescription>
+            <DialogTitle>{t("dialogs.addSystemTitle")}</DialogTitle>
+            <DialogDescription>{t("dialogs.addSystemDesc")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="sys-code">Code</Label>
-              <Input id="sys-code" value={sysCode} onChange={(e) => setSysCode(e.target.value)} placeholder="e.g. SYS-001" />
+              <Label htmlFor="sys-code">{t("dialogs.codeLabel")}</Label>
+              <Input id="sys-code" value={sysCode} onChange={(e) => setSysCode(e.target.value)} placeholder={t("dialogs.sysCodePlaceholder")} />
               {sysErrors.code && <p className="text-xs text-destructive mt-1">{sysErrors.code}</p>}
             </div>
             <div>
-              <Label htmlFor="sys-desc">Description</Label>
-              <Input id="sys-desc" value={sysDesc} onChange={(e) => setSysDesc(e.target.value)} placeholder="Fire Water System" />
+              <Label htmlFor="sys-desc">{t("dialogs.descLabel")}</Label>
+              <Input id="sys-desc" value={sysDesc} onChange={(e) => setSysDesc(e.target.value)} placeholder={t("dialogs.sysDescPlaceholder")} />
               {sysErrors.description && <p className="text-xs text-destructive mt-1">{sysErrors.description}</p>}
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setIsAddSystemOpen(false); setSysCode(""); setSysDesc(""); setSysErrors({}) }}>Cancel</Button>
-            <Button onClick={handleAddSystem} loading={isSubmittingSystem}>Create</Button>
+            <Button variant="outline" onClick={() => { setIsAddSystemOpen(false); setSysCode(""); setSysDesc(""); setSysErrors({}) }}>{t("dialogs.cancel")}</Button>
+            <Button onClick={handleAddSystem} loading={isSubmittingSystem}>{t("dialogs.create")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -858,14 +860,14 @@ export function ExecutionReferenceTabs({
       <Dialog open={isAddSubsystemOpen} onOpenChange={(open) => { if (!open) { setIsAddSubsystemOpen(false); setSubCode(""); setSubDesc(""); setSubSystemId(""); setSubErrors({}) } }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Subsystem</DialogTitle>
-            <DialogDescription>Create a subsystem within a parent system.</DialogDescription>
+            <DialogTitle>{t("dialogs.addSubsystemTitle")}</DialogTitle>
+            <DialogDescription>{t("dialogs.addSubsystemDesc")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="sub-system">Parent System</Label>
+              <Label htmlFor="sub-system">{t("dialogs.parentSystemLabel")}</Label>
               <Select value={subSystemId} onValueChange={setSubSystemId}>
-                <SelectTrigger id="sub-system"><SelectValue placeholder="Select system" /></SelectTrigger>
+                <SelectTrigger id="sub-system"><SelectValue placeholder={t("dialogs.selectSystem")} /></SelectTrigger>
                 <SelectContent>
                   {activeSystems.map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.code} — {s.description}</SelectItem>
@@ -875,19 +877,19 @@ export function ExecutionReferenceTabs({
               {subErrors.systemId && <p className="text-xs text-destructive mt-1">{subErrors.systemId}</p>}
             </div>
             <div>
-              <Label htmlFor="sub-code">Code</Label>
-              <Input id="sub-code" value={subCode} onChange={(e) => setSubCode(e.target.value)} placeholder="e.g. SS-001A" />
+              <Label htmlFor="sub-code">{t("dialogs.codeLabel")}</Label>
+              <Input id="sub-code" value={subCode} onChange={(e) => setSubCode(e.target.value)} placeholder={t("dialogs.subCodePlaceholder")} />
               {subErrors.code && <p className="text-xs text-destructive mt-1">{subErrors.code}</p>}
             </div>
             <div>
-              <Label htmlFor="sub-desc">Description</Label>
-              <Input id="sub-desc" value={subDesc} onChange={(e) => setSubDesc(e.target.value)} placeholder="Sub System Description" />
+              <Label htmlFor="sub-desc">{t("dialogs.descLabel")}</Label>
+              <Input id="sub-desc" value={subDesc} onChange={(e) => setSubDesc(e.target.value)} placeholder={t("dialogs.subDescPlaceholder")} />
               {subErrors.description && <p className="text-xs text-destructive mt-1">{subErrors.description}</p>}
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setIsAddSubsystemOpen(false) }}>Cancel</Button>
-            <Button onClick={handleAddSubsystem} loading={isSubmittingSubsystem}>Create</Button>
+            <Button variant="outline" onClick={() => { setIsAddSubsystemOpen(false) }}>{t("dialogs.cancel")}</Button>
+            <Button onClick={handleAddSubsystem} loading={isSubmittingSubsystem}>{t("dialogs.create")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -896,24 +898,24 @@ export function ExecutionReferenceTabs({
       <Dialog open={isAddLineServiceOpen} onOpenChange={(open) => { if (!open) { setIsAddLineServiceOpen(false); setLsCode(""); setLsDesc(""); setLsErrors({}) } }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Line Service</DialogTitle>
-            <DialogDescription>Create a line service classification.</DialogDescription>
+            <DialogTitle>{t("dialogs.addLineServiceTitle")}</DialogTitle>
+            <DialogDescription>{t("dialogs.addLineServiceDesc")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="ls-code">Code</Label>
-              <Input id="ls-code" value={lsCode} onChange={(e) => setLsCode(e.target.value)} placeholder="e.g. LS-STEAM" />
+              <Label htmlFor="ls-code">{t("dialogs.codeLabel")}</Label>
+              <Input id="ls-code" value={lsCode} onChange={(e) => setLsCode(e.target.value)} placeholder={t("dialogs.lsCodePlaceholder")} />
               {lsErrors.code && <p className="text-xs text-destructive mt-1">{lsErrors.code}</p>}
             </div>
             <div>
-              <Label htmlFor="ls-desc">Description</Label>
-              <Input id="ls-desc" value={lsDesc} onChange={(e) => setLsDesc(e.target.value)} placeholder="Process Steam Line" />
+              <Label htmlFor="ls-desc">{t("dialogs.descLabel")}</Label>
+              <Input id="ls-desc" value={lsDesc} onChange={(e) => setLsDesc(e.target.value)} placeholder={t("dialogs.lsDescPlaceholder")} />
               {lsErrors.description && <p className="text-xs text-destructive mt-1">{lsErrors.description}</p>}
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setIsAddLineServiceOpen(false); setLsCode(""); setLsDesc(""); setLsErrors({}) }}>Cancel</Button>
-            <Button onClick={handleAddLineService} loading={isSubmittingLineService}>Create</Button>
+            <Button variant="outline" onClick={() => { setIsAddLineServiceOpen(false); setLsCode(""); setLsDesc(""); setLsErrors({}) }}>{t("dialogs.cancel")}</Button>
+            <Button onClick={handleAddLineService} loading={isSubmittingLineService}>{t("dialogs.create")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -922,28 +924,28 @@ export function ExecutionReferenceTabs({
         <DialogContent>
           <form onSubmit={handleAddUnitTimeReference}>
             <DialogHeader>
-              <DialogTitle>Add Flange Unit Time</DialogTitle>
-              <DialogDescription>Configure the project quantity for FLANGE_JOINTING.</DialogDescription>
+              <DialogTitle>{t("dialogs.addFlangeUnitTimeTitle")}</DialogTitle>
+              <DialogDescription>{t("dialogs.addFlangeUnitTimeDesc")}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-3">
               <div>
-                <Label htmlFor="unit-time-activity">Activity</Label>
+                <Label htmlFor="unit-time-activity">{t("dialogs.activityLabel")}</Label>
                 <Input id="unit-time-activity" value={FLANGE_JOINTING_ACTIVITY} readOnly />
               </div>
               <div>
-                <Label htmlFor="unit-time-ut">Project UT</Label>
+                <Label htmlFor="unit-time-ut">{t("dialogs.projectUtLabel")}</Label>
                 <Input id="unit-time-ut" type="number" step="0.001" value={unitTimeUt} onChange={(e) => setUnitTimeUt(e.target.value)} disabled={isSubmittingUnitTime} />
                 {unitTimeErrors.projectUt && <p className="mt-1 text-xs text-destructive">{unitTimeErrors.projectUt}</p>}
               </div>
               <div>
-                <Label htmlFor="unit-time-standard">Standard reference</Label>
+                <Label htmlFor="unit-time-standard">{t("dialogs.standardReferenceLabel")}</Label>
                 <Input id="unit-time-standard" value={unitTimeStandard} onChange={(e) => setUnitTimeStandard(e.target.value)} disabled={isSubmittingUnitTime} />
                 {unitTimeErrors.standardReference && <p className="mt-1 text-xs text-destructive">{unitTimeErrors.standardReference}</p>}
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsAddUnitTimeOpen(false)} disabled={isSubmittingUnitTime}>Cancel</Button>
-              <Button type="submit" loading={isSubmittingUnitTime}>Create</Button>
+              <Button type="button" variant="outline" onClick={() => setIsAddUnitTimeOpen(false)} disabled={isSubmittingUnitTime}>{t("dialogs.cancel")}</Button>
+              <Button type="submit" loading={isSubmittingUnitTime}>{t("dialogs.create")}</Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -953,24 +955,24 @@ export function ExecutionReferenceTabs({
         <DialogContent>
           <form onSubmit={handleAddPunchCode}>
             <DialogHeader>
-              <DialogTitle>Add Punch Code</DialogTitle>
-              <DialogDescription>Create a project code for Category X Line Check items.</DialogDescription>
+              <DialogTitle>{t("dialogs.addPunchCodeTitle")}</DialogTitle>
+              <DialogDescription>{t("dialogs.addPunchCodeDesc")}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-3">
               <div>
-                <Label htmlFor="punch-code">Code</Label>
+                <Label htmlFor="punch-code">{t("dialogs.codeLabel")}</Label>
                 <Input id="punch-code" value={punchCode} onChange={(e) => setPunchCode(e.target.value)} disabled={isSubmittingPunchCode} />
                 {punchErrors.code && <p className="mt-1 text-xs text-destructive">{punchErrors.code}</p>}
               </div>
               <div>
-                <Label htmlFor="punch-description">Description</Label>
+                <Label htmlFor="punch-description">{t("dialogs.descLabel")}</Label>
                 <Input id="punch-description" value={punchDescription} onChange={(e) => setPunchDescription(e.target.value)} disabled={isSubmittingPunchCode} />
                 {punchErrors.description && <p className="mt-1 text-xs text-destructive">{punchErrors.description}</p>}
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsAddPunchCodeOpen(false)} disabled={isSubmittingPunchCode}>Cancel</Button>
-              <Button type="submit" loading={isSubmittingPunchCode}>Create</Button>
+              <Button type="button" variant="outline" onClick={() => setIsAddPunchCodeOpen(false)} disabled={isSubmittingPunchCode}>{t("dialogs.cancel")}</Button>
+              <Button type="submit" loading={isSubmittingPunchCode}>{t("dialogs.create")}</Button>
             </DialogFooter>
           </form>
         </DialogContent>
