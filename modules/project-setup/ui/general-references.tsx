@@ -4,17 +4,11 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
 import { formatFieldErrors } from "./setup-field-issue"
 
-import { AlertCircle, Plus, RefreshCw, Search } from "lucide-react"
+import { AlertCircle, Plus, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { type DataColumn } from "@/components/ui/data-table"
 import {
   Dialog,
   DialogContent,
@@ -39,11 +33,16 @@ import {
 } from "../infrastructure/supabase-project-geography-repository"
 import { ReferenceStatusBadge } from "./reference-status-badge"
 import { type ReferenceKeyOf } from "./reference-catalog"
+import { ReferencePane, ReferenceTable } from "./reference-pane"
 import {
   validateSubcontractorInput,
   validateUnitInput,
   validateAreaClassificationInput,
   validatePdsAreaInput,
+  type Subcontractor,
+  type Unit,
+  type AreaClassification,
+  type PdsArea,
 } from "../domain/project-geography"
 
 /**
@@ -54,6 +53,46 @@ const NO_SELECTION = "__none__"
 
 const optionalId = (value: string): string | null =>
   value === "" || value === NO_SELECTION ? null : value
+
+// Same typing as `FlangeColumnsTranslator` in modules/flange/ui/flange-management-screen.tsx:28.
+type GeneralT = ReturnType<typeof useTranslations<"projectSetup.projectGeography">>
+
+function subcontractorColumns(t: GeneralT): ReadonlyArray<DataColumn<Subcontractor>> {
+  return [
+    { id: "code", header: t("columns.code"), value: (row) => row.code, searchable: true, alwaysVisible: true, className: "font-mono font-medium" },
+    { id: "description", header: t("columns.description"), value: (row) => row.description, searchable: true },
+    { id: "contactDetails", header: t("columns.contactDetails"), value: (row) => row.contactDetails ?? "", searchable: true, cell: (row) => row.contactDetails || "—", className: "text-muted-foreground" },
+    { id: "status", header: t("columns.status"), value: (row) => row.status, cell: (row) => <ReferenceStatusBadge status={row.status} /> },
+  ]
+}
+
+function unitColumns(t: GeneralT): ReadonlyArray<DataColumn<Unit>> {
+  return [
+    { id: "code", header: t("columns.unitCode"), value: (row) => row.code, searchable: true, alwaysVisible: true, className: "font-mono font-medium" },
+    { id: "description", header: t("columns.description"), value: (row) => row.description, searchable: true },
+    { id: "status", header: t("columns.status"), value: (row) => row.status, cell: (row) => <ReferenceStatusBadge status={row.status} /> },
+  ]
+}
+
+function areaClassificationColumns(t: GeneralT): ReadonlyArray<DataColumn<AreaClassification>> {
+  return [
+    { id: "code", header: t("columns.areaCode"), value: (row) => row.code, searchable: true, alwaysVisible: true, className: "font-mono font-medium" },
+    { id: "description", header: t("columns.description"), value: (row) => row.description, searchable: true },
+    { id: "associatedUnit", header: t("columns.associatedUnit"), value: (row) => row.unitCode ?? "", cell: (row) => row.unitCode || "—", className: "font-mono text-muted-foreground" },
+    { id: "status", header: t("columns.status"), value: (row) => row.status, cell: (row) => <ReferenceStatusBadge status={row.status} /> },
+  ]
+}
+
+function pdsAreaColumns(t: GeneralT): ReadonlyArray<DataColumn<PdsArea>> {
+  return [
+    { id: "code", header: t("columns.pdsCode"), value: (row) => row.code, searchable: true, alwaysVisible: true, className: "font-mono font-medium" },
+    { id: "description", header: t("columns.description"), value: (row) => row.description, searchable: true },
+    { id: "shopSub", header: t("columns.shopSub"), value: (row) => row.shopSubcontractorCode ?? "", searchable: true, cell: (row) => row.shopSubcontractorCode || "—", className: "font-mono" },
+    { id: "assemblySub", header: t("columns.assemblySub"), value: (row) => row.assemblySubcontractorCode ?? "", searchable: true, cell: (row) => row.assemblySubcontractorCode || "—", className: "font-mono" },
+    { id: "fieldSub", header: t("columns.fieldSub"), value: (row) => row.fieldSubcontractorCode ?? "", searchable: true, cell: (row) => row.fieldSubcontractorCode || "—", className: "font-mono" },
+    { id: "status", header: t("columns.status"), value: (row) => row.status, cell: (row) => <ReferenceStatusBadge status={row.status} /> },
+  ]
+}
 
 export function GeneralReferences({
   projectId,
@@ -70,10 +109,6 @@ export function GeneralReferences({
 
   const [error, setError] = useState<string | null>(null)
   const [geography, setGeography] = useState<LoadedProjectGeography | null>(null)
-
-  // Search filters
-  const [subSearch, setSubSearch] = useState("")
-  const [pdsSearch, setPdsSearch] = useState("")
 
   // Add Subcontractor Dialog
   const [isAddSubOpen, setIsAddSubOpen] = useState(false)
@@ -327,272 +362,125 @@ export function GeneralReferences({
 
   if (error) {
     return (
-      <Card className="border-destructive/50 bg-destructive/5">
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-3 text-destructive">
-            <AlertCircle className="h-5 w-5" />
-            <p className="font-medium">{error}</p>
-          </div>
-          <Button variant="outline" className="mt-4" onClick={fetchGeography}>
-            <RefreshCw className="mr-2 h-4 w-4" /> {t("retry")}
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-6">
+        <div className="flex items-center gap-3 text-destructive">
+          <AlertCircle className="h-5 w-5" />
+          <p className="font-medium">{error}</p>
+        </div>
+        <Button variant="outline" className="mt-4" onClick={fetchGeography}>
+          <RefreshCw className="mr-2 h-4 w-4" /> {t("retry")}
+        </Button>
+      </div>
     )
   }
 
-  const activeSubcontractors = (geography?.subcontractors ?? []).filter((s) => s.status === "active")
-  const activeUnits = (geography?.units ?? []).filter((u) => u.status === "active")
-  const activePdsCustomFields = (geography?.customFields ?? []).filter(
+  if (!geography) return null
+
+  const activeSubcontractors = geography.subcontractors.filter((s) => s.status === "active")
+  const activeUnits = geography.units.filter((u) => u.status === "active")
+  const activePdsCustomFields = geography.customFields.filter(
     (f) => f.scope === "pds_area" && f.status === "active"
-  )
-
-  const filteredSubs = (geography?.subcontractors ?? []).filter((s) =>
-    subSearch
-      ? s.code.toLowerCase().includes(subSearch.toLowerCase()) ||
-        s.description.toLowerCase().includes(subSearch.toLowerCase())
-      : true
-  )
-
-  const filteredPds = (geography?.pdsAreas ?? []).filter((p) =>
-    pdsSearch
-      ? p.code.toLowerCase().includes(pdsSearch.toLowerCase()) ||
-        p.description.toLowerCase().includes(pdsSearch.toLowerCase())
-      : true
   )
 
   return (
     <>
       {/* Subcontractors View */}
       {reference === "subcontractors" && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle>{t("subcontractorsTitle")}</CardTitle>
-              <CardDescription>{t("subcontractorsDesc")}</CardDescription>
-            </div>
-            {canManage && (
-              <Button size="sm" onClick={() => setIsAddSubOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> {t("addSubcontractor")}
-              </Button>
-            )}
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="relative w-72">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
-                placeholder={t("searchSubcontractors")}
-                value={subSearch}
-                onChange={(e) => setSubSearch(e.target.value)}
-                className="pl-8 text-xs h-8"
-              />
-            </div>
-            <div className="rounded-md border overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 border-b text-left">
-                  <tr>
-                    <th className="p-3 font-medium">{t("columns.code")}</th>
-                    <th className="p-3 font-medium">{t("columns.description")}</th>
-                    <th className="p-3 font-medium">{t("columns.contactDetails")}</th>
-                    <th className="p-3 font-medium">{t("columns.status")}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {filteredSubs.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="p-4 text-center text-muted-foreground">
-                        {t("noSubcontractors")}
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredSubs.map((sub) => (
-                      <tr key={sub.id}>
-                        <td className="p-3 font-mono font-medium">{sub.code}</td>
-                        <td className="p-3">{sub.description}</td>
-                        <td className="p-3 text-muted-foreground">{sub.contactDetails || "—"}</td>
-                        <td className="p-3">
-                          <ReferenceStatusBadge status={sub.status} />
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        <ReferencePane
+          title={t("subcontractorsTitle")}
+          description={t("subcontractorsDesc")}
+          count={geography.subcontractors.length}
+          actions={canManage ? (
+            <Button size="sm" onClick={() => setIsAddSubOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> {t("addSubcontractor")}
+            </Button>
+          ) : null}
+        >
+          <ReferenceTable
+            key={reference}
+            columns={subcontractorColumns(t)}
+            rows={geography.subcontractors}
+            rowId={(row) => row.id}
+            emptyTitle={t("noSubcontractors")}
+            searchPlaceholder={t("searchSubcontractors")}
+          />
+        </ReferencePane>
       )}
 
-      {/* Units & Area Classifications View */}
+      {/* Units View */}
       {reference === "units" && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle>{t("unitsTitle")}</CardTitle>
-              <CardDescription>{t("unitsDesc")}</CardDescription>
-            </div>
-            {canManage && (
-              <Button size="sm" onClick={() => setIsAddUnitOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> {t("addUnit")}
-              </Button>
-            )}
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-md border overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 border-b text-left">
-                  <tr>
-                    <th className="p-3 font-medium">{t("columns.unitCode")}</th>
-                    <th className="p-3 font-medium">{t("columns.description")}</th>
-                    <th className="p-3 font-medium">{t("columns.status")}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {(geography?.units ?? []).length === 0 ? (
-                    <tr>
-                      <td colSpan={3} className="p-4 text-center text-muted-foreground">
-                        {t("noUnits")}
-                      </td>
-                    </tr>
-                  ) : (
-                    (geography?.units ?? []).map((unit) => (
-                      <tr key={unit.id}>
-                        <td className="p-3 font-mono font-medium">{unit.code}</td>
-                        <td className="p-3">{unit.description}</td>
-                        <td className="p-3">
-                          <ReferenceStatusBadge status={unit.status} />
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        <ReferencePane
+          title={t("unitsTitle")}
+          description={t("unitsDesc")}
+          count={geography.units.length}
+          actions={canManage ? (
+            <Button size="sm" onClick={() => setIsAddUnitOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> {t("addUnit")}
+            </Button>
+          ) : null}
+        >
+          <ReferenceTable
+            key={reference}
+            columns={unitColumns(t)}
+            rows={geography.units}
+            rowId={(row) => row.id}
+            emptyTitle={t("noUnits")}
+          />
+        </ReferencePane>
       )}
 
+      {/* Area Classifications View */}
       {reference === "area-classifications" && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle>{t("areaClassificationsTitle")}</CardTitle>
-              <CardDescription>{t("areaClassificationsDesc")}</CardDescription>
-            </div>
-            {canManage && (
-              <Button
-                size="sm"
-                onClick={() => setIsAddAcOpen(true)}
-                disabled={activeUnits.length === 0}
-                title={
-                  activeUnits.length === 0
-                    ? t("addActiveUnitFirst")
-                    : undefined
-                }
-              >
-                <Plus className="mr-2 h-4 w-4" /> {t("addAreaClassification")}
-              </Button>
-            )}
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-md border overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 border-b text-left">
-                  <tr>
-                    <th className="p-3 font-medium">{t("columns.areaCode")}</th>
-                    <th className="p-3 font-medium">{t("columns.description")}</th>
-                    <th className="p-3 font-medium">{t("columns.associatedUnit")}</th>
-                    <th className="p-3 font-medium">{t("columns.status")}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {(geography?.areaClassifications ?? []).length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="p-4 text-center text-muted-foreground">
-                        {t("noAreaClassifications")}
-                      </td>
-                    </tr>
-                  ) : (
-                    (geography?.areaClassifications ?? []).map((ac) => (
-                      <tr key={ac.id}>
-                        <td className="p-3 font-mono font-medium">{ac.code}</td>
-                        <td className="p-3">{ac.description}</td>
-                        <td className="p-3 font-mono text-muted-foreground">{ac.unitCode || "—"}</td>
-                        <td className="p-3">
-                          <ReferenceStatusBadge status={ac.status} />
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        <ReferencePane
+          title={t("areaClassificationsTitle")}
+          description={t("areaClassificationsDesc")}
+          count={geography.areaClassifications.length}
+          actions={canManage ? (
+            <Button
+              size="sm"
+              onClick={() => setIsAddAcOpen(true)}
+              disabled={activeUnits.length === 0}
+              title={
+                activeUnits.length === 0
+                  ? t("addActiveUnitFirst")
+                  : undefined
+              }
+            >
+              <Plus className="mr-2 h-4 w-4" /> {t("addAreaClassification")}
+            </Button>
+          ) : null}
+        >
+          <ReferenceTable
+            key={reference}
+            columns={areaClassificationColumns(t)}
+            rows={geography.areaClassifications}
+            rowId={(row) => row.id}
+            emptyTitle={t("noAreaClassifications")}
+          />
+        </ReferencePane>
       )}
 
       {/* PDS Areas View */}
       {reference === "pds-areas" && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div>
-              <CardTitle>{t("pdsTitle")}</CardTitle>
-              <CardDescription>{t("pdsDesc")}</CardDescription>
-            </div>
-            {canManage && (
-              <Button size="sm" onClick={() => setIsAddPdsOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> {t("addPdsArea")}
-              </Button>
-            )}
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="relative w-72">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
-                placeholder={t("searchPdsAreas")}
-                value={pdsSearch}
-                onChange={(e) => setPdsSearch(e.target.value)}
-                className="pl-8 text-xs h-8"
-              />
-            </div>
-            <div className="rounded-md border overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 border-b text-left">
-                  <tr>
-                    <th className="p-3 font-medium">{t("columns.pdsCode")}</th>
-                    <th className="p-3 font-medium">{t("columns.description")}</th>
-                    <th className="p-3 font-medium">{t("columns.shopSub")}</th>
-                    <th className="p-3 font-medium">{t("columns.assemblySub")}</th>
-                    <th className="p-3 font-medium">{t("columns.fieldSub")}</th>
-                    <th className="p-3 font-medium">{t("columns.status")}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {filteredPds.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="p-4 text-center text-muted-foreground">
-                        {t("noPdsAreas")}
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredPds.map((pds) => (
-                      <tr key={pds.id}>
-                        <td className="p-3 font-mono font-medium">{pds.code}</td>
-                        <td className="p-3">{pds.description}</td>
-                        <td className="p-3 font-mono">{pds.shopSubcontractorCode || "—"}</td>
-                        <td className="p-3 font-mono">{pds.assemblySubcontractorCode || "—"}</td>
-                        <td className="p-3 font-mono">{pds.fieldSubcontractorCode || "—"}</td>
-                        <td className="p-3">
-                          <ReferenceStatusBadge status={pds.status} />
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        <ReferencePane
+          title={t("pdsTitle")}
+          description={t("pdsDesc")}
+          count={geography.pdsAreas.length}
+          actions={canManage ? (
+            <Button size="sm" onClick={() => setIsAddPdsOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> {t("addPdsArea")}
+            </Button>
+          ) : null}
+        >
+          <ReferenceTable
+            key={reference}
+            columns={pdsAreaColumns(t)}
+            rows={geography.pdsAreas}
+            rowId={(row) => row.id}
+            emptyTitle={t("noPdsAreas")}
+            searchPlaceholder={t("searchPdsAreas")}
+          />
+        </ReferencePane>
       )}
 
       {/* Add Subcontractor Dialog */}
