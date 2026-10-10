@@ -86,6 +86,8 @@ export function WeldingQualityTabs({
   value?: WeldingQualityTab
   onValueChange?: (tab: WeldingQualityTab) => void
 }) {
+  const t = useTranslations("projectSetup.weldingQuality")
+
   const tIssues = useTranslations("projectSetup.issues")
 
   const searchParams = useSearchParams()
@@ -205,11 +207,11 @@ export function WeldingQualityTabs({
       }
     } catch (err: unknown) {
       if (currentVersion === requestVersionRef.current) {
-        setError(err instanceof Error ? err.message : "Failed to load welding quality references")
+        setError(err instanceof Error ? err.message : t("failedToLoad"))
         setLoading(false)
       }
     }
-  }, [projectId, identFilter])
+  }, [projectId, identFilter, t])
 
   useEffect(() => {
     fetchReferences()
@@ -253,9 +255,9 @@ export function WeldingQualityTabs({
       setScCode("")
       setScDesc("")
       setScMatTypeId("")
-      toast.success(`Service class "${newSc.code}" created successfully`)
+      toast.success(t("serviceClassCreated", { code: newSc.code }))
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to create service class")
+      toast.error(err instanceof Error ? err.message : t("serviceClassFailed"))
     } finally {
       setIsSubmittingSc(false)
     }
@@ -292,9 +294,9 @@ export function WeldingQualityTabs({
       setWtCode("")
       setWtDesc("")
       setWtCountsDia(true)
-      toast.success(`Weld type "${newWt.code}" created successfully`)
+      toast.success(t("weldTypeCreated", { code: newWt.code }))
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to create weld type")
+      toast.error(err instanceof Error ? err.message : t("weldTypeFailed"))
     } finally {
       setIsSubmittingWt(false)
     }
@@ -341,9 +343,9 @@ export function WeldingQualityTabs({
       setWelderCert("")
       setWelderExpires("")
       setWelderWpsIds([])
-      toast.success(`Welder "${newWelder.welderCode}" qualified successfully`)
+      toast.success(t("welderQualified", { code: newWelder.welderCode }))
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to save welder qualification")
+      toast.error(err instanceof Error ? err.message : t("welderFailed"))
     } finally {
       setIsSubmittingWelder(false)
     }
@@ -386,9 +388,9 @@ export function WeldingQualityTabs({
       setThickDia("")
       setThickMm("")
       setThickRating("")
-      toast.success("Thickness / flange rule created successfully")
+      toast.success(t("thicknessRuleCreated"))
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to create thickness rule")
+      toast.error(err instanceof Error ? err.message : t("thicknessRuleFailed"))
     } finally {
       setIsSubmittingThick(false)
     }
@@ -420,9 +422,9 @@ export function WeldingQualityTabs({
       setIsAddReworkOpen(false)
       setReworkCode("")
       setReworkDesc("")
-      toast.success(`Defect code "${newCode.code}" created successfully`)
+      toast.success(t("defectCodeCreated", { code: newCode.code }))
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to create defect code")
+      toast.error(err instanceof Error ? err.message : t("defectCodeFailed"))
     } finally {
       setIsSubmittingRework(false)
     }
@@ -465,9 +467,9 @@ export function WeldingQualityTabs({
           : null
       )
       setIsAddNdeOpen(false)
-      toast.success("NDE matrix rule created successfully")
+      toast.success(t("ndeRuleCreated"))
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to create NDE matrix rule")
+      toast.error(err instanceof Error ? err.message : t("ndeRuleFailed"))
     } finally {
       setIsSubmittingNde(false)
     }
@@ -506,9 +508,9 @@ export function WeldingQualityTabs({
       setPmlMrr("")
       setPmlIdent("")
       setPmlTrace("")
-      toast.success("Piping material record added successfully")
+      toast.success(t("pmlRecordAdded"))
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to add piping material record")
+      toast.error(err instanceof Error ? err.message : t("pmlRecordFailed"))
     } finally {
       setIsSubmittingPml(false)
     }
@@ -539,9 +541,9 @@ export function WeldingQualityTabs({
       setJointReason("")
       setJointCoefficient("")
       setIsAddJointCategoryOpen(false)
-      toast.success(`Joint category "${category.categoryCode}" created successfully`)
+      toast.success(t("jointCategoryCreated", { code: category.categoryCode }))
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to create joint category")
+      toast.error(err instanceof Error ? err.message : t("jointCategoryFailed"))
     } finally {
       setIsSubmittingJointCategory(false)
     }
@@ -558,7 +560,7 @@ export function WeldingQualityTabs({
             <p className="font-medium">{error}</p>
           </div>
           <Button variant="outline" className="mt-4" onClick={fetchReferences}>
-            <RefreshCw className="mr-2 h-4 w-4" /> Retry
+            <RefreshCw className="mr-2 h-4 w-4" /> {t("retry")}
           </Button>
         </CardContent>
       </Card>
@@ -589,37 +591,37 @@ export function WeldingQualityTabs({
     >
       <TabsList>
         <TabsTrigger value="service-classes">
-          Service Classes ({data?.serviceClasses.length ?? 0})
+          {t("tabs.serviceClasses", { count: data?.serviceClasses.length ?? 0 })}
         </TabsTrigger>
         <TabsTrigger value="weld-types">
-          Weld Types ({data?.weldTypes.length ?? 0})
+          {t("tabs.weldTypes", { count: data?.weldTypes.length ?? 0 })}
         </TabsTrigger>
         <TabsTrigger value="welders">
-          Welders ({data?.welderQualifications.length ?? 0})
+          {t("tabs.welders", { count: data?.welderQualifications.length ?? 0 })}
         </TabsTrigger>
         <TabsTrigger value="nde">
-          <span>NDE Matrix ({data?.ndeMatrixRules.length ?? 0})</span>
+          <span>{t("tabs.nde", { count: data?.ndeMatrixRules.length ?? 0 })}</span>
           {ndeCoverage.missingTuples.length > 0 ? (
             <Badge variant="outline" className="text-warning-fg border-warning-border text-xs">
-              Incomplete ({ndeCoverage.missingTuples.length})
+              {t("tabs.ndeIncomplete", { count: ndeCoverage.missingTuples.length })}
             </Badge>
           ) : (
             <Badge variant="outline" className="text-success-fg border-success-border text-xs">
-              Complete
+              {t("tabs.ndeComplete")}
             </Badge>
           )}
         </TabsTrigger>
         <TabsTrigger value="thickness">
-          Thickness / Flange ({data?.thicknessFlangeRules.length ?? 0})
+          {t("tabs.thickness", { count: data?.thicknessFlangeRules.length ?? 0 })}
         </TabsTrigger>
         <TabsTrigger value="pml">
-          PML Records ({data?.pipingMaterialRecords.length ?? 0})
+          {t("tabs.pml", { count: data?.pipingMaterialRecords.length ?? 0 })}
         </TabsTrigger>
         <TabsTrigger value="rework">
-          Rework Codes ({data?.reworkCodes.length ?? 0})
+          {t("tabs.rework", { count: data?.reworkCodes.length ?? 0 })}
         </TabsTrigger>
         <TabsTrigger value="joint-categories">
-          Joint Categories ({data?.jointCategories.length ?? 0})
+          {t("tabs.jointCategories", { count: data?.jointCategories.length ?? 0 })}
         </TabsTrigger>
       </TabsList>
 
@@ -628,12 +630,12 @@ export function WeldingQualityTabs({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
-              <CardTitle>Service Classes</CardTitle>
-              <CardDescription>Piping service class specifications linked to material types.</CardDescription>
+              <CardTitle>{t("serviceClassesTitle")}</CardTitle>
+              <CardDescription>{t("serviceClassesDesc")}</CardDescription>
             </div>
             {canManage && (
               <Button size="sm" onClick={() => setIsAddScOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> Add Service Class
+                <Plus className="mr-2 h-4 w-4" /> {t("addServiceClass")}
               </Button>
             )}
           </CardHeader>
@@ -642,16 +644,16 @@ export function WeldingQualityTabs({
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 border-b text-left">
                   <tr>
-                    <th className="p-3 font-medium">Class Code</th>
-                    <th className="p-3 font-medium">Description</th>
-                    <th className="p-3 font-medium">Status</th>
+                    <th className="p-3 font-medium">{t("columns.classCode")}</th>
+                    <th className="p-3 font-medium">{t("columns.description")}</th>
+                    <th className="p-3 font-medium">{t("columns.status")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {(data?.serviceClasses ?? []).length === 0 ? (
                     <tr>
                       <td colSpan={3} className="p-4 text-center text-muted-foreground">
-                        No service classes defined.
+                        {t("empty.serviceClasses")}
                       </td>
                     </tr>
                   ) : (
@@ -677,12 +679,12 @@ export function WeldingQualityTabs({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
-              <CardTitle>Weld Types</CardTitle>
-              <CardDescription>Canonical weld classifications and diameter-inch accounting flags.</CardDescription>
+              <CardTitle>{t("weldTypesTitle")}</CardTitle>
+              <CardDescription>{t("weldTypesDesc")}</CardDescription>
             </div>
             {canManage && (
               <Button size="sm" onClick={() => setIsAddWtOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> Add Weld Type
+                <Plus className="mr-2 h-4 w-4" /> {t("addWeldType")}
               </Button>
             )}
           </CardHeader>
@@ -691,17 +693,17 @@ export function WeldingQualityTabs({
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 border-b text-left">
                   <tr>
-                    <th className="p-3 font-medium">Weld Code</th>
-                    <th className="p-3 font-medium">Description</th>
-                    <th className="p-3 font-medium">Counts in Dia-Inch</th>
-                    <th className="p-3 font-medium">Status</th>
+                    <th className="p-3 font-medium">{t("columns.weldCode")}</th>
+                    <th className="p-3 font-medium">{t("columns.description")}</th>
+                    <th className="p-3 font-medium">{t("columns.countsInDiaInch")}</th>
+                    <th className="p-3 font-medium">{t("columns.status")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {(data?.weldTypes ?? []).length === 0 ? (
                     <tr>
                       <td colSpan={4} className="p-4 text-center text-muted-foreground">
-                        No weld types defined.
+                        {t("empty.weldTypes")}
                       </td>
                     </tr>
                   ) : (
@@ -711,9 +713,9 @@ export function WeldingQualityTabs({
                         <td className="p-3">{wt.description}</td>
                         <td className="p-3">
                           {wt.countsInDiaInch ? (
-                            <Badge variant="outline" className="text-success-fg border-success-border">Yes</Badge>
+                            <Badge variant="outline" className="text-success-fg border-success-border">{t("badges.yes")}</Badge>
                           ) : (
-                            <Badge variant="secondary">No</Badge>
+                            <Badge variant="secondary">{t("badges.no")}</Badge>
                           )}
                         </td>
                         <td className="p-3">
@@ -734,12 +736,12 @@ export function WeldingQualityTabs({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
-              <CardTitle>Welder Qualifications</CardTitle>
-              <CardDescription>Welder registry with certificate validity and approved WPS links.</CardDescription>
+              <CardTitle>{t("weldersTitle")}</CardTitle>
+              <CardDescription>{t("weldersDesc")}</CardDescription>
             </div>
             {canManage && (
               <Button size="sm" onClick={() => setIsAddWelderOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> Add Welder
+                <Plus className="mr-2 h-4 w-4" /> {t("addWelder")}
               </Button>
             )}
           </CardHeader>
@@ -748,20 +750,20 @@ export function WeldingQualityTabs({
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 border-b text-left">
                   <tr>
-                    <th className="p-3 font-medium">Welder Stencil</th>
-                    <th className="p-3 font-medium">Full Name</th>
-                    <th className="p-3 font-medium">Subcontractor</th>
-                    <th className="p-3 font-medium">Certificate</th>
-                    <th className="p-3 font-medium">Expires On</th>
-                    <th className="p-3 font-medium">Qualified</th>
-                    <th className="p-3 font-medium">Status</th>
+                    <th className="p-3 font-medium">{t("columns.welderStencil")}</th>
+                    <th className="p-3 font-medium">{t("columns.fullName")}</th>
+                    <th className="p-3 font-medium">{t("columns.subcontractor")}</th>
+                    <th className="p-3 font-medium">{t("columns.certificate")}</th>
+                    <th className="p-3 font-medium">{t("columns.expiresOn")}</th>
+                    <th className="p-3 font-medium">{t("columns.qualified")}</th>
+                    <th className="p-3 font-medium">{t("columns.status")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {(data?.welderQualifications ?? []).length === 0 ? (
                     <tr>
                       <td colSpan={7} className="p-4 text-center text-muted-foreground">
-                        No welder qualifications defined.
+                        {t("empty.welders")}
                       </td>
                     </tr>
                   ) : (
@@ -774,9 +776,9 @@ export function WeldingQualityTabs({
                         <td className="p-3 font-mono">{w.expiresOn}</td>
                         <td className="p-3">
                           {w.isCurrentlyQualified ? (
-                            <Badge className="bg-success-bg text-success-fg border-success-border">Valid</Badge>
+                            <Badge className="bg-success-bg text-success-fg border-success-border">{t("badges.valid")}</Badge>
                           ) : (
-                            <Badge variant="destructive">Expired</Badge>
+                            <Badge variant="destructive">{t("badges.expired")}</Badge>
                           )}
                         </td>
                         <td className="p-3">
@@ -797,12 +799,12 @@ export function WeldingQualityTabs({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
-              <CardTitle>NDE Matrix Rules</CardTitle>
-              <CardDescription>NDE testing percentage requirements by Service Class, Weld Type & Location.</CardDescription>
+              <CardTitle>{t("ndeTitle")}</CardTitle>
+              <CardDescription>{t("ndeDesc")}</CardDescription>
             </div>
             {canManage && (
               <Button size="sm" onClick={() => setIsAddNdeOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> Add NDE Rule
+                <Plus className="mr-2 h-4 w-4" /> {t("addNdeRule")}
               </Button>
             )}
           </CardHeader>
@@ -811,7 +813,7 @@ export function WeldingQualityTabs({
               <div className="bg-warning-bg text-warning-fg border-warning-border flex items-center gap-2 rounded-md border p-3 text-sm">
                 <AlertTriangle className="h-4 w-4 shrink-0" />
                 <span>
-                  Missing NDE coverage for {ndeCoverage.missingTuples.length} combinations of active Service Classes and Weld Types.
+                  {t("missingNdeCoverage", { count: ndeCoverage.missingTuples.length })}
                 </span>
               </div>
             )}
@@ -819,23 +821,23 @@ export function WeldingQualityTabs({
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 border-b text-left">
                   <tr>
-                    <th className="p-3 font-medium">Service Class</th>
-                    <th className="p-3 font-medium">Weld Type</th>
-                    <th className="p-3 font-medium">Location</th>
-                    <th className="p-3 font-medium">RT%</th>
-                    <th className="p-3 font-medium">UT%</th>
-                    <th className="p-3 font-medium">MT%</th>
-                    <th className="p-3 font-medium">PT%</th>
-                    <th className="p-3 font-medium">PMI%</th>
-                    <th className="p-3 font-medium">PWHT Req.</th>
-                    <th className="p-3 font-medium">Status</th>
+                    <th className="p-3 font-medium">{t("columns.serviceClass")}</th>
+                    <th className="p-3 font-medium">{t("columns.weldType")}</th>
+                    <th className="p-3 font-medium">{t("columns.location")}</th>
+                    <th className="p-3 font-medium">{t("columns.rtCoverage")}</th>
+                    <th className="p-3 font-medium">{t("columns.utCoverage")}</th>
+                    <th className="p-3 font-medium">{t("columns.mtCoverage")}</th>
+                    <th className="p-3 font-medium">{t("columns.ptCoverage")}</th>
+                    <th className="p-3 font-medium">{t("columns.pmiCoverage")}</th>
+                    <th className="p-3 font-medium">{t("columns.pwhtReq")}</th>
+                    <th className="p-3 font-medium">{t("columns.status")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {(data?.ndeMatrixRules ?? []).length === 0 ? (
                     <tr>
                       <td colSpan={10} className="p-4 text-center text-muted-foreground">
-                        No NDE matrix rules configured.
+                        {t("empty.nde")}
                       </td>
                     </tr>
                   ) : (
@@ -843,7 +845,7 @@ export function WeldingQualityTabs({
                       <tr key={nde.id}>
                         <td className="p-3 font-mono font-medium">{nde.serviceClassCode || "—"}</td>
                         <td className="p-3 font-mono">{nde.weldTypeCode || "—"}</td>
-                        <td className="p-3 capitalize">{nde.weldLocation}</td>
+                        <td className="p-3 capitalize">{nde.weldLocation === "shop" ? t("dialogs.locationShop") : nde.weldLocation === "field" ? t("dialogs.locationField") : nde.weldLocation}</td>
                         <td className="p-3 font-mono">{nde.rtCoverage}%</td>
                         <td className="p-3 font-mono">{nde.utCoverage}%</td>
                         <td className="p-3 font-mono">{nde.mtCoverage}%</td>
@@ -852,9 +854,9 @@ export function WeldingQualityTabs({
                         <td className="p-3 font-mono">
                           {nde.pwhtRequired
                             ? nde.pwhtThicknessThreshold
-                              ? `> ${nde.pwhtThicknessThreshold}mm`
-                              : "Always"
-                            : "No"}
+                              ? t("badges.greaterMm", { threshold: nde.pwhtThicknessThreshold })
+                              : t("badges.always")
+                            : t("badges.no")}
                         </td>
                         <td className="p-3">
                           <ReferenceStatusBadge status={nde.status} />
@@ -874,12 +876,12 @@ export function WeldingQualityTabs({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
-              <CardTitle>Thickness / Flange Rules</CardTitle>
-              <CardDescription>Piping thickness thresholds and required flange ratings per Service Class.</CardDescription>
+              <CardTitle>{t("thicknessTitle")}</CardTitle>
+              <CardDescription>{t("thicknessDesc")}</CardDescription>
             </div>
             {canManage && (
               <Button size="sm" onClick={() => setIsAddThickOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> Add Thickness Rule
+                <Plus className="mr-2 h-4 w-4" /> {t("addThicknessRule")}
               </Button>
             )}
           </CardHeader>
@@ -888,18 +890,18 @@ export function WeldingQualityTabs({
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 border-b text-left">
                   <tr>
-                    <th className="p-3 font-medium">Service Class</th>
-                    <th className="p-3 font-medium">Diameter (in)</th>
-                    <th className="p-3 font-medium">Thickness (mm)</th>
-                    <th className="p-3 font-medium">Flange Rating</th>
-                    <th className="p-3 font-medium">Status</th>
+                    <th className="p-3 font-medium">{t("columns.serviceClass")}</th>
+                    <th className="p-3 font-medium">{t("columns.diameterIn")}</th>
+                    <th className="p-3 font-medium">{t("columns.thicknessMm")}</th>
+                    <th className="p-3 font-medium">{t("columns.flangeRating")}</th>
+                    <th className="p-3 font-medium">{t("columns.status")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {(data?.thicknessFlangeRules ?? []).length === 0 ? (
                     <tr>
                       <td colSpan={5} className="p-4 text-center text-muted-foreground">
-                        No thickness flange rules defined.
+                        {t("empty.thickness")}
                       </td>
                     </tr>
                   ) : (
@@ -927,12 +929,12 @@ export function WeldingQualityTabs({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
-              <CardTitle>Piping Material List (PML)</CardTitle>
-              <CardDescription>Material Receiving Reports, Ident Codes, and Trace/Heat numbers.</CardDescription>
+              <CardTitle>{t("pmlTitle")}</CardTitle>
+              <CardDescription>{t("pmlDesc")}</CardDescription>
             </div>
             {canManage && (
               <Button size="sm" onClick={() => setIsAddPmlOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> Add PML Record
+                <Plus className="mr-2 h-4 w-4" /> {t("addPmlRecord")}
               </Button>
             )}
           </CardHeader>
@@ -941,11 +943,11 @@ export function WeldingQualityTabs({
               <div className="flex items-center justify-between rounded-md border border-sky-200 bg-sky-50 dark:border-sky-900 dark:bg-sky-950/50 p-3 text-sm text-sky-900 dark:text-sky-200">
                 <div className="flex items-center gap-2">
                   <span>
-                    Filtered by Ident: <span className="font-mono font-semibold">{identFilter}</span>
+                    {t("filterByIdent")} <span className="font-mono font-semibold">{identFilter}</span>
                   </span>
                 </div>
                 <Button size="sm" variant="outline" onClick={handleClearIdentFilter}>
-                  Clear filter
+                  {t("clearFilter")}
                 </Button>
               </div>
             )}
@@ -953,10 +955,10 @@ export function WeldingQualityTabs({
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 border-b text-left">
                   <tr>
-                    <th className="p-3 font-medium">MRR Number</th>
-                    <th className="p-3 font-medium">Ident Code</th>
-                    <th className="p-3 font-medium">Trace / Heat Number</th>
-                    <th className="p-3 font-medium">Status</th>
+                    <th className="p-3 font-medium">{t("columns.mrrNumber")}</th>
+                    <th className="p-3 font-medium">{t("columns.identCode")}</th>
+                    <th className="p-3 font-medium">{t("columns.traceHeatNumber")}</th>
+                    <th className="p-3 font-medium">{t("columns.status")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -964,8 +966,8 @@ export function WeldingQualityTabs({
                     <tr>
                       <td colSpan={4} className="p-4 text-center text-muted-foreground">
                         {identFilter
-                          ? `No piping material records found matching Ident "${identFilter}".`
-                          : "No piping material records defined."}
+                          ? t("empty.pmlMatching", { ident: identFilter })
+                          : t("empty.pml")}
                       </td>
                     </tr>
                   ) : (
@@ -992,12 +994,12 @@ export function WeldingQualityTabs({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
-              <CardTitle>Rework Codes</CardTitle>
-              <CardDescription>Defect and repair categorization codes for NDE failures.</CardDescription>
+              <CardTitle>{t("reworkTitle")}</CardTitle>
+              <CardDescription>{t("reworkDesc")}</CardDescription>
             </div>
             {canManage && (
               <Button size="sm" onClick={() => setIsAddReworkOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> Add Defect Code
+                <Plus className="mr-2 h-4 w-4" /> {t("addDefectCode")}
               </Button>
             )}
           </CardHeader>
@@ -1006,16 +1008,16 @@ export function WeldingQualityTabs({
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 border-b text-left">
                   <tr>
-                    <th className="p-3 font-medium">Code</th>
-                    <th className="p-3 font-medium">Description</th>
-                    <th className="p-3 font-medium">Status</th>
+                    <th className="p-3 font-medium">{t("columns.code")}</th>
+                    <th className="p-3 font-medium">{t("columns.description")}</th>
+                    <th className="p-3 font-medium">{t("columns.status")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {(data?.reworkCodes ?? []).length === 0 ? (
                     <tr>
                       <td colSpan={3} className="p-4 text-center text-muted-foreground">
-                        No rework codes defined.
+                        {t("empty.rework")}
                       </td>
                     </tr>
                   ) : (
@@ -1041,12 +1043,12 @@ export function WeldingQualityTabs({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <div>
-              <CardTitle>Joint Categories</CardTitle>
-              <CardDescription>Joint definitions, testing timing, category codes and coefficients.</CardDescription>
+              <CardTitle>{t("jointCategoriesTitle")}</CardTitle>
+              <CardDescription>{t("jointCategoriesDesc")}</CardDescription>
             </div>
             {canManage && (
               <Button size="sm" onClick={() => setIsAddJointCategoryOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> Add Joint Category
+                <Plus className="mr-2 h-4 w-4" /> {t("addJointCategory")}
               </Button>
             )}
           </CardHeader>
@@ -1055,18 +1057,18 @@ export function WeldingQualityTabs({
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 border-b text-left">
                   <tr>
-                    <th className="p-3 font-medium">Joint Definition</th>
-                    <th className="p-3 font-medium">Timing</th>
-                    <th className="p-3 font-medium">Category Code</th>
-                    <th className="p-3 font-medium">Reason</th>
-                    <th className="p-3 font-medium">Status</th>
+                    <th className="p-3 font-medium">{t("columns.jointDefinition")}</th>
+                    <th className="p-3 font-medium">{t("columns.timing")}</th>
+                    <th className="p-3 font-medium">{t("columns.categoryCode")}</th>
+                    <th className="p-3 font-medium">{t("columns.reason")}</th>
+                    <th className="p-3 font-medium">{t("columns.status")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {(data?.jointCategories ?? []).length === 0 ? (
                     <tr>
                       <td colSpan={5} className="p-4 text-center text-muted-foreground">
-                        No joint categories defined.
+                        {t("empty.jointCategories")}
                       </td>
                     </tr>
                   ) : (
@@ -1094,15 +1096,15 @@ export function WeldingQualityTabs({
         <DialogContent>
           <form onSubmit={handleCreateServiceClass}>
             <DialogHeader>
-              <DialogTitle>Add Service Class</DialogTitle>
-              <DialogDescription>Define a new piping service class linked to a material type.</DialogDescription>
+              <DialogTitle>{t("dialogs.addServiceClassTitle")}</DialogTitle>
+              <DialogDescription>{t("dialogs.addServiceClassDesc")}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-3">
               <div className="space-y-1.5">
-                <Label htmlFor="sc-code">Class Code</Label>
+                <Label htmlFor="sc-code">{t("dialogs.classCode")}</Label>
                 <Input
                   id="sc-code"
-                  placeholder="e.g. A1"
+                  placeholder={t("dialogs.classCodePlaceholder")}
                   value={scCode}
                   onChange={(e) => setScCode(e.target.value)}
                   disabled={isSubmittingSc}
@@ -1110,24 +1112,24 @@ export function WeldingQualityTabs({
                 {scErrors.code && <p className="text-xs text-destructive">{scErrors.code}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="sc-desc">Description (Optional)</Label>
+                <Label htmlFor="sc-desc">{t("dialogs.descriptionOptional")}</Label>
                 <Input
                   id="sc-desc"
-                  placeholder="e.g. High pressure process steam"
+                  placeholder={t("dialogs.serviceClassDescPlaceholder")}
                   value={scDesc}
                   onChange={(e) => setScDesc(e.target.value)}
                   disabled={isSubmittingSc}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Material Type</Label>
+                <Label>{t("dialogs.materialType")}</Label>
                 <Select value={scMatTypeId} onValueChange={setScMatTypeId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select material type" />
+                    <SelectValue placeholder={t("dialogs.selectMaterialType")} />
                   </SelectTrigger>
                   <SelectContent>
                     {(data?.materialTypes ?? []).length === 0 ? (
-                      <SelectItem value="none" disabled>No active material types</SelectItem>
+                      <SelectItem value="none" disabled>{t("dialogs.noActiveMaterialTypes")}</SelectItem>
                     ) : (
                       (data?.materialTypes ?? []).map((mt) => (
                         <SelectItem key={mt.id} value={mt.id}>
@@ -1142,10 +1144,10 @@ export function WeldingQualityTabs({
             </div>
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => setIsAddScOpen(false)} disabled={isSubmittingSc}>
-                Cancel
+                {t("dialogs.cancel")}
               </Button>
               <Button type="submit" disabled={isSubmittingSc}>
-                Add Service Class
+                {t("dialogs.addServiceClass")}
               </Button>
             </DialogFooter>
           </form>
@@ -1157,15 +1159,15 @@ export function WeldingQualityTabs({
         <DialogContent>
           <form onSubmit={handleCreateWeldType}>
             <DialogHeader>
-              <DialogTitle>Add Weld Type</DialogTitle>
-              <DialogDescription>Define a canonical weld type.</DialogDescription>
+              <DialogTitle>{t("dialogs.addWeldTypeTitle")}</DialogTitle>
+              <DialogDescription>{t("dialogs.addWeldTypeDesc")}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-3">
               <div className="space-y-1.5">
-                <Label htmlFor="wt-code">Weld Code</Label>
+                <Label htmlFor="wt-code">{t("dialogs.weldCode")}</Label>
                 <Input
                   id="wt-code"
-                  placeholder="e.g. BW"
+                  placeholder={t("dialogs.weldCodePlaceholder")}
                   value={wtCode}
                   onChange={(e) => setWtCode(e.target.value)}
                   disabled={isSubmittingWt}
@@ -1173,10 +1175,10 @@ export function WeldingQualityTabs({
                 {wtErrors.code && <p className="text-xs text-destructive">{wtErrors.code}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="wt-desc">Description</Label>
+                <Label htmlFor="wt-desc">{t("dialogs.weldDesc")}</Label>
                 <Input
                   id="wt-desc"
-                  placeholder="e.g. Butt Weld"
+                  placeholder={t("dialogs.weldDescPlaceholder")}
                   value={wtDesc}
                   onChange={(e) => setWtDesc(e.target.value)}
                   disabled={isSubmittingWt}
@@ -1192,21 +1194,20 @@ export function WeldingQualityTabs({
                 />
                 <div className="space-y-0.5">
                   <Label htmlFor="wt-counts-dia" className="font-normal">
-                    Counts towards dia-inch progress
+                    {t("dialogs.countsTowardsDiaInch")}
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Clear this for a weld type that is recorded but not earned, such as a support
-                    attachment. It cannot be changed once welds exist against the type.
+                    {t("dialogs.countsTowardsDiaInchHint")}
                   </p>
                 </div>
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => setIsAddWtOpen(false)} disabled={isSubmittingWt}>
-                Cancel
+                {t("dialogs.cancel")}
               </Button>
               <Button type="submit" disabled={isSubmittingWt}>
-                Add Weld Type
+                {t("dialogs.addWeldType")}
               </Button>
             </DialogFooter>
           </form>
@@ -1218,15 +1219,14 @@ export function WeldingQualityTabs({
         <DialogContent className="max-h-[85vh] overflow-y-auto">
           <form onSubmit={handleCreateWelder}>
             <DialogHeader>
-              <DialogTitle>Add Welder</DialogTitle>
+              <DialogTitle>{t("dialogs.addWelderTitle")}</DialogTitle>
               <DialogDescription>
-                Qualify a welder against the procedures they are approved for. A weld cannot be
-                recorded without a welder whose certificate is valid on the weld date.
+                {t("dialogs.addWelderDesc")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-3">
               <div className="space-y-1.5">
-                <Label htmlFor="welder-code">Welder Stencil</Label>
+                <Label htmlFor="welder-code">{t("dialogs.welderStencil")}</Label>
                 <Input
                   id="welder-code"
                   placeholder="e.g. W-101"
@@ -1237,10 +1237,10 @@ export function WeldingQualityTabs({
                 {welderErrors.welderCode && <p className="text-xs text-destructive">{welderErrors.welderCode}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="welder-name">Full Name</Label>
+                <Label htmlFor="welder-name">{t("dialogs.fullName")}</Label>
                 <Input
                   id="welder-name"
-                  placeholder="e.g. Ivan Petrov"
+                  placeholder={t("dialogs.welderNamePlaceholder")}
                   value={welderName}
                   onChange={(e) => setWelderName(e.target.value)}
                   disabled={isSubmittingWelder}
@@ -1248,15 +1248,15 @@ export function WeldingQualityTabs({
                 {welderErrors.fullName && <p className="text-xs text-destructive">{welderErrors.fullName}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label>Subcontractor</Label>
+                <Label>{t("dialogs.subcontractor")}</Label>
                 <Select value={welderSubId} onValueChange={setWelderSubId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select subcontractor" />
+                    <SelectValue placeholder={t("dialogs.selectSubcontractor")} />
                   </SelectTrigger>
                   <SelectContent>
                     {(data?.subcontractors ?? []).length === 0 ? (
                       <SelectItem value="none" disabled>
-                        No active subcontractors — add one in Project Geography first
+                        {t("dialogs.noActiveSubcontractors")}
                       </SelectItem>
                     ) : (
                       (data?.subcontractors ?? []).map((sub) => (
@@ -1272,17 +1272,17 @@ export function WeldingQualityTabs({
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="welder-cert">Certificate Number (Optional)</Label>
+                <Label htmlFor="welder-cert">{t("dialogs.certificateNumberOptional")}</Label>
                 <Input
                   id="welder-cert"
-                  placeholder="e.g. CERT-2026-014"
+                  placeholder={t("dialogs.certNumberPlaceholder")}
                   value={welderCert}
                   onChange={(e) => setWelderCert(e.target.value)}
                   disabled={isSubmittingWelder}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="welder-expires">Certificate Expires On</Label>
+                <Label htmlFor="welder-expires">{t("dialogs.certificateExpiresOn")}</Label>
                 <Input
                   id="welder-expires"
                   type="date"
@@ -1293,12 +1293,12 @@ export function WeldingQualityTabs({
                 {welderErrors.expiresOn && <p className="text-xs text-destructive">{welderErrors.expiresOn}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label>Approved WPS</Label>
+                <Label>{t("dialogs.approvedWps")}</Label>
                 {/* A multi-select, not a dropdown: `save_welder_qualification` takes a list, and a
                     welder with no covering WPS is refused by the weld command later. */}
                 {(data?.weldingProcedures ?? []).length === 0 ? (
                   <p className="text-xs text-muted-foreground">
-                    No active welding procedures — add a WPS on this page first.
+                    {t("dialogs.noActiveWps")}
                   </p>
                 ) : (
                   <div className="max-h-40 space-y-2 overflow-y-auto rounded-md border p-3">
@@ -1333,10 +1333,10 @@ export function WeldingQualityTabs({
                 onClick={() => setIsAddWelderOpen(false)}
                 disabled={isSubmittingWelder}
               >
-                Cancel
+                {t("dialogs.cancel")}
               </Button>
               <Button type="submit" disabled={isSubmittingWelder}>
-                Add Welder
+                {t("dialogs.addWelder")}
               </Button>
             </DialogFooter>
           </form>
@@ -1348,23 +1348,21 @@ export function WeldingQualityTabs({
         <DialogContent>
           <form onSubmit={handleCreateThicknessRule}>
             <DialogHeader>
-              <DialogTitle>Add Thickness / Flange Rule</DialogTitle>
+              <DialogTitle>{t("dialogs.addThicknessTitle")}</DialogTitle>
               <DialogDescription>
-                One rule per service class and diameter. A SpoolGen import is refused
-                (`SRV_THICKNESS_MISSING`) for any weld joint whose class and diameter no active
-                rule covers.
+                {t("dialogs.addThicknessDesc")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-3">
               <div className="space-y-1.5">
-                <Label>Service Class</Label>
+                <Label>{t("dialogs.serviceClass")}</Label>
                 <Select value={thickScId} onValueChange={setThickScId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select service class" />
+                    <SelectValue placeholder={t("dialogs.selectServiceClass")} />
                   </SelectTrigger>
                   <SelectContent>
                     {activeServiceClasses.length === 0 ? (
-                      <SelectItem value="none" disabled>No active service classes</SelectItem>
+                      <SelectItem value="none" disabled>{t("dialogs.noActiveServiceClasses")}</SelectItem>
                     ) : (
                       activeServiceClasses.map((sc) => (
                         <SelectItem key={sc.id} value={sc.id}>
@@ -1380,13 +1378,13 @@ export function WeldingQualityTabs({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="thick-dia">Diameter (inch)</Label>
+                  <Label htmlFor="thick-dia">{t("dialogs.diameterInch")}</Label>
                   <Input
                     id="thick-dia"
                     type="number"
                     step="0.5"
                     min="0"
-                    placeholder="e.g. 6"
+                    placeholder={t("dialogs.diameterPlaceholder")}
                     value={thickDia}
                     onChange={(e) => setThickDia(e.target.value)}
                     disabled={isSubmittingThick}
@@ -1396,13 +1394,13 @@ export function WeldingQualityTabs({
                   )}
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="thick-mm">Thickness (mm)</Label>
+                  <Label htmlFor="thick-mm">{t("dialogs.thicknessMm")}</Label>
                   <Input
                     id="thick-mm"
                     type="number"
                     step="0.1"
                     min="0"
-                    placeholder="e.g. 6.0"
+                    placeholder={t("dialogs.thicknessPlaceholder")}
                     value={thickMm}
                     onChange={(e) => setThickMm(e.target.value)}
                     disabled={isSubmittingThick}
@@ -1413,10 +1411,10 @@ export function WeldingQualityTabs({
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="thick-rating">Flange Rating</Label>
+                <Label htmlFor="thick-rating">{t("dialogs.flangeRating")}</Label>
                 <Input
                   id="thick-rating"
-                  placeholder="e.g. 150#"
+                  placeholder={t("dialogs.flangeRatingPlaceholder")}
                   value={thickRating}
                   onChange={(e) => setThickRating(e.target.value)}
                   disabled={isSubmittingThick}
@@ -1433,10 +1431,10 @@ export function WeldingQualityTabs({
                 onClick={() => setIsAddThickOpen(false)}
                 disabled={isSubmittingThick}
               >
-                Cancel
+                {t("dialogs.cancel")}
               </Button>
               <Button type="submit" disabled={isSubmittingThick}>
-                Add Rule
+                {t("dialogs.addRule")}
               </Button>
             </DialogFooter>
           </form>
@@ -1448,22 +1446,21 @@ export function WeldingQualityTabs({
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
           <form onSubmit={handleCreateNdeRule}>
             <DialogHeader>
-              <DialogTitle>Add NDE Matrix Rule</DialogTitle>
+              <DialogTitle>{t("dialogs.addNdeTitle")}</DialogTitle>
               <DialogDescription>
-                Required inspection coverage for one service class, weld type and location. A
-                coverage of 100 % is mandatory inspection; anything between 1 and 99 is a spot rate.
+                {t("dialogs.addNdeDesc")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-3">
               <div className="space-y-1.5">
-                <Label>Service Class</Label>
+                <Label>{t("dialogs.serviceClass")}</Label>
                 <Select value={ndeScId} onValueChange={setNdeScId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select service class" />
+                    <SelectValue placeholder={t("dialogs.selectServiceClass")} />
                   </SelectTrigger>
                   <SelectContent>
                     {activeServiceClasses.length === 0 ? (
-                      <SelectItem value="none" disabled>No active service classes</SelectItem>
+                      <SelectItem value="none" disabled>{t("dialogs.noActiveServiceClasses")}</SelectItem>
                     ) : (
                       activeServiceClasses.map((sc) => (
                         <SelectItem key={sc.id} value={sc.id}>
@@ -1478,14 +1475,14 @@ export function WeldingQualityTabs({
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label>Weld Type</Label>
+                <Label>{t("dialogs.weldType")}</Label>
                 <Select value={ndeWtId} onValueChange={setNdeWtId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select weld type" />
+                    <SelectValue placeholder={t("dialogs.selectWeldType")} />
                   </SelectTrigger>
                   <SelectContent>
                     {activeWeldTypes.length === 0 ? (
-                      <SelectItem value="none" disabled>No active weld types</SelectItem>
+                      <SelectItem value="none" disabled>{t("dialogs.noActiveWeldTypes")}</SelectItem>
                     ) : (
                       activeWeldTypes.map((wt) => (
                         <SelectItem key={wt.id} value={wt.id}>
@@ -1498,7 +1495,7 @@ export function WeldingQualityTabs({
                 {ndeErrors.weldTypeId && <p className="text-xs text-destructive">{ndeErrors.weldTypeId}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label>Weld Location</Label>
+                <Label>{t("dialogs.weldLocation")}</Label>
                 {/* Assembly is a disabled extension point: `PQC50` refuses an assembly weld, and
                     the coverage check above only expects shop and field, so offering assembly here
                     would invite a rule for work this project can never record. */}
@@ -1507,15 +1504,15 @@ export function WeldingQualityTabs({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="shop">Shop</SelectItem>
-                    <SelectItem value="field">Field</SelectItem>
+                    <SelectItem value="shop">{t("dialogs.locationShop")}</SelectItem>
+                    <SelectItem value="field">{t("dialogs.locationField")}</SelectItem>
                   </SelectContent>
                 </Select>
                 {ndeErrors.weldLocation && <p className="text-xs text-destructive">{ndeErrors.weldLocation}</p>}
               </div>
 
               <div className="space-y-2">
-                <Label>Coverage (%)</Label>
+                <Label>{t("dialogs.coveragePercent")}</Label>
                 <div className="grid grid-cols-3 gap-3">
                   {(
                     [
@@ -1554,7 +1551,7 @@ export function WeldingQualityTabs({
                   disabled={isSubmittingNde}
                 />
                 <Label htmlFor="nde-trace-req" className="font-normal">
-                  Material traceability required
+                  {t("dialogs.materialTraceabilityRequired")}
                 </Label>
               </div>
 
@@ -1567,18 +1564,18 @@ export function WeldingQualityTabs({
                     disabled={isSubmittingNde}
                   />
                   <Label htmlFor="nde-pwht-req" className="font-normal">
-                    PWHT required
+                    {t("dialogs.pwhtRequired")}
                   </Label>
                 </div>
                 {ndePwhtReq && (
                   <div className="space-y-1.5 pl-6">
-                    <Label htmlFor="nde-pwht-thick">Thickness threshold in mm (Optional)</Label>
+                    <Label htmlFor="nde-pwht-thick">{t("dialogs.thicknessThresholdOptional")}</Label>
                     <Input
                       id="nde-pwht-thick"
                       type="number"
                       step="0.1"
                       min="0"
-                      placeholder="Leave empty to require PWHT at any thickness"
+                      placeholder={t("dialogs.pwhtThresholdHint")}
                       value={ndePwhtThick}
                       onChange={(e) => setNdePwhtThick(e.target.value)}
                       disabled={isSubmittingNde}
@@ -1597,10 +1594,10 @@ export function WeldingQualityTabs({
                 onClick={() => setIsAddNdeOpen(false)}
                 disabled={isSubmittingNde}
               >
-                Cancel
+                {t("dialogs.cancel")}
               </Button>
               <Button type="submit" disabled={isSubmittingNde}>
-                Add NDE Rule
+                {t("dialogs.addNdeRule")}
               </Button>
             </DialogFooter>
           </form>
@@ -1612,18 +1609,17 @@ export function WeldingQualityTabs({
         <DialogContent>
           <form onSubmit={handleCreatePml}>
             <DialogHeader>
-              <DialogTitle>Add PML Record</DialogTitle>
+              <DialogTitle>{t("dialogs.addPmlTitle")}</DialogTitle>
               <DialogDescription>
-                Received material, by ident code and heat number. A material check only accepts a
-                trace number that matches a record here.
+                {t("dialogs.addPmlDesc")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-3">
               <div className="space-y-1.5">
-                <Label htmlFor="pml-mrr">MRR Number</Label>
+                <Label htmlFor="pml-mrr">{t("dialogs.mrrNumber")}</Label>
                 <Input
                   id="pml-mrr"
-                  placeholder="e.g. MRR-2026-0031"
+                  placeholder={t("dialogs.mrrPlaceholder")}
                   value={pmlMrr}
                   onChange={(e) => setPmlMrr(e.target.value)}
                   disabled={isSubmittingPml}
@@ -1631,10 +1627,10 @@ export function WeldingQualityTabs({
                 {pmlErrors.mrrNumber && <p className="text-xs text-destructive">{pmlErrors.mrrNumber}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="pml-ident">Ident Code</Label>
+                <Label htmlFor="pml-ident">{t("dialogs.identCode")}</Label>
                 <Input
                   id="pml-ident"
-                  placeholder="e.g. IDN-100"
+                  placeholder={t("dialogs.identPlaceholder")}
                   value={pmlIdent}
                   onChange={(e) => setPmlIdent(e.target.value)}
                   disabled={isSubmittingPml}
@@ -1642,10 +1638,10 @@ export function WeldingQualityTabs({
                 {pmlErrors.identCode && <p className="text-xs text-destructive">{pmlErrors.identCode}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="pml-trace">Trace / Heat Number</Label>
+                <Label htmlFor="pml-trace">{t("dialogs.traceHeatNumber")}</Label>
                 <Input
                   id="pml-trace"
-                  placeholder="e.g. HEAT-4471"
+                  placeholder={t("dialogs.tracePlaceholder")}
                   value={pmlTrace}
                   onChange={(e) => setPmlTrace(e.target.value)}
                   disabled={isSubmittingPml}
@@ -1660,10 +1656,10 @@ export function WeldingQualityTabs({
                 onClick={() => setIsAddPmlOpen(false)}
                 disabled={isSubmittingPml}
               >
-                Cancel
+                {t("dialogs.cancel")}
               </Button>
               <Button type="submit" disabled={isSubmittingPml}>
-                Add PML Record
+                {t("dialogs.addPmlRecord")}
               </Button>
             </DialogFooter>
           </form>
@@ -1675,18 +1671,17 @@ export function WeldingQualityTabs({
         <DialogContent>
           <form onSubmit={handleCreateReworkCode}>
             <DialogHeader>
-              <DialogTitle>Add Defect Code</DialogTitle>
+              <DialogTitle>{t("dialogs.addDefectTitle")}</DialogTitle>
               <DialogDescription>
-                A rejected NDE result must name a defect code (`PQC42`), so at least one has to
-                exist before any rejection can be recorded.
+                {t("dialogs.addDefectDesc")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-3">
               <div className="space-y-1.5">
-                <Label htmlFor="rework-code">Code</Label>
+                <Label htmlFor="rework-code">{t("dialogs.defectCode")}</Label>
                 <Input
                   id="rework-code"
-                  placeholder="e.g. PO"
+                  placeholder={t("dialogs.defectCodePlaceholder")}
                   value={reworkCode}
                   onChange={(e) => setReworkCode(e.target.value)}
                   disabled={isSubmittingRework}
@@ -1694,10 +1689,10 @@ export function WeldingQualityTabs({
                 {reworkErrors.code && <p className="text-xs text-destructive">{reworkErrors.code}</p>}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="rework-desc">Description</Label>
+                <Label htmlFor="rework-desc">{t("dialogs.defectDesc")}</Label>
                 <Input
                   id="rework-desc"
-                  placeholder="e.g. Porosity"
+                  placeholder={t("dialogs.defectDescPlaceholder")}
                   value={reworkDesc}
                   onChange={(e) => setReworkDesc(e.target.value)}
                   disabled={isSubmittingRework}
@@ -1714,10 +1709,10 @@ export function WeldingQualityTabs({
                 onClick={() => setIsAddReworkOpen(false)}
                 disabled={isSubmittingRework}
               >
-                Cancel
+                {t("dialogs.cancel")}
               </Button>
               <Button type="submit" disabled={isSubmittingRework}>
-                Add Defect Code
+                {t("dialogs.addDefectCode")}
               </Button>
             </DialogFooter>
           </form>
@@ -1728,46 +1723,46 @@ export function WeldingQualityTabs({
         <DialogContent>
           <form onSubmit={handleCreateJointCategory}>
             <DialogHeader>
-              <DialogTitle>Add Joint Category</DialogTitle>
-              <DialogDescription>Configure the category and punch coefficient used by flange UT.</DialogDescription>
+              <DialogTitle>{t("dialogs.addJointCategoryTitle")}</DialogTitle>
+              <DialogDescription>{t("dialogs.addJointCategoryDesc")}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-3">
               <div>
-                <Label htmlFor="joint-definition">Joint definition</Label>
+                <Label htmlFor="joint-definition">{t("dialogs.jointDefinition")}</Label>
                 <Input id="joint-definition" value={jointDefinition} onChange={(e) => setJointDefinition(e.target.value)} disabled={isSubmittingJointCategory} />
                 {jointCategoryErrors.jointDefinition && <p className="mt-1 text-xs text-destructive">{jointCategoryErrors.jointDefinition}</p>}
               </div>
               <div>
-                <Label htmlFor="joint-timing">Timing</Label>
+                <Label htmlFor="joint-timing">{t("dialogs.timing")}</Label>
                 <Select value={jointTiming} onValueChange={(value) => setJointTiming(value as typeof jointTiming)}>
                   <SelectTrigger id="joint-timing"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="before_pressure_test">Before pressure test</SelectItem>
-                    <SelectItem value="before_precommissioning">Before precommissioning</SelectItem>
-                    <SelectItem value="after_precommissioning">After precommissioning</SelectItem>
+                    <SelectItem value="before_pressure_test">{t("dialogs.timingBeforePressureTest")}</SelectItem>
+                    <SelectItem value="before_precommissioning">{t("dialogs.timingBeforePrecommissioning")}</SelectItem>
+                    <SelectItem value="after_precommissioning">{t("dialogs.timingAfterPrecommissioning")}</SelectItem>
                   </SelectContent>
                 </Select>
                 {jointCategoryErrors.timing && <p className="mt-1 text-xs text-destructive">{jointCategoryErrors.timing}</p>}
               </div>
               <div>
-                <Label htmlFor="joint-category-code">Category X/Y/Z</Label>
-                <Input id="joint-category-code" placeholder="e.g. X" value={jointCategoryCode} onChange={(e) => setJointCategoryCode(e.target.value)} disabled={isSubmittingJointCategory} />
+                <Label htmlFor="joint-category-code">{t("dialogs.categoryCode")}</Label>
+                <Input id="joint-category-code" placeholder={t("dialogs.categoryPlaceholder")} value={jointCategoryCode} onChange={(e) => setJointCategoryCode(e.target.value)} disabled={isSubmittingJointCategory} />
                 {jointCategoryErrors.categoryCode && <p className="mt-1 text-xs text-destructive">{jointCategoryErrors.categoryCode}</p>}
               </div>
               <div>
-                <Label htmlFor="joint-reason">Reason</Label>
+                <Label htmlFor="joint-reason">{t("dialogs.reason")}</Label>
                 <Input id="joint-reason" value={jointReason} onChange={(e) => setJointReason(e.target.value)} disabled={isSubmittingJointCategory} />
                 {jointCategoryErrors.reason && <p className="mt-1 text-xs text-destructive">{jointCategoryErrors.reason}</p>}
               </div>
               <div>
-                <Label htmlFor="joint-coefficient">Punch coefficient (optional)</Label>
+                <Label htmlFor="joint-coefficient">{t("dialogs.punchCoefficientOptional")}</Label>
                 <Input id="joint-coefficient" type="number" step="0.001" value={jointCoefficient} onChange={(e) => setJointCoefficient(e.target.value)} disabled={isSubmittingJointCategory} />
                 {jointCategoryErrors.coefficient && <p className="mt-1 text-xs text-destructive">{jointCategoryErrors.coefficient}</p>}
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsAddJointCategoryOpen(false)} disabled={isSubmittingJointCategory}>Cancel</Button>
-              <Button type="submit" loading={isSubmittingJointCategory}>Create</Button>
+              <Button type="button" variant="outline" onClick={() => setIsAddJointCategoryOpen(false)} disabled={isSubmittingJointCategory}>{t("dialogs.cancel")}</Button>
+              <Button type="submit" loading={isSubmittingJointCategory}>{t("dialogs.create")}</Button>
             </DialogFooter>
           </form>
         </DialogContent>
