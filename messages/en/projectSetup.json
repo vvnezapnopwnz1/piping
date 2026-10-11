@@ -753,6 +753,12 @@
     }
   },
   "systemReferential": {
+    "navigatorLabel": "System references",
+    "noTorquing": "No torquing requirements configured.",
+    "addMaterialTypeDesc": "The material type becomes available in every project.",
+    "addTorquingDesc": "A jointing method that flange management can assign to a joint.",
+    "addUtRuleDesc": "Flange unit time coefficients for a diameter range and, optionally, a flange rating.",
+    "create": "Create",
     "failedToLoad": "Failed to load system referentials",
     "materialTypeAdded": "Material type \"{code}\" added successfully",
     "materialTypeFailed": "Failed to add material type",
@@ -797,7 +803,7 @@
     "systemRuleBadge": "System Rule",
     "noFilmRules": "No film quantity rules configured.",
     "utRulesTitle": "UT Calculation Rules",
-    "utRulesDesc": "System-wide ultrasonic thickness assessment rules.",
+    "utRulesDesc": "Diameter and flange rating coefficients for the flange unit time (UT).",
     "diameterFromIn": "Diameter from (in)",
     "diameterToIn": "Diameter to (in)",
     "flangeRatingOptional": "Flange rating (optional)",

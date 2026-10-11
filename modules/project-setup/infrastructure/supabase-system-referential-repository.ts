@@ -34,7 +34,7 @@ export async function loadSystemReferentials(
       .order("thickness_from_mm", { ascending: true }),
     client
       .from("system_ut_calculation_rules")
-      .select("id, diameter_from_inch, diameter_to_inch, coefficient_diameter, coefficient_rating")
+      .select("id, diameter_from_inch, diameter_to_inch, flange_rating, coefficient_diameter, coefficient_rating")
       .order("diameter_from_inch", { ascending: true }),
     client.rpc("current_user_has_global_capability", {
       requested_capability: "system_referential.manage",
@@ -72,7 +72,7 @@ export async function loadSystemReferentials(
     diameterToInch: Number(row.diameter_to_inch),
     coefficientDiameter: Number(row.coefficient_diameter),
     coefficientRating: Number(row.coefficient_rating),
-    flangeRating: (row as any).flange_rating ?? null,
+    flangeRating: row.flange_rating ?? null,
   }))
 
   const canManage = manageRes.data === true
@@ -139,7 +139,7 @@ export async function createUtCalculationRule(
     id: data.id,
     diameterFromInch: Number(data.diameter_from_inch),
     diameterToInch: Number(data.diameter_to_inch),
-    flangeRating: (data as any).flange_rating ?? null,
+    flangeRating: data.flange_rating ?? null,
     coefficientDiameter: Number(data.coefficient_diameter),
     coefficientRating: Number(data.coefficient_rating),
   }
