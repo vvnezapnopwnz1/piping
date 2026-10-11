@@ -34,6 +34,7 @@ import {
 import { ReferenceStatusBadge } from "./reference-status-badge"
 import { type ReferenceKeyOf } from "./reference-catalog"
 import { ReferencePane, ReferenceTable } from "./reference-pane"
+import { AddAnotherToggle } from "./add-another-toggle"
 import {
   validateSubcontractorInput,
   validateUnitInput,
@@ -106,6 +107,7 @@ export function GeneralReferences({
   const t = useTranslations("projectSetup.projectGeography")
   const tIssues = useTranslations("projectSetup.issues")
   const [loading, setLoading] = useState(true)
+  const [addAnother, setAddAnother] = useState(false)
 
   const [error, setError] = useState<string | null>(null)
   const [geography, setGeography] = useState<LoadedProjectGeography | null>(null)
@@ -204,7 +206,7 @@ export function GeneralReferences({
             }
           : null
       )
-      setIsAddSubOpen(false)
+      if (!addAnother) setIsAddSubOpen(false)
       setSubCode("")
       setSubDesc("")
       setSubContact("")
@@ -239,7 +241,7 @@ export function GeneralReferences({
             }
           : null
       )
-      setIsAddUnitOpen(false)
+      if (!addAnother) setIsAddUnitOpen(false)
       setUnitCode("")
       setUnitDesc("")
       toast.success(t("unitAdded", { code: newUnit.code }))
@@ -285,10 +287,10 @@ export function GeneralReferences({
             }
           : null
       )
-      setIsAddAcOpen(false)
+      if (!addAnother) setIsAddAcOpen(false)
       setAcCode("")
       setAcDesc("")
-      setAcUnitId("")
+      if (!addAnother) setAcUnitId("")
       toast.success(t("areaClassificationAdded", { code: newAc.code }))
     } catch (err: any) {
       toast.error(err.message || t("areaClassificationFailed"))
@@ -339,16 +341,18 @@ export function GeneralReferences({
             }
           : null
       )
-      setIsAddPdsOpen(false)
+      if (!addAnother) setIsAddPdsOpen(false)
       setPdsCode("")
       setPdsDesc("")
-      setShopSubId("")
-      setAssemblySubId("")
-      setFieldSubId("")
-      setAreaClassId("")
-      setEnv("above_ground")
-      setIsUnitFlag(false)
-      setIsRackFlag(false)
+      if (!addAnother) {
+        setShopSubId("")
+        setAssemblySubId("")
+        setFieldSubId("")
+        setAreaClassId("")
+        setEnv("above_ground")
+        setIsUnitFlag(false)
+        setIsRackFlag(false)
+      }
       setPdsCustomValues({})
       toast.success(t("pdsAreaAdded", { code: newPds.code }))
     } catch (err: any) {
@@ -526,6 +530,7 @@ export function GeneralReferences({
               </div>
             </div>
             <DialogFooter>
+              <AddAnotherToggle id="subcontractor-add-another" checked={addAnother} onCheckedChange={setAddAnother} />
               <Button variant="outline" type="button" onClick={() => setIsAddSubOpen(false)} disabled={isSubmittingSub}>
                 {t("dialogs.cancel")}
               </Button>
@@ -572,6 +577,7 @@ export function GeneralReferences({
               </div>
             </div>
             <DialogFooter>
+              <AddAnotherToggle id="unit-add-another" checked={addAnother} onCheckedChange={setAddAnother} />
               <Button
                 variant="outline"
                 type="button"
@@ -641,6 +647,7 @@ export function GeneralReferences({
               </div>
             </div>
             <DialogFooter>
+              <AddAnotherToggle id="area-classification-add-another" checked={addAnother} onCheckedChange={setAddAnother} />
               <Button
                 variant="outline"
                 type="button"
@@ -824,6 +831,7 @@ export function GeneralReferences({
               ))}
             </div>
             <DialogFooter>
+              <AddAnotherToggle id="pds-area-add-another" checked={addAnother} onCheckedChange={setAddAnother} />
               <Button variant="outline" type="button" onClick={() => setIsAddPdsOpen(false)} disabled={isSubmittingPds}>
                 {t("dialogs.cancel")}
               </Button>

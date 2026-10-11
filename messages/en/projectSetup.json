@@ -38,6 +38,7 @@
     }
   },
   "projectReferential": {
+    "addAnother": "Add another",
     "failedToLoad": "Failed to load project setup readiness",
     "unavailable": "Readiness state unavailable",
     "retry": "Retry",

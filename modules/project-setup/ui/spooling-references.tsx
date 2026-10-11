@@ -47,6 +47,7 @@ import type { ReferenceStatus } from "../domain/reference"
 import { ReferenceStatusBadge } from "./reference-status-badge"
 import type { ReferenceKeyOf } from "./reference-catalog"
 import { ReferencePane, ReferenceTable } from "./reference-pane"
+import { AddAnotherToggle } from "./add-another-toggle"
 
 type ExtendedT = ReturnType<typeof useTranslations<"projectSetup.extendedReference">>
 
@@ -203,6 +204,7 @@ export function SpoolingReferences({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<LoadedExtendedReferences | null>(null)
+  const [addAnother, setAddAnother] = useState(false)
   const requestVersionRef = useRef(0)
 
   // Device dialog state
@@ -259,7 +261,7 @@ export function SpoolingReferences({
       const client = getSupabaseBrowserClient()
       await createDevice(client, projectId, validation.value)
       toast.success(t("deviceCreated"))
-      setIsAddDeviceOpen(false)
+      if (!addAnother) setIsAddDeviceOpen(false)
       setDevCode("")
       setDevDesc("")
       setDevErrors({})
@@ -595,6 +597,7 @@ export function SpoolingReferences({
             </div>
           </div>
           <DialogFooter>
+            <AddAnotherToggle id="device-add-another" checked={addAnother} onCheckedChange={setAddAnother} />
             <Button variant="outline" onClick={() => { setIsAddDeviceOpen(false); setDevCode(""); setDevDesc(""); setDevErrors({}) }}>{t("dialogs.cancel")}</Button>
             <Button onClick={handleAddDevice} loading={isSubmittingDevice}>{t("dialogs.create")}</Button>
           </DialogFooter>

@@ -75,6 +75,7 @@ import { ReferenceStatusBadge } from "./reference-status-badge"
 import type { ReferenceKeyOf } from "./reference-catalog"
 import { ReferencePane, ReferenceTable } from "./reference-pane"
 import { ReferenceImportLink } from "./reference-import-link"
+import { AddAnotherToggle } from "./add-another-toggle"
 
 type WeldingT = ReturnType<typeof useTranslations<"projectSetup.weldingQuality">>
 
@@ -227,6 +228,7 @@ export function WeldingReferences({
   const identFilter = searchParams.get("ident")?.trim() || null
 
   const [loading, setLoading] = useState(true)
+  const [addAnother, setAddAnother] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<LoadedWeldingQualityReferences | null>(null)
 
@@ -369,10 +371,10 @@ export function WeldingReferences({
             }
           : null
       )
-      setIsAddScOpen(false)
+      if (!addAnother) setIsAddScOpen(false)
       setScCode("")
       setScDesc("")
-      setScMatTypeId("")
+      if (!addAnother) setScMatTypeId("")
       toast.success(t("serviceClassCreated", { code: newSc.code }))
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : t("serviceClassFailed"))
@@ -408,10 +410,10 @@ export function WeldingReferences({
             }
           : null
       )
-      setIsAddWtOpen(false)
+      if (!addAnother) setIsAddWtOpen(false)
       setWtCode("")
       setWtDesc("")
-      setWtCountsDia(true)
+      if (!addAnother) setWtCountsDia(true)
       toast.success(t("weldTypeCreated", { code: newWt.code }))
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : t("weldTypeFailed"))
@@ -454,13 +456,15 @@ export function WeldingReferences({
             }
           : null
       )
-      setIsAddWelderOpen(false)
+      if (!addAnother) setIsAddWelderOpen(false)
       setWelderCode("")
       setWelderName("")
-      setWelderSubId("")
+      if (!addAnother) {
+        setWelderSubId("")
+        setWelderExpires("")
+        setWelderWpsIds([])
+      }
       setWelderCert("")
-      setWelderExpires("")
-      setWelderWpsIds([])
       toast.success(t("welderQualified", { code: newWelder.welderCode }))
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : t("welderFailed"))
@@ -501,11 +505,13 @@ export function WeldingReferences({
             }
           : null
       )
-      setIsAddThickOpen(false)
-      setThickScId("")
+      if (!addAnother) setIsAddThickOpen(false)
+      if (!addAnother) {
+        setThickScId("")
+        setThickRating("")
+      }
       setThickDia("")
       setThickMm("")
-      setThickRating("")
       toast.success(t("thicknessRuleCreated"))
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : t("thicknessRuleFailed"))
@@ -537,7 +543,7 @@ export function WeldingReferences({
             }
           : null
       )
-      setIsAddReworkOpen(false)
+      if (!addAnother) setIsAddReworkOpen(false)
       setReworkCode("")
       setReworkDesc("")
       toast.success(t("defectCodeCreated", { code: newCode.code }))
@@ -584,7 +590,21 @@ export function WeldingReferences({
             }
           : null
       )
-      setIsAddNdeOpen(false)
+      if (!addAnother) setIsAddNdeOpen(false)
+      setNdeRt("")
+      setNdeUt("")
+      setNdeMt("")
+      setNdePt("")
+      setNdePmi("")
+      setNdeHt("")
+      setNdePwhtThick("")
+      if (!addAnother) {
+        setNdeScId("")
+        setNdeWtId("")
+        setNdeLoc("shop")
+        setNdePwhtReq(false)
+        setNdeTraceReq(true)
+      }
       toast.success(t("ndeRuleCreated"))
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : t("ndeRuleFailed"))
@@ -622,7 +642,7 @@ export function WeldingReferences({
           pipingMaterialRecords: [newRecord, ...prev.pipingMaterialRecords],
         }
       })
-      setIsAddPmlOpen(false)
+      if (!addAnother) setIsAddPmlOpen(false)
       setPmlMrr("")
       setPmlIdent("")
       setPmlTrace("")
@@ -654,11 +674,11 @@ export function WeldingReferences({
       const category = await createJointCategory(getSupabaseBrowserClient(), projectId, validation.value)
       setData((prev) => prev ? { ...prev, jointCategories: [...prev.jointCategories, category].sort((a, b) => a.categoryCode.localeCompare(b.categoryCode)) } : null)
       setJointDefinition("")
-      setJointTiming("before_pressure_test")
+      if (!addAnother) setJointTiming("before_pressure_test")
       setJointCategoryCode("")
       setJointReason("")
       setJointCoefficient("")
-      setIsAddJointCategoryOpen(false)
+      if (!addAnother) setIsAddJointCategoryOpen(false)
       toast.success(t("jointCategoryCreated", { code: category.categoryCode }))
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : t("jointCategoryFailed"))
@@ -976,6 +996,7 @@ export function WeldingReferences({
               </div>
             </div>
             <DialogFooter>
+              <AddAnotherToggle id="service-class-add-another" checked={addAnother} onCheckedChange={setAddAnother} />
               <Button variant="outline" type="button" onClick={() => setIsAddScOpen(false)} disabled={isSubmittingSc}>
                 {t("dialogs.cancel")}
               </Button>
@@ -1036,6 +1057,7 @@ export function WeldingReferences({
               </div>
             </div>
             <DialogFooter>
+              <AddAnotherToggle id="weld-type-add-another" checked={addAnother} onCheckedChange={setAddAnother} />
               <Button variant="outline" type="button" onClick={() => setIsAddWtOpen(false)} disabled={isSubmittingWt}>
                 {t("dialogs.cancel")}
               </Button>
@@ -1160,6 +1182,7 @@ export function WeldingReferences({
               </div>
             </div>
             <DialogFooter>
+              <AddAnotherToggle id="welder-add-another" checked={addAnother} onCheckedChange={setAddAnother} />
               <Button
                 variant="outline"
                 type="button"
@@ -1258,6 +1281,7 @@ export function WeldingReferences({
               </div>
             </div>
             <DialogFooter>
+              <AddAnotherToggle id="thickness-add-another" checked={addAnother} onCheckedChange={setAddAnother} />
               <Button
                 variant="outline"
                 type="button"
@@ -1421,6 +1445,7 @@ export function WeldingReferences({
               </div>
             </div>
             <DialogFooter>
+              <AddAnotherToggle id="nde-rule-add-another" checked={addAnother} onCheckedChange={setAddAnother} />
               <Button
                 variant="outline"
                 type="button"
@@ -1483,6 +1508,7 @@ export function WeldingReferences({
               </div>
             </div>
             <DialogFooter>
+              <AddAnotherToggle id="pml-record-add-another" checked={addAnother} onCheckedChange={setAddAnother} />
               <Button
                 variant="outline"
                 type="button"
@@ -1536,6 +1562,7 @@ export function WeldingReferences({
               </div>
             </div>
             <DialogFooter>
+              <AddAnotherToggle id="defect-code-add-another" checked={addAnother} onCheckedChange={setAddAnother} />
               <Button
                 variant="outline"
                 type="button"
@@ -1594,6 +1621,7 @@ export function WeldingReferences({
               </div>
             </div>
             <DialogFooter>
+              <AddAnotherToggle id="joint-category-add-another" checked={addAnother} onCheckedChange={setAddAnother} />
               <Button type="button" variant="outline" onClick={() => setIsAddJointCategoryOpen(false)} disabled={isSubmittingJointCategory}>{t("dialogs.cancel")}</Button>
               <Button type="submit" loading={isSubmittingJointCategory}>{t("dialogs.create")}</Button>
             </DialogFooter>

@@ -58,6 +58,7 @@ import { validateReferenceIdentity } from "../domain/reference"
 import { ReferenceStatusBadge } from "./reference-status-badge"
 import { type ReferenceKeyOf } from "./reference-catalog"
 import { ReferencePane, ReferenceTable } from "./reference-pane"
+import { AddAnotherToggle } from "./add-another-toggle"
 
 type ExecutionT = ReturnType<typeof useTranslations<"projectSetup.executionReference">>
 type CodesT = ReturnType<typeof useTranslations<"codes">>
@@ -226,6 +227,7 @@ export function TestpackReferences({
 }) {
   const tc = useTranslations("codes")
   const [loading, setLoading] = useState(true)
+  const [addAnother, setAddAnother] = useState(false)
   const tIssues = useTranslations("projectSetup.issues")
   const t = useTranslations("projectSetup.executionReference")
 
@@ -324,8 +326,11 @@ export function TestpackReferences({
       const client = getSupabaseBrowserClient()
       await createProjectTeam(client, projectId, validation.value)
       toast.success(t("teamCreated"))
-      setIsAddTeamOpen(false)
-      resetTeamForm()
+      if (!addAnother) setIsAddTeamOpen(false)
+      setTeamCode("")
+      setTeamDesc("")
+      if (!addAnother) setTeamType("line_check")
+      setTeamErrors({})
       fetchAll()
     } catch (err: any) {
       toast.error(err.message || t("teamFailed"))
@@ -348,7 +353,7 @@ export function TestpackReferences({
     try {
       await createLocationCategory(getSupabaseBrowserClient(), projectId, validation.value)
       toast.success(t("locationCategoryCreated"))
-      setIsAddLocationCategoryOpen(false)
+      if (!addAnother) setIsAddLocationCategoryOpen(false)
       setLocationCategoryCode("")
       setLocationCategoryDescription("")
       setLocationErrors({})
@@ -374,8 +379,8 @@ export function TestpackReferences({
     try {
       await createLocation(getSupabaseBrowserClient(), projectId, validation.value)
       toast.success(t("locationCreated"))
-      setIsAddLocationOpen(false)
-      setLocationCategoryId("")
+      if (!addAnother) setIsAddLocationOpen(false)
+      if (!addAnother) setLocationCategoryId("")
       setLocationCode("")
       setLocationDescription("")
       setLocationProgressColumns("")
@@ -420,7 +425,7 @@ export function TestpackReferences({
       const client = getSupabaseBrowserClient()
       await createProjectSystem(client, projectId, { code: sysCode, description: sysDesc })
       toast.success(t("systemCreated"))
-      setIsAddSystemOpen(false)
+      if (!addAnother) setIsAddSystemOpen(false)
       setSysCode("")
       setSysDesc("")
       setSysErrors({})
@@ -444,10 +449,10 @@ export function TestpackReferences({
       const client = getSupabaseBrowserClient()
       await createProjectSubsystem(client, projectId, validation.value)
       toast.success(t("subsystemCreated"))
-      setIsAddSubsystemOpen(false)
+      if (!addAnother) setIsAddSubsystemOpen(false)
       setSubCode("")
       setSubDesc("")
-      setSubSystemId("")
+      if (!addAnother) setSubSystemId("")
       setSubErrors({})
       fetchAll()
     } catch (err: any) {
@@ -474,7 +479,7 @@ export function TestpackReferences({
         .single()
         .then(({ error }) => { if (error) throw new Error(error.message) })
       toast.success(t("lineServiceCreated"))
-      setIsAddLineServiceOpen(false)
+      if (!addAnother) setIsAddLineServiceOpen(false)
       setLsCode("")
       setLsDesc("")
       setLsErrors({})
@@ -505,7 +510,7 @@ export function TestpackReferences({
       setData((prev) => prev ? { ...prev, unitTimeReferences: [...prev.unitTimeReferences, unitTime].sort((a, b) => a.activity.localeCompare(b.activity)) } : null)
       setUnitTimeUt("")
       setUnitTimeStandard("")
-      setIsAddUnitTimeOpen(false)
+      if (!addAnother) setIsAddUnitTimeOpen(false)
       toast.success(t("flangeUnitTimeCreated"))
     } catch (err: any) {
       toast.error(err.message || t("flangeUnitTimeFailed"))
@@ -529,7 +534,7 @@ export function TestpackReferences({
       setData((prev) => prev ? { ...prev, punchCodes: [...prev.punchCodes, created].sort((a, b) => a.code.localeCompare(b.code)) } : null)
       setPunchCode("")
       setPunchDescription("")
-      setIsAddPunchCodeOpen(false)
+      if (!addAnother) setIsAddPunchCodeOpen(false)
       toast.success(t("punchCodeCreated"))
     } catch (err: any) {
       toast.error(err.message || t("punchCodeFailed"))
@@ -821,7 +826,11 @@ export function TestpackReferences({
             <div><Label htmlFor="location-category-code">{t("dialogs.codeLabel")}</Label><Input id="location-category-code" value={locationCategoryCode} onChange={(event) => setLocationCategoryCode(event.target.value)} />{locationErrors.code && <p className="text-xs text-destructive">{locationErrors.code}</p>}</div>
             <div><Label htmlFor="location-category-description">{t("dialogs.descLabel")}</Label><Input id="location-category-description" value={locationCategoryDescription} onChange={(event) => setLocationCategoryDescription(event.target.value)} />{locationErrors.description && <p className="text-xs text-destructive">{locationErrors.description}</p>}</div>
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setIsAddLocationCategoryOpen(false)}>{t("dialogs.cancel")}</Button><Button onClick={handleAddLocationCategory} disabled={isSubmittingLocation}>{t("dialogs.create")}</Button></DialogFooter>
+          <DialogFooter>
+            <AddAnotherToggle id="location-category-add-another" checked={addAnother} onCheckedChange={setAddAnother} />
+            <Button variant="outline" onClick={() => setIsAddLocationCategoryOpen(false)}>{t("dialogs.cancel")}</Button>
+            <Button onClick={handleAddLocationCategory} disabled={isSubmittingLocation}>{t("dialogs.create")}</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -835,7 +844,11 @@ export function TestpackReferences({
             <div><Label htmlFor="location-capacity">{t("dialogs.capacityFieldLabel")}</Label><Input id="location-capacity" type="number" min="1" value={locationCapacity} onChange={(event) => setLocationCapacity(event.target.value)} />{locationErrors.capacity && <p className="text-xs text-destructive">{locationErrors.capacity}</p>}</div>
             <div><Label htmlFor="location-progress">{t("dialogs.progressColumnsLabel")}</Label><Input id="location-progress" value={locationProgressColumns} onChange={(event) => setLocationProgressColumns(event.target.value)} placeholder={t("dialogs.progressColumnsPlaceholder")} /></div>
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setIsAddLocationOpen(false)}>{t("dialogs.cancel")}</Button><Button onClick={handleAddLocation} disabled={isSubmittingLocation}>{t("dialogs.create")}</Button></DialogFooter>
+          <DialogFooter>
+            <AddAnotherToggle id="location-add-another" checked={addAnother} onCheckedChange={setAddAnother} />
+            <Button variant="outline" onClick={() => setIsAddLocationOpen(false)}>{t("dialogs.cancel")}</Button>
+            <Button onClick={handleAddLocation} disabled={isSubmittingLocation}>{t("dialogs.create")}</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -879,6 +892,7 @@ export function TestpackReferences({
             </div>
           </div>
           <DialogFooter>
+            <AddAnotherToggle id="team-add-another" checked={addAnother} onCheckedChange={setAddAnother} />
             <Button variant="outline" onClick={() => { setIsAddTeamOpen(false); resetTeamForm() }}>{t("dialogs.cancel")}</Button>
             <Button onClick={handleAddTeam} loading={isSubmittingTeam}>{t("dialogs.create")}</Button>
           </DialogFooter>
@@ -905,6 +919,7 @@ export function TestpackReferences({
             </div>
           </div>
           <DialogFooter>
+            <AddAnotherToggle id="system-add-another" checked={addAnother} onCheckedChange={setAddAnother} />
             <Button variant="outline" onClick={() => { setIsAddSystemOpen(false); setSysCode(""); setSysDesc(""); setSysErrors({}) }}>{t("dialogs.cancel")}</Button>
             <Button onClick={handleAddSystem} loading={isSubmittingSystem}>{t("dialogs.create")}</Button>
           </DialogFooter>
@@ -943,6 +958,7 @@ export function TestpackReferences({
             </div>
           </div>
           <DialogFooter>
+            <AddAnotherToggle id="subsystem-add-another" checked={addAnother} onCheckedChange={setAddAnother} />
             <Button variant="outline" onClick={() => { setIsAddSubsystemOpen(false) }}>{t("dialogs.cancel")}</Button>
             <Button onClick={handleAddSubsystem} loading={isSubmittingSubsystem}>{t("dialogs.create")}</Button>
           </DialogFooter>
@@ -969,6 +985,7 @@ export function TestpackReferences({
             </div>
           </div>
           <DialogFooter>
+            <AddAnotherToggle id="line-service-add-another" checked={addAnother} onCheckedChange={setAddAnother} />
             <Button variant="outline" onClick={() => { setIsAddLineServiceOpen(false); setLsCode(""); setLsDesc(""); setLsErrors({}) }}>{t("dialogs.cancel")}</Button>
             <Button onClick={handleAddLineService} loading={isSubmittingLineService}>{t("dialogs.create")}</Button>
           </DialogFooter>
@@ -999,6 +1016,7 @@ export function TestpackReferences({
               </div>
             </div>
             <DialogFooter>
+              <AddAnotherToggle id="flange-unit-time-add-another" checked={addAnother} onCheckedChange={setAddAnother} />
               <Button type="button" variant="outline" onClick={() => setIsAddUnitTimeOpen(false)} disabled={isSubmittingUnitTime}>{t("dialogs.cancel")}</Button>
               <Button type="submit" loading={isSubmittingUnitTime}>{t("dialogs.create")}</Button>
             </DialogFooter>
@@ -1026,6 +1044,7 @@ export function TestpackReferences({
               </div>
             </div>
             <DialogFooter>
+              <AddAnotherToggle id="punch-code-add-another" checked={addAnother} onCheckedChange={setAddAnother} />
               <Button type="button" variant="outline" onClick={() => setIsAddPunchCodeOpen(false)} disabled={isSubmittingPunchCode}>{t("dialogs.cancel")}</Button>
               <Button type="submit" loading={isSubmittingPunchCode}>{t("dialogs.create")}</Button>
             </DialogFooter>
