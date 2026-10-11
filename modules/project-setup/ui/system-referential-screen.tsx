@@ -48,6 +48,7 @@ import { validateReferenceIdentity, getReferenceStatusActions } from "../domain/
 import { formatFieldErrors } from "./setup-field-issue"
 import { ReferenceStatusBadge } from "./reference-status-badge"
 import { ReferencePane, ReferenceTable } from "./reference-pane"
+import { AddAnotherToggle } from "./add-another-toggle"
 import {
   SystemReferenceNavigator,
   parseSystemReferenceKey,
@@ -250,6 +251,7 @@ export function SystemReferentialScreen() {
   const [utCoefficientRating, setUtCoefficientRating] = useState("")
   const [utErrors, setUtErrors] = useState<Record<string, string>>({})
   const [isAddingUt, setIsAddingUt] = useState(false)
+  const [addAnother, setAddAnother] = useState(false)
 
   // Material type edit dialog state
   const [editingEntry, setEditingEntry] = useState<SystemReferenceEntry | null>(null)
@@ -351,7 +353,7 @@ export function SystemReferentialScreen() {
             }
           : null
       )
-      setIsAddMaterialOpen(false)
+      if (!addAnother) setIsAddMaterialOpen(false)
       setAddCode("")
       setAddDescription("")
       toast.success(t("materialTypeAdded", { code: newEntry.code }))
@@ -387,7 +389,7 @@ export function SystemReferentialScreen() {
             }
           : null
       )
-      setIsAddTorquingOpen(false)
+      if (!addAnother) setIsAddTorquingOpen(false)
       setTorquingCode("")
       setTorquingDescription("")
       toast.success(t("torquingAdded", { code: entry.code }))
@@ -426,7 +428,7 @@ export function SystemReferentialScreen() {
             }
           : null
       )
-      setIsAddUtOpen(false)
+      if (!addAnother) setIsAddUtOpen(false)
       setUtDiameterFrom("")
       setUtDiameterTo("")
       setUtFlangeRating("")
@@ -650,6 +652,11 @@ export function SystemReferentialScreen() {
               </div>
             </div>
             <DialogFooter>
+              <AddAnotherToggle
+                id="material-add-another"
+                checked={addAnother}
+                onCheckedChange={setAddAnother}
+              />
               <Button
                 type="button"
                 variant="outline"
@@ -707,6 +714,11 @@ export function SystemReferentialScreen() {
               </div>
             </div>
             <DialogFooter>
+              <AddAnotherToggle
+                id="torquing-add-another"
+                checked={addAnother}
+                onCheckedChange={setAddAnother}
+              />
               <Button
                 type="button"
                 variant="outline"
@@ -804,6 +816,11 @@ export function SystemReferentialScreen() {
               </div>
             </div>
             <DialogFooter>
+              <AddAnotherToggle
+                id="ut-add-another"
+                checked={addAnother}
+                onCheckedChange={setAddAnother}
+              />
               <Button
                 type="button"
                 variant="outline"
