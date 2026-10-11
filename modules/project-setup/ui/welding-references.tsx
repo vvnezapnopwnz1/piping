@@ -957,7 +957,7 @@ export function WeldingReferences({
               <div className="space-y-1.5">
                 <Label>{t("dialogs.materialType")}</Label>
                 <Select value={scMatTypeId} onValueChange={setScMatTypeId}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder={t("dialogs.selectMaterialType")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -1083,7 +1083,7 @@ export function WeldingReferences({
               <div className="space-y-1.5">
                 <Label>{t("dialogs.subcontractor")}</Label>
                 <Select value={welderSubId} onValueChange={setWelderSubId}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder={t("dialogs.selectSubcontractor")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -1190,7 +1190,7 @@ export function WeldingReferences({
               <div className="space-y-1.5">
                 <Label>{t("dialogs.serviceClass")}</Label>
                 <Select value={thickScId} onValueChange={setThickScId}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder={t("dialogs.selectServiceClass")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -1288,7 +1288,7 @@ export function WeldingReferences({
               <div className="space-y-1.5">
                 <Label>{t("dialogs.serviceClass")}</Label>
                 <Select value={ndeScId} onValueChange={setNdeScId}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder={t("dialogs.selectServiceClass")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -1310,7 +1310,7 @@ export function WeldingReferences({
               <div className="space-y-1.5">
                 <Label>{t("dialogs.weldType")}</Label>
                 <Select value={ndeWtId} onValueChange={setNdeWtId}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder={t("dialogs.selectWeldType")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -1333,7 +1333,7 @@ export function WeldingReferences({
                     the coverage check above only expects shop and field, so offering assembly here
                     would invite a rule for work this project can never record. */}
                 <Select value={ndeLoc} onValueChange={(value) => setNdeLoc(value as "shop" | "field")}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1568,7 +1568,7 @@ export function WeldingReferences({
               <div>
                 <Label htmlFor="joint-timing">{t("dialogs.timing")}</Label>
                 <Select value={jointTiming} onValueChange={(value) => setJointTiming(value as typeof jointTiming)}>
-                  <SelectTrigger id="joint-timing"><SelectValue /></SelectTrigger>
+                  <SelectTrigger id="joint-timing" className="w-full"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="before_pressure_test">{t("dialogs.timingBeforePressureTest")}</SelectItem>
                     <SelectItem value="before_precommissioning">{t("dialogs.timingBeforePrecommissioning")}</SelectItem>

@@ -99,7 +99,7 @@ function punchCodeColumns(
       value: () => "",
       cell: (row) =>
         row.status === "active" ? (
-          <Button variant="outline" size="sm" onClick={() => void handleDeactivatePunchCode(row.id)}>
+          <Button variant="ghost" size="sm" onClick={function() { void handleDeactivatePunchCode(row.id) }}>
             {t("deactivate")}
           </Button>
         ) : null,
@@ -204,7 +204,7 @@ function locationColumns(
       sortable: false,
       value: () => "",
       cell: (row) => (
-        <Button size="sm" variant="outline" onClick={() => onEditCapacity(row)}>
+        <Button size="sm" variant="ghost" onClick={function() { onEditCapacity(row) }}>
           {t("editCapacity")}
         </Button>
       ),
@@ -829,7 +829,7 @@ export function TestpackReferences({
         <DialogContent>
           <DialogHeader><DialogTitle>{t("dialogs.addLocationTitle")}</DialogTitle><DialogDescription>{t("dialogs.addLocationDesc")}</DialogDescription></DialogHeader>
           <div className="space-y-4">
-            <div><Label htmlFor="location-category">{t("dialogs.categoryLabel")}</Label><Select value={locationCategoryId} onValueChange={setLocationCategoryId}><SelectTrigger id="location-category"><SelectValue placeholder={t("dialogs.selectCategory")} /></SelectTrigger><SelectContent>{data.locationCategories.map((category) => <SelectItem key={category.id} value={category.id}>{category.code} — {category.description}</SelectItem>)}</SelectContent></Select>{locationErrors.categoryId && <p className="text-xs text-destructive">{locationErrors.categoryId}</p>}</div>
+            <div><Label htmlFor="location-category">{t("dialogs.categoryLabel")}</Label><Select value={locationCategoryId} onValueChange={setLocationCategoryId}><SelectTrigger id="location-category" className="w-full"><SelectValue placeholder={t("dialogs.selectCategory")} /></SelectTrigger><SelectContent>{data.locationCategories.map((category) => <SelectItem key={category.id} value={category.id}>{category.code} — {category.description}</SelectItem>)}</SelectContent></Select>{locationErrors.categoryId && <p className="text-xs text-destructive">{locationErrors.categoryId}</p>}</div>
             <div><Label htmlFor="location-code">{t("dialogs.codeLabel")}</Label><Input id="location-code" value={locationCode} onChange={(event) => setLocationCode(event.target.value)} />{locationErrors.code && <p className="text-xs text-destructive">{locationErrors.code}</p>}</div>
             <div><Label htmlFor="location-description">{t("dialogs.descLabel")}</Label><Input id="location-description" value={locationDescription} onChange={(event) => setLocationDescription(event.target.value)} />{locationErrors.description && <p className="text-xs text-destructive">{locationErrors.description}</p>}</div>
             <div><Label htmlFor="location-capacity">{t("dialogs.capacityFieldLabel")}</Label><Input id="location-capacity" type="number" min="1" value={locationCapacity} onChange={(event) => setLocationCapacity(event.target.value)} />{locationErrors.capacity && <p className="text-xs text-destructive">{locationErrors.capacity}</p>}</div>
@@ -868,7 +868,7 @@ export function TestpackReferences({
             <div>
               <Label htmlFor="team-type">{t("dialogs.teamTypeLabel")}</Label>
               <Select value={teamType} onValueChange={(v) => setTeamType(v as ProjectTeamType)}>
-                <SelectTrigger id="team-type"><SelectValue /></SelectTrigger>
+                <SelectTrigger id="team-type" className="w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {TEAM_TYPES.map((k) => (
                     <SelectItem key={k} value={k}>{tc(`teamType.${k}`)}</SelectItem>
@@ -922,7 +922,7 @@ export function TestpackReferences({
             <div>
               <Label htmlFor="sub-system">{t("dialogs.parentSystemLabel")}</Label>
               <Select value={subSystemId} onValueChange={setSubSystemId}>
-                <SelectTrigger id="sub-system"><SelectValue placeholder={t("dialogs.selectSystem")} /></SelectTrigger>
+                <SelectTrigger id="sub-system" className="w-full"><SelectValue placeholder={t("dialogs.selectSystem")} /></SelectTrigger>
                 <SelectContent>
                   {activeSystems.map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.code} — {s.description}</SelectItem>

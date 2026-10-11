@@ -626,7 +626,7 @@ export function GeneralReferences({
               <div className="space-y-1.5">
                 <Label>{t("dialogs.unitLabel")}</Label>
                 <Select value={acUnitId} onValueChange={setAcUnitId}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder={t("dialogs.selectUnit")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -699,7 +699,7 @@ export function GeneralReferences({
               <div className="space-y-1.5">
                 <Label>{t("dialogs.shopSubcontractor")}</Label>
                 <Select value={shopSubId} onValueChange={setShopSubId}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder={t("dialogs.selectShopSubcontractor")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -716,7 +716,7 @@ export function GeneralReferences({
               <div className="space-y-1.5">
                 <Label>{t("dialogs.assemblySubcontractor")}</Label>
                 <Select value={assemblySubId} onValueChange={setAssemblySubId}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder={t("dialogs.selectAssemblySubcontractor")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -733,7 +733,7 @@ export function GeneralReferences({
               <div className="space-y-1.5">
                 <Label>{t("dialogs.fieldSubcontractor")}</Label>
                 <Select value={fieldSubId} onValueChange={setFieldSubId}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder={t("dialogs.selectFieldSubcontractor")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -750,7 +750,7 @@ export function GeneralReferences({
               <div className="space-y-1.5">
                 <Label>{t("dialogs.areaClassification")}</Label>
                 <Select value={areaClassId} onValueChange={setAreaClassId}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder={t("dialogs.selectAreaClassification")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -775,7 +775,7 @@ export function GeneralReferences({
                   value={env}
                   onValueChange={(value) => setEnv(value as "above_ground" | "underground")}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

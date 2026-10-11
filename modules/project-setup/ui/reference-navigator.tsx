@@ -1,5 +1,7 @@
+// modules/project-setup/ui/reference-navigator.tsx
 "use client"
 
+import { useEffect, useRef } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
@@ -19,6 +21,12 @@ export function ReferenceNavigator({
 }) {
   const t = useTranslations("projectSetup.projectReferential")
   const router = useRouter()
+  const activeLink = useRef<HTMLAnchorElement>(null)
+
+  // Thirty links are taller than a screen: a reference opened by its address must not be highlighted out of sight.
+  useEffect(() => {
+    activeLink.current?.scrollIntoView({ block: "nearest" })
+  }, [active])
 
   return (
     <>
@@ -45,7 +53,7 @@ export function ReferenceNavigator({
 
       <nav
         aria-label={t("navigatorLabel")}
-        className="hidden space-y-4 lg:sticky lg:top-4 lg:block lg:max-h-[calc(100vh-2rem)] lg:self-start lg:overflow-y-auto"
+        className="hidden space-y-3 lg:sticky lg:top-4 lg:block lg:max-h-[calc(100vh-2rem)] lg:self-start lg:overflow-y-auto"
       >
         {REFERENCE_GROUPS.map((group) => (
           <div key={group.id}>
@@ -56,12 +64,13 @@ export function ReferenceNavigator({
               {group.keys.map((key) => (
                 <li key={key}>
                   <Link
+                    ref={key === active ? activeLink : undefined}
                     href={hrefFor(key)}
                     replace
                     scroll={false}
                     aria-current={key === active ? "page" : undefined}
                     className={cn(
-                      "hover:bg-accent flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm",
+                      "hover:bg-accent flex items-center justify-between gap-2 rounded-md px-2 py-1 text-sm",
                       key === active && "bg-accent font-medium",
                     )}
                   >
