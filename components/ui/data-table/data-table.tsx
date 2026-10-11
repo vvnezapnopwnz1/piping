@@ -243,7 +243,7 @@ export function DataTable<Row>({
           hideableColumns={columns
             .filter((column) => !column.alwaysVisible)
             .map((column) => ({ id: column.id, label: column.header }))}
-          searchPlaceholder={searchPlaceholder ?? `Search ${searchable.map((c) => c.header.toLowerCase()).join(', ')}…`}
+          searchPlaceholder={searchPlaceholder ?? (searchable.length > 0 ? tt('searchIn', { columns: searchable.map((c) => c.header).join(', ') }) : tt('search'))}
           rowCount={sorted.length}
           totalCount={rows.length}
           showSearch={chrome.showSearch}

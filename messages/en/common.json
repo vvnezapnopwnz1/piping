@@ -18,6 +18,7 @@
   },
   "table": {
     "search": "Search…",
+    "searchIn": "Search: {columns}",
     "clearSearch": "Clear the search",
     "rowHeight": "Row height",
     "columns": "Columns",

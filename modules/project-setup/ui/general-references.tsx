@@ -550,7 +550,7 @@ export function GeneralReferences({
                 <Label htmlFor="unit-code">{t("columns.code")}</Label>
                 <Input
                   id="unit-code"
-                  placeholder="e.g. U-100"
+                  placeholder={t("dialogs.unitCodePlaceholder")}
                   value={unitCode}
                   onChange={(e) => setUnitCode(e.target.value)}
                   disabled={isSubmittingUnit}

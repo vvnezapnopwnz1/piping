@@ -469,7 +469,7 @@ export default function ProjectDefinitionPage() {
               <CreationField
                 id="cp-contract-number"
                 label={t("contractNumberOptional")}
-                placeholder="e.g. C-1"
+                placeholder={t("contractNumberPlaceholder")}
                 value={createForm.contractNumber}
                 disabled={isCreating}
                 onChange={(value) =>

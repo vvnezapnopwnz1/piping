@@ -489,7 +489,7 @@ export function SystemReferentialScreen() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="ut-flange-rating">{t("flangeRatingOptional")}</Label>
-                <Input id="ut-flange-rating" placeholder="e.g. 150#" value={utFlangeRating} onChange={(e) => setUtFlangeRating(e.target.value)} disabled={isAddingUt} />
+                <Input id="ut-flange-rating" placeholder={t("flangeRatingPlaceholder")} value={utFlangeRating} onChange={(e) => setUtFlangeRating(e.target.value)} disabled={isAddingUt} />
                 {utErrors.flangeRating && <p className="text-xs text-destructive">{utErrors.flangeRating}</p>}
               </div>
               <div className="space-y-1.5">

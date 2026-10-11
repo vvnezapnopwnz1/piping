@@ -1062,7 +1062,7 @@ export function WeldingReferences({
                 <Label htmlFor="welder-code">{t("dialogs.welderStencil")}</Label>
                 <Input
                   id="welder-code"
-                  placeholder="e.g. W-101"
+                  placeholder={t("dialogs.welderStencilPlaceholder")}
                   value={welderCode}
                   onChange={(e) => setWelderCode(e.target.value)}
                   disabled={isSubmittingWelder}

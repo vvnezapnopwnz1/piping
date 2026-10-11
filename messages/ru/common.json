@@ -18,6 +18,7 @@
   },
   "table": {
     "search": "Поиск…",
+    "searchIn": "Поиск: {columns}",
     "clearSearch": "Очистить поиск",
     "rowHeight": "Высота строк",
     "columns": "Колонки",
