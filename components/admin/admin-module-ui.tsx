@@ -31,9 +31,9 @@ export function AdminPageHeader({
   description: string;
 }) {
   return (
-    <div>
-      <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
-      <p className="text-muted-foreground">{description}</p>
+    <div className="space-y-1">
+      <h1 className="text-xl font-semibold text-foreground">{title}</h1>
+      <p className="text-sm text-muted-foreground">{description}</p>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 {
   "overview": {
-    "title": "Admin · Overview",
-    "description": "Setup workspace for project definition, master data, access mapping, and import configuration.",
+    "title": "Project Setup",
+    "description": "What a project needs before work starts, in order.",
     "cards": {
       "projectDefinition": {
         "title": "Project Definition",

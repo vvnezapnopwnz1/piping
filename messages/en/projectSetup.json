@@ -102,13 +102,13 @@
     "addActivity": "Add Activity"
   },
   "adminPages": {
-    "projectReferentialTitle": "Admin · Project Referential",
+    "projectReferentialTitle": "Project Referential",
     "projectReferentialDesc": "Project-level master data for spooling, fabrication, erection, testpack, tracking, and painting.",
     "selectProjectReferential": "Select a project to manage its referentials.",
-    "progressWeightsTitle": "Admin · Progress Weights",
+    "progressWeightsTitle": "Progress Weights",
     "progressWeightsDesc": "Configure progress weight allocations across project phases.",
     "selectProjectWeights": "Select a project to manage its progress weights.",
-    "systemReferentialTitle": "Admin · System Referential",
+    "systemReferentialTitle": "System Referential",
     "systemReferentialDesc": "Cross-project referentials maintained at system-admin scope."
   },
   "issues": {
@@ -834,7 +834,7 @@
     "owner": "Owner",
     "contractor": "Contractor",
     "failedToUploadLogo": "Failed to upload logo",
-    "headerTitle": "Admin · Project Definition",
+    "headerTitle": "Project Definition",
     "headerDesc": "Create and configure project identity, parties, logos, and maximum transit timing.",
     "newProjectTitle": "Create a new project",
     "newProjectDesc": "You are filed as the new project's Project Admin and it becomes your active project. Existing projects are not affected.",
