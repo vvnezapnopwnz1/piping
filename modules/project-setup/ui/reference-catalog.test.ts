@@ -11,6 +11,7 @@ import {
   referenceGroupOf,
   referenceQuery,
   referencesMissingData,
+  setupStepStatus,
 } from "./reference-catalog"
 import { IMPORT_TYPES } from "@/modules/imports/domain/import-type"
 
@@ -59,3 +60,55 @@ test("the three NDE matrix codes mark one reference", () => {
   const missing = referencesMissingData(["nde_matrix_shop", "nde_matrix_field", "material_types", "teams"])
   assert.deepEqual([...missing].sort(), ["nde", "teams"])
 })
+
+test("setupStepStatus counts missing items per step and finds the first missing reference", () => {
+  // all complete
+  assert.deepEqual(setupStepStatus([]), {
+    systemReferential: 0,
+    projectReferential: { missing: 0, first: null },
+    progressWeights: 0,
+  })
+
+  // only a system code
+  assert.deepEqual(setupStepStatus(["material_types"]), {
+    systemReferential: 1,
+    projectReferential: { missing: 0, first: null },
+    progressWeights: 0,
+  })
+
+  // NDE shop+assembly+field count as one reference
+  assert.deepEqual(
+    setupStepStatus(["nde_matrix_shop", "nde_matrix_assembly", "nde_matrix_field"]),
+    {
+      systemReferential: 0,
+      projectReferential: { missing: 1, first: "nde" },
+      progressWeights: 0,
+    },
+  )
+
+  // first missing follows REFERENCE_GROUPS order (welding before testpack, general before welding)
+  const status = setupStepStatus(["teams", "weld_types", "subcontractors"])
+  assert.deepEqual(status, {
+    systemReferential: 0,
+    projectReferential: { missing: 3, first: "subcontractors" },
+    progressWeights: 0,
+  })
+
+  const statusWithoutGeneral = setupStepStatus(["teams", "weld_types"])
+  assert.deepEqual(statusWithoutGeneral, {
+    systemReferential: 0,
+    projectReferential: { missing: 2, first: "weld-types" },
+    progressWeights: 0,
+  })
+
+  // an unknown code is ignored
+  assert.deepEqual(
+    setupStepStatus(["unknown_code", "progress_weights_prefabrication"]),
+    {
+      systemReferential: 0,
+      projectReferential: { missing: 0, first: null },
+      progressWeights: 1,
+    },
+  )
+})
+

@@ -122,3 +122,59 @@ export function referencesMissingData(missingCodes: readonly string[]): Readonly
   }
   return keys
 }
+
+export interface SetupStepStatus {
+  systemReferential: number
+  projectReferential: {
+    missing: number
+    first: ReferenceKey | null
+  }
+  progressWeights: number
+}
+
+/**
+ * Aggregates readiness missing codes into per-step status counts.
+ * Project references count distinct missing reference keys and find the first
+ * missing reference in REFERENCE_GROUPS display order.
+ * Codes with no target are ignored.
+ */
+export function setupStepStatus(missingCodes: readonly string[]): SetupStepStatus {
+  let systemReferential = 0
+  let progressWeights = 0
+  const missingRefs = new Set<ReferenceKey>()
+
+  for (const code of missingCodes) {
+    const target = readinessTarget(code)
+    if (!target) continue
+
+    if (target.kind === "reference") {
+      missingRefs.add(target.key)
+    } else if (target.kind === "page") {
+      if (target.href === "/admin/system-referential") {
+        systemReferential += 1
+      } else if (target.href === "/admin/progress-weights") {
+        progressWeights += 1
+      }
+    }
+  }
+
+  let first: ReferenceKey | null = null
+  if (missingRefs.size > 0) {
+    for (const group of REFERENCE_GROUPS) {
+      const match = group.keys.find((key) => missingRefs.has(key))
+      if (match) {
+        first = match
+        break
+      }
+    }
+  }
+
+  return {
+    systemReferential,
+    projectReferential: {
+      missing: missingRefs.size,
+      first,
+    },
+    progressWeights,
+  }
+}

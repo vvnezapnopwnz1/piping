@@ -9,6 +9,12 @@
       "progressWeights": "Activity weight percentages for fabrication, painting, assembly, and erection phases.",
       "accessRights": "Project members, access roles, functional roles, and subcontractor or area scoping.",
       "imports": "Validate and import piping materials, welding procedures, and welder qualifications."
+    },
+    "status": {
+      "done": "done",
+      "referentialsMissing": "{count, plural, one {# referential missing} other {# referentials missing}}",
+      "weightsMissing": "{count, plural, one {# weight set missing} other {# weight sets missing}}",
+      "importBlocked": "fill the referentials first"
     }
   },
   "imports": {
