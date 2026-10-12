@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { loadProjectSetupReadiness } from "../infrastructure/supabase-setup-readiness-repository"
 import type { ProjectSetupReadiness } from "../domain/setup-readiness"
-import { SetupReadinessPanel } from "./setup-readiness-panel"
 import { ReferenceNavigator } from "./reference-navigator"
 import { GeneralReferences } from "./general-references"
 import { WeldingReferences } from "./welding-references"
@@ -84,24 +83,21 @@ export function ProjectReferentialScreen({
   }
 
   return (
-    <div className="space-y-6">
-      <SetupReadinessPanel readiness={readiness} hrefForReference={hrefFor} />
-      <div className="grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)]">
-        <ReferenceNavigator active={active} missing={referencesMissingData(readiness.missingCodes)} hrefFor={hrefFor} />
-        <div className="min-w-0">
-          {group === "general" && (
-            <GeneralReferences projectId={projectId} canManage={canManage} reference={active as ReferenceKeyOf<"general">} />
-          )}
-          {group === "welding" && (
-            <WeldingReferences projectId={projectId} canManage={canManage} reference={active as ReferenceKeyOf<"welding">} />
-          )}
-          {group === "testpack" && (
-            <TestpackReferences projectId={projectId} canManage={canManage} reference={active as ReferenceKeyOf<"testpack">} />
-          )}
-          {group === "spooling" && (
-            <SpoolingReferences projectId={projectId} canManage={canManage} reference={active as ReferenceKeyOf<"spooling">} />
-          )}
-        </div>
+    <div className="grid gap-6 lg:grid-cols-[15rem_minmax(0,1fr)]">
+      <ReferenceNavigator active={active} missing={referencesMissingData(readiness.missingCodes)} hrefFor={hrefFor} />
+      <div className="min-w-0">
+        {group === "general" && (
+          <GeneralReferences projectId={projectId} canManage={canManage} reference={active as ReferenceKeyOf<"general">} />
+        )}
+        {group === "welding" && (
+          <WeldingReferences projectId={projectId} canManage={canManage} reference={active as ReferenceKeyOf<"welding">} />
+        )}
+        {group === "testpack" && (
+          <TestpackReferences projectId={projectId} canManage={canManage} reference={active as ReferenceKeyOf<"testpack">} />
+        )}
+        {group === "spooling" && (
+          <SpoolingReferences projectId={projectId} canManage={canManage} reference={active as ReferenceKeyOf<"spooling">} />
+        )}
       </div>
     </div>
   )
