@@ -2,39 +2,13 @@
   "overview": {
     "title": "Project Setup",
     "description": "What a project needs before work starts, in order.",
-    "cards": {
-      "projectDefinition": {
-        "title": "Project Definition",
-        "description": "Create and configure the active project record."
-      },
-      "systemReferential": {
-        "title": "System Referential",
-        "description": "Maintain cross-project references for system-admin scope."
-      },
-      "projectReferential": {
-        "title": "Project Referential",
-        "description": "Manage project-level master data used by all modules."
-      },
-      "accessRights": {
-        "title": "Access Rights",
-        "description": "Review roles, PipeQC mappings, and subcontractor scoping."
-      },
-      "importSettings": {
-        "title": "Import Settings",
-        "description": "Prepare Excel/template import configuration."
-      }
-    },
-    "sequence": {
-      "title": "Setup sequence",
-      "description": "Recommended order for configuring PipeQC before operational use.",
-      "step1Label": "Step 1",
-      "step1Text": "Project definition",
-      "step2Label": "Step 2",
-      "step2Text": "System and project referentials",
-      "step3Label": "Step 3",
-      "step3Text": "Access rights",
-      "step4Label": "Step 4",
-      "step4Text": "Import settings"
+    "steps": {
+      "projectDefinition": "Project identity, client and contractor parties, logos, and transit timing.",
+      "systemReferential": "Cross-project standards: material types, torquing methods, film counts, and flange unit times.",
+      "projectReferential": "Project master data for spooling, fabrication, erection, test packs, and tracking.",
+      "progressWeights": "Activity weight percentages for fabrication, painting, assembly, and erection phases.",
+      "accessRights": "Project members, access roles, functional roles, and subcontractor or area scoping.",
+      "imports": "Validate and import piping materials, welding procedures, and welder qualifications."
     }
   },
   "imports": {
