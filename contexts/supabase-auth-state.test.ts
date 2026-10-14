@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import test from "node:test"
 
 import {
   deriveSupabaseAccessState,
@@ -7,6 +8,8 @@ import {
   resolveActiveProjectAccess,
   sortProjectAccessesForDisplay,
   activeProjectStorageKey,
+  withAuthLoadTimeout,
+  AuthLoadTimeoutError,
 } from "./supabase-auth-state"
 
 assert.equal(deriveSupabaseAccessState(null, null), "unauthenticated")
@@ -147,3 +150,12 @@ assert.equal(
   "an address never opens a project the user has no active access to",
 )
 assert.equal(projectIdForAddress([{ projectId: "a", activityCode: "A-1" }], ""), null)
+
+test("a hung auth read settles as a timeout instead of loading forever", async () => {
+  assert.equal(await withAuthLoadTimeout(Promise.resolve("session"), 50), "session")
+  await assert.rejects(withAuthLoadTimeout(Promise.reject(new Error("offline")), 50), /offline/)
+  await assert.rejects(
+    withAuthLoadTimeout(new Promise<never>(() => {}), 10),
+    (error: unknown) => error instanceof AuthLoadTimeoutError,
+  )
+})

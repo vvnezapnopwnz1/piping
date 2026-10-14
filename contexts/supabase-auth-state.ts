@@ -95,3 +95,38 @@ export function projectIdForAddress<
 export function activeProjectStorageKey(userId: string): string {
   return `pipeqc.active-project:${userId}`
 }
+
+/**
+ * How long the first session and access reads may take before the shell gives up waiting. A
+ * stored session refreshes its token over the network, and auth-js retries a network failure
+ * without end, so an unreachable Supabase would otherwise leave a returning user on the loading
+ * screen forever.
+ */
+export const AUTH_LOAD_TIMEOUT_MS = 15_000
+
+export class AuthLoadTimeoutError extends Error {
+  constructor(milliseconds: number) {
+    super(`Supabase did not answer within ${milliseconds / 1000} seconds.`)
+    this.name = "AuthLoadTimeoutError"
+  }
+}
+
+/** Settles like `promise`, or rejects with `AuthLoadTimeoutError` once `milliseconds` pass. */
+export function withAuthLoadTimeout<T>(
+  promise: PromiseLike<T>,
+  milliseconds = AUTH_LOAD_TIMEOUT_MS,
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new AuthLoadTimeoutError(milliseconds)), milliseconds)
+    Promise.resolve(promise).then(
+      (value) => {
+        clearTimeout(timer)
+        resolve(value)
+      },
+      (reason: unknown) => {
+        clearTimeout(timer)
+        reject(reason)
+      },
+    )
+  })
+}

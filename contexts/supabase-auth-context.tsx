@@ -17,6 +17,7 @@ import {
   sortProjectAccessesForDisplay,
   synchronizeProjectAccessDisplay,
   type SupabaseAccessState,
+  withAuthLoadTimeout,
 } from "./supabase-auth-state"
 
 interface SupabaseAuthContextValue {
@@ -89,7 +90,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
 
       let projectAccesses: ProjectAccessSummary[]
       try {
-        projectAccesses = await listCurrentUserProjects(client)
+        projectAccesses = await withAuthLoadTimeout(listCurrentUserProjects(client))
       } catch (loadError) {
         if (disposed || currentRequest !== requestVersion) return
 
@@ -124,7 +125,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
       )
     }
 
-    void client.auth.getSession().then(
+    void withAuthLoadTimeout(client.auth.getSession()).then(
       ({ data: { session }, error: sessionError }) => {
         if (disposed) {
           return

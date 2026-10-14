@@ -34,7 +34,7 @@
     "demo:check:hosted": "tsx scripts/check-hosted-demo.ts",
     "demo:showcase:hosted": "tsx scripts/bootstrap-showcase-dataset-hosted.ts",
     "typecheck": "tsc --noEmit --incremental false",
-    "test:unit": "node --import tsx --test \"modules/**/*.test.ts\" \"lib/**/*.test.ts\" \"config/**/*.test.ts\" \"components/**/*.test.ts\" \"scripts/**/*.test.ts\" \"app/**/*.test.ts\" \"i18n/**/*.test.ts\"",
+    "test:unit": "node --import tsx --test \"modules/**/*.test.ts\" \"lib/**/*.test.ts\" \"config/**/*.test.ts\" \"components/**/*.test.ts\" \"contexts/**/*.test.ts\" \"scripts/**/*.test.ts\" \"app/**/*.test.ts\" \"i18n/**/*.test.ts\"",
     "test:db": "supabase test db",
     "verify": "npm run lint && npm run typecheck && npm run test:unit && npm run test:db",
     "demo:project-setup": "tsx --env-file-if-exists=.env.local scripts/upg/setup-references.ts",
