@@ -1,6 +1,6 @@
 "use client"
 
-import { useTestPackTranslations, testPackValidationMessages, reportTestPackError } from "@/modules/pressure-test/ui/test-pack-i18n"
+import { useTestPackTranslations, testPackValidationMessages, reportTestPackError, testPackPriorityLabel } from "@/modules/pressure-test/ui/test-pack-i18n"
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react"
 import { toast } from "sonner"
@@ -311,8 +311,8 @@ export function TestPackDefinitionEditor({
                 className="h-9 w-full rounded border bg-transparent px-3 text-sm"
               >
                 {TEST_PACK_PRIORITIES.map((priority) => (
-                  <option key={t(`text.${priority.toLowerCase()}`)} value={priority}>
-                    {priority}
+                  <option key={priority} value={priority}>
+                    {testPackPriorityLabel(priority, t)}
                   </option>
                 ))}
               </select>

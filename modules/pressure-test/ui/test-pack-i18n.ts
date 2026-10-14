@@ -43,3 +43,15 @@ export function testPackValidationMessages(errors: Partial<Record<string, string
     code === undefined ? [] : [t(`validation.${code}`, code === "required" ? { field: t(validationFields[field] ?? "text.testPack") } : undefined)],
   ).join("; ")
 }
+
+const PRIORITY_CODES = new Set(["low", "normal", "high", "critical"])
+
+/**
+ * A priority the screens offer is a code and reads in the user's language; an imported priority
+ * outside that list is the project's own word and is shown as written.
+ */
+export function testPackPriorityLabel(priority: string | null | undefined, t: TestPackTranslator): string {
+  if (!priority) return t("text.normal")
+  const code = priority.trim().toLowerCase()
+  return PRIORITY_CODES.has(code) ? t(`text.${code}`) : priority
+}

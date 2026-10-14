@@ -1,6 +1,6 @@
 "use client"
 
-import { useTestPackTranslations, reportTestPackError } from "@/modules/pressure-test/ui/test-pack-i18n"
+import { useTestPackTranslations, reportTestPackError, testPackPriorityLabel } from "@/modules/pressure-test/ui/test-pack-i18n"
 
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
@@ -328,7 +328,7 @@ export function TestPackWorkbench({ projectId, testPackId }: TestPackWorkbenchPr
     id: "priority",
     header: t("text.priority"),
     filter: "select",
-    value: (row) => row.priority ? t(`text.${row.priority.toLowerCase()}`) : t("text.normal"),
+    value: (row) => testPackPriorityLabel(row.priority, t),
   },
   {
     id: "medium",

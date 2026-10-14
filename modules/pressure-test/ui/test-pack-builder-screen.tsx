@@ -1,6 +1,6 @@
 "use client"
 
-import { useTestPackTranslations, testPackValidationMessages, reportTestPackError } from "@/modules/pressure-test/ui/test-pack-i18n"
+import { useTestPackTranslations, testPackValidationMessages, reportTestPackError, testPackPriorityLabel } from "@/modules/pressure-test/ui/test-pack-i18n"
 
 import { useEffect, useMemo, useState, type FormEvent } from "react"
 import { Plus } from "lucide-react"
@@ -141,7 +141,7 @@ export function TestPackBuilderScreen({
   { id: "activeIsoCount", header: "ISO", numeric: true, value: (pack) => pack.activeIsoCount, filter: "number" },
   { id: "revisionNo", header: t("text.rev123"), numeric: true, value: (pack) => pack.revisionNo },
   { id: "location", header: t("text.location"), value: (pack) => pack.location, searchable: true, filter: "select" },
-  { id: "priority", header: t("text.priority"), value: (pack) => pack.priority ? t(`text.${pack.priority.toLowerCase()}`) : t("text.normal"), filter: "select" },
+  { id: "priority", header: t("text.priority"), value: (pack) => testPackPriorityLabel(pack.priority, t), filter: "select" },
   {
     id: "medium",
     header: t("text.medium"),
