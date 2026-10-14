@@ -9,7 +9,7 @@ import {
   sortProjectAccessesForDisplay,
   activeProjectStorageKey,
   withAuthLoadTimeout,
-  AuthLoadTimeoutError,
+  AUTH_LOAD_TIMEOUT,
 } from "./supabase-auth-state"
 
 assert.equal(deriveSupabaseAccessState(null, null), "unauthenticated")
@@ -156,6 +156,6 @@ test("a hung auth read settles as a timeout instead of loading forever", async (
   await assert.rejects(withAuthLoadTimeout(Promise.reject(new Error("offline")), 50), /offline/)
   await assert.rejects(
     withAuthLoadTimeout(new Promise<never>(() => {}), 10),
-    (error: unknown) => error instanceof AuthLoadTimeoutError,
+    (error: unknown) => (error as { code?: string }).code === AUTH_LOAD_TIMEOUT,
   )
 })

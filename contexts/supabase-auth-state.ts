@@ -104,20 +104,24 @@ export function activeProjectStorageKey(userId: string): string {
  */
 export const AUTH_LOAD_TIMEOUT_MS = 15_000
 
-export class AuthLoadTimeoutError extends Error {
-  constructor(milliseconds: number) {
-    super(`Supabase did not answer within ${milliseconds / 1000} seconds.`)
-    this.name = "AuthLoadTimeoutError"
-  }
-}
+/** The `code` of the error a timed-out auth read rejects with. */
+export const AUTH_LOAD_TIMEOUT = "auth_load_timeout"
 
-/** Settles like `promise`, or rejects with `AuthLoadTimeoutError` once `milliseconds` pass. */
+/** Settles like `promise`, or rejects with an `AUTH_LOAD_TIMEOUT` error once `milliseconds` pass. */
 export function withAuthLoadTimeout<T>(
   promise: PromiseLike<T>,
   milliseconds = AUTH_LOAD_TIMEOUT_MS,
 ): Promise<T> {
   return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new AuthLoadTimeoutError(milliseconds)), milliseconds)
+    const timer = setTimeout(
+      () =>
+        reject(
+          Object.assign(new Error(`Supabase did not answer within ${milliseconds} ms.`), {
+            code: AUTH_LOAD_TIMEOUT,
+          }),
+        ),
+      milliseconds,
+    )
     Promise.resolve(promise).then(
       (value) => {
         clearTimeout(timer)
