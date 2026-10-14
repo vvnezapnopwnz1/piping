@@ -12,6 +12,8 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // AGENTS.md is the project's own instructions; next dev would append its own block on every run.
+  agentRules: false,
 }
 
 export default withNextIntl(nextConfig)
