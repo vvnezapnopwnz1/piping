@@ -175,11 +175,5 @@
     "selectBrowse": "Select a project to browse engineering data.",
     "selectImport": "Select a project to import SpoolGen files.",
     "selectRevisions": "Select a project to see revision history."
-  },
-  "placeholder": {
-    "track": "Track 04 (remaining)",
-    "engineeringTransmittals": "Incoming transmittals of isometric revisions from engineering, with their acceptance decisions. The revision model is live; the transmittal document around it is the part of Track 04 still outstanding.",
-    "isoWorkflow": "Receive, check, hold, release and dispatch isometrics to fabrication. The engineering definitions and revisions behind it are live; the document workflow over them is the part of Track 04 still outstanding.",
-    "spoolingTransmittal": "Outgoing transmittals that release spooled isometrics to the shop. The revision model is live; the transmittal document around it is the part of Track 04 still outstanding."
   }
 }

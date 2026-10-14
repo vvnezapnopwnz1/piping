@@ -247,7 +247,6 @@ function ProjectState({ access }: { access: AccessValue }) {
     spooling: (
       <div className={styles.readout}>
         <p className={styles.cardValue}>{t("spooling.baseline")}</p>
-        <p className={styles.figureNote}>{t("spooling.outstanding")}</p>
       </div>
     ),
     fabrication: (

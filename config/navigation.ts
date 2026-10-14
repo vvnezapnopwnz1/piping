@@ -9,7 +9,6 @@ import {
   MapPin,
   Scan,
   FileText,
-  Settings,
   LayoutDashboard,
   Activity,
   type LucideIcon,
@@ -21,7 +20,6 @@ import {
   Bolt,
   Inbox,
   GitBranch,
-  Send,
   ListPlus,
 } from 'lucide-react'
 import type { Messages } from '@/i18n/messages'
@@ -45,12 +43,6 @@ export interface NavItem {
   href: string
   icon: LucideIcon
   children?: NavItem[]
-  /**
-   * The track that will build this module. Set means the route renders `NotOnSupabaseYet`, so
-   * navigation leaves it out: an entry that leads only to "not built" is a dead end. The route
-   * itself stays reachable by URL.
-   */
-  planned?: string
   /** Local-tab group inside the module, e.g. "Spool stages". */
   group?: NavKey
   /** Object context this page applies; see `WorkContextKey`. */
@@ -100,22 +92,6 @@ export const workspaceAreas: readonly WorkspaceArea[] = [
       { title: 'browse', href: '/spooling/browse', icon: FolderTree },
       { title: 'spoolGenImport', href: '/spooling/import', icon: Inbox },
       { title: 'revisionHistory', href: '/spooling/revisions', icon: GitBranch },
-      {
-        title: 'engineeringTransmittals',
-        href: '/spooling/engineering-transmittals',
-        // i18n-ignore — planning marker; planned pages are left out of navigation
-        planned: 'Track 04',
-        icon: Inbox,
-      },
-      // i18n-ignore — planning marker; planned pages are left out of navigation
-      { title: 'isoWorkflow', href: '/spooling/iso-workflow', planned: 'Track 04', icon: GitBranch },
-      {
-        title: 'spoolingTransmittal',
-        href: '/spooling/spooling-transmittal',
-        // i18n-ignore — planning marker; planned pages are left out of navigation
-        planned: 'Track 04',
-        icon: Send,
-      },
     ],
   },
   {
@@ -264,18 +240,11 @@ const SECTION_TITLES: Record<WorkspaceAreaKind, NavKey> = {
   project: 'sectionProject',
 }
 
-/** Settings is the user's configuration, not a part of the project process. */
-const CONFIGURATION: NavSection = {
-  title: 'sectionConfiguration',
-  items: [{ title: 'settings', href: '/settings', icon: Settings }],
-}
-
 export const navigationConfig: NavSection[] = [
   ...(['stage', 'service', 'project'] as const).map((kind) => ({
     title: SECTION_TITLES[kind],
     items: workspaceAreas.filter((area) => area.kind === kind),
   })),
-  CONFIGURATION,
 ]
 
 /**
@@ -297,9 +266,6 @@ function getVisibleItem(
   item: NavItem,
   can: (capability: Capability) => boolean,
 ): NavItem | null {
-  // A route whose module is not built has nothing to navigate to.
-  if (item.planned) return null
-
   const children = item.children
     ?.map((child) => getVisibleItem(child, can))
     .filter((child): child is NavItem => child !== null)

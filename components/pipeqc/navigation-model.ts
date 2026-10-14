@@ -60,7 +60,6 @@ export function firstAccessibleDestination(
   item: NavItem,
   can: Can,
 ): string | null {
-  if (item.planned) return null
   if (canVisit(item.href, can)) return item.href
   for (const child of item.children ?? []) {
     const destination = firstAccessibleDestination(child, can)

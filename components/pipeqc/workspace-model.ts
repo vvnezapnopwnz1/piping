@@ -24,7 +24,6 @@ export interface VisibleArea extends WorkspaceArea {
 export function getVisibleAreas(can: Can): VisibleArea[] {
   return workspaceAreas.flatMap((area) => {
     const pages = area.children.flatMap((page) => {
-      if (page.planned) return []
       const href = accessibleHref(page, can)
       return href ? [href === page.href ? page : { ...page, href }] : []
     })

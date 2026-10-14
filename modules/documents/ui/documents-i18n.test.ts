@@ -6,11 +6,11 @@ import { messagesFor } from "@/i18n/messages"
 import { findUiLiterals } from "@/scripts/i18n/find-ui-literals"
 import { REPORT_DEFINITIONS } from "../domain/report"
 
-const paths = ["modules/documents/ui", "modules/documents/application", "modules/documents/domain", "app/reports", "app/settings", "app/documentation"]
+const paths = ["modules/documents/ui", "modules/documents/application", "modules/documents/domain", "app/reports"]
 
-test("documents, reports and settings are in Russian coverage and carry no hard-coded English", () => {
+test("documents and reports are in Russian coverage and carry no hard-coded English", () => {
   for (const path of paths) assert.ok(I18N_DONE_PATHS.includes(path), path)
-  for (const namespace of ["documents", "settings"] as const) assert.ok(RU_COMPLETE_NAMESPACES.includes(namespace), namespace)
+  assert.ok(RU_COMPLETE_NAMESPACES.includes("documents"))
   assert.deepEqual(findUiLiterals(paths), [])
 })
 
@@ -28,7 +28,5 @@ for (const locale of ["en", "ru"] as const) {
     assert.match(t("download", { format: "XLSX" }), /XLSX/)
     assert.match(t("error.failed", { detail: "read denied" }), /read denied/)
     assert.ok(t("error.unknownReport").length > 0)
-    const settings = createTranslator({ locale, messages: messagesFor(locale), namespace: "settings" })
-    assert.ok(settings("title").length > 0 && settings("description").length > 0)
   })
 }

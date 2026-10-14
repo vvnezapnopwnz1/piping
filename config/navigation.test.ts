@@ -24,9 +24,7 @@ assert.equal(
 // navigation only when it is a page of some area. Every built page the old sidebar offered has
 // to stay one.
 const pageHrefs = workspaceAreas.flatMap((area) =>
-  area.children
-    .filter((page) => !page.planned)
-    .flatMap((page) => [page.href, ...(page.aliases ?? []).map((alias) => alias.href)]),
+  area.children.flatMap((page) => [page.href, ...(page.aliases ?? []).map((alias) => alias.href)]),
 )
 
 for (const href of [

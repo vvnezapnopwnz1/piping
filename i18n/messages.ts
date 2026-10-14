@@ -39,8 +39,6 @@ import ruProjects from "@/messages/ru/projects.json"
 import enDocuments from "@/messages/en/documents.json"
 import ruDocuments from "@/messages/ru/documents.json"
 
-import enSettings from "@/messages/en/settings.json"
-import ruSettings from "@/messages/ru/settings.json"
 
 import enProjectSetup from "@/messages/en/projectSetup.json"
 import ruProjectSetup from "@/messages/ru/projectSetup.json"
@@ -78,7 +76,6 @@ export const en = {
   home: enHome,
   projects: enProjects,
   documents: enDocuments,
-  settings: enSettings,
   projectSetup: enProjectSetup,
   admin: enAdmin,
   access: enAccess,
@@ -105,7 +102,6 @@ export const ru: { [N in Namespace]?: MessageTree } = {
   home: ruHome,
   projects: ruProjects,
   documents: ruDocuments,
-  settings: ruSettings,
   projectSetup: ruProjectSetup,
   admin: ruAdmin,
   access: ruAccess,

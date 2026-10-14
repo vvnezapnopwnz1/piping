@@ -29,11 +29,6 @@ test("an area appears only with pages the user may open, and opens on the first 
   assert.equal(areas[0].home, "/fabrication/qc-release")
 })
 
-test("planned pages never become tabs", () => {
-  const spooling = all.find((area) => area.id === "spooling")!
-  assert.ok(!spooling.pages.some((page) => page.href.includes("transmittal")))
-})
-
 test("a path belongs to its longest matching page", () => {
   assert.equal(locate("/testpack/explorer", all)?.page?.title, "explorer")
   assert.equal(locate("/testpack", all)?.page?.title, "dashboard")
