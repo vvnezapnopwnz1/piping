@@ -62,6 +62,10 @@ export type DataColumn<Row> = {
 export type ServerPagination = {
   pageIndex: number
   pageSize: number
+  /** All rows matching the current server query. */
+  totalCount: number
+  /** All rows before search and column filters, when the screen already has that aggregate. */
+  overallCount?: number
   hasNextPage: boolean
   onPreviousPage: () => void
   onNextPage: () => void
@@ -101,6 +105,10 @@ export function DataTable<Row>({
   toolbarActions,
   pagination = true,
   serverPagination,
+  serverFacets,
+  hideSelectedFacetCounts = false,
+  serverQuery = false,
+  multiSort = true,
   containerClassName,
   className,
 }: {
@@ -122,6 +130,14 @@ export function DataTable<Row>({
   pagination?: boolean
   /** Keeps a cursor-paged table visually consistent with ordinary worklists. */
   serverPagination?: ServerPagination
+  /** Facets produced from the full server result, never just the loaded cursor page. */
+  serverFacets?: Partial<Record<string, ReadonlyArray<[string, number]>>>
+  /** Hides the redundant number beside an already selected select-filter option. */
+  hideSelectedFacetCounts?: boolean
+  /** The screen has moved its search, filters and sorting into its server read. */
+  serverQuery?: boolean
+  /** Cursor-paged screens currently expose one stable server sort at a time. */
+  multiSort?: boolean
   containerClassName?: string
   className?: string
 }) {
@@ -140,7 +156,9 @@ export function DataTable<Row>({
   // Filtering happens before sorting and sorting before paging, which is the only order that lets
   // page 1 mean "the first page of what is currently selected".
   const filtered = React.useMemo(() => {
-    if (state.filters.length === 0 && state.search.trim() === '') return rows
+    // A cursor page is already the server's filtered result. Reapplying this predicate locally
+    // would make search and filtering lie about the rest of the project.
+    if (serverQuery || (state.filters.length === 0 && state.search.trim() === '')) return rows
 
     const byId = new Map(columns.map((column) => [column.id, column]))
     return rows.filter((row) => {
@@ -153,10 +171,10 @@ export function DataTable<Row>({
         state.search,
       )
     })
-  }, [rows, columns, searchable, state.filters, state.search])
+  }, [serverQuery, rows, columns, searchable, state.filters, state.search])
 
   const sorted = React.useMemo(() => {
-    if (state.sorting.length === 0) return filtered
+    if (serverQuery || state.sorting.length === 0) return filtered
     const byId = new Map(columns.map((column) => [column.id, column]))
 
     return [...filtered].sort((rowA, rowB) => {
@@ -168,7 +186,7 @@ export function DataTable<Row>({
       }
       return 0
     })
-  }, [filtered, columns, state.sorting])
+  }, [serverQuery, filtered, columns, state.sorting])
 
   const pageCount = Math.max(1, Math.ceil(sorted.length / state.pageSize))
   // A filter that shrinks the result below the current page would otherwise show an empty page and
@@ -206,7 +224,7 @@ export function DataTable<Row>({
           counts.set(key, (counts.get(key) ?? 0) + 1)
         }
       }
-      return [...counts.entries()]
+      return [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0]))
     },
     [columns, rows, state.filters],
   )
@@ -232,6 +250,15 @@ export function DataTable<Row>({
     hasQuery,
     variant,
   })
+  const serverPageCount = serverPagination
+    ? Math.max(1, Math.ceil(serverPagination.totalCount / serverPagination.pageSize))
+    : 1
+  const serverRangeFrom = serverPagination && serverPagination.totalCount > 0 && sorted.length > 0
+    ? serverPagination.pageIndex * serverPagination.pageSize + 1
+    : 0
+  const serverRangeTo = serverPagination
+    ? Math.min(serverRangeFrom + sorted.length - 1, serverPagination.totalCount)
+    : 0
 
   return (
     <div className={cn('space-y-3', className)}>
@@ -244,8 +271,8 @@ export function DataTable<Row>({
             .filter((column) => !column.alwaysVisible)
             .map((column) => ({ id: column.id, label: column.header }))}
           searchPlaceholder={searchPlaceholder ?? (searchable.length > 0 ? tt('searchIn', { columns: searchable.map((c) => c.header).join(', ') }) : tt('search'))}
-          rowCount={sorted.length}
-          totalCount={rows.length}
+          rowCount={serverPagination?.totalCount ?? sorted.length}
+          totalCount={serverPagination?.overallCount ?? serverPagination?.totalCount ?? rows.length}
           showSearch={chrome.showSearch}
           showViewControls={chrome.showViewControls}
         >
@@ -270,53 +297,54 @@ export function DataTable<Row>({
                   aria-sort={column.sortable === false ? undefined : ariaSort(state.sorting, column.id)}
                   className={column.headerClassName}
                 >
-                  {column.sortable === false ? (
-                    column.header
-                  ) : (
-                    <DataTableColumnHeader
-                      label={column.header}
-                      sortDirection={sortDirection(state.sorting, column.id)}
-                      sortIndex={
-                        state.sorting.length > 1
-                          ? (state.sorting.findIndex((sort) => sort.id === column.id) + 1 || null)
-                          : null
-                      }
-                      filterKind={column.filter}
-                      filter={findFilter(state.filters, column.id)}
-                      facets={column.filter === 'select' ? facetsFor(column.id) : undefined}
-                      pinned={isPinned(column)}
-                      canHide={!column.alwaysVisible}
-                      className={column.numeric ? 'justify-end' : undefined}
-                      onSort={({ shiftKey }) =>
-                        patch({ sorting: toggleSort(state.sorting, column.id, { additive: shiftKey }) })
-                      }
-                      onSortDirection={(direction) =>
-                        patch({
-                          sorting:
-                            direction === null
-                              ? state.sorting.filter((sort) => sort.id !== column.id)
-                              : [
-                                  ...state.sorting.filter((sort) => sort.id !== column.id),
-                                  { id: column.id, desc: direction === 'desc' },
-                                ],
-                        })
-                      }
-                      onFilterChange={(filter) =>
-                        patch({ filters: setFilter(state.filters, filter), pageIndex: 0 })
-                      }
-                      onFilterClear={() =>
-                        patch({ filters: removeFilter(state.filters, column.id), pageIndex: 0 })
-                      }
-                      onTogglePinned={() =>
-                        patch({
-                          pinned: isPinned(column)
-                            ? state.pinned.filter((id) => id !== column.id)
-                            : [...state.pinned, column.id],
-                        })
-                      }
-                      onHide={() => patch({ hidden: [...state.hidden, column.id] })}
-                    />
-                  )}
+                  <DataTableColumnHeader
+                    columnId={column.id}
+                    sortable={column.sortable !== false}
+                    label={column.header}
+                    sortDirection={sortDirection(state.sorting, column.id)}
+                    sortIndex={
+                      state.sorting.length > 1
+                        ? (state.sorting.findIndex((sort) => sort.id === column.id) + 1 || null)
+                        : null
+                    }
+                    filterKind={column.filter}
+                    filter={findFilter(state.filters, column.id)}
+                    facets={serverFacets?.[column.id] ?? (column.filter === 'select' ? facetsFor(column.id) : undefined)}
+                    hideSelectedFacetCounts={hideSelectedFacetCounts}
+                    pinned={isPinned(column)}
+                    canHide={!column.alwaysVisible}
+                    className={column.numeric ? 'justify-end' : undefined}
+                    onSort={({ shiftKey }) =>
+                      patch({ sorting: toggleSort(state.sorting, column.id, { additive: multiSort && shiftKey }) })
+                    }
+                    onSortDirection={(direction) =>
+                      patch({
+                        sorting:
+                          direction === null
+                            ? state.sorting.filter((sort) => sort.id !== column.id)
+                            : multiSort
+                              ? [
+                                ...state.sorting.filter((sort) => sort.id !== column.id),
+                                { id: column.id, desc: direction === 'desc' },
+                              ]
+                              : [{ id: column.id, desc: direction === 'desc' }],
+                      })
+                    }
+                    onFilterChange={(filter) =>
+                      patch({ filters: setFilter(state.filters, filter), pageIndex: 0 })
+                    }
+                    onFilterClear={() =>
+                      patch({ filters: removeFilter(state.filters, column.id), pageIndex: 0 })
+                    }
+                    onTogglePinned={() =>
+                      patch({
+                        pinned: isPinned(column)
+                          ? state.pinned.filter((id) => id !== column.id)
+                          : [...state.pinned, column.id],
+                      })
+                    }
+                    onHide={() => patch({ hidden: [...state.hidden, column.id] })}
+                  />
                 </TableHead>
               ))}
             </TableRow>
@@ -399,10 +427,13 @@ export function DataTable<Row>({
       {serverPagination ? (
         <div className="text-muted-foreground flex flex-wrap items-center justify-between gap-2 text-sm">
           <span className="tabular-nums">
-            {sorted.length === 0
+            {serverPagination.totalCount === 0 || sorted.length === 0
               ? tt('noRows')
-              : tt('rowsInPage', { count: sorted.length })}
-            {filteringActive && rows.length !== sorted.length ? ` ${tt('matching', { count: sorted.length })}` : ''}
+              : tt('range', {
+                from: serverRangeFrom,
+                to: serverRangeTo,
+                total: serverPagination.totalCount,
+              })}
           </span>
 
           <div className="flex items-center gap-2">
@@ -431,7 +462,9 @@ export function DataTable<Row>({
             >
               <ChevronLeft />
             </Button>
-            <span className="tabular-nums">{tt('page', { page: serverPagination.pageIndex + 1 })}</span>
+            <span className="tabular-nums">
+              {tt('pageOf', { page: serverPagination.pageIndex + 1, count: serverPageCount })}
+            </span>
             <Button
               variant="outline"
               size="icon-sm"

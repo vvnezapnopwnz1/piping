@@ -36,12 +36,15 @@ import type { ColumnFilter } from './table-state'
  * which is where half of these screens are read.
  */
 export function DataTableColumnHeader({
+  columnId,
+  sortable = true,
   label,
   sortDirection,
   sortIndex,
   filterKind,
   filter,
   facets,
+  hideSelectedFacetCounts = false,
   pinned,
   canHide,
   onSort,
@@ -52,6 +55,9 @@ export function DataTableColumnHeader({
   onHide,
   className,
 }: {
+  /** Stable state key. It is deliberately not the translated heading shown to the operator. */
+  columnId: string
+  sortable?: boolean
   label: string
   sortDirection: 'asc' | 'desc' | null
   /** Position in a multi-column sort, one-based. Hidden when only one column is sorted. */
@@ -59,6 +65,7 @@ export function DataTableColumnHeader({
   filterKind?: ColumnFilter['kind']
   filter?: ColumnFilter
   facets?: ReadonlyArray<[string, number]>
+  hideSelectedFacetCounts?: boolean
   pinned: boolean
   canHide: boolean
   onSort: (event: { shiftKey: boolean }) => void
@@ -76,23 +83,25 @@ export function DataTableColumnHeader({
 
   return (
     <div className={cn('flex items-center gap-1', className)}>
-      <button
-        type="button"
-        onClick={(event) => onSort({ shiftKey: event.shiftKey })}
-        title={tt('sortBy', { column: label })}
-        className="hover:text-foreground focus-visible:ring-ring -mx-1 flex min-w-0 items-center gap-1 rounded px-1 py-0.5 focus-visible:ring-2 focus-visible:outline-none"
-      >
-        <span className="truncate">{label}</span>
-        {/* The glyph keeps its place whether or not the column is sorted, so turning sorting on
-            does not shove the heading sideways. */}
-        <SortIcon
-          aria-hidden="true"
-          className={cn('size-3 shrink-0', sortDirection ? 'opacity-100' : 'opacity-30')}
-        />
-        {sortIndex !== null ? (
-          <span className="text-muted-foreground text-[10px] tabular-nums">{sortIndex}</span>
-        ) : null}
-      </button>
+      {sortable ? (
+        <button
+          type="button"
+          onClick={(event) => onSort({ shiftKey: event.shiftKey })}
+          title={tt('sortBy', { column: label })}
+          className="hover:text-foreground focus-visible:ring-ring -mx-1 flex min-w-0 items-center gap-1 rounded px-1 py-0.5 focus-visible:ring-2 focus-visible:outline-none"
+        >
+          <span className="truncate">{label}</span>
+          {/* The glyph keeps its place whether or not the column is sorted, so turning sorting on
+              does not shove the heading sideways. */}
+          <SortIcon
+            aria-hidden="true"
+            className={cn('size-3 shrink-0', sortDirection ? 'opacity-100' : 'opacity-30')}
+          />
+          {sortIndex !== null ? (
+            <span className="text-muted-foreground text-[10px] tabular-nums">{sortIndex}</span>
+          ) : null}
+        </button>
+      ) : <span className="min-w-0 truncate px-1 py-0.5">{label}</span>}
 
       {filterKind ? (
         <Popover open={filterOpen} onOpenChange={setFilterOpen}>
@@ -124,11 +133,12 @@ export function DataTableColumnHeader({
               ) : null}
             </div>
             <ColumnFilterEditor
-              columnId={filter?.id ?? label}
+              columnId={columnId}
               kind={filterKind}
               label={label}
               value={filter}
               options={facets}
+              hideSelectedOptionCounts={hideSelectedFacetCounts}
               onChange={onFilterChange}
               onDone={() => setFilterOpen(false)}
             />
@@ -150,18 +160,22 @@ export function DataTableColumnHeader({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-48">
-          <DropdownMenuItem onClick={() => onSortDirection('asc')}>
-            <ArrowUp /> {tt('sortAscending')}
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onSortDirection('desc')}>
-            <ArrowDown /> {tt('sortDescending')}
-          </DropdownMenuItem>
-          {sortDirection ? (
-            <DropdownMenuItem onClick={() => onSortDirection(null)}>
-              <X /> {tt('removeSort')}
-            </DropdownMenuItem>
+          {sortable ? (
+            <>
+              <DropdownMenuItem onClick={() => onSortDirection('asc')}>
+                <ArrowUp /> {tt('sortAscending')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onSortDirection('desc')}>
+                <ArrowDown /> {tt('sortDescending')}
+              </DropdownMenuItem>
+              {sortDirection ? (
+                <DropdownMenuItem onClick={() => onSortDirection(null)}>
+                  <X /> {tt('removeSort')}
+                </DropdownMenuItem>
+              ) : null}
+              <DropdownMenuSeparator />
+            </>
           ) : null}
-          <DropdownMenuSeparator />
           <DropdownMenuItem onClick={onTogglePinned}>
             {pinned ? <PinOff /> : <Pin />}
             {pinned ? tt('unpinColumn') : tt('pinLeft')}

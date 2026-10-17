@@ -54,6 +54,13 @@ export function useTableUrlState(
   )
 
   const [state, setState] = React.useState<DataTableState>(fromUrl)
+  // Event handlers need the latest state without putting navigation inside `setState`. Besides
+  // being a React render-phase side effect, doing `router.replace` from the updater makes a parent
+  // Router update while the table is rendering.
+  const stateRef = React.useRef(state)
+  React.useEffect(() => {
+    stateRef.current = state
+  }, [state])
 
   // The browser's back button changes the URL without going through `update`, so the URL stays
   // the authority and the local copy follows it. Comparing the encoded forms rather than the
@@ -67,29 +74,32 @@ export function useTableUrlState(
     [state, defaults],
   )
   React.useEffect(() => {
-    if (encodedFromUrl !== encodedLocal) setState(fromUrl)
+    if (encodedFromUrl !== encodedLocal) {
+      stateRef.current = fromUrl
+      setState(fromUrl)
+    }
     // Only a URL that moved should pull the table; a local edit is pushed by `update` instead.
   }, [encodedFromUrl])
 
   const update = React.useCallback(
     (next: DataTableState | ((current: DataTableState) => DataTableState)) => {
-      setState((current) => {
-        const resolved = typeof next === 'function' ? next(current) : next
+      const current = stateRef.current
+      const resolved = typeof next === 'function' ? next(current) : next
+      stateRef.current = resolved
+      setState(resolved)
 
-        const params = new URLSearchParams(window.location.search)
-        for (const key of [...params.keys()]) {
-          if (key.startsWith(prefix) && OWNED_KEYS.has(key.slice(prefix.length))) params.delete(key)
-        }
-        for (const [key, value] of encodeTableState(resolved, defaults)) {
-          params.set(`${prefix}${key}`, value)
-        }
+      const params = new URLSearchParams(window.location.search)
+      for (const key of [...params.keys()]) {
+        if (key.startsWith(prefix) && OWNED_KEYS.has(key.slice(prefix.length))) params.delete(key)
+      }
+      for (const [key, value] of encodeTableState(resolved, defaults)) {
+        params.set(`${prefix}${key}`, value)
+      }
 
-        const query = params.toString()
-        // `replace`, not `push`: narrowing a filter five times should not cost five presses of
-        // the back button to leave the screen.
-        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-        return resolved
-      })
+      const query = params.toString()
+      // `replace`, not `push`: narrowing a filter five times should not cost five presses of
+      // the back button to leave the screen.
+      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
     },
     [defaults, pathname, prefix, router],
   )

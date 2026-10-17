@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
 import { ArrowRight } from "lucide-react"
 import { toast } from "sonner"
@@ -13,7 +13,7 @@ import { StatusBadge } from "@/components/ui/status-badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { canVisit } from "@/components/pipeqc/navigation-model"
-import { useNameWorkContext, useWorkContextParam } from "@/components/pipeqc/work-context"
+import { useWorkContextParam } from "@/components/pipeqc/work-context"
 import { linkFrom } from "@/components/pipeqc/workspace-model"
 import { useOptionalAccess } from "@/modules/access/ui/access-context"
 import {
@@ -23,8 +23,19 @@ import {
 } from "../../application/describe-erection-readiness"
 import type { CodesTranslator } from "@/i18n/translator"
 import { useRftShortfallLabel } from "./rft-shortfall-label"
-import type { ErectionReadiness } from "../../infrastructure/supabase-erection-repository"
-import { loadErectionChartData, type ErectionChartData } from "../../infrastructure/supabase-erection-repository"
+import { ERECTION_STAGES } from "../../domain/erection-stage"
+import {
+  loadErectionChartData,
+  loadErectionSpoolPage,
+  loadErectionSpoolStageFacets,
+  type ErectionChartData,
+  type ErectionReadiness,
+  type ErectionSpoolCursor,
+  type ErectionSpoolQuery,
+  type ErectionSpoolStageFacet,
+} from "../../infrastructure/supabase-erection-repository"
+import { useKeysetSpoolPage } from "../use-keyset-spool-page"
+import { erectionSpoolQueryFromTableState, type ErectionStageLabelMap } from "./erection-spool-query"
 import { ErectionChartsPanel } from "./erection-charts-panel"
 import { useErectionReadiness } from "./use-erection-readiness"
 
@@ -114,6 +125,7 @@ function readinessColumns(t: ErectionColumnsTranslator, tc: CodesTranslator): Re
     header: t("material"),
     numeric: true,
     value: (row) => ratio(row.materialLineChecked, row.materialLineTotal),
+    sortable: false,
     cell: (row) => `${row.materialLineChecked}/${row.materialLineTotal}`,
   },
   {
@@ -121,6 +133,7 @@ function readinessColumns(t: ErectionColumnsTranslator, tc: CodesTranslator): Re
     header: t("fieldWelds"),
     numeric: true,
     value: (row) => ratio(row.fieldWeldComplete, row.fieldWeldTotal),
+    sortable: false,
     cell: (row) => `${row.fieldWeldComplete}/${row.fieldWeldTotal}`,
   },
   {
@@ -128,6 +141,7 @@ function readinessColumns(t: ErectionColumnsTranslator, tc: CodesTranslator): Re
     header: t("fieldSupports"),
     numeric: true,
     value: (row) => ratio(row.fieldSupportRecorded, row.fieldSupportTotal),
+    sortable: false,
     cell: (row) => `${row.fieldSupportRecorded}/${row.fieldSupportTotal}`,
   },
   {
@@ -135,6 +149,7 @@ function readinessColumns(t: ErectionColumnsTranslator, tc: CodesTranslator): Re
     header: t("stage"),
     value: (row) => tc(`erectionStage.${currentErectionStage(row)}`),
     filter: "select",
+    sortable: false,
     cell: (row) => (
       <StatusBadge
         status={currentErectionStage(row)}
@@ -185,15 +200,44 @@ export function ErectionReadinessScreen({
   const tc = useTranslations("codes")
   const tcol = useTranslations("erection.columns")
   const columns = useMemo(() => readinessColumns(tcol, tc), [tcol, tc])
-  const { projectId, isLoading, loadFailed, rows: allRows, canView } = useErectionReadiness()
+  const { projectId, canView, refreshToken } = useErectionReadiness()
   // A spool handed over in the address narrows the table to it; the chip in the page head clears it.
   const [spool] = useWorkContextParam("spool")
-  const rows = spool ? allRows.filter((row) => row.spoolRevisionId === spool) : allRows
-  useNameWorkContext("spool", spool, rows[0]?.spoolNumber)
   const [charts, setCharts] = useState<ErectionChartData | null>(null)
   const [chartsLoadedProjectId, setChartsLoadedProjectId] = useState<string | null>(null)
   // Namespaced so this table's filters survive alongside anything else the route puts in the URL.
   const [tableState, setTableState] = useTableUrlState({ namespace: "rft" })
+  const [stageFacets, setStageFacets] = useState<ErectionSpoolStageFacet[] | null>(null)
+  const errorTitle = t("fieldSpoolReadinessCouldNot")
+  const stageLabels = useMemo<ErectionStageLabelMap>(() => Object.fromEntries([
+    [tc("erectionStage.not_started"), null],
+    ...ERECTION_STAGES.map((stage) => [tc(`erectionStage.${stage}`), stage]),
+  ]), [tc])
+  const query = useMemo(
+    () => erectionSpoolQueryFromTableState(tableState, stageLabels, spool),
+    [tableState, stageLabels, spool],
+  )
+  const load = useCallback(
+    (cursor: ErectionSpoolCursor | null, nextQuery: ErectionSpoolQuery, pageSize: number) =>
+      loadErectionSpoolPage(getSupabaseBrowserClient(), projectId ?? "", cursor, nextQuery, pageSize),
+    [projectId],
+  )
+  const page = useKeysetSpoolPage({
+    resetKey: `${projectId}:${canView}:${refreshToken}`,
+    query,
+    pageSize: tableState.pageSize,
+    load,
+    errorTitle,
+  })
+
+  useEffect(() => {
+    if (!projectId || !canView) return
+    let cancelled = false
+    void loadErectionSpoolStageFacets(getSupabaseBrowserClient(), projectId)
+      .then((facets) => { if (!cancelled) setStageFacets(facets) })
+      .catch((error: unknown) => toast.error(errorTitle, { description: errorDetail(error) }))
+    return () => { cancelled = true }
+  }, [projectId, canView, refreshToken, errorTitle])
 
   useEffect(() => {
     if (!showCharts || !projectId || !canView) return
@@ -218,7 +262,9 @@ export function ErectionReadinessScreen({
     )
   }
 
-  const readyCount = rows.filter((row) => row.isRft).length
+  const readyCount = stageFacets?.find((facet) => facet.stage === "rft")?.count ?? 0
+  const overallCount = stageFacets?.reduce((sum, facet) => sum + facet.count, 0) ?? 0
+  const changePageSize = (pageSize: number) => setTableState({ ...tableState, pageSize, pageIndex: 0 })
 
   return (
     <div className="space-y-4">
@@ -238,39 +284,49 @@ export function ErectionReadinessScreen({
         <CardHeader>
           <CardTitle>
             {t("fieldSpoolReadiness")}
-            {isLoading || loadFailed ? null : (
+            {stageFacets === null ? null : (
               <span className="text-muted-foreground ml-2 text-sm font-normal tabular-nums">
-                {t("readyCount", { ready: readyCount, total: rows.length })}
+                {t("readyCount", { ready: readyCount, total: overallCount })}
               </span>
             )}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {loadFailed ? (
-            <p className="text-destructive text-sm">
-              {t("fieldSpoolReadinessCouldNot")}
-            </p>
-          ) : (
-            <DataTable
-              columns={columns}
-              rows={rows}
-              state={tableState}
-              onStateChange={setTableState}
-              rowId={(row) => row.spoolRevisionId}
-              loading={isLoading}
-              searchPlaceholder={t("searchIsoOrSpool")}
-              emptyTitle={
-                spool
-                  ? t("theSelectedSpoolIsNot")
-                  : t("noAcceptedFieldSpoolIs")
-              }
-              emptyDescription={
-                spool
-                  ? t("clearTheSelectedSpoolIn")
-                  : t("fieldSpoolsAppearOnceAn")
-              }
-            />
-          )}
+          <DataTable
+            columns={columns}
+            rows={page.rows}
+            state={tableState}
+            onStateChange={setTableState}
+            rowId={(row) => row.spoolRevisionId}
+            loading={page.loading}
+            serverQuery
+            multiSort={false}
+            hideSelectedFacetCounts
+            serverFacets={{
+              stage: (stageFacets ?? []).map((facet) => [tc(`erectionStage.${facet.stage ?? "not_started"}`), facet.count]),
+            }}
+            serverPagination={{
+              pageIndex: page.pageIndex,
+              pageSize: tableState.pageSize,
+              totalCount: page.totalCount,
+              overallCount: spool ? undefined : overallCount,
+              hasNextPage: page.hasNextPage,
+              onPreviousPage: page.goToPreviousPage,
+              onNextPage: page.goToNextPage,
+              onPageSizeChange: changePageSize,
+            }}
+            searchPlaceholder={t("searchIsoOrSpool")}
+            emptyTitle={
+              spool
+                ? t("theSelectedSpoolIsNot")
+                : t("noAcceptedFieldSpoolIs")
+            }
+            emptyDescription={
+              spool
+                ? t("clearTheSelectedSpoolIn")
+                : t("fieldSpoolsAppearOnceAn")
+            }
+          />
         </CardContent>
       </Card>
     </div>

@@ -83,7 +83,7 @@ export function ErectionScreenShell({
   children,
 }: ErectionScreenShellProps) {
   const t = useTranslations("erection.shell")
-  const { projectId, isLoading, loadFailed, rows, selected, select, canView } = state
+  const { projectId, isLoading, loadFailed, selected, select, canView, refreshToken } = state
   // Browsing for another spool has to take the body with it: everything a screen renders below is
   // about the spool being replaced.
   const [browsingSpools, setBrowsingSpools] = useState(false)
@@ -125,20 +125,15 @@ export function ErectionScreenShell({
       {/* Stacked, not side by side: the spool list is a table with a toolbar and a pagination
           footer now, and none of that fits a 20rem column. It folds to one line once a spool is
           picked, so the form below still gets the page. */}
-      {loadFailed ? (
-        <p className="text-destructive text-sm">
-          {t("fieldSpoolsCouldNotBe")}
-        </p>
-      ) : (
-        <FieldSpoolPicker
-          rows={rows}
-          value={selected?.spoolRevisionId ?? null}
-          onChange={select}
-          browsing={browsingSpools}
-          onBrowsingChange={setBrowsingSpools}
-          loading={isLoading}
-        />
-      )}
+      <FieldSpoolPicker
+        projectId={projectId}
+        value={selected?.spoolRevisionId ?? null}
+        selected={selected}
+        onChange={select}
+        browsing={browsingSpools}
+        onBrowsingChange={setBrowsingSpools}
+        refreshToken={refreshToken}
+      />
 
       {selected && !browsingSpools ? (
         <ErectionCommandContext.Provider value={activeCommands}>

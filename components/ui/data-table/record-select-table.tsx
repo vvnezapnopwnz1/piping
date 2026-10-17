@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { IdentityHeadline } from "@/components/ui/record-target"
 import { DataTable, type DataColumn, type ServerPagination } from "./data-table"
+import type { DataTableState } from "./table-state"
 import { useTableUrlState } from "./use-table-url-state"
 
 /**
@@ -41,6 +42,12 @@ export function RecordSelectTable<Row>({
   toolbarActions,
   pagination = true,
   serverPagination,
+  tableState: controlledTableState,
+  onTableStateChange,
+  serverFacets,
+  hideSelectedFacetCounts = false,
+  serverQuery = false,
+  multiSort = true,
 }: {
   title: string
   columns: ReadonlyArray<DataColumn<Row>>
@@ -72,8 +79,19 @@ export function RecordSelectTable<Row>({
   pagination?: boolean
   /** Cursor navigation rendered in the normal table footer. */
   serverPagination?: ServerPagination
+  /** Server-backed selectors lift the URL state to the loader that owns their rows. */
+  tableState?: DataTableState
+  onTableStateChange?: (next: DataTableState) => void
+  /** Facets produced from the full server result, never only the loaded cursor page. */
+  serverFacets?: Partial<Record<string, ReadonlyArray<[string, number]>>>
+  hideSelectedFacetCounts?: boolean
+  serverQuery?: boolean
+  multiSort?: boolean
 }) {
-  const [tableState, setTableState] = useTableUrlState({ namespace })
+  const [urlTableState, setUrlTableState] = useTableUrlState({ namespace })
+  const controlled = controlledTableState !== undefined && onTableStateChange !== undefined
+  const tableState = controlled ? controlledTableState : urlTableState
+  const setTableState = controlled ? onTableStateChange : setUrlTableState
 
   const selected = selectedId ? (rows.find((row) => rowId(row) === selectedId) ?? null) : null
   // Nothing chosen yet means there is nothing to fold away, so the table opens on its own.
@@ -126,6 +144,10 @@ export function RecordSelectTable<Row>({
           toolbarActions={toolbarActions}
           pagination={pagination}
           serverPagination={serverPagination}
+          serverFacets={serverFacets}
+          hideSelectedFacetCounts={hideSelectedFacetCounts}
+          serverQuery={serverQuery}
+          multiSort={multiSort}
           containerClassName="max-h-[50vh]"
         />
       </CardContent>

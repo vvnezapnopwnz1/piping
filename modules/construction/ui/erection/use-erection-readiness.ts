@@ -19,20 +19,18 @@ import { useNameWorkContext, useWorkContextParam } from "@/components/pipeqc/wor
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { useOptionalAccess } from "@/modules/access/ui/access-context"
 import {
-  loadErectionReadinessForProject,
+  loadErectionReadiness,
   type ErectionReadiness,
 } from "../../infrastructure/supabase-erection-repository"
-import { selectErectionRow } from "./erection-selection"
 
 export interface ErectionReadinessState {
   projectId: string | null
-  /** True until the first read settles, so an empty list is not shown as "no spools". */
+  /** True while the selected spool is being read, so it is not shown as "not available". */
   isLoading: boolean
-  /** A failed read leaves `rows` empty; without this the screen would claim there are none. */
+  /** A failed read leaves no spool; without this the screen would claim the link is wrong. */
   loadFailed: boolean
-  /** True when the loaded projection matches the active project without error or pending refresh. */
+  /** True when the selected spool is the one read for the active project, with no read pending. */
   dataCurrent: boolean
-  rows: ErectionReadiness[]
   selected: ErectionReadiness | null
   select: (
     row: ErectionReadiness | null,
@@ -41,8 +39,13 @@ export interface ErectionReadinessState {
       extra?: Record<string, string | null>
     },
   ) => void
-  /** Re-reads the projection and keeps the current selection if it is still there. */
+  /**
+   * Re-reads the selected spool and tells the spool list to reload, because a milestone recorded
+   * on one screen moves the stage badge that the list shows.
+   */
   refresh: () => Promise<void>
+  /** Changes with every `refresh`; a list that pages on its own reloads when it changes. */
+  refreshToken: number
   canRecord: boolean
   canView: boolean
 }
@@ -50,8 +53,8 @@ export interface ErectionReadinessState {
 const Shared = createContext<ErectionReadinessState | null>(null)
 
 /**
- * Lets the erection workbench load the projection once and hand it to the operation screens it
- * embeds, so a milestone recorded inside one of them moves the workbench's timeline as well.
+ * Lets the erection workbench read the selected spool once and hand it to the operation screens
+ * it embeds, so a milestone recorded inside one of them moves the workbench's timeline as well.
  */
 export function ErectionReadinessProvider({
   value,
@@ -64,14 +67,20 @@ export function ErectionReadinessProvider({
 }
 
 /**
- * Every erection screen needs the same three things: the readiness projection for the active
- * project, a selection within it, and the caller's erection capabilities. Loading that once
- * here is what keeps the individual screens down to their own form.
+ * Every erection screen needs the same things: the selected spool, the active project and the
+ * caller's erection capabilities. Reading that once here keeps the individual screens down to
+ * their own form. The spool list is not part of it: each list pages itself from the server.
  */
 export function useErectionReadiness(): ErectionReadinessState {
   const shared = useContext(Shared)
   const own = useOwnErectionReadiness(shared === null)
   return shared ?? own
+}
+
+interface Resolved {
+  id: string
+  projectId: string
+  row: ErectionReadiness | null
 }
 
 function useOwnErectionReadiness(enabled: boolean): ErectionReadinessState {
@@ -81,80 +90,47 @@ function useOwnErectionReadiness(enabled: boolean): ErectionReadinessState {
   const canRecord = access?.can("erection.progress.record") ?? false
   const canView = access?.can("erection.view") ?? false
 
-  const [loadedProjectId, setLoadedProjectId] = useState<string | null>(null)
-  const [rows, setRows] = useState<ErectionReadiness[]>([])
   // The selected spool lives in the address bar, so it survives Back, reload and a move to the
   // next erection step, and a blocker link can hand a spool over. Nothing is selected unless the
   // operator or a link chose it.
   const [selectedId, setSelectedId] = useWorkContextParam("spool")
-  const [localSelectedId, setLocalSelectedId] = useState<string | null>(null)
-
-  useEffect(() => {
-    setLocalSelectedId(null)
-  }, [selectedId])
-
-  const activeSelectedId = localSelectedId ?? selectedId
-  const [isLoading, setIsLoading] = useState(true)
+  const [resolved, setResolved] = useState<Resolved | null>(null)
+  const [reading, setReading] = useState(false)
   const [loadFailed, setLoadFailed] = useState(false)
+  const [refreshToken, setRefreshToken] = useState(0)
   const generationRef = useRef(0)
 
-  const refresh = useCallback(async () => {
-    if (!enabled || !canView) {
-      setIsLoading(false)
-      return
-    }
-    const currentGen = ++generationRef.current
-    if (!projectId) {
-      setLoadedProjectId(null)
-      setRows([])
-      setLoadFailed(false)
-      setIsLoading(false)
-      return
-    }
-    setIsLoading(true)
-    try {
-      const next = await loadErectionReadinessForProject(getSupabaseBrowserClient(), projectId)
-      if (generationRef.current !== currentGen) return
-      setLoadedProjectId(projectId)
-      setRows(next)
-      setLoadFailed(false)
-    } catch (error: unknown) {
-      if (generationRef.current !== currentGen) return
-      setLoadFailed(true)
-      if (loadedProjectId !== projectId) {
-        setRows([])
+  const read = useCallback(
+    async (id: string, forProjectId: string) => {
+      const generation = ++generationRef.current
+      setReading(true)
+      try {
+        const row = await loadErectionReadiness(getSupabaseBrowserClient(), id)
+        if (generationRef.current !== generation) return
+        // A spool of another project is "not available" here, as it is when the address is stale.
+        setResolved({ id, projectId: forProjectId, row: row?.projectId === forProjectId ? row : null })
+        setLoadFailed(false)
+      } catch (error: unknown) {
+        if (generationRef.current !== generation) return
+        setLoadFailed(true)
+        toast.error(t("erectionReadinessCouldNotBe"), { description: errorDetail(error) })
+        throw error
+      } finally {
+        if (generationRef.current === generation) setReading(false)
       }
-      toast.error(
-        t("erectionReadinessCouldNotBe"), { description: errorDetail(error) },
-      )
-      throw error
-    } finally {
-      if (generationRef.current === currentGen) {
-        setIsLoading(false)
-      }
-    }
-  }, [enabled, canView, projectId, loadedProjectId])
+    },
+    [t],
+  )
+
+  const wanted = enabled && canView && projectId && selectedId ? { id: selectedId, projectId } : null
+  const alreadyResolved = wanted && resolved?.id === wanted.id && resolved.projectId === wanted.projectId
 
   useEffect(() => {
-    let cancelled = false
-    void Promise.resolve().then(() => {
-      if (!cancelled) {
-        void refresh().catch(() => undefined)
-      }
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [refresh])
+    if (!wanted || alreadyResolved) return
+    void read(wanted.id, wanted.projectId).catch(() => undefined)
+  }, [wanted?.id, wanted?.projectId, alreadyResolved, read])
 
-  const visibleRows = useMemo(
-    () => (projectId && loadedProjectId === projectId ? rows : []),
-    [projectId, loadedProjectId, rows],
-  )
-  const selected = useMemo(
-    () => selectErectionRow(visibleRows, projectId, activeSelectedId),
-    [visibleRows, projectId, activeSelectedId],
-  )
+  const selected = alreadyResolved ? resolved.row : null
   useNameWorkContext("spool", selected?.spoolRevisionId, selected?.spoolNumber)
 
   const select = useCallback(
@@ -165,26 +141,36 @@ function useOwnErectionReadiness(enabled: boolean): ErectionReadinessState {
         extra?: Record<string, string | null>
       },
     ) => {
-      setLocalSelectedId(row?.spoolRevisionId ?? null)
+      // The list already holds this row, so seed it instead of reading it again.
+      if (row && projectId) setResolved({ id: row.spoolRevisionId, projectId, row })
       setSelectedId(row?.spoolRevisionId ?? null, options)
     },
-    [setSelectedId],
+    [projectId, setSelectedId],
   )
 
-  const dataCurrent = Boolean(
-    projectId && loadedProjectId === projectId && !isLoading && !loadFailed,
-  )
+  const refresh = useCallback(async () => {
+    setRefreshToken((token) => token + 1)
+    if (!enabled || !canView || !projectId || !selectedId) return
+    await read(selectedId, projectId)
+  }, [enabled, canView, projectId, selectedId, read])
 
-  return {
-    projectId,
-    isLoading,
-    loadFailed,
-    dataCurrent,
-    rows: visibleRows,
-    selected,
-    select,
-    refresh,
-    canRecord,
-    canView,
-  }
+  const resolving = Boolean(wanted) && !alreadyResolved
+  const isLoading = resolving || reading
+  const dataCurrent = Boolean(projectId && !isLoading && !loadFailed && (!wanted || alreadyResolved))
+
+  return useMemo(
+    () => ({
+      projectId,
+      isLoading,
+      loadFailed,
+      dataCurrent,
+      selected,
+      select,
+      refresh,
+      refreshToken,
+      canRecord,
+      canView,
+    }),
+    [projectId, isLoading, loadFailed, dataCurrent, selected, select, refresh, refreshToken, canRecord, canView],
+  )
 }

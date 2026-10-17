@@ -7,6 +7,16 @@ import type { FabricationReadiness, ReleaseBlocker } from "../domain/quality-rel
 import type { WelderQualification, WeldingProcedure } from "../domain/weld-progress"
 import type { MaterialCheckPayload } from "../application/record-material-check"
 import type { WeldProgressPayload } from "../application/record-weld-progress"
+import {
+  applyBoolean,
+  applyColumnKeyset,
+  applyContains,
+  applyIsoKeyset,
+  applyNumberRange,
+  applySpoolSearch,
+  applyStages,
+  type ProjectionRequest,
+} from "./projection-keyset"
 import { mapSupabaseConstructionError } from "./supabase-construction-errors"
 
 
@@ -49,11 +59,40 @@ export interface FabricationSpoolCursor {
   isoNumber: string
   spoolNumber: string
   spoolRevisionId: string
+  /** Present only when the page is ordered by a single non-default server field. */
+  sort?: {
+    id: FabricationSpoolSort["id"]
+    value: string | number | boolean
+    desc: boolean
+  }
 }
 
 export interface FabricationSpoolPage {
   rows: SpoolStatus[]
   nextCursor: FabricationSpoolCursor | null
+  /** All rows matching the query, not just the loaded cursor page. */
+  totalCount: number
+}
+
+export type FabricationSpoolSort = {
+  id: "spoolNumber" | "isoNumber" | "ndePending" | "pwhtPending" | "isReleasable"
+  desc: boolean
+}
+
+export interface FabricationSpoolQuery {
+  search: string
+  spoolNumber: string | null
+  isoNumber: string | null
+  stages: Array<ConstructionStage | null> | null
+  ndePending: { min: number | null; max: number | null } | null
+  pwhtPending: { min: number | null; max: number | null } | null
+  isReleasable: boolean | null
+  sort: FabricationSpoolSort | null
+}
+
+export type FabricationSpoolStageFacet = {
+  stage: ConstructionStage | null
+  count: number
 }
 
 export interface FabricationChartData {
@@ -96,12 +135,23 @@ export function toSpoolStatus(row: Row): SpoolStatus {
 
 export function toFabricationSpoolCursor(
   status: SpoolStatus,
+  sort: FabricationSpoolSort | null = null,
 ): FabricationSpoolCursor {
-  return {
+  const cursor: FabricationSpoolCursor = {
     isoNumber: status.isoNumber,
     spoolNumber: status.spoolNumber,
     spoolRevisionId: status.spoolRevisionId,
   }
+  // ISO ascending is the list's natural key, so its three-field cursor remains the compact,
+  // backwards-compatible form. Other orders carry precisely the value that the database compares.
+  if (sort && !(sort.id === "isoNumber" && !sort.desc)) {
+    cursor.sort = {
+      id: sort.id,
+      value: spoolSortValue(status, sort.id),
+      desc: sort.desc,
+    }
+  }
+  return cursor
 }
 
 export interface WeldSummary {
@@ -247,6 +297,92 @@ export interface WeldFormReferentials {
 
 // Reads -----------------------------------------------------------------------
 
+const FABRICATION_SPOOL_SELECT = [
+  "spool_revision_id",
+  "project_id",
+  "iso_number",
+  "spool_number",
+  "revision_number",
+  "pds_area_id",
+  "current_stage",
+  "start_fab_on",
+  "material_check_on",
+  "fabricated_on",
+  "qc_release_on",
+  "sent_to_paint_on",
+  "painted_on",
+  "final_qc_on",
+  "laydown_on",
+  "is_fabricated",
+  "is_releasable",
+  "line_total",
+  "line_checked",
+  "weld_total",
+  "weld_complete",
+  "support_total",
+  "support_recorded",
+  "nde_pending",
+  "pwht_pending",
+].join(",")
+
+const FABRICATION_SPOOL_SORT_COLUMNS = {
+  spoolNumber: "spool_number",
+  isoNumber: "iso_number",
+  ndePending: "nde_pending",
+  pwhtPending: "pwht_pending",
+  isReleasable: "is_releasable",
+} as const
+
+const emptyFabricationSpoolQuery = (): FabricationSpoolQuery => ({
+  search: "",
+  spoolNumber: null,
+  isoNumber: null,
+  stages: null,
+  ndePending: null,
+  pwhtPending: null,
+  isReleasable: null,
+  sort: null,
+})
+
+const spoolSortValue = (
+  status: SpoolStatus,
+  id: FabricationSpoolSort["id"],
+): string | number | boolean => {
+  switch (id) {
+    case "spoolNumber": return status.spoolNumber
+    case "isoNumber": return status.isoNumber
+    case "ndePending": return status.ndePending
+    case "pwhtPending": return status.pwhtPending
+    case "isReleasable": return status.isReleasable
+  }
+}
+
+
+const applyFabricationSpoolFilters = <Request extends ProjectionRequest>(
+  initial: Request,
+  filters: FabricationSpoolQuery,
+): Request => {
+  let request = applySpoolSearch(initial, filters.search)
+  request = applyContains(request, "spool_number", filters.spoolNumber)
+  request = applyContains(request, "iso_number", filters.isoNumber)
+  request = applyStages(request, "current_stage", filters.stages)
+  request = applyNumberRange(request, "nde_pending", filters.ndePending)
+  request = applyNumberRange(request, "pwht_pending", filters.pwhtPending)
+  return applyBoolean(request, "is_releasable", filters.isReleasable)
+}
+
+const applyFabricationSpoolCursor = <Request extends ProjectionRequest>(
+  initial: Request,
+  cursor: FabricationSpoolCursor | null,
+  sort: FabricationSpoolSort | null,
+): Request => {
+  if (!cursor) return initial
+  if (!sort || sort.id === "isoNumber") return applyIsoKeyset(initial, cursor, sort?.desc ?? false)
+  const sorted = cursor.sort
+  if (!sorted || sorted.id !== sort.id || sorted.desc !== sort.desc) return initial
+  return applyColumnKeyset(initial, FABRICATION_SPOOL_SORT_COLUMNS[sort.id], sorted.value, cursor.spoolRevisionId, sort.desc)
+}
+
 // The projection stores only accepted, non-removed revisions. That keeps every fabrication
 // picker on the record it can act on and avoids duplicate spool labels after an ISO revision.
 export async function loadSpoolStatuses(
@@ -260,23 +396,75 @@ export async function loadFabricationSpoolPage(
   client: SupabaseClient<Database>,
   projectId: string,
   cursor: FabricationSpoolCursor | null = null,
-  stage: ConstructionStage | null = null,
+  filters: FabricationSpoolQuery = emptyFabricationSpoolQuery(),
   pageLimit = 50,
 ): Promise<FabricationSpoolPage> {
-  const { data, error } = await client.rpc("list_fabrication_spools", {
-    target_project_id: projectId,
-    target_stage: stage ?? undefined,
-    after_iso_number: cursor?.isoNumber,
-    after_spool_number: cursor?.spoolNumber,
-    after_spool_revision_id: cursor?.spoolRevisionId,
-    page_limit: pageLimit,
-  })
+  const sort = filters.sort
+  let countRequest = client
+    .from("fabrication_spool_projections")
+    .select("spool_revision_id", { count: "exact", head: true })
+    .eq("project_id", projectId)
+    .eq("revision_status", "accepted")
+    .eq("is_removed", false)
+  let request = client
+    .from("fabrication_spool_projections")
+    .select(FABRICATION_SPOOL_SELECT)
+    .eq("project_id", projectId)
+    .eq("revision_status", "accepted")
+    .eq("is_removed", false)
+
+  countRequest = applyFabricationSpoolFilters(countRequest, filters)
+  request = applyFabricationSpoolFilters(request, filters)
+  request = applyFabricationSpoolCursor(request, cursor, sort)
+
+  if (!sort || sort.id === "isoNumber") {
+    request = request
+      .order("iso_number", { ascending: !sort?.desc })
+      .order("spool_number", { ascending: !sort?.desc })
+      .order("spool_revision_id", { ascending: !sort?.desc })
+  } else {
+    request = request
+      .order(FABRICATION_SPOOL_SORT_COLUMNS[sort.id], { ascending: !sort.desc })
+      .order("spool_revision_id", { ascending: !sort.desc })
+  }
+
+  const [countResult, pageResult] = await Promise.all([
+    countRequest,
+    request.limit(pageLimit + 1),
+  ])
+  fail(countResult.error)
+  const { data, error } = pageResult
   fail(error)
-  const rows = (data ?? []).map(toSpoolStatus)
+  const rows = (data ?? []).slice(0, pageLimit).map(toSpoolStatus)
   return {
     rows,
-    nextCursor: rows.length === pageLimit ? toFabricationSpoolCursor(rows.at(-1)!) : null,
+    nextCursor: (data ?? []).length > pageLimit ? toFabricationSpoolCursor(rows.at(-1)!, sort) : null,
+    totalCount: countResult.count ?? 0,
   }
+}
+
+/**
+ * The stage picker is a project-wide catalog: it is independent of the loaded cursor page and of
+ * the current table query. RLS still limits it to the spools the operator is allowed to see.
+ */
+export async function loadFabricationSpoolStageFacets(
+  client: SupabaseClient<Database>,
+  projectId: string,
+): Promise<FabricationSpoolStageFacet[]> {
+  const stages: Array<ConstructionStage | null> = [null, "start_fab", "material_check", "fabricated", "qc_release", "sent_to_paint", "painted", "final_qc", "laydown"]
+
+  return Promise.all(stages.map(async (stage) => {
+    let request = client
+      .from("fabrication_spool_projections")
+      .select("spool_revision_id", { count: "exact", head: true })
+      .eq("project_id", projectId)
+      .eq("revision_status", "accepted")
+      .eq("is_removed", false)
+    request = stage === null ? request.is("current_stage", null) : request.eq("current_stage", stage)
+    const { count, error } = await request
+    fail(error)
+    return { stage, count: count ?? 0 }
+  }))
 }
 
 export async function loadFabricationSpoolStageCounts(

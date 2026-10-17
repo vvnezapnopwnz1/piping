@@ -22,6 +22,7 @@ export function ColumnFilterEditor({
   label,
   value,
   options,
+  hideSelectedOptionCounts = false,
   onChange,
   onDone,
 }: {
@@ -31,6 +32,8 @@ export function ColumnFilterEditor({
   value: ColumnFilter | undefined
   /** Distinct values present in the column, with how many rows carry each. */
   options?: ReadonlyArray<[string, number]>
+  /** A selected option is already marked with a checkbox; some screens do not need its count too. */
+  hideSelectedOptionCounts?: boolean
   onChange: (filter: ColumnFilter) => void
   onDone: () => void
 }) {
@@ -41,6 +44,7 @@ export function ColumnFilterEditor({
           columnId={columnId}
           value={value?.kind === 'select' ? value.values : []}
           options={options ?? []}
+          hideSelectedOptionCounts={hideSelectedOptionCounts}
           onChange={(values) => onChange({ id: columnId, kind: 'select', values })}
         />
       )
@@ -132,11 +136,13 @@ function SelectFilter({
   columnId,
   value,
   options,
+  hideSelectedOptionCounts,
   onChange,
 }: {
   columnId: string
   value: string[]
   options: ReadonlyArray<[string, number]>
+  hideSelectedOptionCounts: boolean
   onChange: (values: string[]) => void
 }) {
   const tt = useTranslations('common.table')
@@ -146,8 +152,7 @@ function SelectFilter({
   // scrolling a popover to find one.
   const visible = React.useMemo(() => {
     const needle = query.trim().toLowerCase()
-    const sorted = [...options].sort((a, b) => a[0].localeCompare(b[0]))
-    return needle ? sorted.filter(([option]) => option.toLowerCase().includes(needle)) : sorted
+    return needle ? options.filter(([option]) => option.toLowerCase().includes(needle)) : options
   }, [options, query])
 
   const toggle = (option: string) =>
@@ -182,7 +187,9 @@ function SelectFilter({
             >
               <Checkbox checked={value.includes(option)} onCheckedChange={() => toggle(option)} />
               <span className="flex-1 truncate">{option || '—'}</span>
-              <span className="text-muted-foreground tabular-nums">{count}</span>
+              {!hideSelectedOptionCounts || !value.includes(option) ? (
+                <span className="text-muted-foreground tabular-nums">{count}</span>
+              ) : null}
             </label>
           ))
         )}

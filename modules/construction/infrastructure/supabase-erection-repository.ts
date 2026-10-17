@@ -1,12 +1,25 @@
-import { selectAllRows } from "@/lib/supabase/select-all-rows"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
 import type { Database, Json } from "@/lib/supabase/database.types"
-import type { ErectionStage } from "../domain/erection-stage"
+import { ERECTION_STAGES, type ErectionStage } from "../domain/erection-stage"
 import type { RftShortfallItem } from "../application/describe-erection-readiness"
 import type { MaterialCheckPayload } from "../application/record-material-check"
 import type { WeldProgressPayload } from "../application/record-weld-progress"
 import { mapSupabaseConstructionError } from "./supabase-construction-errors"
+import {
+  applyBoolean,
+  applyColumnKeyset,
+  applyContains,
+  applyDateRange,
+  applyIsoKeyset,
+  applyNumberRange,
+  applySpoolSearch,
+  applyStages,
+  type DateRange,
+  type IsoCursor,
+  type NumberRange,
+  type ProjectionRequest,
+} from "./projection-keyset"
 
 type Row = Record<string, any>
 
@@ -94,36 +107,213 @@ export function toErectionReadiness(row: Row): ErectionReadiness {
 const READINESS_COLUMNS =
   "spool_revision_id, project_id, iso_number, spool_number, revision_number, revision_status, material_line_total, material_line_checked, material_checked_on, field_weld_total, field_weld_complete, last_field_weld_on, field_support_total, field_support_recorded, last_field_support_on, to_site_on, erected_on, welded_bolted_on, supported_on, nde_pending, pwht_pending, is_rft, rft_on, rft_blockers"
 
+/** One spool, read from the live view, or null when the id is not an accepted spool of the caller. */
 export async function loadErectionReadiness(
   client: SupabaseClient<Database>,
   spoolRevisionId: string,
-): Promise<ErectionReadiness> {
+): Promise<ErectionReadiness | null> {
   const { data, error } = await client
     .from("spool_erection_readiness")
     .select(READINESS_COLUMNS)
     .eq("spool_revision_id", spoolRevisionId)
-    .single()
+    .maybeSingle()
   fail(error)
-  if (!data) throw new Error(mapSupabaseConstructionError(null))
-  return toErectionReadiness(data)
+  return data ? toErectionReadiness(data) : null
 }
 
-export async function loadErectionReadinessForProject(
+// Field spool list -----------------------------------------------------------
+
+export type ErectionSpoolSort = {
+  id: "spoolNumber" | "isoNumber" | "ndePending" | "pwhtPending" | "isRft"
+  desc: boolean
+}
+
+export interface ErectionSpoolQuery {
+  search: string
+  spoolNumber: string | null
+  isoNumber: string | null
+  /** A spool handed over in the address narrows the list to itself. */
+  spoolRevisionId: string | null
+  /** `null` among the stages is "not started". */
+  stages: Array<ErectionStage | null> | null
+  ndePending: NumberRange | null
+  pwhtPending: NumberRange | null
+  toSiteOn: DateRange | null
+  isRft: boolean | null
+  sort: ErectionSpoolSort | null
+}
+
+export interface ErectionSpoolCursor extends IsoCursor {
+  /** Present only when the page is ordered by a single non-default server field. */
+  sort?: { id: ErectionSpoolSort["id"]; value: string | number | boolean; desc: boolean }
+}
+
+export interface ErectionSpoolPage {
+  rows: ErectionReadiness[]
+  nextCursor: ErectionSpoolCursor | null
+  /** All rows matching the query, not just the loaded cursor page. */
+  totalCount: number
+}
+
+export type ErectionSpoolStageFacet = { stage: ErectionStage | null; count: number }
+
+/**
+ * The list reads the projection the fabrication list reads. Its field columns carry the same
+ * names as the readiness view, except the two open-evidence counters, which the projection keeps
+ * as `field_nde_pending` and `field_pwht_pending` beside the shop's own.
+ */
+const ERECTION_SPOOL_SELECT =
+  "spool_revision_id, project_id, iso_number, spool_number, revision_number, revision_status, material_line_total, material_line_checked, material_checked_on, field_weld_total, field_weld_complete, last_field_weld_on, field_support_total, field_support_recorded, last_field_support_on, to_site_on, erected_on, welded_bolted_on, supported_on, field_nde_pending, field_pwht_pending, is_rft, rft_on, rft_blockers"
+
+const ERECTION_SPOOL_SORT_COLUMNS = {
+  spoolNumber: "spool_number",
+  isoNumber: "iso_number",
+  ndePending: "field_nde_pending",
+  pwhtPending: "field_pwht_pending",
+  isRft: "is_rft",
+} as const
+
+export const emptyErectionSpoolQuery = (): ErectionSpoolQuery => ({
+  search: "",
+  spoolNumber: null,
+  isoNumber: null,
+  spoolRevisionId: null,
+  stages: null,
+  ndePending: null,
+  pwhtPending: null,
+  toSiteOn: null,
+  isRft: null,
+  sort: null,
+})
+
+export const toErectionSpool = (row: Row): ErectionReadiness =>
+  toErectionReadiness({ ...row, nde_pending: row.field_nde_pending, pwht_pending: row.field_pwht_pending })
+
+const erectionSortValue = (spool: ErectionReadiness, id: ErectionSpoolSort["id"]): string | number | boolean => {
+  switch (id) {
+    case "spoolNumber": return spool.spoolNumber
+    case "isoNumber": return spool.isoNumber
+    case "ndePending": return spool.ndePending
+    case "pwhtPending": return spool.pwhtPending
+    case "isRft": return spool.isRft
+  }
+}
+
+export function toErectionSpoolCursor(
+  spool: ErectionReadiness,
+  sort: ErectionSpoolSort | null = null,
+): ErectionSpoolCursor {
+  const cursor: ErectionSpoolCursor = {
+    isoNumber: spool.isoNumber,
+    spoolNumber: spool.spoolNumber,
+    spoolRevisionId: spool.spoolRevisionId,
+  }
+  // ISO ascending is the list's natural key; any other order carries the value the database compares.
+  if (sort && !(sort.id === "isoNumber" && !sort.desc)) {
+    cursor.sort = { id: sort.id, value: erectionSortValue(spool, sort.id), desc: sort.desc }
+  }
+  return cursor
+}
+
+const applyErectionSpoolFilters = <Request extends ProjectionRequest>(
+  initial: Request,
+  filters: ErectionSpoolQuery,
+): Request => {
+  let request = applySpoolSearch(initial, filters.search)
+  request = applyContains(request, "spool_number", filters.spoolNumber)
+  request = applyContains(request, "iso_number", filters.isoNumber)
+  if (filters.spoolRevisionId) request = request.eq("spool_revision_id", filters.spoolRevisionId) as Request
+  request = applyStages(request, "current_erection_stage", filters.stages)
+  request = applyNumberRange(request, "field_nde_pending", filters.ndePending)
+  request = applyNumberRange(request, "field_pwht_pending", filters.pwhtPending)
+  request = applyDateRange(request, "to_site_on", filters.toSiteOn)
+  return applyBoolean(request, "is_rft", filters.isRft)
+}
+
+const applyErectionSpoolCursor = <Request extends ProjectionRequest>(
+  initial: Request,
+  cursor: ErectionSpoolCursor | null,
+  sort: ErectionSpoolSort | null,
+): Request => {
+  if (!cursor) return initial
+  if (!sort || sort.id === "isoNumber") return applyIsoKeyset(initial, cursor, sort?.desc ?? false)
+  const sorted = cursor.sort
+  if (!sorted || sorted.id !== sort.id || sorted.desc !== sort.desc) return initial
+  return applyColumnKeyset(initial, ERECTION_SPOOL_SORT_COLUMNS[sort.id], sorted.value, cursor.spoolRevisionId, sort.desc)
+}
+
+/** One keyset page of the project's field spools and the size of the whole filtered result. */
+export async function loadErectionSpoolPage(
   client: SupabaseClient<Database>,
   projectId: string,
-): Promise<ErectionReadiness[]> {
-  // The whole project, past PostgREST's 1,000-row cap.
-  const data = await selectAllRows((from, to) =>
+  cursor: ErectionSpoolCursor | null = null,
+  filters: ErectionSpoolQuery = emptyErectionSpoolQuery(),
+  pageLimit = 50,
+): Promise<ErectionSpoolPage> {
+  const sort = filters.sort
+  const base = () =>
     client
-      .from("spool_erection_readiness")
-      .select(READINESS_COLUMNS)
+      .from("fabrication_spool_projections")
+      .select(ERECTION_SPOOL_SELECT)
       .eq("project_id", projectId)
-      .order("iso_number")
-      .order("spool_number")
-      .order("spool_revision_id")
-      .range(from, to),
+      .eq("revision_status", "accepted")
+      .eq("is_removed", false)
+  const countRequest = applyErectionSpoolFilters(
+    client
+      .from("fabrication_spool_projections")
+      .select("spool_revision_id", { count: "exact", head: true })
+      .eq("project_id", projectId)
+      .eq("revision_status", "accepted")
+      .eq("is_removed", false),
+    filters,
   )
-  return data.map((row) => toErectionReadiness(row))
+  let request = applyErectionSpoolCursor(applyErectionSpoolFilters(base(), filters), cursor, sort)
+
+  if (!sort || sort.id === "isoNumber") {
+    const ascending = !sort?.desc
+    request = request
+      .order("iso_number", { ascending })
+      .order("spool_number", { ascending })
+      .order("spool_revision_id", { ascending })
+  } else {
+    request = request
+      .order(ERECTION_SPOOL_SORT_COLUMNS[sort.id], { ascending: !sort.desc })
+      .order("spool_revision_id", { ascending: !sort.desc })
+  }
+
+  const [countResult, pageResult] = await Promise.all([countRequest, request.limit(pageLimit + 1)])
+  fail(countResult.error)
+  fail(pageResult.error)
+  const data = pageResult.data ?? []
+  const rows = data.slice(0, pageLimit).map(toErectionSpool)
+  return {
+    rows,
+    nextCursor: data.length > pageLimit ? toErectionSpoolCursor(rows.at(-1)!, sort) : null,
+    totalCount: countResult.count ?? 0,
+  }
+}
+
+/**
+ * The stage picker is a project-wide catalog: independent of the loaded page and of the current
+ * query, in the order of the field sequence. RLS still limits it to what the caller may see.
+ */
+export async function loadErectionSpoolStageFacets(
+  client: SupabaseClient<Database>,
+  projectId: string,
+): Promise<ErectionSpoolStageFacet[]> {
+  const stages: Array<ErectionStage | null> = [null, ...ERECTION_STAGES]
+  return Promise.all(stages.map(async (stage) => {
+    let request = client
+      .from("fabrication_spool_projections")
+      .select("spool_revision_id", { count: "exact", head: true })
+      .eq("project_id", projectId)
+      .eq("revision_status", "accepted")
+      .eq("is_removed", false)
+    request = stage === null ? request.is("current_erection_stage", null) : request.eq("current_erection_stage", stage)
+    const { count, error } = await request
+    fail(error)
+    return { stage, count: count ?? 0 }
+  }))
 }
 
 export async function loadErectionChartData(client: SupabaseClient<Database>, projectId: string): Promise<ErectionChartData> {

@@ -64,7 +64,7 @@ export function ErectionWorkbench({ operation }: { operation: ErectionOperationI
   const te = useTranslations("erection")
   const stepWords = (step: ErectionStep) => ({ ...step, lines: step.lines.map((line) => ({ label: te(`line.${line.label}`), value: line.value === "yes" ? te("shared.yes") : line.value })) })
   const state = useErectionReadiness()
-  const { projectId, isLoading, loadFailed, rows, selected, select, canView } = state
+  const { projectId, isLoading, loadFailed, selected, select, canView, refreshToken } = state
   const [spoolParam] = useWorkContextParam("spool")
   const requestLeave = useRequestLeave()
   const can = useOptionalAccess()?.can
@@ -112,12 +112,13 @@ export function ErectionWorkbench({ operation }: { operation: ErectionOperationI
         <div className={styles.split} data-open={spoolParam ? "" : undefined}>
           <div className={styles.listPane}>
             <FieldSpoolPicker
-              rows={rows}
+              projectId={projectId}
               value={selected?.spoolRevisionId ?? null}
+              selected={selected}
               onChange={choose}
               browsing
               onBrowsingChange={() => undefined}
-              loading={isLoading}
+              refreshToken={refreshToken}
             />
           </div>
 

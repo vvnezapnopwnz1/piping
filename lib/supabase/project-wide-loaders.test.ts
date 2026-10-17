@@ -8,7 +8,6 @@ import test from "node:test"
 const root = new URL("../../", import.meta.url)
 const LOADERS: ReadonlyArray<readonly [string, string]> = [
   ["modules/quality/infrastructure/supabase-quality-repository.ts", "nde_obligations"],
-  ["modules/construction/infrastructure/supabase-erection-repository.ts", "spool_erection_readiness"],
   ["modules/flange/infrastructure/supabase-flange-repository.ts", "flange_joint_worklist"],
   ["modules/engineering/infrastructure/supabase-engineering-repository.ts", "isometrics"],
   ["modules/pressure-test/infrastructure/supabase-pressure-test-repository.ts", "isometric_readiness"],

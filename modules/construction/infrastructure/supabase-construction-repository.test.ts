@@ -1,6 +1,8 @@
 import assert from "node:assert/strict"
+import test from "node:test"
 
 import {
+  loadFabricationSpoolPage,
   toFabricationSpoolCursor,
   toReadiness,
   toSpoolStatus,
@@ -10,7 +12,7 @@ import {
   toWeldingProcedure,
 } from "./supabase-construction-repository"
 
-const status = toSpoolStatus({
+const spoolRow = {
   spool_revision_id: "spool-rev-1",
   project_id: "project-1",
   iso_number: "ISO-A",
@@ -36,7 +38,9 @@ const status = toSpoolStatus({
   support_recorded: 0,
   nde_pending: 0,
   pwht_pending: 0,
-})
+} as const
+
+const status = toSpoolStatus(spoolRow)
 assert.equal(status.spoolNumber, "SP-1")
 assert.equal(status.currentStage, "start_fab")
 assert.equal(status.dates.start_fab, "2026-08-04")
@@ -161,3 +165,36 @@ const pendingSupport = toSupportRow({
 })
 assert.equal(pendingSupport.installedOn, null)
 assert.equal(pendingSupport.installedPhase, null)
+
+test("a fabrication page reports the full filtered result count", async () => {
+  const selections: Array<{ head?: boolean }> = []
+  const request = (head = false) => {
+    const builder = {
+      eq: () => builder,
+      is: () => builder,
+      in: () => builder,
+      gte: () => builder,
+      lte: () => builder,
+      ilike: () => builder,
+      or: () => builder,
+      order: () => builder,
+      limit: async () => ({ data: [spoolRow], error: null }),
+      then: (resolve: (value: unknown) => unknown) =>
+        Promise.resolve({ data: null, count: head ? 42 : null, error: null }).then(resolve),
+    }
+    return builder
+  }
+  const client = {
+    from: () => ({
+      select: (_columns: string, options?: { head?: boolean }) => {
+        selections.push(options ?? {})
+        return request(options?.head === true)
+      },
+    }),
+  }
+
+  const page = await loadFabricationSpoolPage(client as never, "project-1", null, undefined, 50)
+
+  assert.equal(page.totalCount, 42)
+  assert.equal(selections.some((selection) => selection.head === true), true)
+})

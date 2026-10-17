@@ -48,6 +48,9 @@ export function fabricationSpoolColumns(t: SpoolColumnsTranslator, tc: CodesTran
     header: t("stage"),
     value: (spool) => tc(`fabricationStage.${spool.currentStage ?? "not_started"}`),
     filter: "select",
+    // Status can be empty. Its useful filter is server-side, while a null-safe keyset sort would
+    // need a separate cursor shape, so do not pretend that the current cursor can sort it.
+    sortable: false,
     cell: (spool) => (
       <StatusBadge
         status={spool.currentStage ?? "not_started"}
@@ -60,6 +63,7 @@ export function fabricationSpoolColumns(t: SpoolColumnsTranslator, tc: CodesTran
     header: t("material"),
     numeric: true,
     value: (spool) => ratio(spool.lineChecked, spool.lineTotal),
+    sortable: false,
     cell: (spool) => `${spool.lineChecked}/${spool.lineTotal}`,
   },
   {
@@ -67,6 +71,7 @@ export function fabricationSpoolColumns(t: SpoolColumnsTranslator, tc: CodesTran
     header: t("welds"),
     numeric: true,
     value: (spool) => ratio(spool.weldComplete, spool.weldTotal),
+    sortable: false,
     cell: (spool) => `${spool.weldComplete}/${spool.weldTotal}`,
   },
   {
@@ -74,6 +79,7 @@ export function fabricationSpoolColumns(t: SpoolColumnsTranslator, tc: CodesTran
     header: t("supports"),
     numeric: true,
     value: (spool) => ratio(spool.supportRecorded, spool.supportTotal),
+    sortable: false,
     cell: (spool) => `${spool.supportRecorded}/${spool.supportTotal}`,
   },
   { id: "ndePending", header: t("ndeOpen"), numeric: true, value: (spool) => spool.ndePending, filter: "number" },
