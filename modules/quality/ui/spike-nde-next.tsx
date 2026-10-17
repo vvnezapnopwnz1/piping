@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { Check, ChevronDown, ChevronRight } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
+import { DataTable, useTableUrlState, type DataColumn } from "@/components/ui/data-table"
 import { Button } from "@/components/ui/button"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { NDT_METHODS, jointStatusLabel, type NdeBatch, type NdeObligation, type NdtMethod, type CoverageRegime } from "../domain/nde-batch"
@@ -37,6 +38,19 @@ function statusWords(ob: NdeObligation): string {
   return ({ S: "К выбору", SS: "Выбран", NR: "Результат внесён", H: "К контролю", HS: "В контроле" } as Record<string, string>)[code] ?? code
 }
 
+const DISPOSITION_TEXT = (ob: NdeObligation) =>
+  ob.disposition === "satisfied" ? "Выполнен" : ob.disposition === "issued" ? "Ждёт результата" : ob.batchNumber ? "В партии" : "Ждёт партию"
+
+const JOINT_COLUMNS: DataColumn<NdeObligation>[] = [
+  { id: "weld", header: "Стык", value: (ob) => ob.weldNumber, searchable: true, filter: "text", pinned: true, alwaysVisible: true, className: "font-mono font-medium" },
+  { id: "spool", header: "Катушка", value: (ob) => ob.spoolNumber, searchable: true, filter: "text", className: "font-mono" },
+  { id: "batch", header: "Партия", value: (ob) => ob.batchNumber ?? "—", searchable: true, filter: "select", className: "font-mono" },
+  { id: "method", header: "Метод", value: (ob) => METHOD_TEXT[ob.method] ?? ob.method, filter: "select" },
+  { id: "state", header: "Состояние", value: (ob) => DISPOSITION_TEXT(ob), filter: "select" },
+  { id: "status", header: "Статус стыка", value: (ob) => statusWords(ob), filter: "select" },
+  { id: "coverage", header: "Объём", numeric: true, value: (ob) => `${ob.requiredCoverage} %` },
+]
+
 export function SpikeNdeNext({ projectId }: { projectId: string }) {
   const [obligations, setObligations] = useState<NdeObligation[]>([])
   const [batches, setBatches] = useState<NdeBatch[]>([])
@@ -53,6 +67,7 @@ export function SpikeNdeNext({ projectId }: { projectId: string }) {
   const [percent, setPercent] = useState("10")
   const [reject, setReject] = useState<{ ob: NdeObligation; code: string; welder: string; welders: string[] } | null>(null)
   const [showClosed, setShowClosed] = useState(false)
+  const [jointTable, setJointTable] = useTableUrlState({ namespace: "nx" })
 
   const reload = useCallback(async () => {
     const client = getSupabaseBrowserClient()
@@ -118,7 +133,7 @@ export function SpikeNdeNext({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
+    <div className="mx-auto max-w-6xl space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <h1 className="text-xl font-semibold">Неразрушающий контроль</h1>
@@ -231,6 +246,20 @@ export function SpikeNdeNext({ projectId }: { projectId: string }) {
             <Button size="sm" disabled={busy !== null} onClick={() => void run("issue", async () => { const c = getSupabaseBrowserClient(); await allocateNdeBatchCandidates(c, b.id, b.coverageRegime === "spot" ? 10 : 100, key("allocate")); await issueNdeBatch(c, b.id, key("issue")) })}>Выдать</Button>
           </div>
         ))}
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Все стыки ({obligations.length})</h2>
+        <DataTable
+          columns={JOINT_COLUMNS}
+          rows={obligations}
+          state={jointTable}
+          onStateChange={setJointTable}
+          rowId={(ob) => ob.id}
+          searchPlaceholder="Поиск по стыку, катушке или партии"
+          emptyTitle="Стыков нет"
+          emptyDescription="Стыки появляются, когда сварены и подпадают под правило контроля"
+        />
       </section>
 
       <section>
