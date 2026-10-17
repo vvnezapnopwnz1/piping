@@ -3,6 +3,7 @@ import test from "node:test"
 import { canRecordPressureTestEvent, derivePressureTestState, isMonotonicDate, type PressureTestWorkflowFacts } from "./pressure-test-workflow"
 
 const base: PressureTestWorkflowFacts = {
+  canonicalState: "awaiting_rft",
   isRft: true,
   blindingAssigned: true,
   blindingCompleted: true,
@@ -15,17 +16,24 @@ const base: PressureTestWorkflowFacts = {
   zReinstated: false,
 }
 
-test("derives the manual pressure-test state sequence", () => {
-  assert.equal(derivePressureTestState({ ...base, isRft: false }), "awaiting_rft")
-  assert.equal(derivePressureTestState({ ...base, blindingAssigned: false }), "blinding_assigned")
-  assert.equal(derivePressureTestState({ ...base, blindingCompleted: false }), "blinding_assigned")
-  assert.equal(derivePressureTestState({ ...base, testingStarted: false }), "blinded")
-  assert.equal(derivePressureTestState({ ...base, testingStarted: true }), "testing")
-  assert.equal(derivePressureTestState({ ...base, testingStarted: true, testingCompleted: true }), "awaiting_y_reinstatement")
-  assert.equal(derivePressureTestState({ ...base, testingStarted: true, testingCompleted: true, yReinstated: true }), "ready_for_precommissioning")
-  assert.equal(derivePressureTestState({ ...base, testingStarted: true, testingCompleted: true, yReinstated: true, precommissioned: true }), "awaiting_z_reinstatement")
-  assert.equal(derivePressureTestState({ ...base, testingStarted: true, testingCompleted: true, yReinstated: true, precommissioned: true, zReinstated: true }), "complete")
+test("strictly returns server canonical state without client fallback ladder", () => {
+  const states: PressureTestWorkflowFacts["canonicalState"][] = [
+    "awaiting_rft",
+    "blinding_assigned",
+    "blinded",
+    "testing",
+    "tested",
+    "awaiting_y_reinstatement",
+    "ready_for_precommissioning",
+    "precommissioned",
+    "awaiting_z_reinstatement",
+    "complete",
+  ]
+  for (const state of states) {
+    assert.equal(derivePressureTestState({ ...base, canonicalState: state }), state)
+  }
 })
+
 test("guards events by predecessor state and preserves monotonic dates", () => {
   assert.equal(canRecordPressureTestEvent("blinded", "testing_started"), true)
   assert.equal(canRecordPressureTestEvent("awaiting_rft", "testing_started"), false)

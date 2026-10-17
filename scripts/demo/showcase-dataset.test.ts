@@ -210,21 +210,27 @@ test("every spool's ladder dates are non-decreasing, which the commands enforce"
   // requirement, not presentation.
   for (const spool of buildShowcaseProgressPlan(BASE).spools) {
     const startFab = spool.stages.find((stage) => stage.stage === "start_fab")
-    const lastWeld = spool.weldedJoints.at(-1)?.weldedOn
+    const lastShopWeld = spool.weldedJoints
+      .filter((joint) => joint.phase === "fabrication")
+      .at(-1)?.weldedOn
+    const fieldWelds = spool.weldedJoints
+      .filter((joint) => joint.phase === "erection")
+      .map((joint) => joint.weldedOn)
     const sentToPaint = spool.stages.find((stage) => stage.stage === "sent_to_paint")
+    const erectionStages = spool.stages.filter((stage) => stage.phase === "erection")
     const sequence = [
       startFab?.occurredOn,
       spool.materialCheckOn,
-      lastWeld,
+      lastShopWeld,
       spool.supportsInstalledOn,
       spool.qualityReleaseOn,
       sentToPaint?.occurredOn,
       spool.paintedOn,
       spool.finalQcOn,
       spool.laydownOn,
-      ...spool.stages
-        .filter((stage) => stage.phase === "erection")
-        .map((stage) => stage.occurredOn),
+      ...erectionStages.slice(0, 2).map((stage) => stage.occurredOn),
+      ...fieldWelds,
+      ...erectionStages.slice(2).map((stage) => stage.occurredOn),
     ].filter((date): date is string => date !== undefined)
 
     for (let index = 1; index < sequence.length; index += 1) {
@@ -236,9 +242,7 @@ test("every spool's ladder dates are non-decreasing, which the commands enforce"
   }
 })
 
-test("no field weld is queued for shop weld progress", () => {
-  // record_weld_progress refuses a field joint outright, so a field weld in weldedJoints would
-  // abort the seed part-way and leave a half-built stand.
+test("the RFT spool records every field weld through the erection command", () => {
   const fieldWeldNumbers = new Set(
     SHOWCASE_ISO_NUMBERS.flatMap((iso) =>
       weldRows(iso)
@@ -248,13 +252,17 @@ test("no field weld is queued for shop weld progress", () => {
   )
   assert.ok(fieldWeldNumbers.size > 0, "the dataset has no field welds at all")
 
+  const fieldWelds = buildShowcaseProgressPlan(BASE).spools.flatMap((spool) =>
+    spool.weldedJoints.filter((joint) => fieldWeldNumbers.has(joint.weldNumber)),
+  )
+  assert.equal(fieldWelds.length, 2, "the RFT spool must complete both imported field joints")
+  for (const joint of fieldWelds) {
+    assert.equal(joint.phase, "erection", `${joint.weldNumber} must use erection progress`)
+  }
   for (const spool of buildShowcaseProgressPlan(BASE).spools) {
     for (const joint of spool.weldedJoints) {
-      assert.equal(
-        fieldWeldNumbers.has(joint.weldNumber),
-        false,
-        `${joint.weldNumber} is a field weld and cannot go through record_weld_progress`,
-      )
+      if (fieldWeldNumbers.has(joint.weldNumber)) continue
+      assert.equal(joint.phase, "fabrication", `${joint.weldNumber} must stay in fabrication`)
     }
   }
 })

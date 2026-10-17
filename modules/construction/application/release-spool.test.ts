@@ -13,18 +13,42 @@ const ready: FabricationReadiness = {
   ndePending: 0,
   pwhtPending: 0,
   revisionStatus: "accepted",
+  isFabricated: true,
+  isReleasable: true,
+  releaseBlockers: [],
 }
 
 assert.deepEqual(describeReleaseGate(ready), { allowed: true, reason: null })
 
-const blocked = describeReleaseGate({ ...ready, ndePending: 3 })
+const blocked = describeReleaseGate({
+  ...ready,
+  ndePending: 3,
+  isReleasable: false,
+  releaseBlockers: [{ code: "nde_open", values: { count: 3 } }],
+})
 assert.equal(blocked.allowed, false)
 assert.deepEqual(blocked.reason, { code: "release_blockers", blockers: [{ code: "nde_open", values: { count: 3 } }] })
 
 // Every blocker is reported, in the order the server checks them.
-const multiple = describeReleaseGate({ ...ready, lineChecked: 0, pwhtPending: 1 })
+const multiple = describeReleaseGate({
+  ...ready,
+  lineChecked: 0,
+  pwhtPending: 1,
+  isFabricated: false,
+  isReleasable: false,
+  releaseBlockers: [
+    { code: "material_incomplete", values: { checked: 0, total: 1 } },
+    { code: "pwht_open", values: { count: 1 } },
+  ],
+})
 assert.equal(multiple.allowed, false)
-assert.deepEqual(multiple.reason, { code: "release_blockers", blockers: [{ code: "material_incomplete", values: { checked: 0, total: 1 } }, { code: "pwht_open", values: { count: 1 } }] })
+assert.deepEqual(multiple.reason, {
+  code: "release_blockers",
+  blockers: [
+    { code: "material_incomplete", values: { checked: 0, total: 1 } },
+    { code: "pwht_open", values: { count: 1 } },
+  ],
+})
 
 assert.deepEqual(describePaintGate(null, 240, null, null), {
   allowed: false,

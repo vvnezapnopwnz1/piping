@@ -39,6 +39,24 @@ test("the allocation commit is guarded against double submission", () => {
   assert.ok(/finally \{\s*setAllocating\(false\)/.test(source), "the flag must clear on failure too")
 })
 
+test("NDE batch actions keep their idempotency key when the response is lost", () => {
+  assert.ok(
+    source.includes("const batchActionIdempotencyKey = (action: string, batchId: string) =>"),
+    "the screen must own a stable key for each batch action",
+  )
+  for (const action of ["allocate", "issue", "close"]) {
+    assert.ok(
+      source.includes(`batchActionIdempotencyKey("${action}",`),
+      `${action} must reuse its action key rather than make a new UUID on every click`,
+    )
+  }
+  assert.equal(
+    /(?:allocateNdeBatchCandidates|issueNdeBatch|closeNdeBatch)\([\s\S]{0,160}crypto\.randomUUID\(\)/.test(source),
+    false,
+    "a retry must submit the original key to let the server return its receipt",
+  )
+})
+
 // Item 15: the two tables had no cross-reference in either direction.
 test("batches and obligations cross-reference each other", () => {
   assert.ok(

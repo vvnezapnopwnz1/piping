@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/database.types"
 import type { ConstructionStage, StageDates } from "../domain/construction-phase"
 import type { NdtMethod } from "../domain/nde-obligation"
-import type { FabricationReadiness } from "../domain/quality-release"
+import type { FabricationReadiness, ReleaseBlocker } from "../domain/quality-release"
 import type { WelderQualification, WeldingProcedure } from "../domain/weld-progress"
 import type { MaterialCheckPayload } from "../application/record-material-check"
 import type { WeldProgressPayload } from "../application/record-weld-progress"
@@ -180,8 +180,14 @@ export function toReadiness(row: Row): FabricationReadiness {
     ndePending: row.nde_pending ?? 0,
     pwhtPending: row.pwht_pending ?? 0,
     revisionStatus: row.revision_status ?? "accepted",
+    isFabricated: row.is_fabricated === true,
+    isReleasable: row.is_releasable === true,
+    releaseBlockers: Array.isArray(row.release_blockers)
+      ? (row.release_blockers as ReleaseBlocker[])
+      : [],
   }
 }
+
 
 export interface ObligationRow {
   id: string

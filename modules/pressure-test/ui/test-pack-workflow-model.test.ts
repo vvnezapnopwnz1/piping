@@ -2,165 +2,105 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import {
   canOperateWorkflow,
-  computeEffectiveCompletedFlangeIds,
-  deriveReinstatementCategoryFacts,
-  filterActiveTestPackFlanges,
   summarizeWorkflowPresentation,
 } from "./test-pack-workflow-model"
-import type {
-  FlangeJointReadinessRow,
-  FlangeReinstatementRecordRow,
-  TestPackMemberRow,
-} from "../infrastructure/supabase-pressure-test-repository"
 
-test("deriveReinstatementCategoryFacts distinguishes missing targets (N/A) from failed read (unknown)", () => {
-  // Read failed: targets is null
-  const failedRead = deriveReinstatementCategoryFacts("Y", null, [], true)
-  assert.equal(failedRead.state, "unknown")
-
-  // Read succeeded with 0 Y targets: N/A
-  const noYTargets = deriveReinstatementCategoryFacts("Y", [], [], true)
-  assert.equal(noYTargets.state, "not_applicable")
-})
-
-test("unassigned or incomplete Y targets do not count as complete", () => {
-  const target: FlangeJointReadinessRow = {
-    flange_joint_revision_id: "flange-1",
-    isometric_id: "iso-1",
-    category_code: "Y",
-    revision_status: "accepted",
-    is_removed: false,
-    requires_reinstatement: true,
+test("precommissioning is blocked if required Y is not completed in workflowRow", () => {
+  const workflowRow = {
+    test_pack_id: "tp-1",
+    project_id: "proj-1",
+    test_pack_number: "TP-001",
+    revision_no: 1,
+    is_rft: true,
+    rft_on: "2026-08-01",
+    blinding_assigned: true,
+    blinding_completed: true,
+    testing_started: true,
+    testing_completed: true,
+    precommissioned: false,
+    y_target_count: 1,
+    y_completed_count: 0,
+    z_target_count: 0,
+    z_completed_count: 0,
+    line_check_total: 0,
+    line_check_completed: 0,
+    item_clearance_total: 0,
+    item_clearance_cleared: 0,
+    rft_state: "completed",
+    blinding_state: "completed",
+    testing_state: "completed",
+    y_state: "ready",
+    precomm_state: "blocked",
+    z_state: "not_applicable",
+    canonical_state: "awaiting_y_reinstatement",
+    blockers: { precommissioning: ["y_reinstatement_pending"] },
+    available_operations: ["y_reinstatement"],
   } as never
 
-  // Unassigned / no records -> ready if unlocked, blocked if locked
-  const readyFacts = deriveReinstatementCategoryFacts("Y", [target], [], true)
-  assert.equal(readyFacts.state, "ready")
-
-  const blockedFacts = deriveReinstatementCategoryFacts("Y", [target], [], false)
-  assert.equal(blockedFacts.state, "blocked")
-})
-
-test("multiple required targets: partial completion is ongoing, full is completed", () => {
-  const target1: FlangeJointReadinessRow = {
-    flange_joint_revision_id: "f-1",
-    category_code: "Y",
-    revision_status: "accepted",
-    is_removed: false,
-    requires_reinstatement: true,
-  } as never
-  const target2: FlangeJointReadinessRow = {
-    flange_joint_revision_id: "f-2",
-    category_code: "Y",
-    revision_status: "accepted",
-    is_removed: false,
-    requires_reinstatement: true,
-  } as never
-
-  const record1: FlangeReinstatementRecordRow = {
-    id: "rec-1",
-    flange_joint_revision_id: "f-1",
-    superseded_at: null,
-  } as never
-
-  const partial = deriveReinstatementCategoryFacts("Y", [target1, target2], [record1], true)
-  assert.equal(partial.state, "ongoing")
-  assert.equal(partial.completedTargetIds.size, 1)
-
-  const record2: FlangeReinstatementRecordRow = {
-    id: "rec-2",
-    flange_joint_revision_id: "f-2",
-    superseded_at: null,
-  } as never
-
-  const full = deriveReinstatementCategoryFacts("Y", [target1, target2], [record1, record2], true)
-  assert.equal(full.state, "completed")
-  assert.equal(full.completedTargetIds.size, 2)
-})
-
-test("superseded record does not close target", () => {
-  const target: FlangeJointReadinessRow = {
-    flange_joint_revision_id: "f-1",
-    category_code: "Y",
-  } as never
-  const supersededRecord: FlangeReinstatementRecordRow = {
-    id: "rec-1",
-    flange_joint_revision_id: "f-1",
-    superseded_at: "2026-08-10T12:00:00Z",
-  } as never
-
-  const completed = computeEffectiveCompletedFlangeIds([target], [supersededRecord])
-  assert.equal(completed.size, 0)
-})
-
-test("filterActiveTestPackFlanges filters only active accepted non-removed flanges of active member ISOs", () => {
-  const members: TestPackMemberRow[] = [
-    { isometric_id: "iso-active", removed_at: null },
-    { isometric_id: "iso-removed", removed_at: "2026-08-01" },
-  ] as never
-
-  const flanges: FlangeJointReadinessRow[] = [
-    {
-      flange_joint_revision_id: "f-1",
-      isometric_id: "iso-active",
-      category_code: "Y",
-      revision_status: "accepted",
-      is_removed: false,
-      requires_reinstatement: true,
-    },
-    {
-      flange_joint_revision_id: "f-2",
-      isometric_id: "iso-removed",
-      category_code: "Y",
-      revision_status: "accepted",
-      is_removed: false,
-      requires_reinstatement: true,
-    },
-    {
-      flange_joint_revision_id: "f-3",
-      isometric_id: "iso-active",
-      category_code: "Y",
-      revision_status: "obsolete",
-      is_removed: false,
-      requires_reinstatement: true,
-    },
-  ] as never
-
-  const active = filterActiveTestPackFlanges(members, flanges, "Y")
-  assert.equal(active.length, 1)
-  assert.equal(active[0].flange_joint_revision_id, "f-1")
-})
-
-test("precommissioning is blocked if required Y is not completed", () => {
-  const members: TestPackMemberRow[] = [{ isometric_id: "iso-1", removed_at: null }] as never
-  const yTarget: FlangeJointReadinessRow = {
-    flange_joint_revision_id: "f-1",
-    isometric_id: "iso-1",
-    category_code: "Y",
-    revision_status: "accepted",
-    is_removed: false,
-    requires_reinstatement: true,
-  } as never
-
-  const summary = summarizeWorkflowPresentation({
-    isRft: true,
-    blindingWorklist: [{ record_id: "blind-rec-1" }] as never,
-    testingPrecommWorklist: [{ testing_started_on: "2026-08-10", testing_completed_on: "2026-08-11" }] as never,
-    members,
-    reinstatementTargets: [yTarget],
-    effectiveRecords: [], // Y not completed
-    lineCheckWorklist: [],
-    itemClearanceWorklist: [],
-  })
+  const summary = summarizeWorkflowPresentation({ workflowRow })
 
   assert.equal(summary.testingState, "completed")
   assert.equal(summary.yState, "ready")
   assert.equal(summary.precommState, "blocked")
 })
 
+
 test("canOperateWorkflow restricts writes for Reader, archived, or stale data", () => {
   assert.deepEqual(canOperateWorkflow(true, "active", true), { allowed: true })
   assert.equal(canOperateWorkflow(false, "active", true).allowed, false)
   assert.equal(canOperateWorkflow(true, "archived", true).allowed, false)
   assert.equal(canOperateWorkflow(true, "active", false).allowed, false)
+})
+
+test("summarizeWorkflowPresentation respects authoritative server workflow projection", () => {
+  const workflowRow = {
+    test_pack_id: "tp-1",
+    project_id: "proj-1",
+    test_pack_number: "TP-001",
+    revision_no: 1,
+    is_rft: true,
+    rft_on: "2026-08-01",
+    blinding_assigned: true,
+    blinding_completed: true,
+    blinding_completed_on: "2026-08-02",
+    testing_started: true,
+    testing_started_on: "2026-08-03",
+    testing_completed: true,
+    testing_completed_on: "2026-08-04",
+    precommissioned: false,
+    precommissioning_completed_on: null,
+    y_target_count: 2,
+    y_completed_count: 1,
+    z_target_count: 3,
+    z_completed_count: 0,
+    line_check_total: 4,
+    line_check_completed: 4,
+    item_clearance_total: 2,
+    item_clearance_cleared: 2,
+    rft_state: "completed",
+    blinding_state: "completed",
+    testing_state: "completed",
+    y_state: "ongoing",
+    precomm_state: "blocked",
+    z_state: "blocked",
+    canonical_state: "awaiting_y_reinstatement",
+    blockers: {
+      precommissioning: ["y_reinstatement_pending"],
+    },
+    available_operations: ["y_reinstatement"],
+  } as never
+
+  const summary = summarizeWorkflowPresentation({ workflowRow })
+
+  assert.equal(summary.canonicalState, "awaiting_y_reinstatement")
+  assert.equal(summary.rftState, "completed")
+  assert.equal(summary.blindingState, "completed")
+  assert.equal(summary.testingState, "completed")
+  assert.equal(summary.yState, "ongoing")
+  assert.equal(summary.precommState, "blocked")
+  assert.equal(summary.zState, "blocked")
+  assert.deepEqual(summary.availableOperations, ["y_reinstatement"])
+  assert.deepEqual(summary.blockers?.precommissioning, ["y_reinstatement_pending"])
+  assert.equal(summary.lineCheckSummary.open, 0)
+  assert.equal(summary.itemClearanceSummary.open, 0)
 })

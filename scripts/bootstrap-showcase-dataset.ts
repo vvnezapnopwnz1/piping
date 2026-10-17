@@ -224,7 +224,7 @@ async function seedSpoolBeforeNde(
     )
   }
 
-  for (const joint of spool.weldedJoints) {
+  const recordWeld = async (joint: (typeof spool.weldedJoints)[number]) => {
     const weldJointRevisionId = weldJointIds.get(joint.weldNumber)
     if (!weldJointRevisionId) {
       throw new Error(`${joint.weldNumber} was not imported.`)
@@ -236,6 +236,7 @@ async function seedSpoolBeforeNde(
       operator,
       "record_weld_progress",
       {
+        target_phase: joint.phase,
         target_weld_joint_revision_id: weldJointRevisionId,
         subcontractor_id: references.subcontractorId,
         welding_procedure_id: references.weldingProcedureId,
@@ -248,6 +249,30 @@ async function seedSpoolBeforeNde(
       },
       `${spool.spoolNumber}/${joint.weldNumber}`,
     )
+  }
+
+  for (const joint of spool.weldedJoints.filter((joint) => joint.phase === "fabrication")) {
+    await recordWeld(joint)
+  }
+
+  // Field welds are erection work. The authoritative command requires To Site first, while
+  // Welded/Bolted must wait until these joints have been recorded (L1).
+  for (const stage of spool.stages) {
+    if (stage.phase !== "erection" || !["to_site", "erected"].includes(stage.stage)) continue
+    await call(
+      operator,
+      "record_erection_progress",
+      {
+        target_spool_revision_id: revisionId,
+        target_stage: stage.stage,
+        target_occurred_on: stage.occurredOn,
+        target_idempotency_key: `showcase-erection-${spool.spoolNumber}-${stage.stage}`,
+      },
+      `${spool.spoolNumber}/${stage.stage}`,
+    )
+  }
+  for (const joint of spool.weldedJoints.filter((joint) => joint.phase === "erection")) {
+    await recordWeld(joint)
   }
 
   if (spool.supportsInstalledOn) {
@@ -346,7 +371,7 @@ async function seedSpoolAfterNde(
   }
 
   for (const stage of spool.stages) {
-    if (stage.phase !== "erection") continue
+    if (stage.phase !== "erection" || ["to_site", "erected"].includes(stage.stage)) continue
     await call(
       operator,
       "record_erection_progress",

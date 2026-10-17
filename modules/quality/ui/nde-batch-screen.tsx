@@ -58,6 +58,11 @@ import {
 type BatchTranslator = ReturnType<typeof useTranslations<"nde.batch">>
 type CodesTranslator = ReturnType<typeof useTranslations<"codes">>
 
+// A lost browser response must retry the same command, not create a second action.
+// Batch ids are immutable, so this identifies exactly one action for that batch.
+const batchActionIdempotencyKey = (action: string, batchId: string) =>
+  `browser-nde-batch-${action}-${batchId}`
+
 function createObligationColumns(t: BatchTranslator, tc: CodesTranslator): ReadonlyArray<DataColumn<NdeObligation>> {
   return [
     { id: "spoolNumber", header: t("columns.spool"), value: (ob) => ob.spoolNumber, searchable: true, filter: "text", className: "font-mono" },
@@ -154,6 +159,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
 
   // Record Result Form
   const [selectedObligationId, setSelectedObligationId] = useState<string | null>(null)
+  const [recordIdempotencyKey, setRecordIdempotencyKey] = useState<string>("")
   const [outcome, setOutcome] = useState<"accepted" | "rejected">("accepted")
   const [examinedOn, setExaminedOn] = useState(new Date().toISOString().slice(0, 10))
   const [reportNumber, setReportNumber] = useState("")
@@ -190,6 +196,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
   const openResultDialog = useCallback(
     async (obligation: NdeObligation) => {
       setSelectedObligationId(obligation.id)
+      setRecordIdempotencyKey(crypto.randomUUID())
       setOutcome("accepted")
       setDefectReworkCodeId("")
       setResponsibleWelderId("")
@@ -303,7 +310,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
         client,
         previewBatchId,
         percentage,
-        crypto.randomUUID(),
+        batchActionIdempotencyKey("allocate", previewBatchId),
       )
       toast.success(t("success.candidatesAllocated", { count: allocated, percentage }))
       setPreviewBatchId(null)
@@ -318,7 +325,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
   const handleIssueBatch = async (batchId: string) => {
     try {
       const client = getSupabaseBrowserClient()
-      await issueNdeBatch(client, batchId, crypto.randomUUID())
+      await issueNdeBatch(client, batchId, batchActionIdempotencyKey("issue", batchId))
       toast.success(t("success.ndeBatchIssued"))
       void reload()
     } catch (err: any) {
@@ -329,7 +336,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
   const handleCloseBatch = async (batchId: string) => {
     try {
       const client = getSupabaseBrowserClient()
-      await closeNdeBatch(client, batchId, crypto.randomUUID())
+      await closeNdeBatch(client, batchId, batchActionIdempotencyKey("close", batchId))
       toast.success(t("success.ndeBatchClosed"))
       void reload()
     } catch (err: any) {
@@ -345,6 +352,10 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
       toast.error(t("validation.rejectedRequiresDefectCode"))
       return
     }
+    const idempotencyKey = recordIdempotencyKey || crypto.randomUUID()
+    if (!recordIdempotencyKey) {
+      setRecordIdempotencyKey(idempotencyKey)
+    }
     try {
       const client = getSupabaseBrowserClient()
       await recordNdeResult(
@@ -355,10 +366,11 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
         reportNumber || null,
         outcome === "rejected" ? defectReworkCodeId : null,
         responsibleWelderId || null,
-        crypto.randomUUID()
+        idempotencyKey
       )
       toast.success(t("success.resultRecorded", { outcome: t(`outcomeCode.${outcome}`) }))
       setSelectedObligationId(null)
+      setRecordIdempotencyKey("")
       void reload()
     } catch (err: any) {
       toast.error(t("errors.failedToRecordResult"), { description: errorDetail(err) })
@@ -639,7 +651,12 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
       {/* Record Result Dialog */}
       <Dialog
         open={Boolean(selectedObligationId)}
-        onOpenChange={(open) => !open && setSelectedObligationId(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedObligationId(null)
+            setRecordIdempotencyKey("")
+          }
+        }}
       >
         <DialogContent>
           <DialogHeader>

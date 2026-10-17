@@ -12,6 +12,7 @@ import type { PressureTestRequestType } from "./pressure-test-ui-model"
 import { PressureTestProgressScreen } from "./pressure-test-progress-screen"
 import { RequestPreparationScreen } from "./request-preparation-screen"
 import {
+  canOpenWorkflowOperation,
   canOperateWorkflow,
   summarizeWorkflowPresentation,
   type StagePresentationState,
@@ -78,23 +79,25 @@ export function TestPackWorkflowPanel({
 
   const opCheck = canOperateWorkflow(canManage, pack.lifecycle, dataCurrent)
 
+  const workflowRow = snapshot?.workflow
   const summary = useMemo(() => {
-    if (!snapshot) return null
+    if (!workflowRow) return null
     return summarizeWorkflowPresentation({
-      isRft: snapshot.readiness?.isRft ?? false,
-      blindingWorklist: snapshot.worklists.blinding,
-      testingPrecommWorklist: snapshot.worklists.testingPrecomm,
-      members: snapshot.members,
-      reinstatementTargets: snapshot.worklists.reinstatementTargets,
-      effectiveRecords: snapshot.worklists.effectiveReinstatementRecords,
-      lineCheckWorklist: snapshot.worklists.lineCheck,
-      itemClearanceWorklist: snapshot.worklists.itemClearance,
+      workflowRow,
     })
-  }, [snapshot])
+  }, [workflowRow])
+
+
+  const canOpenOperation = (op: TestPackOperation) =>
+    canOpenWorkflowOperation(op, opCheck.allowed, summary !== null, summary?.availableOperations)
 
   const openOp = (op: TestPackOperation, mode: TestPackMode = "progress") => {
+    if (!canOpenOperation(op)) {
+      return
+    }
     onSelectOperation?.(op, mode)
   }
+
 
   // Map operation to RequestType
   const activeRequestType = useMemo((): PressureTestRequestType | "testing_precomm" | null => {
@@ -147,6 +150,7 @@ export function TestPackWorkflowPanel({
               <Button
                 size="sm"
                 variant={currentOperation === "line_check" && currentMode === "preparation" ? "default" : "outline"}
+                disabled={!canOpenOperation("line_check")}
                 onClick={() => openOp("line_check", "preparation")}
               >
 
@@ -155,6 +159,7 @@ export function TestPackWorkflowPanel({
               <Button
                 size="sm"
                 variant={currentOperation === "line_check" && currentMode === "progress" ? "default" : "outline"}
+                disabled={!canOpenOperation("line_check")}
                 onClick={() => openOp("line_check", "progress")}
               >
 
@@ -179,6 +184,7 @@ export function TestPackWorkflowPanel({
               <Button
                 size="sm"
                 variant={currentOperation === "item_clearance" && currentMode === "preparation" ? "default" : "outline"}
+                disabled={!canOpenOperation("item_clearance")}
                 onClick={() => openOp("item_clearance", "preparation")}
               >
 
@@ -187,6 +193,7 @@ export function TestPackWorkflowPanel({
               <Button
                 size="sm"
                 variant={currentOperation === "item_clearance" && currentMode === "progress" ? "default" : "outline"}
+                disabled={!canOpenOperation("item_clearance")}
                 onClick={() => openOp("item_clearance", "progress")}
               >
 
@@ -245,6 +252,7 @@ export function TestPackWorkflowPanel({
               <Button
                 size="sm"
                 variant={currentOperation === "blinding" && currentMode === "preparation" ? "default" : "outline"}
+                disabled={!canOpenOperation("blinding")}
                 onClick={() => openOp("blinding", "preparation")}
               >
 
@@ -253,9 +261,9 @@ export function TestPackWorkflowPanel({
               <Button
                 size="sm"
                 variant={currentOperation === "blinding" && currentMode === "progress" ? "default" : "outline"}
+                disabled={!canOpenOperation("blinding")}
                 onClick={() => openOp("blinding", "progress")}
               >
-
                 {t("text.complete")}
               </Button>
             </div>
@@ -271,17 +279,20 @@ export function TestPackWorkflowPanel({
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-
                 {t("text.pressurizeTestPackBoundaryAndConfirmHoldingIntegrity")}
               </p>
             </div>
             <Button
               size="sm"
               variant={currentOperation === "testing" ? "default" : "outline"}
+              disabled={!canOpenOperation("testing")}
               onClick={() => openOp("testing", "progress")}
             >
-
-              {t("text.recordTesting")}
+              {summary?.availableOperations?.includes("testing_complete")
+                ? t("text.completeTesting")
+                : summary?.availableOperations?.includes("testing_start")
+                  ? t("text.startTesting")
+                  : t("text.recordTesting")}
             </Button>
           </div>
 
@@ -295,7 +306,6 @@ export function TestPackWorkflowPanel({
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-
                 {t("text.preTestJointReinstatementRequiredBeforePreCommissioning")}
               </p>
             </div>
@@ -303,19 +313,17 @@ export function TestPackWorkflowPanel({
               <Button
                 size="sm"
                 variant={currentOperation === "y_reinstatement" && currentMode === "preparation" ? "default" : "outline"}
-                disabled={summary?.yState === "not_applicable"}
+                disabled={!canOpenOperation("y_reinstatement")}
                 onClick={() => openOp("y_reinstatement", "preparation")}
               >
-
                 {t("text.assign")}
               </Button>
               <Button
                 size="sm"
                 variant={currentOperation === "y_reinstatement" && currentMode === "progress" ? "default" : "outline"}
-                disabled={summary?.yState === "not_applicable"}
+                disabled={!canOpenOperation("y_reinstatement")}
                 onClick={() => openOp("y_reinstatement", "progress")}
               >
-
                 {t("text.recordJoints")}
               </Button>
             </div>
@@ -331,7 +339,8 @@ export function TestPackWorkflowPanel({
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {summary?.precommState === "blocked" && summary.yState !== "completed" && summary.yState !== "not_applicable"
+                {(Array.isArray(summary?.blockers?.precommissioning) &&
+                  (summary.blockers.precommissioning as string[]).includes("y_reinstatement_pending"))
                   ? t("text.blockedCategoryYReinstatementMustBeCompleteBefore")
                   : t("text.dryingAirBlowingInertingOrOtherPreCommissioning")}
               </p>
@@ -339,9 +348,9 @@ export function TestPackWorkflowPanel({
             <Button
               size="sm"
               variant={currentOperation === "precommissioning" ? "default" : "outline"}
+              disabled={!canOpenOperation("precommissioning")}
               onClick={() => openOp("precommissioning", "progress")}
             >
-
               {t("text.recordPreComm")}
             </Button>
           </div>
@@ -356,7 +365,6 @@ export function TestPackWorkflowPanel({
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-
                 {t("text.finalPostPrecommissioningReinstatementToCompleteHandoverReadiness")}
               </p>
             </div>
@@ -364,19 +372,17 @@ export function TestPackWorkflowPanel({
               <Button
                 size="sm"
                 variant={currentOperation === "z_reinstatement" && currentMode === "preparation" ? "default" : "outline"}
-                disabled={summary?.zState === "not_applicable"}
+                disabled={!canOpenOperation("z_reinstatement")}
                 onClick={() => openOp("z_reinstatement", "preparation")}
               >
-
                 {t("text.assign")}
               </Button>
               <Button
                 size="sm"
                 variant={currentOperation === "z_reinstatement" && currentMode === "progress" ? "default" : "outline"}
-                disabled={summary?.zState === "not_applicable"}
+                disabled={!canOpenOperation("z_reinstatement")}
                 onClick={() => openOp("z_reinstatement", "progress")}
               >
-
                 {t("text.recordJoints")}
               </Button>
             </div>
@@ -385,8 +391,9 @@ export function TestPackWorkflowPanel({
       </Card>
 
       {/* Embedded operational section */}
-      {currentOperation && activeRequestType && (
+      {currentOperation && activeRequestType && canOpenOperation(currentOperation) && (
         <Card className="border-primary/40 bg-card">
+
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <div className="flex items-center gap-2">
               <CardTitle className="text-base capitalize">

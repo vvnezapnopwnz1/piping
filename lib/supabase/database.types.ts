@@ -343,6 +343,7 @@ export type Database = {
           created_at: string
           id: string
           idempotency_key: string
+          payload_hash: string | null
           project_id: string
           result: Json | null
         }
@@ -354,6 +355,7 @@ export type Database = {
           created_at?: string
           id?: string
           idempotency_key: string
+          payload_hash?: string | null
           project_id: string
           result?: Json | null
         }
@@ -364,6 +366,7 @@ export type Database = {
           created_at?: string
           id?: string
           idempotency_key?: string
+          payload_hash?: string | null
           project_id?: string
           result?: Json | null
         }
@@ -574,8 +577,10 @@ export type Database = {
           projection_version: number
           pwht_pending: number
           qc_release_on: string | null
+          release_blockers: Json
           revision_number: string
           revision_status: string
+          rft_blockers: Json
           rft_on: string | null
           sent_to_paint_on: string | null
           spool_number: string
@@ -623,8 +628,10 @@ export type Database = {
           projection_version?: number
           pwht_pending?: number
           qc_release_on?: string | null
+          release_blockers?: Json
           revision_number: string
           revision_status: string
+          rft_blockers?: Json
           rft_on?: string | null
           sent_to_paint_on?: string | null
           spool_number: string
@@ -671,8 +678,10 @@ export type Database = {
           projection_version?: number
           pwht_pending?: number
           qc_release_on?: string | null
+          release_blockers?: Json
           revision_number?: string
           revision_status?: string
+          rft_blockers?: Json
           rft_on?: string | null
           sent_to_paint_on?: string | null
           spool_number?: string
@@ -9294,6 +9303,7 @@ export type Database = {
           pwht_pending: number | null
           revision_number: string | null
           revision_status: Database["public"]["Enums"]["revision_status"] | null
+          rft_blockers: Json | null
           rft_on: string | null
           spool_number: string | null
           spool_revision_id: string | null
@@ -9326,6 +9336,7 @@ export type Database = {
           nde_pending: number | null
           project_id: string | null
           pwht_pending: number | null
+          release_blockers: Json | null
           revision_status: Database["public"]["Enums"]["revision_status"] | null
           spool_revision_id: string | null
           support_recorded: number | null
@@ -10153,6 +10164,60 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "testing_precomm_worklist"
             referencedColumns: ["test_pack_id"]
+          },
+        ]
+      }
+      test_pack_workflow: {
+        Row: {
+          available_operations: string[]
+          blinding_assigned: boolean | null
+          blinding_completed: boolean | null
+          blinding_completed_on: string | null
+          blinding_state: string
+          blockers: Json
+          canonical_state: string
+          is_rft: boolean
+          item_clearance_cleared: number
+          item_clearance_total: number
+          lifecycle: string | null
+          line_check_completed: number
+          line_check_total: number
+          precomm_state: string
+          precommissioned: boolean | null
+          precommissioning_completed_on: string | null
+          project_id: string
+          revision_no: number | null
+          rft_on: string | null
+          rft_state: string
+          test_pack_id: string
+          test_pack_number: string
+          testing_completed: boolean | null
+          testing_completed_on: string | null
+          testing_started: boolean | null
+          testing_started_on: string | null
+          testing_state: string
+          y_completed_count: number
+          y_state: string
+          y_target_count: number
+          z_completed_count: number
+          z_state: string
+          z_target_count: number
+        }
+        ComputedFields: never
+        Relationships: [
+          {
+            foreignKeyName: "test_packs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_packs"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -11344,8 +11409,10 @@ export type Database = {
           projection_version: number
           pwht_pending: number
           qc_release_on: string | null
+          release_blockers: Json
           revision_number: string
           revision_status: string
+          rft_blockers: Json
           rft_on: string | null
           sent_to_paint_on: string | null
           spool_number: string
@@ -11485,7 +11552,9 @@ export type Database = {
           project_id: string
           pwht_pending: number
           qc_release_on: string
+          release_blockers: Json
           revision_number: string
+          rft_blockers: Json
           sent_to_paint_on: string
           spool_number: string
           spool_revision_id: string

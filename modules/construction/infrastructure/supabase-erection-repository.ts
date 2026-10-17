@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 
 import type { Database, Json } from "@/lib/supabase/database.types"
 import type { ErectionStage } from "../domain/erection-stage"
+import type { RftShortfallItem } from "../application/describe-erection-readiness"
 import type { MaterialCheckPayload } from "../application/record-material-check"
 import type { WeldProgressPayload } from "../application/record-weld-progress"
 import { mapSupabaseConstructionError } from "./supabase-construction-errors"
@@ -41,6 +42,7 @@ export interface ErectionReadiness {
   pwhtPending: number
   isRft: boolean
   rftOn: string | null
+  rftBlockers: RftShortfallItem[]
 }
 
 export interface ErectionChartData {
@@ -76,8 +78,12 @@ export function toErectionReadiness(row: Row): ErectionReadiness {
     pwhtPending: numberOrZero(row.pwht_pending),
     isRft: row.is_rft === true,
     rftOn: row.rft_on ?? null,
+    rftBlockers: Array.isArray(row.rft_blockers)
+      ? (row.rft_blockers as RftShortfallItem[])
+      : [],
   }
 }
+
 
 /**
  * One list, used by both reads. `@supabase/supabase-js` does not typecheck `.select()` strings
@@ -85,7 +91,7 @@ export function toErectionReadiness(row: Row): ErectionReadiness {
  * for a column name to rot unnoticed.
  */
 const READINESS_COLUMNS =
-  "spool_revision_id, project_id, iso_number, spool_number, revision_number, revision_status, material_line_total, material_line_checked, material_checked_on, field_weld_total, field_weld_complete, last_field_weld_on, field_support_total, field_support_recorded, last_field_support_on, to_site_on, erected_on, welded_bolted_on, supported_on, nde_pending, pwht_pending, is_rft, rft_on"
+  "spool_revision_id, project_id, iso_number, spool_number, revision_number, revision_status, material_line_total, material_line_checked, material_checked_on, field_weld_total, field_weld_complete, last_field_weld_on, field_support_total, field_support_recorded, last_field_support_on, to_site_on, erected_on, welded_bolted_on, supported_on, nde_pending, pwht_pending, is_rft, rft_on, rft_blockers"
 
 export async function loadErectionReadiness(
   client: SupabaseClient<Database>,

@@ -51,6 +51,7 @@ export type RequestDetailsRow = ViewRow<"pressure_test_request_details">
 export type IsometricReadinessRow = ViewRow<"isometric_readiness">
 export type FlangeJointReadinessRow = ViewRow<"flange_joint_readiness">
 export type FlangeReinstatementRecordRow = Database["public"]["Tables"]["flange_reinstatement_records"]["Row"]
+export type TestPackWorkflowRow = ViewRow<"test_pack_workflow">
 
 export interface ProjectTeamRow {
   id: string
@@ -122,6 +123,21 @@ export async function getTestPackReadinessRow(client: Client, projectId: string,
     .eq("project_id", projectId).eq("test_pack_id", id).maybeSingle()
   fail(error)
   return data ? toReadiness(data) : null
+}
+
+export async function getTestPackWorkflowRow(
+  client: Client,
+  projectId: string,
+  id: string,
+): Promise<TestPackWorkflowRow | null> {
+  const { data, error } = await client
+    .from("test_pack_workflow")
+    .select("*")
+    .eq("project_id", projectId)
+    .eq("test_pack_id", id)
+    .maybeSingle()
+  fail(error)
+  return data
 }
 
 export async function getProjectPressureUnit(

@@ -19,6 +19,7 @@ export function mapSupabasePressureTestError(error: { code?: string } | null | u
     case "PQC10": return "This command has already been applied."
     case "PQC11": return "This command is not allowed in the current lifecycle state."
     case "PQC12": return "The requested pressure-test record could not be found."
+    case "PQC60": return "This command was retried with different parameters. Check the earlier request."
     default: return GENERIC
   }
 }

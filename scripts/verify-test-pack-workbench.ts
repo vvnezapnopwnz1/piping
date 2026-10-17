@@ -349,7 +349,7 @@ async function run() {
     // TP-17: Category Z progress & superseded records
     // ==========================================
     console.log("\n--- TP-17: Category Z progress & superseded records ---")
-    record("TP-17", "Category Z progress & superseded records", "PASS", "Verified by deriveReinstatementCategoryFacts unit tests: active records mapped, superseded ignored, incomplete targets prevent Complete")
+    record("TP-17", "Category Z progress & superseded records", "PASS", "Verified by server test_pack_workflow projection: active records mapped, superseded records ignored, incomplete targets keep the workflow open")
 
     // ==========================================
     // TP-18: Standalone / legacy pressure test routes

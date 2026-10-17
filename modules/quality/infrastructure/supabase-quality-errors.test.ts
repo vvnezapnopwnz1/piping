@@ -59,4 +59,5 @@ test("an unmapped or missing code falls back to the generic sentence", () => {
   assert.equal(mapSupabaseQualityError(undefined), GENERIC_QUALITY_ERROR)
   assert.equal(mapSupabaseQualityError({ message: "no code" }), GENERIC_QUALITY_ERROR)
   assert.equal(mapSupabaseQualityError({ code: "PQC99" }), GENERIC_QUALITY_ERROR)
+  assert.match(mapSupabaseQualityError({ code: "PQC60" }), /different parameters/)
 })

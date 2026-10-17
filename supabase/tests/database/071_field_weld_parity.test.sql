@@ -1,5 +1,5 @@
 begin;
-select plan(15);
+select plan(16);
 
 select has_function('public', 'record_weld_progress',
   array['construction_phase', 'uuid', 'uuid', 'uuid', 'jsonb', 'jsonb', 'text'],
@@ -103,6 +103,14 @@ select public.record_construction_progress(
 select public.record_erection_progress(
   '43000000-0000-0000-0000-000000000731', 'to_site', date '2026-08-11', '{}'::jsonb, 'field-site');
 
+select lives_ok($$select public.record_erection_progress(
+  '43000000-0000-0000-0000-000000000731',
+  'erected', date '2026-08-12', '{}'::jsonb, 'field-erected')$$,
+  'the field spool can record erected after to site');
+select throws_ok($$select public.record_erection_progress(
+  '43000000-0000-0000-0000-000000000731',
+  'welded_bolted', date '2026-08-13', '{}'::jsonb, 'field-welded-too-early')$$,
+  'PQC56', null, 'welded or bolted requires every field joint to be welded');
 select lives_ok($$select public.record_weld_progress(
   'erection',
   '47000000-0000-0000-0000-000000000731',
@@ -130,11 +138,6 @@ select throws_ok($$select public.record_weld_progress(
   '50000000-0000-0000-0000-000000000731', '56000000-0000-0000-0000-000000000731',
   '[]'::jsonb, '{}'::jsonb, null)$$,
   'PQC51', null, 'a field joint cannot be recorded as fabrication');
-
-select lives_ok($$select public.record_erection_progress(
-  '43000000-0000-0000-0000-000000000731',
-  'erected', date '2026-08-12', '{}'::jsonb, 'field-erected')$$,
-  'the field spool can record erected after to site');
 select lives_ok($$select public.record_erection_progress(
   '43000000-0000-0000-0000-000000000731',
   'welded_bolted', date '2026-08-13', '{}'::jsonb, 'field-welded')$$,

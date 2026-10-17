@@ -28,8 +28,10 @@ const row = (overrides: Partial<ErectionReadiness> = {}): ErectionReadiness => (
   pwhtPending: 0,
   isRft: false,
   rftOn: null,
+  rftBlockers: [],
   ...overrides,
 })
+
 
 test("URL selection cannot fall back to another spool or another project", () => {
   const first = row()

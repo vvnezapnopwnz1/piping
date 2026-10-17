@@ -11,30 +11,29 @@ export type PressureTestState =
   | "complete"
 
 export interface PressureTestWorkflowFacts {
-  isRft: boolean
-  blindingAssigned: boolean
-  blindingCompleted: boolean
-  testingStarted: boolean
-  testingCompleted: boolean
-  yEligible: boolean
-  yReinstated: boolean
-  precommissioned: boolean
-  zEligible: boolean
-  zReinstated: boolean
+  canonicalState: PressureTestState
+  isRft?: boolean
+  blindingAssigned?: boolean
+  blindingCompleted?: boolean
+  testingStarted?: boolean
+  testingCompleted?: boolean
+  yEligible?: boolean
+  yReinstated?: boolean
+  precommissioned?: boolean
+  zEligible?: boolean
+  zReinstated?: boolean
 }
 export type PressureTestEvent = "testing_started" | "testing_completed" | "precommissioning_completed"
 
-export function derivePressureTestState(facts: PressureTestWorkflowFacts): PressureTestState {
-  if (!facts.isRft) return "awaiting_rft"
-  if (!facts.blindingAssigned) return "blinding_assigned"
-  if (!facts.blindingCompleted) return "blinding_assigned"
-  if (!facts.testingStarted) return "blinded"
-  if (!facts.testingCompleted) return "testing"
-  if (facts.yEligible && !facts.yReinstated) return "awaiting_y_reinstatement"
-  if (!facts.precommissioned) return "ready_for_precommissioning"
-  if (facts.zEligible && !facts.zReinstated) return "awaiting_z_reinstatement"
-  return "complete"
+/**
+ * Returns the server-computed canonical state directly without client ladder calculation.
+ */
+export function derivePressureTestState(
+  facts: PressureTestWorkflowFacts,
+): PressureTestState {
+  return facts.canonicalState
 }
+
 
 export function canRecordPressureTestEvent(state: PressureTestState, event: PressureTestEvent): boolean {
   if (event === "testing_started") return state === "blinded"

@@ -27,13 +27,28 @@ export type WorkflowTone = "blocked" | "ready" | "ongoing" | "complete"
 export interface WorkflowSummary { label: string; tone: WorkflowTone; code?: 12 }
 
 export function summarizeWorkflow(facts: PressureTestWorkflowFacts): WorkflowSummary {
-  if (!facts.isRft) return { label: "text.awaitingRft", tone: "blocked" }
-  if (!facts.blindingAssigned) return { label: "text.readyForBlinding", tone: "ready", code: 12 }
-  if (!facts.blindingCompleted) return { label: "text.blindingOngoing", tone: "ongoing" }
-  if (!facts.testingStarted) return { label: "text.readyToStartTesting", tone: "ready", code: 12 }
-  if (!facts.testingCompleted) return { label: "text.testingOngoing", tone: "ongoing" }
-  if (facts.yEligible && !facts.yReinstated) return { label: "text.awaitingYReinstatement", tone: "blocked" }
-  if (!facts.precommissioned) return { label: "text.readyForPreCommissioning", tone: "ready" }
-  if (facts.zEligible && !facts.zReinstated) return { label: "text.awaitingZReinstatement", tone: "blocked" }
-  return { label: "text.complete", tone: "complete" }
+  switch (facts.canonicalState) {
+    case "awaiting_rft":
+      return { label: "text.awaitingRft", tone: "blocked" }
+    case "blinding_assigned":
+      return facts.blindingCompleted
+        ? { label: "text.blindingOngoing", tone: "ongoing" }
+        : { label: "text.readyForBlinding", tone: "ready", code: 12 }
+    case "blinded":
+      return { label: "text.readyToStartTesting", tone: "ready", code: 12 }
+    case "testing":
+      return { label: "text.testingOngoing", tone: "ongoing" }
+    case "tested":
+    case "awaiting_y_reinstatement":
+      return { label: "text.awaitingYReinstatement", tone: "blocked" }
+    case "ready_for_precommissioning":
+      return { label: "text.readyForPreCommissioning", tone: "ready" }
+    case "precommissioned":
+    case "awaiting_z_reinstatement":
+      return { label: "text.awaitingZReinstatement", tone: "blocked" }
+    case "complete":
+      return { label: "text.complete", tone: "complete" }
+    default:
+      return { label: "text.awaitingRft", tone: "blocked" }
+  }
 }

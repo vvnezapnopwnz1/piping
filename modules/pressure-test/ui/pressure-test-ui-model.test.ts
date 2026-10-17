@@ -14,6 +14,6 @@ test("all assignable request types have a server-backed preparation contract", (
 })
 
 test("workflow summary exposes server state without inventing numeric codes", () => {
-  assert.deepEqual(summarizeWorkflow({ isRft: false, blindingAssigned: false, blindingCompleted: false, testingStarted: false, testingCompleted: false, yEligible: true, yReinstated: false, precommissioned: false, zEligible: true, zReinstated: false }), { label: "text.awaitingRft", tone: "blocked" })
-  assert.deepEqual(summarizeWorkflow({ isRft: true, blindingAssigned: true, blindingCompleted: true, testingStarted: false, testingCompleted: false, yEligible: false, yReinstated: false, precommissioned: false, zEligible: false, zReinstated: false }), { label: "text.readyToStartTesting", tone: "ready", code: 12 })
+  assert.deepEqual(summarizeWorkflow({ canonicalState: "awaiting_rft" }), { label: "text.awaitingRft", tone: "blocked" })
+  assert.deepEqual(summarizeWorkflow({ canonicalState: "blinded" }), { label: "text.readyToStartTesting", tone: "ready", code: 12 })
 })

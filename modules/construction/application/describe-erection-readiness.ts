@@ -11,6 +11,8 @@ export interface ErectionReadinessFacts extends ErectionStageEvidence {
   pwhtPending: number
   isRft: boolean
   rftOn: string | null
+  currentErectionStage?: ErectionStage | "not_started" | null
+  rftBlockers: RftShortfallItem[]
 }
 
 export function toStageEvidence(facts: ErectionReadinessFacts): ErectionStageEvidence {
@@ -24,6 +26,9 @@ export function toStageEvidence(facts: ErectionReadinessFacts): ErectionStageEvi
 
 /** The furthest stage the spool has reached, for the picker badge and the readiness table. */
 export function currentErectionStage(facts: ErectionReadinessFacts): ErectionStage | "not_started" {
+  if (facts.currentErectionStage !== undefined && facts.currentErectionStage !== null) {
+    return facts.currentErectionStage
+  }
   if (facts.isRft) return "rft"
   if (facts.supportedOn) return "supported"
   if (facts.weldedBoltedOn) return "welded_bolted"
@@ -41,16 +46,10 @@ export interface RftShortfallItem {
 }
 
 /**
- * The open RFT criteria one by one, in the order `spool_erection_readiness` evaluates them, so
- * each can lead to the screen where it is resolved. Empty once the spool is RFT.
+ * The open RFT criteria one by one. Returns the server-computed shortfall list directly.
+ * Empty once the spool is RFT.
  */
 export function listRftShortfall(facts: ErectionReadinessFacts): RftShortfallItem[] {
   if (facts.isRft) return []
-
-  const missing: RftShortfallItem[] = []
-  if (!facts.weldedBoltedOn) missing.push({ kind: "welded_bolted" })
-  if (!facts.supportedOn) missing.push({ kind: "supported" })
-  if (facts.ndePending > 0) missing.push({ kind: "nde", count: facts.ndePending })
-  if (facts.pwhtPending > 0) missing.push({ kind: "pwht", count: facts.pwhtPending })
-  return missing
+  return facts.rftBlockers
 }

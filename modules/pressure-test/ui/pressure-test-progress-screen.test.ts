@@ -75,6 +75,18 @@ test("every durable action on this screen reports through a toast", () => {
   )
 })
 
+test("a pressure-test stage retry keeps the original idempotency key", () => {
+  assert.ok(
+    source.includes("const stageIdempotencyKey = (testPackId: string, stage: string) =>"),
+    "a stable key must identify a stage of a specific test pack",
+  )
+  assert.match(
+    source,
+    /stage,\s*date,\s*stageIdempotencyKey\(row\.test_pack_id \?\? "", stage\)/,
+    "the UI must pass that key instead of letting the application make a new one on each click",
+  )
+})
+
 // One page-wide Event date is applied to whichever row action runs next, which is not discoverable
 // from a bare "Event date" label sitting above a list of rows.
 test("the Event date field explains it is shared across every row action", () => {

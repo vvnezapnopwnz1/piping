@@ -53,6 +53,11 @@ interface Props {
 type LineDraft = { date: string; punchCodeId: string; description: string }
 type ReinstatementDraft = { date: string; reportNumber: string; tagNumber: string }
 
+// A pack can have each pressure-test stage only once.  Keep its retry key stable
+// even when the browser loses the response and the operator clicks again.
+const stageIdempotencyKey = (testPackId: string, stage: string) =>
+  `browser-pressure-test-stage-${testPackId}-${stage}`
+
 export function PressureTestProgressScreen({
   requestType,
   title,
@@ -272,6 +277,7 @@ export function PressureTestProgressScreen({
             : "ready_for_precommissioning",
         stage,
         date,
+        stageIdempotencyKey(row.test_pack_id ?? "", stage),
       )
       if (!result.ok) {
         setError(testPackValidationMessages(result.errors, t))

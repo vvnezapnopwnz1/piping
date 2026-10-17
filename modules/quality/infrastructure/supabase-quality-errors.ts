@@ -16,6 +16,7 @@ export const QUALITY_ERROR_SENTENCES: Record<string, string> = {
   PQC45: "That obligation belongs to another project or to a superseded revision.",
   PQC46: "The NDE100 population snapshot is missing or empty.",
   PQC47: "This spool has an outstanding PWHT requirement and cannot be quality released.",
+  PQC60: "This command was retried with different parameters. Check the earlier request.",
   "42501": "You do not have permission to record this NDE work.",
   "23505": "That record already exists for this obligation.",
   "23514": "One of the values entered is not allowed by the project rules.",

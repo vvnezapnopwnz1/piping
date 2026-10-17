@@ -48,6 +48,8 @@ export function mapSupabaseConstructionError(
       return "This support progress record is not available for the selected spool."
     case "PQC59":
       return "This support is already recorded as installed in the other phase, and that record is kept."
+    case "PQC60":
+      return "This command was retried with different parameters. Check the earlier request."
     case "42501":
       return "You do not have permission to record this construction work, or the spool is outside your scope."
     case "23505":

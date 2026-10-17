@@ -17,6 +17,7 @@ const FACTS: ErectionReadinessFacts = {
   pwhtPending: 0,
   isRft: false,
   rftOn: null,
+  rftBlockers: [{ kind: "welded_bolted" }, { kind: "supported" }],
 }
 
 assert.equal(currentErectionStage(FACTS), "not_started")
@@ -42,13 +43,28 @@ assert.deepEqual(toStageEvidence({ ...FACTS, ndePending: 3, toSiteOn: "2026-08-0
 })
 
 test("an RFT spool has nothing outstanding", () => {
-  assert.deepEqual(listRftShortfall({ ...FACTS, isRft: true }), [])
+  assert.deepEqual(listRftShortfall({ ...FACTS, isRft: true, rftBlockers: [] }), [])
 })
 
-test("missing stages come first, then open NDE and PWHT with their counts", () => {
+test("server-computed rftBlockers are returned directly without client shortfall derivation", () => {
   assert.deepEqual(listRftShortfall(FACTS), [{ kind: "welded_bolted" }, { kind: "supported" }])
   assert.deepEqual(
-    listRftShortfall({ ...FACTS, weldedBoltedOn: "2026-08-03", supportedOn: "2026-08-04", ndePending: 2, pwhtPending: 1 }),
+    listRftShortfall({
+      ...FACTS,
+      weldedBoltedOn: "2026-08-03",
+      supportedOn: "2026-08-04",
+      ndePending: 2,
+      pwhtPending: 1,
+      rftBlockers: [{ kind: "nde", count: 2 }, { kind: "pwht", count: 1 }],
+    }),
     [{ kind: "nde", count: 2 }, { kind: "pwht", count: 1 }],
+  )
+})
+
+test("authoritative server rftBlockers are returned directly without client re-derivation", () => {
+  const serverBlockers = [{ kind: "nde" as const, count: 5 }]
+  assert.deepEqual(
+    listRftShortfall({ ...FACTS, rftBlockers: serverBlockers }),
+    serverBlockers,
   )
 })

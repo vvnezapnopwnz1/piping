@@ -28,8 +28,10 @@ const row = (overrides: Partial<ErectionReadiness> = {}): ErectionReadiness => (
   pwhtPending: 0,
   isRft: false,
   rftOn: null,
+  rftBlockers: [],
   ...overrides,
 })
+
 
 test("every erection route opens the workbench on its operation", () => {
   assert.equal(erectionOperationForPath("/erection/to-site", null), "to_site")

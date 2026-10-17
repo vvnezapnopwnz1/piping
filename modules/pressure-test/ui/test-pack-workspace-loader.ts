@@ -4,6 +4,7 @@ import {
   getProjectPressureUnit,
   getTestPackCatalogRow,
   getTestPackReadinessRow,
+  getTestPackWorkflowRow,
   listBlindingWorklist,
   listFlangeReinstatementRecords,
   listItemClearanceWorklist,
@@ -32,6 +33,7 @@ import {
   type TestPackMemberRow,
   type TestPackReadinessRow,
   type TestPackSpoolStatusRow,
+  type TestPackWorkflowRow,
 } from "../infrastructure/supabase-pressure-test-repository"
 
 export interface ScopedPage<T> {
@@ -82,6 +84,7 @@ export interface TestPackScopedWorklists {
 export interface TestPackWorkspaceSnapshot {
   pack: TestPackCatalogRow
   readiness: TestPackReadinessRow | null
+  workflow: TestPackWorkflowRow | null
   members: TestPackMemberRow[]
   isoStatus: TestPackIsoStatusRow[]
   spoolStatus: TestPackSpoolStatusRow[]
@@ -97,6 +100,7 @@ export type TestPackWorkspaceResult =
 export interface TestPackLoaderRepository {
   getTestPackCatalogRow: (projectId: string, id: string) => Promise<TestPackCatalogRow | null>
   getTestPackReadinessRow: (projectId: string, id: string) => Promise<TestPackReadinessRow | null>
+  getTestPackWorkflowRow: (projectId: string, id: string) => Promise<TestPackWorkflowRow | null>
   listTestPackMembers: (projectId: string, testPackId: string) => Promise<TestPackMemberRow[]>
   listTestPackIsoStatus: (projectId: string, testPackId: string) => Promise<TestPackIsoStatusRow[]>
   listTestPackSpoolStatus: (projectId: string, testPackId: string) => Promise<TestPackSpoolStatusRow[]>
@@ -123,6 +127,7 @@ export function createSupabaseTestPackLoaderRepository(
   return {
     getTestPackCatalogRow: (projectId, id) => getTestPackCatalogRow(client, projectId, id),
     getTestPackReadinessRow: (projectId, id) => getTestPackReadinessRow(client, projectId, id),
+    getTestPackWorkflowRow: (projectId, id) => getTestPackWorkflowRow(client, projectId, id),
     listTestPackMembers: (projectId, testPackId) => listTestPackMembers(client, projectId, testPackId),
     listTestPackIsoStatus: (projectId, testPackId) => listTestPackIsoStatus(client, projectId, testPackId),
     listTestPackSpoolStatus: (projectId, testPackId) => listTestPackSpoolStatus(client, projectId, testPackId),
@@ -171,6 +176,7 @@ export async function loadTestPackWorkspaceSnapshot(
   // 2. Load detail reads in parallel.
   const [
     readiness,
+    workflow,
     members,
     isoStatus,
     spoolStatus,
@@ -187,6 +193,7 @@ export async function loadTestPackWorkspaceSnapshot(
     projectPressureUnit,
   ] = await Promise.all([
     repo.getTestPackReadinessRow(projectId, packId),
+    repo.getTestPackWorkflowRow(projectId, packId),
     repo.listTestPackMembers(projectId, packId),
     repo.listTestPackIsoStatus(projectId, packId),
     repo.listTestPackSpoolStatus(projectId, packId),
@@ -223,6 +230,7 @@ export async function loadTestPackWorkspaceSnapshot(
   const snapshot: TestPackWorkspaceSnapshot = {
     pack,
     readiness,
+    workflow,
     members,
     isoStatus,
     spoolStatus,

@@ -140,6 +140,8 @@ export interface ShowcaseStage {
 export interface ShowcaseWeldedJoint {
   readonly weldNumber: string
   readonly weldedOn: string
+  /** Shop welds are fabrication work; the two field joints of an RFT spool are erection work. */
+  readonly phase: "fabrication" | "erection"
   /**
    * Position in the welder rotation. The seeder maps it onto the welders actually qualified for
    * the WPS it selects, taking root from the rotation and cap from the next position — they must
@@ -347,14 +349,15 @@ export function buildShowcaseProgressPlan(baseDate: Date): ShowcaseProgressPlan 
       const weldedCount = reaches(entry, "qc_release") ? WELDS_PER_SPOOL : 4
       const weldedJoints: ShowcaseWeldedJoint[] = []
       for (let ordinal = 1; ordinal <= weldedCount; ordinal += 1) {
-        // Field welds belong to the erection module: `record_weld_progress` refuses them with
-        // "Joint … is a field weld and belongs to the assembly or erection module". They stay
-        // unwelded here, which is also what happens on a real site.
-        if (isFieldWeld(entry, ordinal)) continue
+        const fieldWeld = isFieldWeld(entry, ordinal)
+        // Only the one RFT spool reaches Welded/Bolted. Its two field joints must therefore be
+        // completed by the erection command before that stage can be recorded (L1).
+        if (fieldWeld && entry.erection !== "rft") continue
         weldedJoints.push({
           weldNumber: showcaseWeldNumber(spoolNumber, ordinal),
           // One weld a day, so `fabricated` lands before the support and release steps.
-          weldedOn: on(STEP_DAYS.firstWeld + (ordinal - 1)),
+          weldedOn: on(fieldWeld ? STEP_DAYS.firstErection + ordinal - 2 : STEP_DAYS.firstWeld + (ordinal - 1)),
+          phase: fieldWeld ? "erection" : "fabrication",
           welderRotation: welderCursor++,
         })
       }

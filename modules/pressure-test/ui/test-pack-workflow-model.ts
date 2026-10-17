@@ -1,17 +1,11 @@
+import type { TestPackWorkflowRow } from "../infrastructure/supabase-pressure-test-repository"
+
 import type {
-  BlindingWorklistRow,
-  FlangeJointReadinessRow,
-  FlangeReinstatementRecordRow,
-  LineCheckWorklistRow,
-  ItemClearanceWorklistRow,
-  TestingPrecommWorklistRow,
-  TestPackMemberRow,
-} from "../infrastructure/supabase-pressure-test-repository"
-import {
-  derivePressureTestState,
-  type PressureTestState,
-  type PressureTestWorkflowFacts,
+  PressureTestState,
+  PressureTestWorkflowFacts,
 } from "../domain/pressure-test-workflow"
+import type { TestPackOperation } from "./test-pack-workspace-model"
+
 
 export type StagePresentationState =
   | "not_applicable"
@@ -20,13 +14,6 @@ export type StagePresentationState =
   | "completed"
   | "blocked"
   | "unknown"
-
-export interface ReinstatementCategoryFacts {
-  category: "Y" | "Z"
-  requiredTargets: FlangeJointReadinessRow[]
-  completedTargetIds: Set<string>
-  state: StagePresentationState
-}
 
 export interface WorkflowPresentationSummary {
   rftState: StagePresentationState
@@ -39,236 +26,108 @@ export interface WorkflowPresentationSummary {
   itemClearanceSummary: { total: number; cleared: number; open: number }
   canonicalState: PressureTestState
   facts: PressureTestWorkflowFacts
-}
-
-export function filterActiveTestPackFlanges(
-  members: readonly TestPackMemberRow[],
-  flanges: readonly FlangeJointReadinessRow[],
-  category: "Y" | "Z",
-): FlangeJointReadinessRow[] {
-  const memberIsoIds = new Set(
-    members
-      .filter((item) => item.removed_at === null && Boolean(item.isometric_id))
-      .map((item) => item.isometric_id as string),
-  )
-
-  return flanges.filter((flange) => {
-    if (!flange.isometric_id || !flange.flange_joint_revision_id) return false
-    return (
-      memberIsoIds.has(flange.isometric_id) &&
-      flange.revision_status === "accepted" &&
-      flange.is_removed === false &&
-      flange.requires_reinstatement === true &&
-      flange.category_code === category
-    )
-  })
-}
-
-export function computeEffectiveCompletedFlangeIds(
-  targets: readonly FlangeJointReadinessRow[],
-  records: readonly FlangeReinstatementRecordRow[],
-): Set<string> {
-  const targetIds = new Set(
-    targets
-      .map((t) => t.flange_joint_revision_id)
-      .filter((id): id is string => Boolean(id)),
-  )
-
-  const completed = new Set<string>()
-  for (const record of records) {
-    if (
-      record.superseded_at === null &&
-      targetIds.has(record.flange_joint_revision_id)
-    ) {
-      completed.add(record.flange_joint_revision_id)
-    }
-  }
-  return completed
-}
-
-export function deriveReinstatementCategoryFacts(
-  category: "Y" | "Z",
-  targets: readonly FlangeJointReadinessRow[] | null,
-  records: readonly FlangeReinstatementRecordRow[] | null,
-  isUnlocked: boolean,
-): ReinstatementCategoryFacts {
-  if (targets === null || records === null) {
-    return {
-      category,
-      requiredTargets: [],
-      completedTargetIds: new Set(),
-      state: "unknown",
-    }
-  }
-
-  const categoryTargets = targets.filter((t) => t.category_code === category)
-  if (categoryTargets.length === 0) {
-    return {
-      category,
-      requiredTargets: [],
-      completedTargetIds: new Set(),
-      state: "not_applicable",
-    }
-  }
-
-  const completedTargetIds = computeEffectiveCompletedFlangeIds(categoryTargets, records)
-  const isComplete = completedTargetIds.size >= categoryTargets.length
-
-  let state: StagePresentationState
-  if (isComplete) {
-    state = "completed"
-  } else if (!isUnlocked) {
-    state = "blocked"
-  } else if (completedTargetIds.size > 0) {
-    state = "ongoing"
-  } else {
-    state = "ready"
-  }
-
-  return {
-    category,
-    requiredTargets: categoryTargets,
-    completedTargetIds,
-    state,
-  }
+  blockers?: Record<string, unknown>
+  availableOperations?: string[]
 }
 
 export function summarizeWorkflowPresentation({
-  isRft,
-  blindingWorklist,
-  testingPrecommWorklist,
-  members,
-  reinstatementTargets,
-  effectiveRecords,
-  lineCheckWorklist,
-  itemClearanceWorklist,
+  workflowRow,
 }: {
-  isRft: boolean
-  blindingWorklist: readonly BlindingWorklistRow[]
-  testingPrecommWorklist: readonly TestingPrecommWorklistRow[]
-  members: readonly TestPackMemberRow[]
-  reinstatementTargets: readonly FlangeJointReadinessRow[] | null
-  effectiveRecords: readonly FlangeReinstatementRecordRow[] | null
-  lineCheckWorklist: readonly LineCheckWorklistRow[]
-  itemClearanceWorklist: readonly ItemClearanceWorklistRow[]
+  workflowRow: TestPackWorkflowRow
 }): WorkflowPresentationSummary {
-  // Blinding facts
-  const blindingRow = blindingWorklist[0] ?? null
-  const blindingAssigned = Boolean(blindingRow)
-  const blindingCompleted = Boolean(blindingRow?.record_id)
+  if (!workflowRow) {
+    throw new Error("workflowRow is required")
+  }
 
-  // Testing facts
-  const testingRow = testingPrecommWorklist[0] ?? null
-  const testingStarted = Boolean(testingRow?.testing_started_on)
-  const testingCompleted = Boolean(testingRow?.testing_completed_on)
+  const yEligible = workflowRow.y_target_count > 0
+  const yReinstated = yEligible && workflowRow.y_completed_count >= workflowRow.y_target_count
+  const zEligible = workflowRow.z_target_count > 0
+  const zReinstated = zEligible && workflowRow.z_completed_count >= workflowRow.z_target_count
 
-  // Reinstatement Y
-  const yTargets =
-    reinstatementTargets !== null
-      ? filterActiveTestPackFlanges(members, reinstatementTargets, "Y")
-      : null
-  const yFacts = deriveReinstatementCategoryFacts(
-    "Y",
-    yTargets,
-    effectiveRecords,
-    testingCompleted,
-  )
-
-  const yEligible = yFacts.state !== "not_applicable"
-  const yReinstated = yFacts.state === "completed"
-
-  // Precomm facts
-  const precommissioned = Boolean(testingRow?.precommissioning_completed_on)
-  const precommUnlocked = testingCompleted && (!yEligible || yReinstated)
-
-  // Reinstatement Z
-  const zTargets =
-    reinstatementTargets !== null
-      ? filterActiveTestPackFlanges(members, reinstatementTargets, "Z")
-      : null
-  const zFacts = deriveReinstatementCategoryFacts(
-    "Z",
-    zTargets,
-    effectiveRecords,
-    precommissioned,
-  )
-  const zEligible = zFacts.state !== "not_applicable"
-  const zReinstated = zFacts.state === "completed"
-
-  // Canonical facts for domain state
   const facts: PressureTestWorkflowFacts = {
-    isRft,
-    blindingAssigned,
-    blindingCompleted,
-    testingStarted,
-    testingCompleted,
+    canonicalState: workflowRow.canonical_state as PressureTestState,
+    isRft: workflowRow.is_rft,
+    blindingAssigned: workflowRow.blinding_assigned ?? false,
+    blindingCompleted: workflowRow.blinding_completed ?? false,
+    testingStarted: workflowRow.testing_started ?? false,
+    testingCompleted: workflowRow.testing_completed ?? false,
     yEligible,
     yReinstated,
-    precommissioned,
+    precommissioned: workflowRow.precommissioned ?? false,
     zEligible,
     zReinstated,
   }
 
-  const canonicalState = derivePressureTestState(facts)
-
-  // Presentation states for steps
-  const rftState: StagePresentationState = isRft ? "completed" : "blocked"
-
-  let blindingState: StagePresentationState
-  if (blindingCompleted) {
-    blindingState = "completed"
-  } else if (!isRft) {
-    blindingState = "blocked"
-  } else if (blindingAssigned) {
-    blindingState = "ongoing"
-  } else {
-    blindingState = "ready"
-  }
-
-  let testingState: StagePresentationState
-  if (testingCompleted) {
-    testingState = "completed"
-  } else if (!blindingCompleted) {
-    testingState = "blocked"
-  } else if (testingStarted) {
-    testingState = "ongoing"
-  } else {
-    testingState = "ready"
-  }
-
-  let precommState: StagePresentationState
-  if (precommissioned) {
-    precommState = "completed"
-  } else if (!precommUnlocked) {
-    precommState = "blocked"
-  } else {
-    precommState = "ready"
-  }
-
-  // Preparatory summaries
-  const lineCompleted = lineCheckWorklist.filter((row) => row.result_id !== null).length
-  const clearanceCompleted = itemClearanceWorklist.filter((row) => row.clearance_id !== null).length
-
   return {
-    rftState,
-    blindingState,
-    testingState,
-    yState: yFacts.state,
-    precommState,
-    zState: zFacts.state,
+    rftState: workflowRow.rft_state as StagePresentationState,
+    blindingState: workflowRow.blinding_state as StagePresentationState,
+    testingState: workflowRow.testing_state as StagePresentationState,
+    yState: workflowRow.y_state as StagePresentationState,
+    precommState: workflowRow.precomm_state as StagePresentationState,
+    zState: workflowRow.z_state as StagePresentationState,
     lineCheckSummary: {
-      total: lineCheckWorklist.length,
-      completed: lineCompleted,
-      open: lineCheckWorklist.length - lineCompleted,
+      total: workflowRow.line_check_total,
+      completed: workflowRow.line_check_completed,
+      open: Math.max(0, workflowRow.line_check_total - workflowRow.line_check_completed),
     },
     itemClearanceSummary: {
-      total: itemClearanceWorklist.length,
-      cleared: clearanceCompleted,
-      open: itemClearanceWorklist.length - clearanceCompleted,
+      total: workflowRow.item_clearance_total,
+      cleared: workflowRow.item_clearance_cleared,
+      open: Math.max(0, workflowRow.item_clearance_total - workflowRow.item_clearance_cleared),
     },
-    canonicalState,
+    canonicalState: workflowRow.canonical_state as PressureTestState,
     facts,
+    blockers: (workflowRow.blockers ?? {}) as Record<string, unknown>,
+    availableOperations: workflowRow.available_operations,
   }
+}
+
+export type WorkflowOperationName =
+  | "blinding"
+  | "testing"
+  | "testing_start"
+  | "testing_complete"
+  | "y_reinstatement"
+  | "precommissioning"
+  | "z_reinstatement"
+
+export const WORKFLOW_OPERATION_MAP: Record<TestPackOperation, readonly WorkflowOperationName[]> = {
+  line_check: [],
+  item_clearance: [],
+  blinding: ["blinding"],
+  testing: ["testing", "testing_start", "testing_complete"],
+  y_reinstatement: ["y_reinstatement"],
+  precommissioning: ["precommissioning"],
+  z_reinstatement: ["z_reinstatement"],
+}
+
+export function isWorkflowOperationAvailable(
+  operation: TestPackOperation,
+  availableOperations?: readonly string[] | null,
+  specificAction?: "testing_start" | "testing_complete",
+): boolean {
+  if (operation === "line_check" || operation === "item_clearance") {
+    return true
+  }
+  if (!availableOperations) return false
+  if (specificAction) {
+    return availableOperations.includes(specificAction)
+  }
+  const requiredOps = WORKFLOW_OPERATION_MAP[operation]
+  return requiredOps.some((op) => availableOperations.includes(op))
+}
+
+export function canOpenWorkflowOperation(
+  operation: TestPackOperation,
+  canOperate: boolean,
+  hasWorkflow: boolean,
+  availableOperations?: readonly string[] | null,
+): boolean {
+  return (
+    canOperate &&
+    hasWorkflow &&
+    isWorkflowOperationAvailable(operation, availableOperations)
+  )
 }
 
 export function canOperateWorkflow(

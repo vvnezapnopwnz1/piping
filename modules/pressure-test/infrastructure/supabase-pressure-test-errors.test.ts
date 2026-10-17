@@ -9,5 +9,6 @@ test("maps pressure-test command errors without leaking SQL", () => {
   assert.match(mapSupabasePressureTestError({ code: "PQT09" }), /blinding/)
   assert.match(mapSupabasePressureTestError({ code: "PQT17" }), /test is completed/)
   assert.match(mapSupabasePressureTestError({ code: "PQT18" }), /pre-commissioning/)
+  assert.match(mapSupabasePressureTestError({ code: "PQC60" }), /different parameters/)
   assert.equal(mapSupabasePressureTestError({ code: "42P01" }), "The pressure-test action could not be completed. Please try again.")
 })

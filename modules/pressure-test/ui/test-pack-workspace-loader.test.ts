@@ -115,6 +115,23 @@ function createFakeRepo(overrides: Partial<TestPackLoaderRepository> = {}): {
         isRft: false,
       } as never
     },
+    getTestPackWorkflowRow: async (_p, id) => {
+      calls.push(`getTestPackWorkflowRow:${id}`)
+      return {
+        test_pack_id: id,
+        project_id: "proj-1",
+        test_pack_number: "TP-001",
+        revision_no: 1,
+        canonical_state: "awaiting_rft",
+        rft_state: "blocked",
+        blinding_state: "blocked",
+        testing_state: "blocked",
+        y_state: "blocked",
+        precomm_state: "blocked",
+        z_state: "blocked",
+        is_rft: false,
+      } as never
+    },
     listTestPackMembers: async () => {
       calls.push("listTestPackMembers")
       return []
