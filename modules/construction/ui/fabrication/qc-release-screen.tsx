@@ -391,6 +391,71 @@ export function QcReleaseScreen({
     )
   }
 
+  // Supports are installed here, and Fabricated needs them, so the card stays reachable while the
+  // step is blocked on Fabricated; hiding it there left a spool with a shop support stuck.
+  const renderSupportsCard = (hidden: boolean, withDate = false) => (
+    <Card id="release-supports" hidden={hidden}>
+      <CardHeader>
+        <CardTitle ref={supportsHeadingRef} tabIndex={-1} className="outline-none">
+          {t("supports")}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {withDate ? (
+          <label className="mb-3 block text-sm font-medium">
+            {t("installationDate")}
+            <Input
+              type="date"
+              value={releasedOn}
+              disabled={pendingAction !== null}
+              onChange={(event) => setReleasedOn(event.target.value)}
+              className="mt-1 w-48"
+            />
+          </label>
+        ) : null}
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t("support")}</TableHead>
+              <TableHead>{t("type")}</TableHead>
+              <TableHead>{t("qty")}</TableHead>
+              <TableHead>{t("installed")}</TableHead>
+              <TableHead />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {supports.map((support) => (
+              <TableRow key={support.supportRevisionId}>
+                <TableCell className="font-mono text-xs">{support.supportNumber}</TableCell>
+                <TableCell>{support.supportType ?? "—"}</TableCell>
+                <TableCell>{support.quantity}</TableCell>
+                <TableCell>{support.installedOn ?? "—"}</TableCell>
+                <TableCell>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={
+                      support.installedOn !== null ||
+                      pendingAction !== null
+                    }
+                    loading={pendingAction === `support-${support.supportRevisionId}`}
+                    onClick={() => void handleInstallSupport(support.supportRevisionId)}
+                  >
+                    {t("markInstalled")}
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        {supports.length === 0 ? (
+          <p className="text-muted-foreground text-sm">{t("noSupportsOnThisSpool")}</p>
+        ) : null}
+      </CardContent>
+    </Card>
+  )
+
   const isDone = Boolean(spool?.dates.qc_release)
   const blockedBy = !isDone && !spool?.dates.fabricated ? t("shopWelds") : null
   const mode = spool ? panelMode({ allRecorded: isDone, blockedBy }) : "actionable"
@@ -444,24 +509,27 @@ export function QcReleaseScreen({
               ) : null}
             </div>
           ) : mode === "blocked" ? (
-            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <span>{t("shopWeldsMustBeComplete")}</span>
-              {embedded ? (
-                embedded.canOpenOperation?.("welds") ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => embedded.onOpenOperation?.("welds")}
-                  >
-                    {t("openShopWelds")}
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <span>{t("shopWeldsMustBeComplete")}</span>
+                {embedded ? (
+                  embedded.canOpenOperation?.("welds") ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => embedded.onOpenOperation?.("welds")}
+                    >
+                      {t("openShopWelds")}
+                    </Button>
+                  ) : null
+                ) : weldsHref ? (
+                  <Button asChild size="sm" variant="outline">
+                    <Link href={weldsHref}>{t("openShopWelds")}</Link>
                   </Button>
-                ) : null
-              ) : weldsHref ? (
-                <Button asChild size="sm" variant="outline">
-                  <Link href={weldsHref}>{t("openShopWelds")}</Link>
-                </Button>
-              ) : null}
+                ) : null}
+              </div>
+              {renderSupportsCard(false, true)}
             </div>
           ) : (
             <>
@@ -542,54 +610,7 @@ export function QcReleaseScreen({
                 </CardContent>
               </Card>
 
-          <Card id="release-supports" hidden={Boolean(embedded) && evidence !== "supports"}>
-            <CardHeader>
-              <CardTitle ref={supportsHeadingRef} tabIndex={-1} className="outline-none">
-                {t("supports")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("support")}</TableHead>
-                    <TableHead>{t("type")}</TableHead>
-                    <TableHead>{t("qty")}</TableHead>
-                    <TableHead>{t("installed")}</TableHead>
-                    <TableHead />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {supports.map((support) => (
-                    <TableRow key={support.supportRevisionId}>
-                      <TableCell className="font-mono text-xs">{support.supportNumber}</TableCell>
-                      <TableCell>{support.supportType ?? "—"}</TableCell>
-                      <TableCell>{support.quantity}</TableCell>
-                      <TableCell>{support.installedOn ?? "—"}</TableCell>
-                      <TableCell>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          disabled={
-                            support.installedOn !== null ||
-                            pendingAction !== null
-                          }
-                          loading={pendingAction === `support-${support.supportRevisionId}`}
-                          onClick={() => void handleInstallSupport(support.supportRevisionId)}
-                        >
-                          {t("markInstalled")}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              {supports.length === 0 ? (
-                <p className="text-muted-foreground text-sm">{t("noSupportsOnThisSpool")}</p>
-              ) : null}
-            </CardContent>
-          </Card>
+          {renderSupportsCard(Boolean(embedded) && evidence !== "supports")}
 
           <Card id="release-nde" hidden={Boolean(embedded) && evidence !== "nde"}>
             <CardHeader>
