@@ -42,7 +42,9 @@
     "demo:week": "tsx --env-file-if-exists=.env.local scripts/upg/run-week.ts",
     "demo:project-setup:hosted": "tsx scripts/upg/setup-references.ts",
     "demo:project-load:hosted": "tsx scripts/upg/load-project.ts",
-    "demo:week:hosted": "tsx scripts/upg/run-week.ts"
+    "demo:week:hosted": "tsx scripts/upg/run-week.ts",
+    "demo:read-timings": "tsx --env-file-if-exists=.env.local scripts/upg/time-reads.ts",
+    "demo:read-timings:hosted": "tsx scripts/upg/time-reads.ts --confirm-hosted-upg"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "1.1.15",
