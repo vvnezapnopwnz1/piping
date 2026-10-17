@@ -8686,6 +8686,90 @@ export type Database = {
           },
         ]
       }
+      nde_register_rows: {
+        Row: {
+          batch_number: string | null
+          batch_status: string | null
+          defect_code: string | null
+          disposition: string | null
+          examined_on: string | null
+          iso_number: string | null
+          isometric_id: string | null
+          method: string | null
+          ndt_subcontractor_name: string | null
+          obligation_id: string | null
+          outcome: string | null
+          project_id: string | null
+          report_number: string | null
+          required_coverage: number | null
+          selection_mode: string | null
+          spool_number: string | null
+          test_pack_id: string | null
+          test_pack_number: string | null
+          weld_location: string | null
+          weld_number: string | null
+          welder_codes: string[] | null
+        }
+        ComputedFields: never
+        Relationships: [
+          {
+            foreignKeyName: "nde_obligations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_document_rows"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_readiness"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_release_backlog"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_workflow"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "testing_precomm_worklist"
+            referencedColumns: ["test_pack_id"]
+          },
+        ]
+      }
       pressure_test_request_details: {
         Row: {
           assigned_on: string | null
@@ -9830,6 +9914,47 @@ export type Database = {
           },
         ]
       }
+      test_pack_document_rows: {
+        Row: {
+          is_rft: boolean | null
+          iso_count: number | null
+          lifecycle: string | null
+          line_numbers: string[] | null
+          line_service_code: string | null
+          location: string | null
+          open_x_count: number | null
+          planned_end_on: string | null
+          planned_start_on: string | null
+          precommissioning_completed_on: string | null
+          pressure_unit: Database["public"]["Enums"]["pressure_unit"] | null
+          project_id: string | null
+          revision_no: number | null
+          rft_on: string | null
+          service_class_code: string | null
+          subsystem_code: string | null
+          subsystem_description: string | null
+          system_code: string | null
+          system_description: string | null
+          test_medium: Database["public"]["Enums"]["test_pack_medium"] | null
+          test_pack_id: string | null
+          test_pack_number: string | null
+          test_pressure: number | null
+          testing_completed_on: string | null
+          testing_started_on: string | null
+          weld_done: number | null
+          weld_total: number | null
+        }
+        ComputedFields: never
+        Relationships: [
+          {
+            foreignKeyName: "test_packs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       test_pack_iso_status: {
         Row: {
           blocker_counts: Json | null
@@ -10362,6 +10487,92 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      weld_log_rows: {
+        Row: {
+          diameter_inch: number | null
+          iso_number: string | null
+          isometric_id: string | null
+          line_number: string | null
+          nde_methods: string[] | null
+          nde_pending: number | null
+          nde_rejected: number | null
+          project_id: string | null
+          pwht_accepted: boolean | null
+          pwht_required: boolean | null
+          revision_number: string | null
+          spool_number: string | null
+          test_pack_id: string | null
+          test_pack_number: string | null
+          thickness_mm: number | null
+          trace_numbers: string[] | null
+          weld_joint_revision_id: string | null
+          weld_location: string | null
+          weld_number: string | null
+          weld_on: string | null
+          weld_type_code: string | null
+          welder_codes: string[] | null
+          wps_code: string | null
+        }
+        ComputedFields: never
+        Relationships: [
+          {
+            foreignKeyName: "isometrics_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_document_rows"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_readiness"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_release_backlog"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_pack_workflow"
+            referencedColumns: ["test_pack_id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "test_packs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_pack_isometrics_test_pack_id_fkey"
+            columns: ["test_pack_id"]
+            isOneToOne: false
+            referencedRelation: "testing_precomm_worklist"
+            referencedColumns: ["test_pack_id"]
           },
         ]
       }
