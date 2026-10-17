@@ -15,6 +15,7 @@ test("dashboard accepts open shared values and computes real metrics", () => {
   assert.equal(dashboard.scansThisMonth, 1)
   assert.equal(dashboard.overdue, 1)
   assert.equal(dashboard.mostUsedDevice, "PDA-1")
+  assert.equal(dashboard.recentActivity[0].spoolNumber, "S1", "recent activity shows the spool number, not its id")
 })
 
 test("latest-project loader suppresses a stale project response", async () => {

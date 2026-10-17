@@ -142,7 +142,8 @@ export interface TrackingDashboard {
   mostUsedDevice: string | null
   mostUsedOperator: string | null
   mostUsedLocation: string | null
-  recentActivity: TrackingEventRow[]
+  /** `spoolNumber` is what an operator reads; the id is the fallback when the spool left the worklist. */
+  recentActivity: (TrackingEventRow & { spoolNumber: string })[]
 }
 
 export function normalizeTrackingDirection(value: unknown): TrackingDirection | null {

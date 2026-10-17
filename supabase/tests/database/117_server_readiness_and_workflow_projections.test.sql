@@ -1,5 +1,5 @@
 begin;
-select plan(45);
+select plan(46);
 
 -- 1. Schema checks for spool readiness blockers in fabrication_spool_projections and spool_erection_readiness
 select has_column('public', 'fabrication_spool_projections', 'release_blockers', 'fabrication_spool_projections stores release_blockers');
@@ -147,7 +147,7 @@ values ('59000000-0000-0000-0000-000000000117', '30000000-0000-0000-0000-0000000
 insert into public.line_check_request_items (request_id, project_id, test_pack_id, isometric_id)
 values ('59000000-0000-0000-0000-000000000117', '30000000-0000-0000-0000-000000000117', (select id from public.test_packs where test_pack_number = 'TP-117'), '46000000-0000-0000-0000-000000000117');
 insert into public.line_check_results (project_id, request_id, test_pack_id, isometric_id, completed_on, recorded_by)
-values ('30000000-0000-0000-0000-000000000117', '59000000-0000-0000-0000-000000000117', (select id from public.test_packs where test_pack_number = 'TP-117'), '46000000-0000-0000-0000-000000000117', date '2026-08-01', '10000000-0000-0000-0000-000000000117');
+values ('30000000-0000-0000-0000-000000000117', '59000000-0000-0000-0000-000000000117', (select id from public.test_packs where test_pack_number = 'TP-117'), '46000000-0000-0000-0000-000000000117', date '2026-08-05', '10000000-0000-0000-0000-000000000117');
 
 -- Insert erection stage events so SP-117 achieves RFT
 insert into public.construction_progress_events (project_id, spool_revision_id, phase, stage, occurred_on, payload, source)
@@ -167,6 +167,12 @@ select is(
   (select rft_state from public.test_pack_workflow where test_pack_number = 'TP-117'),
   'completed',
   'test_pack_workflow rft_state is completed when members are RFT'
+);
+
+select is(
+  (select rft_on from public.test_pack_readiness where test_pack_number = 'TP-117'),
+  date '2026-08-05',
+  'a test pack is RFT on the day its line check was completed, not on the earlier day the spools were ready'
 );
 
 select is(

@@ -167,6 +167,7 @@
     "openQcRelease": "Открыть приёмку ОТК",
     "sentToPaint": "Передана в покраску",
     "sentToPaintOn": "Передана в покраску {date}",
+    "sentToPaintDate": "Дата отправки в покраску",
     "recordSentToPaint": "Записать передачу в покраску",
     "painting": "Покраска",
     "loadingPaintReferentials": "Загружаем справочники покраски…",

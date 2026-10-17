@@ -42,6 +42,11 @@ const EXEMPT = new Map<string, string>([
     "expands one selected ISO revision into its spool graph — bounded by the revision, and each " +
       "entry is a detail card rather than a row",
   ],
+  [
+    "modules/tracking/ui/tracking-dashboard-screen.tsx",
+    "its 'recent activity' is a fixed feed of the last ten scans, one row per event; the spool number " +
+      "is a label on the event, the spool worklist itself is on the Data Analysis screen",
+  ],
 ])
 
 test("every screen that lists spools uses the shared table", () => {

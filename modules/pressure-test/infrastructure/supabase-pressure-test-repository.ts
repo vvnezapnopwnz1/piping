@@ -312,6 +312,13 @@ export async function listTestingPrecommWorklist(client: Client, projectId: stri
   return data ?? []
 }
 
+/** What the server lets each pack do next (`test_pack_workflow.available_operations`), by pack id. */
+export async function listAvailableOperations(client: Client, projectId: string): Promise<Record<string, string[]>> {
+  const { data, error } = await client.from("test_pack_workflow").select("test_pack_id, available_operations").eq("project_id", projectId)
+  fail(error)
+  return Object.fromEntries((data ?? []).map((row) => [row.test_pack_id ?? "", row.available_operations ?? []]))
+}
+
 export async function listReinstatementWorklist(client: Client, projectId: string, testPackId?: string): Promise<ReinstatementWorklistRow[]> {
   let query = client.from("reinstatement_worklist").select("*").eq("project_id", projectId)
   if (testPackId) query = query.eq("test_pack_id", testPackId)

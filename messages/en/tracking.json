@@ -105,7 +105,7 @@
       "title": "Recent activity",
       "time": "Time",
       "direction": "Direction",
-      "spoolId": "Spool ID",
+      "spoolId": "Spool",
       "source": "Source",
       "empty": "No tracking events yet."
     }
@@ -184,7 +184,7 @@
     "dialog": {
       "titleEvent": "Add tracking event",
       "titleCorrection": "Add tracking correction",
-      "description": "The saved database event is append-only. The screen refetches durable state after success.",
+      "description": "A saved event is not edited. To fix a mistake, add a correction.",
       "direction": "Direction",
       "location": "Location",
       "device": "Device",

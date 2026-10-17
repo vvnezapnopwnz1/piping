@@ -46,6 +46,7 @@
     "testPack": "Тест-пакет",
     "complete": "Завершено",
     "startTesting": "Начать испытание",
+    "waitingForPreviousStep": "Ждёт предыдущий шаг",
     "completeTesting": "Завершить испытание",
     "completePreCommissioning": "Завершить предпусковые работы",
     "reportNumber": "Номер отчёта",

@@ -24,6 +24,7 @@ import {
   listRequestDetails,
   listTestPackCatalog,
   listTestPackMembers,
+  getTestPackWorkflowRow,
   listTestPackReinstatementTargets,
   type FlangeJointReadinessRow,
   type ProjectTeamRow,
@@ -140,9 +141,17 @@ export function RequestPreparationScreen({
         if (!active) return
         setPunches(nextPunches)
       } else if (requestType === "reinstatement") {
-        const nextFlanges = await listTestPackReinstatementTargets(client, projectId, selectedPack)
+        const [nextFlanges, workflow] = await Promise.all([
+          listTestPackReinstatementTargets(client, projectId, selectedPack),
+          getTestPackWorkflowRow(client, projectId, selectedPack),
+        ])
         if (!active) return
-        setFlanges(nextFlanges)
+        // Only the categories the server says can be reinstated now: Y after testing, Z after pre-commissioning.
+        const operations = workflow?.available_operations ?? []
+        setFlanges(nextFlanges.filter((flange) =>
+          (flange.category_code === "Y" && operations.includes("y_reinstatement")) ||
+          (flange.category_code === "Z" && operations.includes("z_reinstatement")),
+        ))
       }
       setSelectedTargets([])
     }

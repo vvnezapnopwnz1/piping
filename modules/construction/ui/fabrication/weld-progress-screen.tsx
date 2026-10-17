@@ -130,7 +130,7 @@ export function WeldProgressScreen({
       const client = getSupabaseBrowserClient()
       const [newStatus, nextWelds] = await Promise.all([
         loadSpoolStatus(client, spoolRevisionId),
-        loadWeldSummaries(client, spoolRevisionId),
+        loadWeldSummaries(client, spoolRevisionId, "shop"),
       ])
       setSpool(newStatus)
       setWelds(nextWelds)
@@ -147,7 +147,7 @@ export function WeldProgressScreen({
     if (!spoolRevisionId || !currentKey) return
     let cancelled = false
     const key = currentKey
-    void loadWeldSummaries(getSupabaseBrowserClient(), spoolRevisionId)
+    void loadWeldSummaries(getSupabaseBrowserClient(), spoolRevisionId, "shop")
       .then((loadedWelds) => {
         if (cancelled) return
         setWelds(loadedWelds)

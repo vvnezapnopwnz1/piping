@@ -137,6 +137,7 @@
     "openQcRelease": "Open QC release",
     "sentToPaint": "Sent to Paint",
     "sentToPaintOn": "Sent to paint {date}",
+    "sentToPaintDate": "Sent to paint on",
     "recordSentToPaint": "Record Sent to Paint",
     "painting": "Painting",
     "loadingPaintReferentials": "Loading paint referentials…",

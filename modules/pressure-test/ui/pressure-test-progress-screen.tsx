@@ -23,6 +23,7 @@ import {
   listProjectPunchCodes,
   listProjectTeams,
   listReinstatementWorklist,
+  listAvailableOperations,
   listTestingPrecommWorklist,
   recordBlinding,
   recordPunchClearance,
@@ -58,6 +59,9 @@ type ReinstatementDraft = { date: string; reportNumber: string; tagNumber: strin
 const stageIdempotencyKey = (testPackId: string, stage: string) =>
   `browser-pressure-test-stage-${testPackId}-${stage}`
 
+// The server decides when a pack can move on (test_pack_workflow.available_operations); the list only shows these.
+const TESTING_STEP_OPERATIONS = ["testing_start", "testing_complete", "precommissioning"]
+
 export function PressureTestProgressScreen({
   requestType,
   title,
@@ -82,6 +86,7 @@ export function PressureTestProgressScreen({
   const [clearanceRows, setClearanceRows] = useState<ItemClearanceWorklistRow[]>([])
   const [blindingRows, setBlindingRows] = useState<BlindingWorklistRow[]>([])
   const [testingRows, setTestingRows] = useState<TestingPrecommWorklistRow[]>([])
+  const [availableOperations, setAvailableOperations] = useState<Record<string, string[]>>({})
   const [reinstatementRows, setReinstatementRows] = useState<ReinstatementWorklistRow[]>([])
   const [teams, setTeams] = useState<ProjectTeamRow[]>([])
   const [punchCodes, setPunchCodes] = useState<ProjectReferenceOptionRow[]>([])
@@ -122,6 +127,7 @@ export function PressureTestProgressScreen({
     }
     if (requestType === "testing_precomm") {
       setTestingRows(await listTestingPrecommWorklist(client, projectId, effectivePackId))
+      setAvailableOperations(await listAvailableOperations(client, projectId))
     }
     if (requestType === "reinstatement") {
       const nextTeams = await listProjectTeams(client, projectId, "jointer")
@@ -527,6 +533,8 @@ export function PressureTestProgressScreen({
                 <span>
                   {row.precommissioning_completed_on ? (
                     t("text.complete")
+                  ) : !(availableOperations[row.test_pack_id ?? ""] ?? []).some((op) => TESTING_STEP_OPERATIONS.includes(op)) ? (
+                    <span className="text-muted-foreground">{t("text.waitingForPreviousStep")}</span>
                   ) : (
                     <Button
                       type="button"

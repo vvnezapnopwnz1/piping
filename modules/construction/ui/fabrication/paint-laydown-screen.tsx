@@ -334,7 +334,7 @@ export function PaintLaydownScreen({
                 <CardContent className="space-y-4">
                   <div className="flex flex-wrap items-end gap-2 pt-1">
                     <label className="text-sm font-medium">
-                      {t("sentToPaintOn")}
+                      {t("sentToPaintDate")}
                       <Input
                         ref={sentToPaintOnRef}
                         type="date"
