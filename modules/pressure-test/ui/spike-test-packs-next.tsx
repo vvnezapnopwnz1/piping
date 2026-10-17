@@ -175,7 +175,7 @@ export function SpikeTestPacksNext({ projectId }: { projectId: string }) {
           <p className="p-6 text-sm text-muted-foreground">Выберите пакет слева</p>
         ) : (
           <>
-            <header className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-2 border-b bg-card p-4">
+            <header className="sticky top-0 z-20 flex h-[76px] flex-wrap items-center justify-between gap-2 border-b bg-card px-4">
               <div>
                 <h2 className="font-mono text-xl font-semibold">{pack.testPackNumber}</h2>
                 <p className="text-sm text-muted-foreground">{pack.activeIsoCount} изометрик · {STAGE_TEXT[stageOf(pack.id)]}</p>
@@ -186,13 +186,17 @@ export function SpikeTestPacksNext({ projectId }: { projectId: string }) {
                 const isOpen = open === step.id
                 return (
                   <li key={step.id} className={`rounded-lg border ${step.id === current ? "border-primary" : ""}`}>
-                    <button type="button" onClick={() => setOpen(isOpen ? null : step.id)} className="flex w-full items-center gap-3 p-3 text-left">
-                      <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full border text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setOpen(isOpen ? null : step.id)}
+                      className={`flex w-full items-center gap-3 p-3 text-left ${isOpen ? `sticky top-[76px] z-10 rounded-t-lg shadow-sm ${step.id === current ? "bg-primary text-primary-foreground" : "bg-emerald-700 text-white"}` : ""}`}
+                    >
+                      <span className={`flex h-6 w-6 flex-none items-center justify-center rounded-full border text-xs ${isOpen ? "border-white/60 bg-white" : ""}`}>
                         {step.state === "done" ? <Check className="h-4 w-4 text-emerald-600" /> : step.state === "blocked" ? <Lock className="h-3.5 w-3.5 text-muted-foreground" /> : step.id === current ? <Circle className="h-3 w-3 fill-primary text-primary" /> : index + 1}
                       </span>
-                      <span className={`flex-1 ${step.state === "blocked" ? "text-muted-foreground" : ""}`}>
+                      <span className={`flex-1 ${step.state === "blocked" && !isOpen ? "text-muted-foreground" : ""}`}>
                         <span className="font-medium">{step.title}</span>
-                        <span className="ml-2 text-sm text-muted-foreground">{step.state === "blocked" && step.reason ? step.reason : step.summary}</span>
+                        <span className={`ml-2 text-sm ${isOpen ? "opacity-80" : "text-muted-foreground"}`}>{step.state === "blocked" && step.reason ? step.reason : step.summary}</span>
                       </span>
                       {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     </button>
