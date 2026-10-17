@@ -11,7 +11,6 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { generateDocument, type GenerateDocumentResult } from "../application/generate-document"
 import { DOCUMENT_DEFINITIONS, type DocumentCode } from "../domain/report"
 import {
-  loadAuthorName,
   loadNdeRegister,
   loadPunchRegister,
   loadTestPackSummary,
@@ -26,14 +25,12 @@ export function ReportsScreen({
   projectId,
   projectCode,
   projectTitle,
-  userId,
-  userEmail,
+  author,
 }: {
   projectId: string
   projectCode: string
   projectTitle: string
-  userId: string
-  userEmail: string
+  author: string
 }) {
   const t = useTranslations("documents")
   const { locale, chrome, labels } = useDocumentLabels()
@@ -54,7 +51,6 @@ export function ReportsScreen({
     setLastDownloaded(null)
 
     const client = getSupabaseBrowserClient()
-    const author = await loadAuthorName(client, userId, userEmail)
     const result = await generateDocument({
       loadWeldLog: (id) => loadWeldLog(client, { projectId: id }),
       loadNdeRegister: (id) => loadNdeRegister(client, { projectId: id }),

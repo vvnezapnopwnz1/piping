@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl"
 
 import { useSupabaseAuth } from "@/contexts/supabase-auth-context"
+import { documentAuthor } from "@/modules/documents/ui/document-author"
 import { ReportsScreen } from "@/modules/documents/ui/reports-screen"
 
 export default function ReportsPage() {
@@ -15,8 +16,7 @@ export default function ReportsPage() {
       projectId={project.projectId}
       projectCode={project.activityCode}
       projectTitle={project.title}
-      userId={user.id}
-      userEmail={user.email ?? ""}
+      author={documentAuthor(user)}
     />
   )
 }

@@ -1,5 +1,5 @@
 begin;
-select plan(22);
+select plan(23);
 
 -- 1. The three document projections run with the reader's rights and only authenticated reads them.
 select ok(
@@ -158,6 +158,12 @@ select results_eq(
     where test_pack_id = '54000000-0000-0000-0000-000000000118'$$,
   $$values (1, array['L-118'], 2, 'SYS-118'::text, 'SUB-118'::text)$$,
   'test pack document row counts active ISOs, their lines and their welds'
+);
+
+select is(
+  (select weld_total from public.test_pack_document_rows where test_pack_id = '54000000-0000-0000-0000-000000000118'),
+  (select count(*)::int from public.weld_log_rows where test_pack_id = '54000000-0000-0000-0000-000000000118'),
+  'the pack weld count agrees with the weld log of the pack'
 );
 
 -- 4. Someone outside the project reads nothing.

@@ -148,9 +148,3 @@ export async function loadPunchRegister(client: Client, scope: DocumentScope): P
     completionDate: row.completion_date,
   }))
 }
-
-/** The name printed as the document's author: the profile name, or the e-mail when the profile has none. */
-export async function loadAuthorName(client: Client, userId: string, fallback: string): Promise<string> {
-  const { data } = await client.from("profiles").select("full_name").eq("id", userId).maybeSingle()
-  return data?.full_name?.trim() || fallback
-}
