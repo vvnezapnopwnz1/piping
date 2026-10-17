@@ -25,6 +25,14 @@
 - pgTAP только на изолированном стенде `.pgtap-stack`. На живой локальный стенд — `migration up`. Сброс
   стенда — только с подтверждения владельца. На KZ — через `pipeqc-release.sh` (сухой прогон, затем `--apply`).
 - Лимит `statement_timeout` на KZ (30 с) не трогать: это временное прикрытие, цель — укладываться в 2 с.
+- **Вьюхи фазы 5 зависят от вьюх готовности** (миграция `20261018090000_document_projections.sql`):
+  `test_pack_document_rows` от `test_pack_readiness`, `nde_register_rows` от `weld_log_rows`. Вьюхи готовности
+  менять только через `create or replace view` с теми же колонками, их типами и порядком. `drop view … cascade` не
+  использовать: он молча удаляет зависимые вьюхи. Если пересоздание неизбежно, в той же миграции пересоздать
+  `test_pack_document_rows` и остальные зависимые вьюхи из `20261018090000`. После миграции pgTAP `118_document_projections`
+  остаётся зелёным.
+- Номер pgTAP `118` занят фазой 5; тесты N2 нумеруются с `119`.
+- `pipeqc-release.sh` повезёт на KZ и миграцию фазы 5: она добавляет только вьюхи, откат не нужен.
 - Секреты не печатать.
 
 ## Review Focus
@@ -51,13 +59,13 @@
 
 ### Task 2: Оптимизация вьюхи `spool_erection_readiness`
 
-**Files:** Create `supabase/migrations/<ts>_erection_readiness_speed.sql`; Test `supabase/tests/database/118_erection_readiness_same_rows.test.sql`; Modify `modules/construction/infrastructure/supabase-erection-repository.ts` только если Task 1 покажет, что экрану нужно чтение с фильтром.
+**Files:** Create `supabase/migrations/<ts>_erection_readiness_speed.sql`; Test `supabase/tests/database/119_erection_readiness_same_rows.test.sql`; Modify `modules/construction/infrastructure/supabase-erection-repository.ts` только если Task 1 покажет, что экрану нужно чтение с фильтром.
 
 **Interfaces:**
 - Consumes: определение вьюхи из `20261017124000_server_readiness_canonical_projections.sql:81`, проекции `fabrication_spool_projections`.
 - Produces: та же вьюха с тем же набором и порядком колонок (`database.types.ts` не меняется).
 
-- [ ] **Step 1: pgTAP-тест `118`.** Строки вьюхи по UPG-1 (или фикстуре из теста `104`) совпадают построчно с `expected`,
+- [ ] **Step 1: pgTAP-тест `119`.** Строки вьюхи по UPG-1 (или фикстуре из теста `104`) совпадают построчно с `expected`,
   снятыми до миграции: `results_eq` по `(spool_revision_id, release_blockers, rft_blockers, verdict)`.
   Отдельные проверки на пункты Review Focus 1–3.
 - [ ] **Step 2:** запустить на `.pgtap-stack`, тест зелёный на старой вьюхе (фиксирует поведение).
