@@ -21,9 +21,12 @@ import { useOptionalAccess } from "@/modules/access/ui/access-context"
 import {
   listTestPackCatalog,
   listTestPackReadiness,
+  listTestPackStages,
   type TestPackCatalogRow,
   type TestPackReadinessRow,
 } from "../infrastructure/supabase-pressure-test-repository"
+import type { PressureTestState } from "../domain/pressure-test-workflow"
+import { summarizeWorkflow } from "./pressure-test-ui-model"
 import { mediumLabel } from "./test-pack-builder-model"
 import { TestPackCompositionEditor } from "./test-pack-composition-editor"
 import { TestPackDefinitionEditor } from "./test-pack-definition-editor"
@@ -53,6 +56,8 @@ export interface TestPackWorkbenchProps {
 
 type CatalogWithReadiness = TestPackCatalogRow & {
   isRft?: boolean
+  /** The server's stage of the pack, `test_pack_workflow.canonical_state`. */
+  stage?: PressureTestState
   memberCount?: number
   xOpenCount?: number | null
 }
@@ -312,17 +317,14 @@ export function TestPackWorkbench({ projectId, testPackId }: TestPackWorkbenchPr
   },
   {
     id: "readiness",
-    header: t("text.readiness"),
+    header: t("text.stage"),
     filter: "select",
-    value: (row) => (row.isRft ? t("text.readyForTest162") : t("text.blocked")),
-    cell: (row) =>
-      row.isRft !== undefined ? (
-        <Badge variant={row.isRft ? "default" : "secondary"}>
-          {row.isRft ? "RFT" : t("text.blocked")}
-        </Badge>
-      ) : (
-        <span className="text-muted-foreground">—</span>
-      ),
+    value: (row) => (row.stage ? t(summarizeWorkflow({ canonicalState: row.stage }).label) : "—"),
+    cell: (row) => {
+      if (!row.stage) return <span className="text-muted-foreground">—</span>
+      const summary = summarizeWorkflow({ canonicalState: row.stage })
+      return <Badge variant={summary.tone === "blocked" ? "secondary" : "default"}>{t(summary.label)}</Badge>
+    },
   },
   {
     id: "location",
@@ -364,8 +366,9 @@ export function TestPackWorkbench({ projectId, testPackId }: TestPackWorkbenchPr
     void Promise.all([
       listTestPackCatalog(client, projectId),
       listTestPackReadiness(client, projectId),
+      listTestPackStages(client, projectId),
     ])
-      .then(([catalog, readiness]) => {
+      .then(([catalog, readiness, stages]) => {
         if (!active) return
         const readinessMap = new Map<string, TestPackReadinessRow>()
         for (const r of readiness) {
@@ -377,6 +380,7 @@ export function TestPackWorkbench({ projectId, testPackId }: TestPackWorkbenchPr
           return {
             ...row,
             isRft: r?.isRft,
+            stage: stages[row.id] as PressureTestState | undefined,
             memberCount: r?.memberCount,
             xOpenCount: r?.x_open_count,
           }
@@ -397,8 +401,11 @@ export function TestPackWorkbench({ projectId, testPackId }: TestPackWorkbenchPr
   }, [projectId])
 
   const handleOpenPack = (id: string) => {
+    // A pack past RFT opens on its workflow, where the next step is; a blocked pack opens on its readiness.
+    const stage = catalogRows.find((row) => row.id === id)?.stage
+    const view = stage && stage !== "awaiting_rft" ? "workflow" : "readiness"
     requestLeave(() => {
-      setTestPackParam(id, { push: true, extra: { view: "readiness", operation: null, mode: null, spool: null } })
+      setTestPackParam(id, { push: true, extra: { view, operation: null, mode: null, spool: null } })
     })
   }
 

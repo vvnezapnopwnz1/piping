@@ -63,7 +63,7 @@ test("breadcrumbs follow navigation hierarchy rather than guessed URL segments",
       () => true,
       name,
     ).map((page) => page.title),
-    ["Test Packs", "Pressure Test", "Line Check", "Progress"],
+    ["Test Packs", "Explorer", "Pressure Test", "Line Check", "Progress"],
   )
   assert.ok(
     getPageDestinations(() => true, name).some(

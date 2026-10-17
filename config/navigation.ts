@@ -164,8 +164,15 @@ export const workspaceAreas: readonly WorkspaceArea[] = [
     children: [
       { title: 'dashboard', href: '/testpack', icon: LayoutDashboard },
       { title: 'builder', href: '/testpack/builder', icon: ListPlus, context: TEST_PACK },
-      { title: 'explorer', href: '/testpack/explorer', icon: FolderTree, context: TEST_PACK },
-      { title: 'pressureTest', href: '/testpack/pressure-test', icon: Gauge, context: TEST_PACK },
+      {
+        // The pack workbench carries the whole pressure-test sequence for one pack (Workflow tab).
+        // The cross-pack worklists keep their addresses as parts of it, not as a tab of their own.
+        title: 'explorer',
+        href: '/testpack/explorer',
+        icon: FolderTree,
+        context: TEST_PACK,
+        aliases: [{ title: 'pressureTest', href: '/testpack/pressure-test' }],
+      },
     ],
   },
   {

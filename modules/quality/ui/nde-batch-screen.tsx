@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl"
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 
 import { errorDetail } from "@/i18n/format"
@@ -63,13 +64,23 @@ type CodesTranslator = ReturnType<typeof useTranslations<"codes">>
 const batchActionIdempotencyKey = (action: string, batchId: string) =>
   `browser-nde-batch-${action}-${batchId}`
 
+/** The manual's joint status code as a sentence; the domain keeps the code, the words are here. */
+function jointStatusText(t: BatchTranslator, obligation: Parameters<typeof jointStatusLabel>[0]): string {
+  const code = jointStatusLabel(obligation)
+  const n = String(obligation.cycleOrdinal)
+  if (/^T\d+S$/.test(code)) return t("jointStatus.tracerSelected", { n })
+  if (/^T\d+$/.test(code)) return t("jointStatus.tracer", { n })
+  if (/^R\d+$/.test(code)) return t("jointStatus.repair", { n })
+  return t(`jointStatus.${code as "S" | "SS" | "NR" | "H" | "HS"}`)
+}
+
 function createObligationColumns(t: BatchTranslator, tc: CodesTranslator): ReadonlyArray<DataColumn<NdeObligation>> {
   return [
     { id: "spoolNumber", header: t("columns.spool"), value: (ob) => ob.spoolNumber, searchable: true, filter: "text", className: "font-mono" },
     { id: "weldNumber", header: t("columns.joint"), value: (ob) => ob.weldNumber, searchable: true, filter: "text", pinned: true, alwaysVisible: true, className: "font-mono font-medium" },
     { id: "batchNumber", header: t("columns.batch"), value: (ob) => ob.batchNumber, searchable: true, filter: "select", className: "font-mono" },
     { id: "method", header: t("columns.method"), value: (ob) => codeLabel(tc, "ndeMethod", ob.method), filter: "select", className: "font-mono" },
-    { id: "jointStatus", header: t("columns.manualStatus"), value: (ob) => jointStatusLabel(ob), filter: "select", className: "font-mono" },
+    { id: "jointStatus", header: t("columns.manualStatus"), value: (ob) => jointStatusText(t, ob), filter: "select" },
     {
       id: "cycle",
       header: t("columns.cycle"),
@@ -142,6 +153,19 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
   })
   const [loading, setLoading] = useState(true)
   const [obligationTable, setObligationTable] = useTableUrlState({ namespace: "ob" })
+  // Two ways to look at the same work, kept in the address so a link opens the right one:
+  // the joints that need a result (default) or the batches that group them.
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+  const router = useRouter()
+  const view: "obligations" | "batches" = searchParams.get("view") === "batches" ? "batches" : "obligations"
+  const showView = (next: "obligations" | "batches") => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (next === "obligations") params.delete("view")
+    else params.set("view", next)
+    const query = params.toString()
+    router.replace(query ? `${pathname}?${query}` : pathname)
+  }
 
   // Create Batch Form
   const [isCreateOpen, setIsCreateOpen] = useState(false)
@@ -470,7 +494,23 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
         </div>
       )}
 
+      <div role="tablist" aria-label={t("viewSwitch")} className="flex gap-2">
+        {(["obligations", "batches"] as const).map((item) => (
+          <Button
+            key={item}
+            role="tab"
+            aria-selected={view === item}
+            size="sm"
+            variant={view === item ? "default" : "outline"}
+            onClick={() => showView(item)}
+          >
+            {t(`view.${item}`, { count: item === "batches" ? batches.length : obligations.length })}
+          </Button>
+        ))}
+      </div>
+
       <div className="grid grid-cols-1 gap-6">
+        {view === "batches" ? (
         <Card>
           <CardHeader>
             <CardTitle>{t("batches", { count: batches.length })}</CardTitle>
@@ -563,7 +603,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
             </Table>
           </CardContent>
         </Card>
-
+        ) : (
         <Card>
           <CardHeader>
             <CardTitle>
@@ -590,6 +630,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
             />
           </CardContent>
         </Card>
+        )}
       </div>
 
       {/* Allocation Preview Dialog — shows the candidate set before the durable allocation */}
@@ -664,7 +705,7 @@ export function NdeBatchScreen({ projectId }: { projectId: string }) {
               {selectedObligation
                 ? t("recordNdeResultFor", {
                   weldNumber: selectedObligation.weldNumber,
-                  status: jointStatusLabel(selectedObligation),
+                  status: jointStatusText(t, selectedObligation),
                 })
                 : t("recordNdeResult")}
             </DialogTitle>

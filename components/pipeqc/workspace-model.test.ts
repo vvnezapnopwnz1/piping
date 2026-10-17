@@ -32,7 +32,8 @@ test("an area appears only with pages the user may open, and opens on the first 
 test("a path belongs to its longest matching page", () => {
   assert.equal(locate("/testpack/explorer", all)?.page?.title, "explorer")
   assert.equal(locate("/testpack", all)?.page?.title, "dashboard")
-  assert.equal(locate("/testpack/pressure-test/line-check/progress", all)?.page?.title, "pressureTest")
+  // The pressure-test worklists are part of the pack workbench, not a tab of their own.
+  assert.equal(locate("/testpack/pressure-test/line-check/progress", all)?.page?.title, "explorer")
   assert.equal(locate("/nde/dashboard", all)?.page?.title, "dashboard")
   assert.equal(locate("/erection/rft", all)?.area.id, "erection")
   // Routes that render the same screen as a step are that step, not a page of their own.

@@ -26,10 +26,20 @@
       "joint": "Joint",
       "batch": "Batch",
       "method": "Method",
-      "manualStatus": "Status (manual)",
+      "manualStatus": "Joint status",
       "cycle": "Cycle",
       "coverage": "Coverage",
       "disposition": "Disposition"
+    },
+    "jointStatus": {
+      "S": "To select",
+      "SS": "Selected, awaiting examination",
+      "NR": "Result recorded",
+      "H": "100 %: to examine",
+      "HS": "100 %: in examination or done",
+      "repair": "Repair {n}",
+      "tracer": "Tracer {n}: to select",
+      "tracerSelected": "Tracer {n}: selected"
     },
     "cycle": {
       "original": "Original",
@@ -62,6 +72,11 @@
     },
     "escalatedBatch": "<batch>Batch {batchNumber}</batch> escalated on {date} because {reason}. Every remaining joint of that welder is now examined at 100 %.",
     "batches": "Batches ({count})",
+    "viewSwitch": "NDE view",
+    "view": {
+      "obligations": "Joints ({count})",
+      "batches": "Batches ({count})"
+    },
     "batch": "Batch #",
     "method": "Method",
     "regime": "Regime",

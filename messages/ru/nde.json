@@ -26,10 +26,20 @@
       "joint": "Стык",
       "batch": "Партия",
       "method": "Метод",
-      "manualStatus": "Статус по руководству",
+      "manualStatus": "Статус стыка",
       "cycle": "Цикл",
       "coverage": "Охват",
       "disposition": "Состояние"
+    },
+    "jointStatus": {
+      "S": "К выбору",
+      "SS": "Выбран, ждёт контроля",
+      "NR": "Результат внесён",
+      "H": "100 %: к контролю",
+      "HS": "100 %: в контроле или выполнен",
+      "repair": "Ремонт {n}",
+      "tracer": "Трассер {n}: к выбору",
+      "tracerSelected": "Трассер {n}: выбран"
     },
     "cycle": {
       "original": "Исходный",
@@ -61,6 +71,11 @@
       "secondLevelTracer": "отклонён трассер второго уровня"
     },
     "escalatedBatch": "Партия <batch>{batchNumber}</batch> переведена на усиленный контроль {date}, потому что {reason}. Все оставшиеся стыки этого сварщика теперь проверяются на 100 %.",
+    "viewSwitch": "Вид NDE",
+    "view": {
+      "obligations": "Стыки ({count})",
+      "batches": "Партии ({count})"
+    },
     "batches": "Партии ({count})",
     "batch": "Партия №",
     "method": "Метод",
