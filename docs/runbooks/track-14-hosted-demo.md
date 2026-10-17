@@ -1,79 +1,40 @@
-# Track 14 — hosted PipeQC demo
+# Track 14 — production PipeQC demo
 
-The public stand is served at `https://pipe-qc-shell-layout.vercel.app/` and
-uses only the disposable Supabase project `lmjkqcdmxehknipeoeye`. It extends
-the business walkthrough in [Track 12](./track-12-demo.md); use that document
-for the presenter story and controls.
+Публичный стенд доступен по адресу <https://app.piping-qc-work.shop/>. Он
+работает на self-hosted Supabase на том же управляемом production-сервере;
+старые Vercel и облачный Supabase-проект не являются источником данных этого
+демо.
 
-## One-time dashboard configuration
+Используйте [Track 12](./track-12-demo.md) для сценария показа и
+[production runbook](./hosted-stand-operations.md) для выпуска и диагностики.
 
-In Supabase Dashboard, open **Authentication → Providers → Email** for
-`pipeqc-hosted-demo` and disable **Allow new users to sign up**. No SMTP,
-invites, or password recovery are configured for this display-only stand.
+## Настройки Auth
 
-Then open **Authentication → URL Configuration** and set:
+Для production Auth настроены:
 
-- Site URL: `https://pipe-qc-shell-layout.vercel.app/`
-- Redirect URL allow-list: `https://pipe-qc-shell-layout.vercel.app/**`
+- Site URL: `https://app.piping-qc-work.shop`;
+- redirect allow-list включает `https://app.piping-qc-work.shop/**`.
 
-Save each page. Confirm that the public login form offers sign-in but no sign-up
-action. The six fixed accounts are created by the reseed command with confirmed
-email addresses, so they do not require email delivery.
+Регистрацию, SMTP, invite и восстановление пароля не меняют в ходе обычного
+демо. Любая такая правка — отдельная операция владельца с проверкой в
+браузере.
 
-## Reseed from an owner machine
+## Данные и учётные записи
 
-Reseeding removes every demo result, Auth identity, and relational row from the
-hosted stand, then replays all migrations and restores the fixed Track 12
-starting state. It is normal recovery for this intentionally disposable demo.
-Do not run it during a rehearsal whose state you want to keep.
+Текущий стенд содержит Curated journey. Это не disposable-окружение: запрещено
+запускать `demo:prepare:hosted`, `supabase db reset` или пересоздавать
+пользователей, чтобы получить чистый сценарий. Сначала владелец выбирает
+Baseline или новый Curated journey и подтверждает потерю текущих данных.
 
-The Supabase CLI must already be logged in with an account that owns the
-Marketplace-created project. Enter the two secrets interactively; never put
-them in Vercel, a committed file, screenshots, or chat.
+Показывайте только назначенные пользователю роли. Пароли, service-role ключи,
+JWT-ключи и дампы не заносятся в инструкции, чат или коммиты.
 
-```zsh
-cd /path/to/pipe-qc-shell-layout
-export SUPABASE_URL="https://lmjkqcdmxehknipeoeye.supabase.co"
-read -r -s "SUPABASE_SECRET_KEY?Hosted Supabase secret key: "
-echo
-read -r -s "TRACK01_FIXTURE_PASSWORD?Demo password (12+ characters): "
-echo
-export SUPABASE_SECRET_KEY TRACK01_FIXTURE_PASSWORD
-npm run demo:prepare:hosted -- --confirm-hosted-reset
-unset SUPABASE_SECRET_KEY TRACK01_FIXTURE_PASSWORD
-```
+## Перед внешним показом
 
-The command pins the URL and `supabase link` project ref before any reset. It
-rejects every other project before a CLI reset, network gateway, or Auth Admin
-call. A successful run prints only `PASS check=...` lines.
-
-For a safe, read-only health check, enter the same `SUPABASE_URL` and
-`SUPABASE_SECRET_KEY`, then run:
-
-```zsh
-npm run demo:check:hosted
-```
-
-Run the check twice before a presentation. It must print the same all-PASS
-contract both times. The command performs no reset, inserts, updates, deletes,
-RPC calls, or Auth mutations.
-
-## Presenter accounts
-
-Use the same password entered at reseed time for all fixed accounts. The normal
-story starts as `track01.project-admin-a@example.test`, switches to
-`track01.qc-editor@example.test` for operational evidence, and uses
-`track01.reader-qc@example.test` only for denied-action checks. Their exact
-roles and the complete 40-minute walkthrough remain in the Track 12 runbook.
-
-## Hosting boundaries
-
-Vercel production keeps only `NEXT_PUBLIC_SUPABASE_URL` and
-`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. No database password, JWT secret,
-service-role JWT, or `SUPABASE_SECRET_KEY` belongs there.
-
-The Supabase free tier may pause after inactivity. This is accepted for the
-demo: restore/resume the project from its Supabase dashboard, run the read-only
-health check, and reseed only if the check is not all PASS. There is no keep
-alive, scheduled reseed, backup/restore routine, custom domain, monitoring,
-offline mode, or open registration in this release.
+1. Откройте публичный URL и войдите назначенной учётной записью.
+2. Пройдите нужную часть Track 12; не добавляйте тестовые записи в основной
+   сценарий без решения, сохранять ли их.
+3. Если выпуск был непосредственно перед показом, убедитесь, что новый
+   контейнер работает и изменённый путь принят в браузере.
+4. При проблеме используйте production runbook; не сбрасывайте стенд как
+   первую реакцию.
