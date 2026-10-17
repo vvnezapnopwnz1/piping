@@ -85,7 +85,7 @@
     "theBillOfMaterialsCould": "The bill of materials could not be loaded, so nothing is shown above.",
     "refreshSpoolStatusBeforeRecording": "Refresh spool status before recording.",
     "recordFieldTraces": "Record field traces",
-    "doneSummary": "Checked {checked} · QC-13 {qc13}"
+    "doneSummary": "Checked {checked} · Spool fabrication sheet {qc13}"
   },
   "fieldSupport": {
     "supportsCouldNotBeLoaded": "Supports could not be loaded.",

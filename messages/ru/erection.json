@@ -101,7 +101,7 @@
     "theBillOfMaterialsCould": "Спецификацию загрузить не удалось, поэтому выше ничего нет.",
     "refreshSpoolStatusBeforeRecording": "Обновите статус катушки перед записью.",
     "recordFieldTraces": "Записать плавки",
-    "doneSummary": "Проверено {checked} · QC-13 {qc13}"
+    "doneSummary": "Проверено {checked} · лист изготовления {qc13}"
   },
   "fieldSupport": {
     "supportsCouldNotBeLoaded": "Не удалось загрузить опоры.",
