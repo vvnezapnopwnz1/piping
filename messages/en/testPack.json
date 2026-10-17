@@ -484,6 +484,36 @@
     },
     "isoReady": "ready",
     "isoBlocked": "blocked",
-    "spoolPending": "waiting for NDE: {nde}, PWHT: {pwht}"
+    "spoolPending": "waiting for NDE: {nde}, PWHT: {pwht}",
+    "action": {
+      "assign": "Assign",
+      "team": "Team",
+      "selectTeam": "Select a team",
+      "assignedOn": "Assigned on",
+      "targets": "What to assign",
+      "wholePack": "The whole pack",
+      "noTargets": "Nothing left to assign",
+      "assignButton": "Assign",
+      "assigned": "Assigned: request {number}",
+      "assignFailed": "Could not assign",
+      "record": "Record result",
+      "date": "Date",
+      "noOpen": "No open work",
+      "request": "Request {number}",
+      "punchCode": "Category X item (optional)",
+      "noPunch": "No item",
+      "punchDescription": "Description",
+      "saveLineCheck": "Record line check",
+      "lineCheckSaved": "Line check recorded",
+      "lineCheckFailed": "Could not record the line check",
+      "clear": "Clear item",
+      "cleared": "Item cleared",
+      "clearFailed": "Could not clear the item",
+      "blindingDone": "Blinding installed",
+      "blindingSaved": "Blinding recorded",
+      "blindingFailed": "Could not record blinding",
+      "selectAll": "Select all",
+      "waiting": "This step is not available yet"
+    }
   }
 }

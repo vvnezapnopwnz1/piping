@@ -484,6 +484,36 @@
     },
     "isoReady": "готова",
     "isoBlocked": "не готова",
-    "spoolPending": "ждёт контроля: {nde}, термообработки: {pwht}"
+    "spoolPending": "ждёт контроля: {nde}, термообработки: {pwht}",
+    "action": {
+      "assign": "Назначить",
+      "team": "Бригада",
+      "selectTeam": "Выберите бригаду",
+      "assignedOn": "Дата назначения",
+      "targets": "Что назначить",
+      "wholePack": "Весь пакет",
+      "noTargets": "Назначать нечего",
+      "assignButton": "Назначить",
+      "assigned": "Назначено: заявка {number}",
+      "assignFailed": "Не удалось назначить",
+      "record": "Записать результат",
+      "date": "Дата",
+      "noOpen": "Открытых работ нет",
+      "request": "Заявка {number}",
+      "punchCode": "Замечание категории X (необязательно)",
+      "noPunch": "Без замечания",
+      "punchDescription": "Описание",
+      "saveLineCheck": "Записать проверку линии",
+      "lineCheckSaved": "Проверка линии записана",
+      "lineCheckFailed": "Не удалось записать проверку линии",
+      "clear": "Закрыть замечание",
+      "cleared": "Замечание закрыто",
+      "clearFailed": "Не удалось закрыть замечание",
+      "blindingDone": "Заглушки установлены",
+      "blindingSaved": "Заглушки записаны",
+      "blindingFailed": "Не удалось записать заглушки",
+      "selectAll": "Выбрать все",
+      "waiting": "Этот шаг пока недоступен"
+    }
   }
 }
