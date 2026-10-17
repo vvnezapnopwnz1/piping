@@ -1,3 +1,4 @@
+import { selectAllRows } from "@/lib/supabase/select-all-rows"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
 import type { Database, Json } from "@/lib/supabase/database.types"
@@ -111,14 +112,18 @@ export async function loadErectionReadinessForProject(
   client: SupabaseClient<Database>,
   projectId: string,
 ): Promise<ErectionReadiness[]> {
-  const { data, error } = await client
-    .from("spool_erection_readiness")
-    .select(READINESS_COLUMNS)
-    .eq("project_id", projectId)
-    .order("iso_number")
-    .order("spool_number")
-  fail(error)
-  return (data ?? []).map((row) => toErectionReadiness(row))
+  // The whole project, past PostgREST's 1,000-row cap.
+  const data = await selectAllRows((from, to) =>
+    client
+      .from("spool_erection_readiness")
+      .select(READINESS_COLUMNS)
+      .eq("project_id", projectId)
+      .order("iso_number")
+      .order("spool_number")
+      .order("spool_revision_id")
+      .range(from, to),
+  )
+  return data.map((row) => toErectionReadiness(row))
 }
 
 export async function loadErectionChartData(client: SupabaseClient<Database>, projectId: string): Promise<ErectionChartData> {

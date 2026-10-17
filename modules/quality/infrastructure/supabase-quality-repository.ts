@@ -1,3 +1,4 @@
+import { selectAllRows } from "@/lib/supabase/select-all-rows"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/database.types"
 import type {
@@ -98,13 +99,17 @@ export async function loadNdeObligations(
   client: SupabaseClient<Database>,
   projectId: string
 ): Promise<NdeObligation[]> {
-  const { data, error } = await client
-    .from("nde_obligations")
-    .select(
-      "id, project_id, weld_joint_revision_id, spool_revision_id, method, required_coverage, selection_mode, coverage_regime, disposition, cycle_kind, cycle_ordinal, parent_obligation_id, responsible_welder_qualification_id, weld_joint_revisions(weld_joints(weld_number)), spool_revisions(spools(spool_number)), nde_batch_items(nde_batches(batch_number))"
-    )
-    .eq("project_id", projectId)
-  fail(error)
+  // The whole project, past PostgREST's 1,000-row cap: a cut-off list would hide obligations without a word.
+  const data = await selectAllRows((from, to) =>
+    client
+      .from("nde_obligations")
+      .select(
+        "id, project_id, weld_joint_revision_id, spool_revision_id, method, required_coverage, selection_mode, coverage_regime, disposition, cycle_kind, cycle_ordinal, parent_obligation_id, responsible_welder_qualification_id, weld_joint_revisions(weld_joints(weld_number)), spool_revisions(spools(spool_number)), nde_batch_items(nde_batches(batch_number))"
+      )
+      .eq("project_id", projectId)
+      .order("id")
+      .range(from, to),
+  )
   // Spool then joint, so a repair and its tracers read in the order an inspector walks
   // the line rather than in whatever order PostgREST returns them.
   return required(data)

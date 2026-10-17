@@ -8,7 +8,7 @@ test("repository reads the scoped worklist view", async () => {
     from(name: string) {
       calls.push(["from", name])
       return {
-        select: (columns: string) => { calls.push(["select", columns]); return { eq: (field: string, value: string) => { calls.push(["eq", field, value]); return { order: async () => ({ data: [{ flange_joint_revision_id: "fjr-1", progress_state: "not_started" }], error: null }) } } } },
+        select: (columns: string) => { calls.push(["select", columns]); return { eq: (field: string, value: string) => { calls.push(["eq", field, value]); return { order: () => ({ order: () => ({ range: async (from: number) => ({ data: from === 0 ? [{ flange_joint_revision_id: "fjr-1", progress_state: "not_started" }] : [], error: null }) }) }) } } } },
       }
     },
   } as never

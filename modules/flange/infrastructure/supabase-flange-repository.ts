@@ -1,3 +1,4 @@
+import { selectAllRows } from "@/lib/supabase/select-all-rows"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/database.types"
 import type { NormalizedFlangeProgressInput } from "../domain/flange-progress"
@@ -54,9 +55,10 @@ function toProgressRecord(row: Row): FlangeProgressRecord {
 }
 
 export async function listFlangeWorklist(client: SupabaseClient<Database>, projectId: string): Promise<FlangeWorklistItem[]> {
-  const { data, error } = await client.from("flange_joint_worklist").select("*").eq("project_id", projectId).order("flange_number")
-  fail(error)
-  return (data ?? []).map((row) => toWorklist(row as Row))
+  const data = await selectAllRows((from, to) =>
+    client.from("flange_joint_worklist").select("*").eq("project_id", projectId).order("flange_number").order("flange_joint_revision_id").range(from, to),
+  )
+  return data.map((row) => toWorklist(row as Row))
 }
 
 export async function listFlangeHistory(client: SupabaseClient<Database>, projectId: string, flangeJointRevisionId?: string): Promise<Array<Record<string, unknown>>> {

@@ -1,3 +1,4 @@
+import { selectAllRows } from "@/lib/supabase/select-all-rows"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/database.types"
 import type { CreateTestPackInput, UpdateTestPackInput } from "../domain/test-pack"
@@ -275,9 +276,9 @@ export async function listProjectIsometricNumbers(client: Client, projectId: str
 }
 
 export async function listAvailableIsometricReadiness(client: Client, projectId: string): Promise<IsometricReadinessRow[]> {
-  const { data, error } = await client.from("isometric_readiness").select("*").eq("project_id", projectId).order("isometric_id")
-  fail(error)
-  return data ?? []
+  return selectAllRows((from, to) =>
+    client.from("isometric_readiness").select("*").eq("project_id", projectId).order("isometric_id").range(from, to),
+  )
 }
 
 export async function listLineCheckWorklist(client: Client, projectId: string, testPackId?: string): Promise<LineCheckWorklistRow[]> {
