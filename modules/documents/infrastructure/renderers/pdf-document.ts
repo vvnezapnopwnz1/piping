@@ -11,7 +11,7 @@ export interface PdfFonts {
 /** Every word goes through PT Sans: jsPDF's built-in fonts have no Cyrillic glyphs. */
 const FAMILY = "PTSans"
 const MARGIN = 28
-const STAMP_HEIGHT = 40
+const STAMP_HEIGHT = 54
 const FOOTER_HEIGHT = 18
 const SECTION_GAP = 18
 
