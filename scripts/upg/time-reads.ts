@@ -6,7 +6,7 @@
 import { findProjectId, readUpgEnv, signInOperator, upgTargetFromArgv } from "./operator"
 
 const RUNS = 3
-const PROJECT = "UPG-1"
+const PROJECT = process.argv.includes("--project") ? process.argv[process.argv.indexOf("--project") + 1] : "UPG-1"
 
 // Reads as the screens issue them: `*` where the app takes whole rows, a short list where it takes two columns.
 const READS: readonly (readonly [view: string, columns: string])[] = [
