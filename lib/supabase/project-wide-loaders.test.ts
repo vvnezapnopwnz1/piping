@@ -12,6 +12,7 @@ const LOADERS: ReadonlyArray<readonly [string, string]> = [
   ["modules/flange/infrastructure/supabase-flange-repository.ts", "flange_joint_worklist"],
   ["modules/engineering/infrastructure/supabase-engineering-repository.ts", "isometrics"],
   ["modules/pressure-test/infrastructure/supabase-pressure-test-repository.ts", "isometric_readiness"],
+  ["modules/pressure-test/infrastructure/test-pack-rows.ts", "test_pack_workflow"],
 ]
 
 for (const [file, table] of LOADERS) {
