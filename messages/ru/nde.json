@@ -167,5 +167,36 @@
   "pages": {
     "selectAProjectToView": "Выберите проект, чтобы посмотреть сводку NDE.",
     "selectAProjectToManage": "Выберите проект, чтобы управлять партиями NDE."
+  },
+  "screen": {
+    "title": "Неразрушающий контроль",
+    "searchPlaceholder": "Поиск по стыку, катушке или партии",
+    "emptyTitle": "Стыков нет",
+    "emptyDescription": "Стыки появляются, когда сварены и подпадают под правило контроля",
+    "tab": {
+      "joints": "Стыки",
+      "waiting_result": "Ждут результата",
+      "waiting_batch": "Ждут партию",
+      "closed": "Закрытые партии",
+      "summary": "Сводка"
+    },
+    "column": {
+      "joint": "Стык",
+      "spool": "Катушка",
+      "batch": "Партия",
+      "method": "Метод",
+      "state": "Состояние",
+      "status": "Статус стыка",
+      "coverage": "Объём"
+    },
+    "state": {
+      "waiting_batch": "Ждёт партию",
+      "in_batch": "В партии",
+      "waiting_result": "Ждёт результата",
+      "done": "Выполнен"
+    },
+    "closedBatch": "{count} стыков",
+    "noClosed": "Закрытых партий нет",
+    "createBatch": "Создать партию"
   }
 }

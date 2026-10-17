@@ -167,5 +167,36 @@
   "pages": {
     "selectAProjectToView": "Select a project to view NDE dashboard.",
     "selectAProjectToManage": "Select a project to manage NDE batches."
+  },
+  "screen": {
+    "title": "Non-destructive testing",
+    "searchPlaceholder": "Search joint, spool or batch",
+    "emptyTitle": "No joints",
+    "emptyDescription": "Joints appear once welded and covered by an NDE rule",
+    "tab": {
+      "joints": "Joints",
+      "waiting_result": "Waiting for result",
+      "waiting_batch": "Waiting for a batch",
+      "closed": "Closed batches",
+      "summary": "Summary"
+    },
+    "column": {
+      "joint": "Joint",
+      "spool": "Spool",
+      "batch": "Batch",
+      "method": "Method",
+      "state": "State",
+      "status": "Joint status",
+      "coverage": "Coverage"
+    },
+    "state": {
+      "waiting_batch": "Waiting for a batch",
+      "in_batch": "In a batch",
+      "waiting_result": "Waiting for result",
+      "done": "Done"
+    },
+    "closedBatch": "{count} joints",
+    "noClosed": "No closed batches",
+    "createBatch": "Create batch"
   }
 }
