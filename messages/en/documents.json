@@ -82,7 +82,9 @@
     "rftOn": "Ready on",
     "testingStarted": "Test started",
     "testingCompleted": "Test completed",
-    "precommissioning": "Pre-commissioning completed"
+    "precommissioning": "Pre-commissioning completed",
+    "ndeResult": "NDE result",
+    "reports": "Report numbers"
   },
   "values": {
     "location": {
@@ -126,5 +128,65 @@
     },
     "yes": "yes",
     "no": "no"
+  },
+  "dossier": {
+    "button": "Dossier {format}",
+    "title": "Test pack handover dossier {number}",
+    "composition": "{isos, plural, one {# ISO} other {# ISOs}}, {welds, plural, one {# weld} other {# welds}}",
+    "sections": {
+      "pack": "Test pack",
+      "act": "Pipeline strength and tightness test record (blank)",
+      "isos": "Composition",
+      "weldHistory": "Weld history",
+      "nde": "NDE",
+      "punch": "Punch items X"
+    },
+    "facts": {
+      "testPack": "Test pack",
+      "system": "System",
+      "subsystem": "Subsystem",
+      "lineService": "Line service",
+      "medium": "Test medium",
+      "testPressure": "Test pressure",
+      "location": "Location",
+      "composition": "Composition",
+      "rftOn": "Ready for test on",
+      "testingStarted": "Test started",
+      "testingCompleted": "Test completed",
+      "precommissioning": "Pre-commissioning completed",
+      "testDate": "Test date"
+    },
+    "act": {
+      "groups": {
+        "pipeline": "Pipeline",
+        "operating": "Operating parameters",
+        "strength": "Strength test",
+        "tightness": "Tightness test"
+      },
+      "columns": {
+        "number": "No.",
+        "pipeline": "Pipeline (line and ISOs)",
+        "pressure": "Pressure, MPa",
+        "temperature": "Temperature, °C",
+        "medium": "Medium",
+        "testType": "Type",
+        "testPressure": "Test pressure, MPa",
+        "duration": "Duration, h",
+        "pressureDrop": "Pressure drop, %",
+        "allowedDrop": "Allowed drop, %"
+      },
+      "testType": {
+        "hydraulic": "hydraulic",
+        "pneumatic": "pneumatic"
+      },
+      "conclusion": "Conclusion:",
+      "signatures": {
+        "position": "Position",
+        "name": "Full name",
+        "signature": "Signature",
+        "date": "Date"
+      },
+      "footnote": "Layout follows appendix 21 of the Safety instruction for operating process pipelines (order of the Ministry of Emergency Situations of the Republic of Kazakhstan No. 359 of 27.07.2021). Measured values and signatures are entered by hand."
+    }
   }
 }

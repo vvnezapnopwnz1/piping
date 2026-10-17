@@ -22,6 +22,10 @@ export type Cell = string | number | null
 export interface DocumentTable {
   head: string[]
   body: Cell[][]
+  /** An optional row above `head` that groups its columns, as in a printed form. */
+  groups?: { label: string; span: number }[]
+  /** Minimum row height in points, for rows meant to be filled in by hand. */
+  rowHeight?: number
 }
 
 /** Orders ISO, spool and weld numbers the way people read them: `W-2` before `W-10`. */

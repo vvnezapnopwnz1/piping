@@ -30,6 +30,10 @@ for (const locale of ["en", "ru"] as const) {
     }
     for (const column of DOCUMENT_COLUMNS) assert.ok(t(`columns.${column}`).length > 0, column)
     assert.match(t("chrome.page", { n: 2, total: 5 }), /2.*5/)
+    assert.match(t("dossier.title", { number: "TP-100-01" }), /TP-100-01/)
+    assert.match(t("dossier.composition", { isos: 3, welds: 21 }), /3.*21/)
+    assert.match(t("dossier.button", { format: "PDF" }), /PDF/)
+    assert.match(t("dossier.act.footnote"), /359/)
     assert.match(t("download", { format: "XLSX" }), /XLSX/)
     assert.match(t("error.failed", { detail: "read denied" }), /read denied/)
     assert.ok(t("error.unknownReport").length > 0)

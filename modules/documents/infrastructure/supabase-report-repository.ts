@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/database.types"
 import { selectAllRows } from "@/lib/supabase/select-all-rows"
 import type { NdeRegisterRow, PunchRow, TestPackDocumentRow, WeldLogRow } from "../domain/report"
+import type { TestPackDossierSnapshot } from "../domain/test-pack-dossier"
 
 type Client = SupabaseClient<Database>
 type ViewRow<Name extends keyof Database["public"]["Views"]> = Database["public"]["Views"][Name]["Row"]
@@ -103,20 +104,18 @@ function toTestPackDocumentRow(row: Omit<ViewRow<"test_pack_document_rows">, "pr
   }
 }
 
-export async function loadWeldLog(client: Client, scope: DocumentScope): Promise<WeldLogRow[]> {
+export async function loadWeldLog(client: Client, scope: Pick<DocumentScope, "projectId">): Promise<WeldLogRow[]> {
   const rows = await selectAllRows((from, to) => {
-    let query = client.from("weld_log_rows").select(WELD_LOG_SELECT).eq("project_id", scope.projectId)
-    if (scope.testPackId) query = query.eq("test_pack_id", scope.testPackId)
-    return query.order("weld_joint_revision_id").range(from, to)
+    return client.from("weld_log_rows").select(WELD_LOG_SELECT).eq("project_id", scope.projectId)
+      .order("weld_joint_revision_id").range(from, to)
   })
   return rows.map(toWeldLogRow)
 }
 
-export async function loadNdeRegister(client: Client, scope: DocumentScope): Promise<NdeRegisterRow[]> {
+export async function loadNdeRegister(client: Client, scope: Pick<DocumentScope, "projectId">): Promise<NdeRegisterRow[]> {
   const rows = await selectAllRows((from, to) => {
-    let query = client.from("nde_register_rows").select(NDE_REGISTER_SELECT).eq("project_id", scope.projectId)
-    if (scope.testPackId) query = query.eq("test_pack_id", scope.testPackId)
-    return query.order("obligation_id").range(from, to)
+    return client.from("nde_register_rows").select(NDE_REGISTER_SELECT).eq("project_id", scope.projectId)
+      .order("obligation_id").range(from, to)
   })
   return rows.map(toNdeRegisterRow)
 }
@@ -147,4 +146,41 @@ export async function loadPunchRegister(client: Client, scope: DocumentScope): P
     checkingDate: row.checking_date,
     completionDate: row.completion_date,
   }))
+}
+
+/** One test pack's dossier in five reads; `null` when the pack is not visible to the reader. */
+export async function loadTestPackDossier(
+  client: Client,
+  scope: Required<DocumentScope>,
+): Promise<TestPackDossierSnapshot | null> {
+  // Welds and NDE are read for the whole project and narrowed here. With a pack filter the planner, misled by
+  // the RLS row estimates, nests loops and the NDE read ran past the statement timeout (23 s on TP-100-01).
+  const project = { projectId: scope.projectId }
+  const inPack = <Row extends { testPackId: string | null }>(rows: Row[]) => rows.filter((row) => row.testPackId === scope.testPackId)
+  const [packs, isos, welds, nde, punch] = await Promise.all([
+    loadTestPackSummary(client, scope),
+    client
+      .from("test_pack_isometrics")
+      .select("isometrics(iso_number), isometric_revisions(revision_number, line_number)")
+      .eq("project_id", scope.projectId)
+      .eq("test_pack_id", scope.testPackId)
+      .is("removed_at", null),
+    loadWeldLog(client, project).then(inPack),
+    loadNdeRegister(client, project).then(inPack),
+    loadPunchRegister(client, scope),
+  ])
+  if (isos.error) throw new Error(isos.error.message || "Unable to load the test pack composition")
+  const [pack] = packs
+  if (!pack) return null
+  return {
+    pack,
+    isos: (isos.data ?? []).map((member) => ({
+      isoNumber: member.isometrics?.iso_number ?? "",
+      revisionNumber: member.isometric_revisions?.revision_number ?? "",
+      lineNumber: member.isometric_revisions?.line_number ?? null,
+    })),
+    welds,
+    nde,
+    punch,
+  }
 }

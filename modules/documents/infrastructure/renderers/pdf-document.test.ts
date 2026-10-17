@@ -45,7 +45,7 @@ function recordTexts(doc: jsPDF): string[] {
 }
 
 test("pdf embeds PT Sans and every text run uses it", async () => {
-  const doc = createPdf(fonts, "landscape")
+  const doc = createPdf(fonts, "landscape", "ru")
   const texts = recordTexts(doc)
   drawSection(doc, header.title, { head: ["Стык", "Дата"], body: [["W-1", "01.10.2026"]] }, chromeRecording([]))
   const ptSans = new Set(["normal", "bold"].map((style) => String(doc.setFont("PTSans", style).getFont().id)))
@@ -62,7 +62,7 @@ test("pdf embeds PT Sans and every text run uses it", async () => {
 
 test("finishPdf numbers every page", () => {
   const pages: Array<[number, number]> = []
-  const doc = createPdf(fonts, "landscape")
+  const doc = createPdf(fonts, "landscape", "ru")
   const body = Array.from({ length: 120 }, (_, index) => [`W-${index + 1}`, "01.10.2026"])
   drawSection(doc, header.title, { head: ["Стык", "Дата"], body }, chromeRecording([]))
 
@@ -74,10 +74,19 @@ test("finishPdf numbers every page", () => {
 })
 
 test("drawSection prints the no-records label for an empty table", () => {
-  const doc = createPdf(fonts, "portrait")
+  const doc = createPdf(fonts, "portrait", "ru")
   const texts = recordTexts(doc)
 
   drawSection(doc, "Замечания", { head: ["№", "Описание"], body: [] }, chromeRecording([]))
 
   assert.ok(texts.includes("Записей нет"))
+})
+
+test("drawSection prints numbers in the reader's format", () => {
+  const doc = createPdf(fonts, "landscape", "ru")
+  const texts = recordTexts(doc)
+
+  drawSection(doc, "Стыки", { head: ["Стык", "Толщина, мм"], body: [["W-1", 6.02]] }, chromeRecording([]))
+
+  assert.ok(texts.includes("6,02"))
 })

@@ -41,6 +41,8 @@ import {
   type TestPackOperation,
   type TestPackView,
 } from "./test-pack-workspace-model"
+import { TestPackDossierButton } from "@/modules/documents/ui/test-pack-dossier-button"
+
 import { TestPackWorkflowPanel } from "./test-pack-workflow-panel"
 import styles from "./test-pack-workbench.module.css"
 
@@ -191,7 +193,12 @@ function WorkbenchDrawerHost({
       kicker={t("text.testPack")}
       title={pack.testPackNumber}
       meta={t("text.packMeta", { revision: pack.revisionNo, count: pack.activeIsoCount })}
-      status={statusNode}
+      status={
+        <div className="flex flex-wrap items-center gap-2">
+          {statusNode}
+          <TestPackDossierButton projectId={projectId} testPackId={pack.id} testPackNumber={pack.testPackNumber} />
+        </div>
+      }
       returnLabel={t("text.testPacks")}
       closeLabel={t("text.closePack", { number: pack.testPackNumber })}
       recordKind="test-pack"

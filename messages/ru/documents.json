@@ -82,7 +82,9 @@
     "rftOn": "Дата готовности",
     "testingStarted": "Испытание начато",
     "testingCompleted": "Испытание окончено",
-    "precommissioning": "Пусконаладка завершена"
+    "precommissioning": "Пусконаладка завершена",
+    "ndeResult": "Результат NDE",
+    "reports": "№ заключений"
   },
   "values": {
     "location": {
@@ -126,5 +128,65 @@
     },
     "yes": "да",
     "no": "нет"
+  },
+  "dossier": {
+    "button": "Досье {format}",
+    "title": "Сдаточное досье тест-пакета {number}",
+    "composition": "{isos} ISO, {welds, plural, one {# стык} few {# стыка} many {# стыков} other {# стыка}}",
+    "sections": {
+      "pack": "Тест-пакет",
+      "act": "Акт испытания трубопроводов на прочность и герметичность (заготовка)",
+      "isos": "Состав",
+      "weldHistory": "Weld History",
+      "nde": "NDE",
+      "punch": "Замечания X"
+    },
+    "facts": {
+      "testPack": "Тест-пакет",
+      "system": "Система",
+      "subsystem": "Подсистема",
+      "lineService": "Среда линии",
+      "medium": "Среда испытания",
+      "testPressure": "Давление испытания",
+      "location": "Место",
+      "composition": "Состав",
+      "rftOn": "Готов к испытанию",
+      "testingStarted": "Испытание начато",
+      "testingCompleted": "Испытание окончено",
+      "precommissioning": "Пусконаладка завершена",
+      "testDate": "Дата испытания"
+    },
+    "act": {
+      "groups": {
+        "pipeline": "Трубопровод",
+        "operating": "Рабочие параметры",
+        "strength": "Испытание на прочность",
+        "tightness": "Испытание на герметичность"
+      },
+      "columns": {
+        "number": "№ п/п",
+        "pipeline": "Наименование трубопровода (линия и ISO)",
+        "pressure": "Давление, МПа",
+        "temperature": "Температура, °C",
+        "medium": "Среда",
+        "testType": "Вид",
+        "testPressure": "Ри, МПа",
+        "duration": "Продолжительность, ч",
+        "pressureDrop": "Падение давления, %",
+        "allowedDrop": "Допустимое падение, %"
+      },
+      "testType": {
+        "hydraulic": "гидравлическое",
+        "pneumatic": "пневматическое"
+      },
+      "conclusion": "Заключение:",
+      "signatures": {
+        "position": "Должность",
+        "name": "ФИО",
+        "signature": "Подпись",
+        "date": "Дата"
+      },
+      "footnote": "Структура формы — приложение 21 к Инструкции по безопасности при эксплуатации технологических трубопроводов (приказ МЧС РК № 359 от 27.07.2021). Измеренные значения и подписи вносятся от руки."
+    }
   }
 }

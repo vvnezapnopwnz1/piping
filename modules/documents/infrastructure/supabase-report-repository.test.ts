@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { loadNdeRegister, loadTestPackSummary, loadWeldLog } from "./supabase-report-repository"
+import { loadTestPackDossier, loadTestPackSummary, loadWeldLog } from "./supabase-report-repository"
 
 /** A PostgREST stand-in that serves `rows` in pages of at most `cap`, whatever range is asked for. */
 function pagedClient(rows: Record<string, unknown>[], calls: unknown[], cap = 1000, error: { message: string } | null = null) {
@@ -14,6 +14,7 @@ function pagedClient(rows: Record<string, unknown>[], calls: unknown[], cap = 10
         eq(field: string, value: string) { calls.push(["eq", field, value]); return query },
         order(field: string) { calls.push(["order", field]); return query },
         range(start: number, end: number) { calls.push(["range", start, end]); from = start; return query },
+        is(field: string, value: unknown) { calls.push(["is", field, value]); return query },
         then(resolve: (value: unknown) => void) {
           resolve({ data: error ? null : rows.slice(from, from + cap), error })
         },
@@ -53,13 +54,34 @@ test("the weld log loader turns empty arrays and nulls into plain values", async
   assert.equal(row.diameterInch, 6)
 })
 
-test("a test pack filter narrows the read to that pack", async () => {
+test("the dossier reads welds and NDE by project and keeps only the pack's rows", async () => {
   const calls: unknown[] = []
-  await loadNdeRegister(pagedClient([], calls), { projectId: "project-a", testPackId: "tp-1" })
+  const pack = { test_pack_id: "tp-1", test_pack_number: "TP-1", revision_no: 0, line_numbers: null }
+  const client = {
+    from(table: string) {
+      calls.push(["from", table])
+      const rows: Record<string, unknown>[] = table === "weld_log_rows"
+        ? [{ ...weldRow("1"), test_pack_id: "tp-1" }, { ...weldRow("2"), test_pack_id: "tp-2" }]
+        : table === "test_pack_document_rows" ? [pack] : []
+      let from = 0
+      const query = {
+        select() { return query },
+        eq(field: string, value: string) { calls.push(["eq", table, field, value]); return query },
+        is() { return query },
+        order() { return query },
+        range(start: number) { from = start; return query },
+        then(resolve: (value: unknown) => void) { resolve({ data: rows.slice(from), error: null }) },
+      }
+      return query
+    },
+  } as never
 
-  assert.ok(has(calls, ["from", "nde_register_rows"]))
-  assert.ok(has(calls, ["eq", "test_pack_id", "tp-1"]))
-  assert.ok(has(calls, ["order", "obligation_id"]))
+  const snapshot = await loadTestPackDossier(client, { projectId: "project-a", testPackId: "tp-1" })
+
+  assert.deepEqual(snapshot?.welds.map((row) => row.weldNumber), ["W-1"])
+  assert.ok(!has(calls, ["eq", "weld_log_rows", "test_pack_id", "tp-1"]))
+  assert.ok(!has(calls, ["eq", "nde_register_rows", "test_pack_id", "tp-1"]))
+  assert.ok(has(calls, ["eq", "test_pack_document_rows", "test_pack_id", "tp-1"]))
 })
 
 test("loader read errors remain visible to the caller", async () => {
@@ -67,4 +89,9 @@ test("loader read errors remain visible to the caller", async () => {
     loadTestPackSummary(pagedClient([], [], 1000, { message: "read denied" }), { projectId: "project-a" }),
     /read denied/,
   )
+})
+
+test("the dossier loader returns null when the pack is not visible", async () => {
+  const snapshot = await loadTestPackDossier(pagedClient([], []), { projectId: "project-a", testPackId: "tp-1" })
+  assert.equal(snapshot, null)
 })

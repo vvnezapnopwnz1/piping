@@ -20,8 +20,18 @@ export const TEST_PACK_SUMMARY_COLUMNS = [
   "rft", "rftOn", "testingStarted", "testingCompleted", "precommissioning",
 ] as const
 
+export const ISO_COLUMNS = ["iso", "revision", "line"] as const
+
+export const WELD_HISTORY_COLUMNS = [
+  "iso", "spool", "weld", "location", "diameter", "thickness", "wps", "welders", "weldedOn", "ndeResult",
+  "reports", "pwht", "heat",
+] as const
+
 export const DOCUMENT_COLUMNS = [
-  ...new Set([...WELD_LOG_COLUMNS, ...NDE_REGISTER_COLUMNS, ...PUNCH_COLUMNS, ...TEST_PACK_SUMMARY_COLUMNS]),
+  ...new Set([
+    ...WELD_LOG_COLUMNS, ...NDE_REGISTER_COLUMNS, ...PUNCH_COLUMNS, ...TEST_PACK_SUMMARY_COLUMNS,
+    ...ISO_COLUMNS, ...WELD_HISTORY_COLUMNS,
+  ]),
 ] as const
 
 export type DocumentColumn =
@@ -29,6 +39,8 @@ export type DocumentColumn =
   | (typeof NDE_REGISTER_COLUMNS)[number]
   | (typeof PUNCH_COLUMNS)[number]
   | (typeof TEST_PACK_SUMMARY_COLUMNS)[number]
+  | (typeof ISO_COLUMNS)[number]
+  | (typeof WELD_HISTORY_COLUMNS)[number]
 
 /** Every word a register prints, already in the reader's language; codes are keys, never shown raw. */
 export interface RegisterLabels {
@@ -47,15 +59,15 @@ export interface RegisterLabels {
   no: string
 }
 
-function word(words: Record<string, string>, code: string | null): string | null {
+export function word(words: Record<string, string>, code: string | null): string | null {
   return code === null ? null : words[code] ?? code
 }
 
-function list(values: readonly string[]): string | null {
+export function list(values: readonly string[]): string | null {
   return values.length === 0 ? null : values.join(", ")
 }
 
-function head(columns: readonly DocumentColumn[], labels: RegisterLabels): string[] {
+export function head(columns: readonly DocumentColumn[], labels: RegisterLabels): string[] {
   return columns.map((column) => labels.columns[column])
 }
 
@@ -66,12 +78,12 @@ function ndeStatus(row: WeldLogRow, labels: RegisterLabels): string | null {
   return row.ndeMethods.length > 0 ? labels.ndeStatus.done : null
 }
 
-function pwht(row: WeldLogRow, labels: RegisterLabels): string | null {
+export function pwht(row: WeldLogRow, labels: RegisterLabels): string | null {
   if (!row.pwhtRequired) return null
   return row.pwhtAccepted ? labels.pwht.accepted : labels.pwht.required
 }
 
-function byWeld(a: { isoNumber: string; spoolNumber: string; weldNumber: string }, b: typeof a): number {
+export function byWeld(a: { isoNumber: string; spoolNumber: string; weldNumber: string }, b: typeof a): number {
   return compareCodes(a.isoNumber, b.isoNumber)
     || compareCodes(a.spoolNumber, b.spoolNumber)
     || compareCodes(a.weldNumber, b.weldNumber)

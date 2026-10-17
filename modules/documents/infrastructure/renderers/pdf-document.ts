@@ -1,7 +1,7 @@
 import { jsPDF } from "jspdf"
 import { autoTable } from "jspdf-autotable"
 
-import { headerLines, type DocumentChrome, type DocumentHeader, type DocumentTable } from "../../domain/document"
+import { headerLines, type Cell, type DocumentChrome, type DocumentHeader, type DocumentLocale, type DocumentTable } from "../../domain/document"
 
 export interface PdfFonts {
   regular: Uint8Array
@@ -16,6 +16,7 @@ const FOOTER_HEIGHT = 18
 const SECTION_GAP = 18
 
 const cursors = new WeakMap<jsPDF, number>()
+const numberFormats = new WeakMap<jsPDF, Intl.NumberFormat>()
 
 function base64(bytes: Uint8Array): string {
   let binary = ""
@@ -43,7 +44,7 @@ export async function loadPdfFonts(fetchImpl: typeof fetch = fetch): Promise<Pdf
   return { regular, bold }
 }
 
-export function createPdf(fonts: PdfFonts, orientation: "portrait" | "landscape"): jsPDF {
+export function createPdf(fonts: PdfFonts, orientation: "portrait" | "landscape", locale: DocumentLocale): jsPDF {
   const doc = new jsPDF({ unit: "pt", format: "a4", orientation, compress: false })
   doc.addFileToVFS("PTSans-Regular.ttf", base64(fonts.regular))
   doc.addFont("PTSans-Regular.ttf", FAMILY, "normal")
@@ -51,38 +52,91 @@ export function createPdf(fonts: PdfFonts, orientation: "portrait" | "landscape"
   doc.addFont("PTSans-Bold.ttf", FAMILY, "bold")
   doc.setFont(FAMILY, "normal")
   cursors.set(doc, contentTop())
+  numberFormats.set(doc, new Intl.NumberFormat(locale === "ru" ? "ru-RU" : "en-GB", { maximumFractionDigits: 3 }))
   return doc
 }
 
-/** A section title and its table; the table header repeats on every page it spans. */
-export function drawSection(doc: jsPDF, title: string, table: DocumentTable, chrome: DocumentChrome): void {
-  let y = cursors.get(doc) ?? contentTop()
-  if (y + 60 > contentBottom(doc)) {
-    doc.addPage()
-    y = contentTop()
-  }
+/** Numbers as the reader writes them (6,02 in Russian); empty cells stay empty. */
+function cellText(doc: jsPDF, cell: Cell): string {
+  if (typeof cell === "number") return numberFormats.get(doc)?.format(cell) ?? String(cell)
+  return cell ?? ""
+}
 
-  doc.setFont(FAMILY, "bold").setFontSize(11)
-  doc.text(title, MARGIN, y)
+function cursor(doc: jsPDF, room: number): number {
+  const y = cursors.get(doc) ?? contentTop()
+  if (y + room <= contentBottom(doc)) return y
+  doc.addPage()
+  return contentTop()
+}
+
+/** Starts the next part of the document on a fresh page. */
+export function startPage(doc: jsPDF): void {
+  doc.addPage()
+  cursors.set(doc, contentTop())
+}
+
+/** A section title (when given) and its table; the table header repeats on every page it spans. */
+export function drawSection(doc: jsPDF, title: string, table: DocumentTable, chrome: DocumentChrome): void {
+  let y = cursor(doc, 60)
+  if (title) {
+    doc.setFont(FAMILY, "bold").setFontSize(11)
+    doc.text(title, MARGIN, y)
+    y += 8
+  }
   doc.setFont(FAMILY, "normal").setFontSize(9)
 
   if (table.body.length === 0) {
-    doc.text(chrome.noRecords, MARGIN, y + 16)
-    cursors.set(doc, y + 16 + SECTION_GAP)
+    doc.text(chrome.noRecords, MARGIN, y + 8)
+    cursors.set(doc, y + 8 + SECTION_GAP)
     return
   }
 
+  const groupRow = table.groups?.map((group) => ({ content: group.label, colSpan: group.span, styles: { halign: "center" as const } }))
   autoTable(doc, {
-    head: [table.head],
-    body: table.body.map((row) => row.map((cell) => cell ?? "")),
-    startY: y + 8,
+    head: groupRow ? [groupRow, table.head] : [table.head],
+    body: table.body.map((row) => row.map((cell) => cellText(doc, cell))),
+    startY: y,
     margin: { top: contentTop(), bottom: MARGIN + FOOTER_HEIGHT, left: MARGIN, right: MARGIN },
     showHead: "everyPage",
-    styles: { font: FAMILY, fontStyle: "normal", fontSize: 8, cellPadding: 3, overflow: "linebreak", textColor: 20 },
-    headStyles: { font: FAMILY, fontStyle: "bold", fillColor: [235, 235, 235], textColor: 20 },
+    styles: {
+      font: FAMILY, fontStyle: "normal", fontSize: 8, cellPadding: 3, overflow: "linebreak", textColor: 20,
+      ...(table.rowHeight ? { minCellHeight: table.rowHeight, lineWidth: 0.4, lineColor: 160 } : {}),
+    },
+    headStyles: { font: FAMILY, fontStyle: "bold", fillColor: [235, 235, 235], textColor: 20, minCellHeight: 0 },
   })
   const finalY = (doc as jsPDF & { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY ?? y
   cursors.set(doc, finalY + SECTION_GAP)
+}
+
+/** Label–value pairs as a two-column table without a header, labels in bold. */
+export function drawFacts(doc: jsPDF, title: string, facts: Cell[][]): void {
+  let y = cursor(doc, 40)
+  if (title) {
+    doc.setFont(FAMILY, "bold").setFontSize(11)
+    doc.text(title, MARGIN, y)
+    y += 8
+  }
+  autoTable(doc, {
+    body: facts.map((row) => row.map((cell) => cellText(doc, cell))),
+    startY: y,
+    margin: { top: contentTop(), bottom: MARGIN + FOOTER_HEIGHT, left: MARGIN, right: MARGIN },
+    theme: "plain",
+    styles: { font: FAMILY, fontStyle: "normal", fontSize: 9, cellPadding: 2, textColor: 20 },
+    columnStyles: { 0: { fontStyle: "bold", cellWidth: 180 } },
+  })
+  const finalY = (doc as jsPDF & { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY ?? y
+  cursors.set(doc, finalY + SECTION_GAP)
+}
+
+/** A line or paragraph of running text: a form heading, a conclusion line or a footnote. */
+export function drawParagraph(doc: jsPDF, text: string, style: "heading" | "body" | "note"): void {
+  const size = style === "heading" ? 12 : style === "note" ? 7 : 9
+  const width = doc.internal.pageSize.getWidth() - MARGIN * 2
+  doc.setFont(FAMILY, style === "heading" ? "bold" : "normal").setFontSize(size)
+  const lines = doc.splitTextToSize(text, width) as string[]
+  const y = cursor(doc, lines.length * size * 1.3 + 4)
+  doc.text(lines, MARGIN, y)
+  cursors.set(doc, y + lines.length * size * 1.3 + (style === "note" ? 4 : 10))
 }
 
 /** Stamps the document header on top of every page and "page N of M" at the bottom. */
