@@ -13,15 +13,21 @@ import { createClient } from "@supabase/supabase-js"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 
+import { assertHostedSupabaseTarget } from "../demo/hosted-target"
 import { assertLocalSupabaseTarget } from "../demo/local-target"
-import { createSupabaseDemoStandCore } from "../demo/supabase-demo-stand"
+import {
+  createHostedSupabaseDemoStandCore,
+  createSupabaseDemoStandCore,
+} from "../demo/supabase-demo-stand"
 import { UPG_PROJECT } from "./dataset"
 import { UPG_FIXTURE_DIR, addDays } from "./files"
+import { readUpgEnv, upgTargetFromArgv, type UpgTarget } from "./operator"
 import { UPG_REFERENCES } from "./references"
 
 export interface ServiceEnv {
   readonly url: string
   readonly serviceRoleKey: string
+  readonly target?: UpgTarget
 }
 
 async function projectIdOf(env: ServiceEnv, projectCode: string): Promise<string> {
@@ -33,15 +39,27 @@ async function projectIdOf(env: ServiceEnv, projectCode: string): Promise<string
 }
 
 export async function prepareUpgReferences(env: ServiceEnv, projectCode: string): Promise<void> {
-  assertLocalSupabaseTarget(env.url)
+  const target = env.target ?? "local"
+  if (target === "hosted") {
+    assertHostedSupabaseTarget(env.url)
+  } else {
+    assertLocalSupabaseTarget(env.url)
+  }
   const projectId = await projectIdOf(env, projectCode)
-  const core = createSupabaseDemoStandCore(env.url, env.serviceRoleKey)
+  const core = target === "hosted"
+    ? createHostedSupabaseDemoStandCore(env.url, env.serviceRoleKey)
+    : createSupabaseDemoStandCore(env.url, env.serviceRoleKey)
   await core.resolveShowcasePrerequisiteIds()
   await core.prepareProjectReferencesFor(projectId, UPG_REFERENCES, new Date())
 }
 
 export async function backdateUpgWps(env: ServiceEnv, projectCode: string, approvedOn: string): Promise<number> {
-  assertLocalSupabaseTarget(env.url)
+  const target = env.target ?? "local"
+  if (target === "hosted") {
+    assertHostedSupabaseTarget(env.url)
+  } else {
+    assertLocalSupabaseTarget(env.url)
+  }
   const projectId = await projectIdOf(env, projectCode)
   const admin = createClient(env.url, env.serviceRoleKey, { auth: { persistSession: false } })
   const { data, error } = await admin
@@ -63,9 +81,11 @@ function argument(name: string): string | undefined {
 }
 
 async function main(): Promise<void> {
-  const env = { url: process.env.SUPABASE_URL ?? "", serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "" }
-  if (!env.serviceRoleKey) throw new Error("SUPABASE_SERVICE_ROLE_KEY must be set in .env.local.")
-  assertLocalSupabaseTarget(env.url)
+  const target = upgTargetFromArgv(process.argv)
+  const env = readUpgEnv(process.env, target)
+  if (target === "hosted") {
+    console.log(`Target: ${env.url} (hosted)`)
+  }
   const projectCode = argument("--project") ?? UPG_PROJECT.activityCode
   const phase = argument("--phase")
   if (phase === "references") {

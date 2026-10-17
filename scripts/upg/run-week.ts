@@ -15,7 +15,7 @@ import { UPG_PROJECT } from "./dataset"
 import { addDays, UPG_FIXTURE_DIR } from "./files"
 import { executeAction, summarizeRun, type ActionResult } from "./execute"
 import { loadIds } from "./ids"
-import { findProjectId, readUpgEnv, signInOperator } from "./operator"
+import { findProjectId, readUpgEnv, signInOperator, upgTargetFromArgv } from "./operator"
 import { UPG_WEEK_COUNT, buildWeekPlan, describeAction } from "./weeks"
 
 function argument(name: string): string | undefined {
@@ -28,7 +28,11 @@ async function main(): Promise<number> {
   if (!Number.isInteger(week) || week < 1 || week > UPG_WEEK_COUNT) throw new Error(`Use --week 1…${UPG_WEEK_COUNT}.`)
   const includeManual = process.argv.includes("--include-manual")
   const projectCode = argument("--project") ?? UPG_PROJECT.activityCode
-  const env = readUpgEnv()
+  const target = upgTargetFromArgv(process.argv)
+  const env = readUpgEnv(process.env, target)
+  if (target === "hosted") {
+    console.log(`Target: ${env.url} (hosted)`)
+  }
   const client = await signInOperator(env)
   const projectId = await findProjectId(client, projectCode)
   if (!projectId) throw new Error(`Project ${projectCode} does not exist.`)

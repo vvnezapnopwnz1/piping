@@ -3,20 +3,55 @@ import { readFileSync } from "node:fs"
 import { join } from "node:path"
 
 import type { Database } from "../../lib/supabase/database.types"
+import { assertHostedSupabaseTarget } from "../demo/hosted-target"
+import { hostedAdminKeyFromEnvironment } from "../prepare-hosted-demo"
 import { isLocalhost } from "../spoolgen-fixture-import"
 import { UPG_FIXTURE_DIR } from "./files"
 
 /** The account that creates UPG-1 in the UI, and so its project admin. */
 export const UPG_OPERATOR_EMAIL = "track01.platform-admin@example.test"
 
+export type UpgTarget = "local" | "hosted"
+
+export const UPG_HOSTED_CONFIRMATION = "--confirm-hosted-upg"
+
 export interface UpgEnv {
   readonly url: string
   readonly publishableKey: string
   readonly password: string
   readonly serviceRoleKey: string
+  readonly target: UpgTarget
 }
 
-export function readUpgEnv(env: NodeJS.ProcessEnv = process.env): UpgEnv {
+export function upgTargetFromArgv(argv: readonly string[]): UpgTarget {
+  return argv.includes(UPG_HOSTED_CONFIRMATION) ? "hosted" : "local"
+}
+
+export function readUpgEnv(
+  env: NodeJS.ProcessEnv = process.env,
+  target: UpgTarget = "local",
+): UpgEnv {
+  if (target === "hosted") {
+    const targetUrl = assertHostedSupabaseTarget(env.SUPABASE_URL ?? "")
+    const url = targetUrl.origin
+    const serviceRoleKey = hostedAdminKeyFromEnvironment(env)?.trim() ?? ""
+    const publishableKey = env.SUPABASE_PUBLISHABLE_KEY?.trim() ?? ""
+    const password = env.TRACK01_FIXTURE_PASSWORD ?? ""
+
+    const missing: string[] = []
+    if (!serviceRoleKey) missing.push("SUPABASE_SECRET_KEY")
+    if (!publishableKey) missing.push("SUPABASE_PUBLISHABLE_KEY")
+    if (!password) missing.push("TRACK01_FIXTURE_PASSWORD")
+
+    if (missing.length > 0) {
+      throw new Error(
+        `${missing.join(", ")} must be set in ~/.pipeqc-hosted.env.`,
+      )
+    }
+
+    return { url, publishableKey, password, serviceRoleKey, target }
+  }
+
   const url = env.SUPABASE_URL ?? ""
   if (!isLocalhost(url)) throw new Error("Refusing to run against a non-local Supabase URL.")
   const publishableKey = env.SUPABASE_PUBLISHABLE_KEY || env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || ""
@@ -25,7 +60,7 @@ export function readUpgEnv(env: NodeJS.ProcessEnv = process.env): UpgEnv {
   if (!publishableKey || !password || !serviceRoleKey) {
     throw new Error("SUPABASE_SERVICE_ROLE_KEY, a publishable key and TRACK01_FIXTURE_PASSWORD must be set in .env.local.")
   }
-  return { url, publishableKey, password, serviceRoleKey }
+  return { url, publishableKey, password, serviceRoleKey, target }
 }
 
 export async function signInOperator(env: UpgEnv): Promise<SupabaseClient<Database>> {

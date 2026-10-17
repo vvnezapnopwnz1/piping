@@ -16,7 +16,7 @@ import { computeChecksum, readFirstSheetMatrix } from "../../modules/imports/inf
 import { createNdeMatrixRule } from "../../modules/project-setup/infrastructure/supabase-welding-quality-reference-repository"
 import { PWHT_FORM_RULES, UPG_PROJECT } from "./dataset"
 import { addDays, importSheets } from "./files"
-import { findProjectId, readFixtureBytes, readFixtureText, readUpgEnv, signInOperator, type UpgEnv } from "./operator"
+import { findProjectId, readFixtureBytes, readFixtureText, readUpgEnv, signInOperator, upgTargetFromArgv, type UpgEnv } from "./operator"
 import { importSpoolgenPackage } from "./import-spooling"
 import { backdateUpgWps, prepareUpgReferences, startDateFromManifest } from "./setup-references"
 
@@ -138,7 +138,12 @@ export async function loadUpgProject(env: UpgEnv, options: { createProject: bool
 }
 
 if (process.argv[1]?.endsWith("load-project.ts")) {
-  loadUpgProject(readUpgEnv(), { createProject: process.argv.includes("--create-project") }).catch((error: unknown) => {
+  const target = upgTargetFromArgv(process.argv)
+  const env = readUpgEnv(process.env, target)
+  if (target === "hosted") {
+    console.log(`Target: ${env.url} (hosted)`)
+  }
+  loadUpgProject(env, { createProject: process.argv.includes("--create-project") }).catch((error: unknown) => {
     console.error(error instanceof Error ? error.message : String(error))
     process.exit(1)
   })
