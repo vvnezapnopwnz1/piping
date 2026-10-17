@@ -17,7 +17,7 @@ import {
 } from "../../infrastructure/supabase-pressure-test-repository"
 import { reportTestPackError, useTestPackTranslations } from "../test-pack-i18n"
 import { AssignForm } from "./assign-form"
-import { reinstatementDraftErrors, reinstatementTargets } from "./testing-actions"
+import { reinstatementAssignKey, reinstatementDraftErrors, reinstatementTargets } from "./testing-actions"
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -48,7 +48,7 @@ export function ReinstatementStep({ projectId, packId, category, available, canM
   const assign = async ({ teamId, date, targetIds }: { teamId: string; date: string; targetIds: string[] }) => {
     setError(null)
     try {
-      await assignReinstatement(getSupabaseBrowserClient(), packId, targetIds, teamId, date, `browser-reinstatement-${packId}-${category}-${date}-${teamId}`)
+      await assignReinstatement(getSupabaseBrowserClient(), packId, targetIds, teamId, date, reinstatementAssignKey(packId, category, date, teamId, targetIds))
       toast.success(t("steps.action.assigned", { number: "" }))
       await load(); onChanged()
     } catch (cause) { setError(reportTestPackError(cause, t("steps.action.assignFailed"))) }

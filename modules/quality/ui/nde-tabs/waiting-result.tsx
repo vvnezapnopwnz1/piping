@@ -82,27 +82,6 @@ export function WaitingResultTab({ obligations, batches, referentials, onChanged
   if (issued.length === 0) return <p className="rounded-lg border p-4 text-sm text-muted-foreground">{t("noIssued")}</p>
   return (
     <div className="space-y-3">
-      {reject && (
-        <div className="space-y-2 rounded-lg border border-destructive bg-card p-3">
-          <p className="text-sm font-medium">{t("rejectionOf", { joint: reject.ob.weldNumber })}</p>
-          <div className="flex flex-wrap items-end gap-3">
-            <label className="text-sm">{t("defectCode")}
-              <select className="mt-1 block rounded border bg-transparent p-2" value={reject.defectCodeId} onChange={(event) => setReject({ ...reject, defectCodeId: event.target.value })}>
-                <option value="">{t("selectDefect")}</option>
-                {referentials.reworkCodes.map((code) => <option key={code.id} value={code.id}>{code.code}{code.description ? ` · ${code.description}` : ""}</option>)}
-              </select>
-            </label>
-            <label className="text-sm">{t("responsibleWelder")}
-              <select className="mt-1 block rounded border bg-transparent p-2" value={reject.welderId} onChange={(event) => setReject({ ...reject, welderId: event.target.value })}>
-                <option value="">{t("noWelder")}</option>
-                {referentials.welders.filter((welder) => reject.welderIds.includes(welder.id)).map((welder) => <option key={welder.id} value={welder.id}>{welder.welderCode}{welder.fullName ? ` · ${welder.fullName}` : ""}</option>)}
-              </select>
-            </label>
-            <Button size="sm" disabled={busy || !rejectDraftValid(reject, reject.welderIds)} onClick={() => void saveReject()}>{t("recordRejection")}</Button>
-            <Button size="sm" variant="outline" onClick={() => setReject(null)}>{t("cancel")}</Button>
-          </div>
-        </div>
-      )}
       {issued.map((batch) => {
         const all = byBatch.get(batch.batchNumber) ?? []
         const waiting = all.filter((ob) => jointState(ob) === "waiting_result")
@@ -126,11 +105,34 @@ export function WaitingResultTab({ obligations, batches, referentials, onChanged
                 {waiting.map((ob) => {
                   const status = jointStatusMessage(ob)
                   return (
-                    <div key={ob.id} className="flex items-center gap-3 rounded border px-3 py-1.5 text-sm">
-                      <input type="checkbox" aria-label={ob.weldNumber} checked={picked.has(ob.id)} onChange={(event) => { const next = new Set(picked); if (event.target.checked) next.add(ob.id); else next.delete(ob.id); setPicked(next) }} />
-                      <span className="w-40 font-mono">{ob.weldNumber}</span>
-                      <span className="flex-1 text-muted-foreground">{ob.spoolNumber} · {tb(status.key as never, status.values as never)}</span>
-                      <Button size="sm" variant="outline" onClick={() => void startReject(ob)}>{t("rejectJoint")}</Button>
+                    <div key={ob.id} className="space-y-2">
+                      <div className="flex items-center gap-3 rounded border px-3 py-1.5 text-sm">
+                        <input type="checkbox" aria-label={ob.weldNumber} checked={picked.has(ob.id)} onChange={(event) => { const next = new Set(picked); if (event.target.checked) next.add(ob.id); else next.delete(ob.id); setPicked(next) }} />
+                        <span className="w-40 font-mono">{ob.weldNumber}</span>
+                        <span className="flex-1 text-muted-foreground">{ob.spoolNumber} · {tb(status.key as never, status.values as never)}</span>
+                        <Button size="sm" variant="outline" onClick={() => void startReject(ob)}>{t("rejectJoint")}</Button>
+                      </div>
+                      {reject?.ob.id === ob.id && (
+                        <div className="space-y-2 rounded-lg border border-destructive bg-card p-3">
+                          <p className="text-sm font-medium">{t("rejectionOf", { joint: reject.ob.weldNumber })} · {date}</p>
+                          <div className="flex flex-wrap items-end gap-3">
+                            <label className="text-sm">{t("defectCode")}
+                              <select className="mt-1 block rounded border bg-transparent p-2" value={reject.defectCodeId} onChange={(event) => setReject({ ...reject, defectCodeId: event.target.value })}>
+                                <option value="">{t("selectDefect")}</option>
+                                {referentials.reworkCodes.map((code) => <option key={code.id} value={code.id}>{code.code}{code.description ? ` · ${code.description}` : ""}</option>)}
+                              </select>
+                            </label>
+                            <label className="text-sm">{t("responsibleWelder")}
+                              <select className="mt-1 block rounded border bg-transparent p-2" value={reject.welderId} onChange={(event) => setReject({ ...reject, welderId: event.target.value })}>
+                                <option value="">{t("noWelder")}</option>
+                                {referentials.welders.filter((welder) => reject.welderIds.includes(welder.id)).map((welder) => <option key={welder.id} value={welder.id}>{welder.welderCode}{welder.fullName ? ` · ${welder.fullName}` : ""}</option>)}
+                              </select>
+                            </label>
+                            <Button size="sm" disabled={busy || !rejectDraftValid(reject, reject.welderIds)} onClick={() => void saveReject()}>{t("recordRejection")}</Button>
+                            <Button size="sm" variant="outline" onClick={() => setReject(null)}>{t("cancel")}</Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )
                 })}

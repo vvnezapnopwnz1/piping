@@ -155,9 +155,11 @@ export async function getProjectPressureUnit(
 }
 
 export async function listTestPackCatalog(client: Client, projectId: string): Promise<TestPackCatalogRow[]> {
-  const { data, error } = await client.from("test_pack_catalog").select(TEST_PACK_SELECT).eq("project_id", projectId).order("test_pack_number")
-  fail(error)
-  return (data ?? []).map(toCatalog)
+  // Read past the 1,000-row cap; the id breaks ties so pages never overlap.
+  const rows = await selectAllRows((from, to) =>
+    client.from("test_pack_catalog").select(TEST_PACK_SELECT).eq("project_id", projectId).order("test_pack_number").order("id").range(from, to),
+  )
+  return rows.map(toCatalog)
 }
 
 export async function listTestPackReadiness(client: Client, projectId: string): Promise<TestPackReadinessRow[]> {

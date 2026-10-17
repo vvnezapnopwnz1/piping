@@ -25,3 +25,8 @@ export function jointStatusMessage(obligation: Parameters<typeof jointStatusLabe
   if (/^R\d+$/.test(code)) return { key: "jointStatus.repair", values: { n } }
   return { key: `jointStatus.${code}` }
 }
+
+/** Creating a batch for a method and regime with no joint waiting leaves an empty draft the server refuses to issue. */
+export function canCreateBatch(obligations: readonly Pick<NdeObligation, "disposition" | "batchNumber" | "method" | "coverageRegime">[], method: string, regime: string): boolean {
+  return obligations.some((ob) => jointState(ob) === "waiting_batch" && ob.method === method && ob.coverageRegime === regime)
+}

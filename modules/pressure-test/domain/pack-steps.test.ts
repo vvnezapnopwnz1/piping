@@ -57,3 +57,24 @@ test("stage groups: waiting for RFT, complete, everything else active", () => {
   assert.equal(packStageGroup("testing"), "active")
   assert.equal(packStageGroup("awaiting_z_reinstatement"), "active")
 })
+
+test("open X punches show the item clearance step even before any item is assigned to a request", () => {
+  const steps = buildPackSteps(row({ item_clearance_total: 0, blockers: { rft: { X_OPEN: 2 } } }))
+  assert.equal(steps.some((step) => step.id === "item_clearance"), true)
+})
+
+test("a pack with no isometrics starts at composition; readiness and line check wait for it", () => {
+  const steps = buildPackSteps(row({ blockers: { rft: { NO_SPOOLS: 1 } } }))
+  assert.equal(steps[0].id, "composition")
+  assert.equal(steps[0].state, "ready")
+  assert.equal(currentStepId(steps), "composition")
+  assert.equal(steps.find((step) => step.id === "readiness")!.state, "blocked")
+  assert.equal(steps.find((step) => step.id === "line_check")!.state, "blocked")
+})
+
+test("line check is not done while the server still counts isometrics without a complete line check", () => {
+  const steps = buildPackSteps(row({ line_check_total: 3, line_check_completed: 3, blockers: { rft: { LINE_CHECK_PENDING: 7 } } }))
+  const lineCheck = steps.find((step) => step.id === "line_check")!
+  assert.equal(lineCheck.state, "ongoing")
+  assert.deepEqual(lineCheck.summary, { key: "steps.summary.isoProgress", values: { done: 3, total: 10 } })
+})

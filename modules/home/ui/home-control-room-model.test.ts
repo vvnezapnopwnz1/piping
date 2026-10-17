@@ -41,10 +41,9 @@ test("project heading uses the selected access row rather than fixture text", ()
 
 test("attention links open the target table already narrowed to the counted rows", () => {
   const nde = new URL(ISSUED_NDE_HREF, "http://x")
+  // The NDE screen counts issued joints on its "waiting for result" tab, so the link opens that tab.
   assert.equal(nde.pathname, "/nde")
-  const ob = new URLSearchParams()
-  for (const [key, value] of nde.searchParams) if (key.startsWith("ob_")) ob.set(key.slice(3), value)
-  assert.deepEqual(decodeTableState(ob).filters, [{ id: "disposition", kind: "select", values: ["issued"] }])
+  assert.equal(nde.searchParams.get("tab"), "waiting_result")
 
   const rft = new URL(NOT_READY_FOR_TEST_HREF, "http://x")
   const own = new URLSearchParams()

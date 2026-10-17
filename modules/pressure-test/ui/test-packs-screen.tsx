@@ -12,7 +12,7 @@ import { TestPackDossierButton } from "@/modules/documents/ui/test-pack-dossier-
 import { buildPackSteps, currentStepId, type PackWorkflowRow, type StepId } from "../domain/pack-steps"
 import { listTestPackCatalog, type TestPackCatalogRow } from "../infrastructure/supabase-pressure-test-repository"
 import { listTestPackWorkflowRows } from "../infrastructure/test-pack-rows"
-import { resolvePackSelection } from "./pack-selection"
+import { resolvePackSelection, shouldReloadForRequested } from "./pack-selection"
 import { StepBody } from "./steps/step-body"
 import { TestPackBuilderScreen } from "./test-pack-builder-screen"
 import { TestPackList } from "./test-pack-list"
@@ -35,16 +35,25 @@ export function TestPacksScreen({ projectId, initialStep }: { projectId: string;
   const [workflows, setWorkflows] = useState<Record<string, PackWorkflowRow>>({})
   const [loaded, setLoaded] = useState(false)
   const [version, setVersion] = useState(0)
+  const [loadFailed, setLoadFailed] = useState(false)
+  const [reloadedFor, setReloadedFor] = useState<string | null>(null)
 
   useEffect(() => {
     let active = true
     const client = getSupabaseBrowserClient()
-    void Promise.all([listTestPackCatalog(client, projectId), listTestPackWorkflowRows(client, projectId)]).then(([catalog, rows]) => {
-      if (!active) return
-      setPacks(catalog)
-      setWorkflows(rows)
-      setLoaded(true)
-    })
+    Promise.all([listTestPackCatalog(client, projectId), listTestPackWorkflowRows(client, projectId)])
+      .then(([catalog, rows]) => {
+        if (!active) return
+        setPacks(catalog)
+        setWorkflows(rows)
+        setLoadFailed(false)
+      })
+      .catch(() => {
+        if (active) setLoadFailed(true)
+      })
+      .finally(() => {
+        if (active) setLoaded(true)
+      })
     return () => {
       active = false
     }
@@ -52,6 +61,12 @@ export function TestPacksScreen({ projectId, initialStep }: { projectId: string;
 
   const refresh = useCallback(() => setVersion((value) => value + 1), [])
   const selection = resolvePackSelection(packs, requested)
+  // The builder creates a pack and puts its id in the address; the list loaded before that, so read it again once.
+  useEffect(() => {
+    if (!shouldReloadForRequested(selection, loaded && !loadFailed, requested, reloadedFor)) return
+    setReloadedFor(requested)
+    refresh()
+  }, [selection, loaded, loadFailed, requested, reloadedFor, refresh])
   const pack = selection.kind === "selected" ? (packs.find((candidate) => candidate.id === selection.id) ?? null) : null
   const row = pack ? workflows[pack.id] : undefined
   const steps = useMemo(() => (row ? buildPackSteps(row) : []), [row])
@@ -75,15 +90,21 @@ export function TestPacksScreen({ projectId, initialStep }: { projectId: string;
   }
 
   const creating = canManage && params.get("new") === "1" && selection.kind === "none"
-  const showingPack = selection.kind !== "none" || creating
+  const showingPack = selection.kind === "selected" || creating
   return (
     <div className="flex h-[calc(100dvh-140px)] min-h-[420px] gap-4">
       <div className={`${showingPack ? "hidden lg:flex" : "flex"} w-full min-h-0 flex-col lg:w-[340px] lg:flex-none`}>
-        <TestPackList packs={packs} stages={stages} selectedId={pack?.id ?? null} onSelect={(id) => selectPack(id, { push: true, extra: { step: null, new: null } })} onCreate={() => selectPack(null, { push: true, extra: { new: "1", step: null } })} canManage={canManage} />
+        <TestPackList packs={packs} stages={stages} selectedId={pack?.id ?? null} onSelect={(id) => selectPack(id, { push: true, extra: { step: null, new: null, operation: null, view: null, mode: null } })} onCreate={() => selectPack(null, { push: true, extra: { new: "1", step: null } })} canManage={canManage} />
       </div>
       <section className={`${showingPack ? "block" : "hidden lg:block"} min-h-0 min-w-0 flex-1 overflow-y-auto rounded-lg border bg-card`}>
         {!loaded && <div className="space-y-2 p-4"><Skeleton className="h-6 w-1/3" /><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></div>}
-        {selection.kind === "not_found" && loaded && <p className="p-6 text-sm text-muted-foreground">{t("screen.notFound")}</p>}
+        {loadFailed && loaded && (
+          <div className="space-y-2 p-6 text-sm">
+            <p className="text-destructive">{t("screen.loadFailed")}</p>
+            <Button size="sm" variant="outline" onClick={refresh}>{t("screen.retry")}</Button>
+          </div>
+        )}
+        {selection.kind === "not_found" && loaded && !loadFailed && <p className="p-6 text-sm text-muted-foreground">{t("screen.notFound")}</p>}
         {selection.kind === "none" && !creating && loaded && <p className="p-6 text-sm text-muted-foreground">{t("screen.selectPack")}</p>}
         {creating && (
           <div className="p-4">
@@ -103,7 +124,7 @@ export function TestPacksScreen({ projectId, initialStep }: { projectId: string;
             </header>
             {!canManage && <p className="mx-4 mt-3 rounded border bg-muted px-3 py-2 text-sm">{t("screen.readOnly")}</p>}
             {canManage && pack.lifecycle === "archived" && <p className="mx-4 mt-3 rounded border bg-muted px-3 py-2 text-sm">{t("screen.archived")}</p>}
-            <PackSteps steps={steps} currentId={current} openId={openId} onOpen={setStep} renderBody={(step) => <StepBody step={step} context={{ projectId, pack, canManage: canManage && pack.lifecycle !== "archived", workflow: row, onChanged: refresh }} />} />
+            <PackSteps steps={steps} currentId={current} openId={openId} onOpen={setStep} renderBody={(step) => <StepBody step={step} context={{ projectId, pack, canManage: canManage && pack.lifecycle !== "archived" && !loadFailed, workflow: row, onChanged: refresh }} />} />
           </>
         )}
       </section>

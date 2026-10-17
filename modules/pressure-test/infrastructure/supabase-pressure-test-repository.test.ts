@@ -23,7 +23,7 @@ test("catalog query is project scoped", async () => {
   const client = {
     from(name: string) {
       calls.push(["from", name])
-      return { select: (columns: string) => { calls.push(["select", columns]); return { eq: (field: string, value: string) => { calls.push(["eq", field, value]); return { order: async () => ({ data: [], error: null }) } } } } }
+      return { select: (columns: string) => { calls.push(["select", columns]); return { eq: (field: string, value: string) => { calls.push(["eq", field, value]); const page: any = { order: () => page, range: async () => ({ data: [], error: null }) }; return page } } } }
     },
   } as never
   await listTestPackCatalog(client, "project-1")

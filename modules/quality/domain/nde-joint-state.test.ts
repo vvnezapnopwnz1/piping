@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { jointState, jointStatusMessage, ndeTab } from "./nde-joint-state"
+import { canCreateBatch, jointState, jointStatusMessage, ndeTab } from "./nde-joint-state"
 
 const ob = (disposition: string, batchNumber: string | null) => ({ disposition, batchNumber }) as never
 
@@ -28,4 +28,12 @@ test("the manual's joint status code becomes a message key, with the cycle numbe
   assert.deepEqual(jointStatusMessage({ ...base, disposition: "satisfied" } as never), { key: "jointStatus.NR" })
   assert.deepEqual(jointStatusMessage({ ...base, cycleKind: "tracer", cycleOrdinal: 2, disposition: "issued" } as never), { key: "jointStatus.tracerSelected", values: { n: "2" } })
   assert.deepEqual(jointStatusMessage({ ...base, cycleKind: "repair", cycleOrdinal: 1 } as never), { key: "jointStatus.repair", values: { n: "1" } })
+})
+
+test("a batch can be created only for a method and regime that has joints waiting for a batch", () => {
+  const ob = (method: string, coverageRegime: string, disposition = "pending", batchNumber: string | null = null) => ({ method, coverageRegime, disposition, batchNumber }) as never
+  const all = [ob("rt", "spot"), ob("pt", "mandatory_100", "pending", "NB-1")]
+  assert.equal(canCreateBatch(all, "rt", "spot"), true)
+  assert.equal(canCreateBatch(all, "rt", "mandatory_100"), false)
+  assert.equal(canCreateBatch(all, "pt", "mandatory_100"), false)
 })

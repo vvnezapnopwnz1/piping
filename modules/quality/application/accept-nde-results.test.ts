@@ -26,10 +26,10 @@ test("results are recorded one by one; a refusal does not stop the rest", async 
   assert.equal(calls.length, 3)
 })
 
-test("the report number is numbered per joint and the retry key is stable per obligation", async () => {
+test("the report number is stored as typed on every joint and the retry key is stable per obligation", async () => {
   const { client, calls } = fakeClient()
-  await acceptNdeResults(client, ["a", "b"], "2026-10-17", "R1")
-  assert.deepEqual(calls.map((call) => call.report_number), ["R1-1", "R1-2"])
+  await acceptNdeResults(client, ["a", "b"], "2026-10-17", " R1 ")
+  assert.deepEqual(calls.map((call) => call.report_number), ["R1", "R1"])
   assert.deepEqual(calls.map((call) => call.idempotency_key), ["nde-accept-a", "nde-accept-b"])
 })
 

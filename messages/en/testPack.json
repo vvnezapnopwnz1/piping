@@ -442,7 +442,9 @@
       "complete": "Complete"
     },
     "readOnly": "You can view this pack but not change it",
-    "archived": "This pack is archived and read-only"
+    "archived": "This pack is archived and read-only",
+    "loadFailed": "Test packs could not be loaded",
+    "retry": "Try again"
   },
   "steps": {
     "title": {

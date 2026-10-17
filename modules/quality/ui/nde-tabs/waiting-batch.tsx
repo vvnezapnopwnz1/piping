@@ -10,7 +10,7 @@ import { codeLabel } from "@/i18n/translator"
 import { errorDetail } from "@/i18n/format"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { NDT_METHODS, type CoverageRegime, type NdeBatch, type NdeObligation, type NdtMethod } from "../../domain/nde-batch"
-import { jointState } from "../../domain/nde-joint-state"
+import { canCreateBatch, jointState } from "../../domain/nde-joint-state"
 import { allocateNdeBatchCandidates, createNdeBatch, issueNdeBatch } from "../../infrastructure/supabase-quality-repository"
 
 /** The sample a spot batch examines, and the whole of a mandatory one; the percentage can be changed in the form. */
@@ -46,14 +46,15 @@ export function WaitingBatchTab({ projectId, obligations, batches, onChanged }: 
     run(async () => {
       const client = getSupabaseBrowserClient()
       const batch = await createNdeBatch(client, projectId, m, r, null, null, crypto.randomUUID())
-      await allocateNdeBatchCandidates(client, batch.id, pct, `browser-nde-batch-allocate-${batch.id}`)
+      await allocateNdeBatchCandidates(client, batch.id, pct, `browser-nde-batch-allocate-${batch.id}-${pct}`)
       await issueNdeBatch(client, batch.id, `browser-nde-batch-issue-${batch.id}`)
       return t("batchCreatedIssued", { number: batch.batchNumber })
     })
   const issueDraft = (batch: NdeBatch) =>
     run(async () => {
       const client = getSupabaseBrowserClient()
-      await allocateNdeBatchCandidates(client, batch.id, defaultPercent(batch.coverageRegime), `browser-nde-batch-allocate-${batch.id}`)
+      const pct = defaultPercent(batch.coverageRegime)
+      await allocateNdeBatchCandidates(client, batch.id, pct, `browser-nde-batch-allocate-${batch.id}-${pct}`)
       await issueNdeBatch(client, batch.id, `browser-nde-batch-issue-${batch.id}`)
       return tb("success.ndeBatchIssued")
     })
@@ -75,7 +76,7 @@ export function WaitingBatchTab({ projectId, obligations, batches, onChanged }: 
         <label className="text-sm">{t("percentage")}
           <input type="number" min={1} max={100} className="mt-1 block w-20 rounded border bg-transparent p-2" value={percent} onChange={(event) => setPercent(event.target.value)} />
         </label>
-        <Button disabled={busy || !(Number(percent) > 0 && Number(percent) <= 100)} onClick={() => void createAndIssue(method, regime, Number(percent))}>{t("createAndIssue")}</Button>
+        <Button disabled={busy || !canCreateBatch(obligations, method, regime) || !(Number(percent) > 0 && Number(percent) <= 100)} onClick={() => void createAndIssue(method, regime, Number(percent))}>{t("createAndIssue")}</Button>
       </div>
       {groups.size === 0 && drafts.length === 0 && <p className="rounded-lg border p-4 text-sm text-muted-foreground">{t("noWaiting")}</p>}
       {[...groups.entries()].map(([key, items]) => {
@@ -90,7 +91,7 @@ export function WaitingBatchTab({ projectId, obligations, batches, onChanged }: 
       {drafts.map((batch) => (
         <div key={batch.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-card p-3 text-sm">
           <span className="font-mono">{batch.batchNumber} <Badge variant="outline">{t("draftBatch")}</Badge></span>
-          <Button size="sm" disabled={busy} onClick={() => void issueDraft(batch)}>{t("issue")}</Button>
+          <Button size="sm" disabled={busy || !canCreateBatch(obligations, batch.method, batch.coverageRegime)} onClick={() => void issueDraft(batch)}>{t("issue")}</Button>
         </div>
       ))}
     </div>

@@ -25,3 +25,8 @@ export function reinstatementTargets(
 export function reinstatementDraftErrors(draft: { report: string; tag: string }): { report?: true; tag?: true } {
   return { ...(draft.report.trim() === "" ? { report: true as const } : {}), ...(draft.tag.trim() === "" ? { tag: true as const } : {}) }
 }
+
+/** The retry key of a reinstatement assignment. It names the flanges: the server replays a request for a repeated key, so a key shared by two different sets would silently drop the second. */
+export function reinstatementAssignKey(packId: string, category: string, date: string, teamId: string, targetIds: readonly string[]): string {
+  return `browser-reinstatement-${packId}-${category}-${date}-${teamId}-${[...targetIds].sort().join(",")}`
+}

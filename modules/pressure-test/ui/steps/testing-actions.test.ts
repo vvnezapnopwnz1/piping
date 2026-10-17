@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { nextTestingAction, reinstatementDraftErrors, reinstatementTargets } from "./testing-actions"
+import { nextTestingAction, reinstatementAssignKey, reinstatementDraftErrors, reinstatementTargets } from "./testing-actions"
 
 test("the server's allowed operation picks the testing button", () => {
   assert.equal(nextTestingAction(["testing_complete"]), "testing_complete")
@@ -29,4 +29,10 @@ test("a reinstatement record needs a report number and a tag number, reported by
   assert.deepEqual(reinstatementDraftErrors({ report: "", tag: "" }), { report: true, tag: true })
   assert.deepEqual(reinstatementDraftErrors({ report: "R1", tag: " " }), { tag: true })
   assert.deepEqual(reinstatementDraftErrors({ report: "R1", tag: "T1" }), {})
+})
+
+test("the reinstatement assignment key follows the payload: other flanges, other key; the same flanges in any order, the same key", () => {
+  const key = (ids: string[]) => reinstatementAssignKey("pack", "Y", "2026-10-17", "team", ids)
+  assert.notEqual(key(["f1", "f2"]), key(["f3"]))
+  assert.equal(key(["f2", "f1"]), key(["f1", "f2"]))
 })

@@ -59,9 +59,7 @@ export function narrowedHref(path: string, namespace: string, filters: ColumnFil
   return query ? `${path}?${query}` : path;
 }
 
-export const ISSUED_NDE_HREF = narrowedHref("/nde", "ob", [
-  { id: "disposition", kind: "select", values: ["issued"] },
-]);
+export const ISSUED_NDE_HREF = "/nde?tab=waiting_result";
 
 export const NOT_READY_FOR_TEST_HREF = narrowedHref("/erection/rft", "rft", [
   { id: "isRft", kind: "boolean", value: false },

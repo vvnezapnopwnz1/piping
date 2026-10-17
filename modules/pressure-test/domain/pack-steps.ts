@@ -64,14 +64,18 @@ export function rftReasonLines(counts: Record<string, unknown> | null | undefine
 }
 
 export function buildPackSteps(row: PackWorkflowRow): PackStep[] {
-  const rftReasons = rftReasonLines(((row.blockers ?? {}) as Record<string, unknown>).rft as Record<string, unknown> | undefined)
+  const rftCounts = (((row.blockers ?? {}) as Record<string, unknown>).rft ?? {}) as Record<string, unknown>
+  const rftReasons = rftReasonLines(rftCounts)
+  const noSpools = Number(rftCounts.NO_SPOOLS ?? 0) > 0
+  const linePending = Number(rftCounts.LINE_CHECK_PENDING ?? 0)
+  const xOpen = Number(rftCounts.X_OPEN ?? 0)
   const lineTotal = count(row, "line_check_total")
   const lineDone = count(row, "line_check_completed")
   const clearTotal = count(row, "item_clearance_total")
   const clearDone = count(row, "item_clearance_cleared")
 
   const steps: (PackStep | null)[] = [
-    { id: "composition", state: "done", summary: null, reasons: [] },
+    { id: "composition", state: noSpools ? "ready" : "done", summary: null, reasons: [] },
     {
       id: "readiness",
       state: stepState(row.rft_state),
@@ -80,16 +84,20 @@ export function buildPackSteps(row: PackWorkflowRow): PackStep[] {
     },
     {
       id: "line_check",
-      state: lineTotal === 0 ? "ready" : lineDone === lineTotal ? "done" : "ongoing",
-      summary: lineTotal === 0 ? { key: "steps.summary.notAssigned" } : { key: "steps.summary.isoProgress", values: { done: lineDone, total: lineTotal } },
-      reasons: [],
+      // Done only when the server no longer counts isometrics without a complete line check: assigned items alone
+      // can all be finished while other isometrics of the pack were never assigned.
+      state: noSpools ? "blocked" : lineTotal === 0 ? "ready" : lineDone === lineTotal && linePending === 0 ? "done" : "ongoing",
+      summary: lineTotal === 0 ? { key: "steps.summary.notAssigned" } : { key: "steps.summary.isoProgress", values: { done: lineDone, total: linePending > 0 ? lineDone + linePending : lineTotal } },
+      reasons: noSpools ? [{ key: "steps.wait.previous" }] : [],
     },
-    clearTotal === 0
+    // The worklist counts only items already assigned to a request, so open X punches alone must show the step:
+    // it is the only place a clearance request is assigned.
+    clearTotal === 0 && xOpen === 0
       ? null
       : {
           id: "item_clearance",
-          state: clearDone === clearTotal ? "done" : "ongoing",
-          summary: { key: "steps.summary.punchProgress", values: { done: clearDone, total: clearTotal } },
+          state: clearTotal === 0 ? "ready" : clearDone === clearTotal && xOpen === 0 ? "done" : "ongoing",
+          summary: clearTotal === 0 ? { key: "steps.summary.notAssigned" } : { key: "steps.summary.punchProgress", values: { done: clearDone, total: clearTotal } },
           reasons: [],
         },
     {
