@@ -15,6 +15,7 @@ test("the document list is the four project registers and the test pack dossier"
     ],
   )
   assert.ok(DOCUMENT_DEFINITIONS.every((definition) => definition.requiredCapability === "reports.view"))
+  assert.ok(DOCUMENT_DEFINITIONS.every((definition) => definition.formats.join() === "xlsx,pdf" || definition.formats.join() === "pdf,xlsx"))
 })
 
 test("document file names are stable, project-specific and sortable", () => {

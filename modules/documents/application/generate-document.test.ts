@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
 import test from "node:test"
 
 import * as XLSX from "xlsx"
@@ -33,8 +34,13 @@ function repository(overrides: Partial<DocumentRepository> = {}): DocumentReposi
   }
 }
 
-function input(code: string): GenerateDocumentInput {
-  return { code, format: "xlsx", projectId: "project-1", header, chrome, labels }
+const fonts = async () => ({
+  regular: new Uint8Array(readFileSync("public/fonts/PTSans-Regular.ttf")),
+  bold: new Uint8Array(readFileSync("public/fonts/PTSans-Bold.ttf")),
+})
+
+function input(code: string, format: "xlsx" | "pdf" = "xlsx"): GenerateDocumentInput {
+  return { code, format, projectId: "project-1", header, chrome, labels, fonts }
 }
 
 test("an unknown document code is refused", async () => {
@@ -58,4 +64,16 @@ test("the weld log comes out as an XLSX named after the project and the day", as
   const sheet = workbook.Sheets[workbook.SheetNames[0]]
   assert.equal(sheet.A1.v, "Журнал сварочных работ")
   assert.equal(sheet.A7.v, "UPG-100-1001")
+})
+
+test("every project register also comes out as a PDF with PT Sans", async () => {
+  for (const [code, stem] of [["RPT-W-001", "weld-log"], ["RPT-N-001", "nde-register"], ["RPT-P-001", "punch-register"], ["RPT-T-002", "test-pack-summary"]]) {
+    const result = await generateDocument(repository(), input(code, "pdf"))
+
+    assert.ok(result.ok, code)
+    assert.equal(result.value.fileName, `UPG-1-${stem}-2026-10-18.pdf`)
+    assert.equal(result.value.blob.type, "application/pdf")
+    const pdf = new TextDecoder("latin1").decode(await result.value.blob.arrayBuffer())
+    assert.match(pdf, /\/BaseFont \/PTSans/, code)
+  }
 })

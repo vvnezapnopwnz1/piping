@@ -105,10 +105,10 @@ export interface TestPackDocumentRow {
 }
 
 export const DOCUMENT_DEFINITIONS: readonly DocumentDefinition[] = [
-  { code: "RPT-W-001", scope: "project", formats: ["xlsx"], requiredCapability: "reports.view", fileNameStem: "weld-log" },
-  { code: "RPT-N-001", scope: "project", formats: ["xlsx"], requiredCapability: "reports.view", fileNameStem: "nde-register" },
-  { code: "RPT-P-001", scope: "project", formats: ["xlsx"], requiredCapability: "reports.view", fileNameStem: "punch-register" },
-  { code: "RPT-T-002", scope: "project", formats: ["xlsx"], requiredCapability: "reports.view", fileNameStem: "test-pack-summary" },
+  { code: "RPT-W-001", scope: "project", formats: ["xlsx", "pdf"], requiredCapability: "reports.view", fileNameStem: "weld-log" },
+  { code: "RPT-N-001", scope: "project", formats: ["xlsx", "pdf"], requiredCapability: "reports.view", fileNameStem: "nde-register" },
+  { code: "RPT-P-001", scope: "project", formats: ["xlsx", "pdf"], requiredCapability: "reports.view", fileNameStem: "punch-register" },
+  { code: "RPT-T-002", scope: "project", formats: ["xlsx", "pdf"], requiredCapability: "reports.view", fileNameStem: "test-pack-summary" },
   { code: "DOS-T-001", scope: "testPack", formats: ["pdf", "xlsx"], requiredCapability: "reports.view", fileNameStem: "test-pack-dossier" },
 ]
 

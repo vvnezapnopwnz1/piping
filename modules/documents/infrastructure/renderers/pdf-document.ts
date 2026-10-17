@@ -99,7 +99,8 @@ export function drawSection(doc: jsPDF, title: string, table: DocumentTable, chr
     margin: { top: contentTop(), bottom: MARGIN + FOOTER_HEIGHT, left: MARGIN, right: MARGIN },
     showHead: "everyPage",
     styles: {
-      font: FAMILY, fontStyle: "normal", fontSize: 8, cellPadding: 3, overflow: "linebreak", textColor: 20,
+      font: FAMILY, fontStyle: "normal", fontSize: table.head.length > 12 ? 6.5 : 8, cellPadding: table.head.length > 12 ? 2 : 3,
+      overflow: "linebreak", textColor: 20,
       ...(table.rowHeight ? { minCellHeight: table.rowHeight, lineWidth: 0.4, lineColor: 160 } : {}),
     },
     headStyles: { font: FAMILY, fontStyle: "bold", fillColor: [235, 235, 235], textColor: 20, minCellHeight: 0 },

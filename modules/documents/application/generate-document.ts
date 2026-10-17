@@ -15,6 +15,7 @@ import {
   type TestPackDocumentRow,
   type WeldLogRow,
 } from "../domain/report"
+import { createPdf, drawSection, finishPdf, type PdfFonts } from "../infrastructure/renderers/pdf-document"
 import { documentSheet, xlsxBlob } from "../infrastructure/renderers/xlsx-document"
 
 export interface DocumentRepository {
@@ -31,6 +32,7 @@ export interface GenerateDocumentInput {
   header: DocumentHeader
   chrome: DocumentChrome
   labels: RegisterLabels
+  fonts: () => Promise<PdfFonts>
 }
 
 export type GenerateDocumentResult =
@@ -48,7 +50,16 @@ async function registerTable(repository: DocumentRepository, input: GenerateDocu
   }
 }
 
-/** Builds one of the project registers as an XLSX file from the current project data. */
+async function render(table: DocumentTable, input: GenerateDocumentInput): Promise<Blob> {
+  if (input.format === "xlsx") {
+    return xlsxBlob([{ name: input.header.title, sheet: documentSheet(input.header, input.chrome, table) }])
+  }
+  const doc = createPdf(await input.fonts(), "landscape", input.header.locale)
+  drawSection(doc, "", table, input.chrome)
+  return finishPdf(doc, input.header, input.chrome)
+}
+
+/** Builds one of the project registers from the current project data: XLSX to edit or PDF to print. */
 export async function generateDocument(
   repository: DocumentRepository,
   input: GenerateDocumentInput,
@@ -61,7 +72,7 @@ export async function generateDocument(
   try {
     const table = await registerTable(repository, input)
     if (!table) return { ok: false, reason: "unknownReport" }
-    const blob = xlsxBlob([{ name: input.header.title, sheet: documentSheet(input.header, input.chrome, table) }])
+    const blob = await render(table, input)
     return {
       ok: true,
       value: { blob, fileName: buildReportFileName(definition, input.header.projectCode, input.header.generatedAt, input.format) },
