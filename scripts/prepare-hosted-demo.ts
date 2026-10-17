@@ -69,7 +69,7 @@ export function formatHostedDemoCheck(check: DemoCheckResult): string {
   const status = check.ok ? "PASS" : "FAIL"
   const recovery = check.ok
     ? ""
-    : " recovery=npm run demo:prepare:hosted -- --confirm-hosted-reset"
+    : " recovery=contact-owner-for-approved-server-recovery"
   return `${status} check=${safeCheckId(check.id)}${recovery}`
 }
 

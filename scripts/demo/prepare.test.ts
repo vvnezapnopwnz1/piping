@@ -9,6 +9,7 @@ import {
   runPrepareDemo,
 } from "../prepare-track12-demo"
 import {
+  formatHostedDemoCheck,
   hostedAdminKeyFromEnvironment,
   parseHostedPrepareArguments,
   runHostedReset,
@@ -3866,6 +3867,22 @@ test("demo check formatter exposes status and safe check identity but no report 
     line,
     /FAKE|TOKEN|AUTH|PASSWORD|payload|expected-hash|actual-hash/i,
   )
+})
+
+test("hosted check formatter never suggests the disabled hosted reset", () => {
+  const line = formatHostedDemoCheck({
+    id: "projects",
+    ok: false,
+    expected: "expected-state",
+    actual: "actual-state",
+    recovery: "ignored",
+  })
+
+  assert.equal(
+    line,
+    "FAIL check=projects recovery=contact-owner-for-approved-server-recovery",
+  )
+  assert.doesNotMatch(line, /demo:prepare:hosted|reset/i)
 })
 
 test("read-only check validates before factory and calls only readSnapshot then evaluate", async () => {
