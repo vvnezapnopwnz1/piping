@@ -513,7 +513,19 @@
       "blindingSaved": "Blinding recorded",
       "blindingFailed": "Could not record blinding",
       "selectAll": "Select all",
-      "waiting": "This step is not available yet"
+      "waiting": "This step is not available yet",
+      "startTesting": "Start testing",
+      "completeTesting": "Complete testing",
+      "completePrecommissioning": "Pre-commissioning done",
+      "testingSaved": "Step recorded",
+      "testingFailed": "Could not record the step",
+      "reportNumber": "Report number",
+      "tagNumber": "Tag number",
+      "jointerTeam": "Jointer team",
+      "recordJoint": "Record joint",
+      "jointSaved": "Reinstatement recorded",
+      "jointFailed": "Could not record the reinstatement",
+      "required": "Required"
     }
   }
 }

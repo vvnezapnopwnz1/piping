@@ -513,7 +513,19 @@
       "blindingSaved": "Заглушки записаны",
       "blindingFailed": "Не удалось записать заглушки",
       "selectAll": "Выбрать все",
-      "waiting": "Этот шаг пока недоступен"
+      "waiting": "Этот шаг пока недоступен",
+      "startTesting": "Начать испытание",
+      "completeTesting": "Завершить испытание",
+      "completePrecommissioning": "Пусконаладка завершена",
+      "testingSaved": "Шаг записан",
+      "testingFailed": "Не удалось записать шаг",
+      "reportNumber": "Номер отчёта",
+      "tagNumber": "Номер метки",
+      "jointerTeam": "Бригада сборщиков",
+      "recordJoint": "Записать соединение",
+      "jointSaved": "Обратная сборка записана",
+      "jointFailed": "Не удалось записать обратную сборку",
+      "required": "Обязательное поле"
     }
   }
 }

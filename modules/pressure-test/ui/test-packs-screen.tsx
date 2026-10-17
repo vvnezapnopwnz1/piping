@@ -101,7 +101,7 @@ export function TestPacksScreen({ projectId, initialStep }: { projectId: string;
             </header>
             {!canManage && <p className="mx-4 mt-3 rounded border bg-muted px-3 py-2 text-sm">{t("screen.readOnly")}</p>}
             {canManage && pack.lifecycle === "archived" && <p className="mx-4 mt-3 rounded border bg-muted px-3 py-2 text-sm">{t("screen.archived")}</p>}
-            <PackSteps steps={steps} currentId={current} openId={openId} onOpen={setStep} renderBody={(step) => <StepBody step={step} context={{ projectId, pack, canManage: canManage && pack.lifecycle !== "archived", onChanged: refresh }} />} />
+            <PackSteps steps={steps} currentId={current} openId={openId} onOpen={setStep} renderBody={(step) => <StepBody step={step} context={{ projectId, pack, canManage: canManage && pack.lifecycle !== "archived", workflow: row, onChanged: refresh }} />} />
           </>
         )}
       </section>
