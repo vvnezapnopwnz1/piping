@@ -1,67 +1,70 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import {
-  loadFabricationProgressSnapshot,
-  loadTestPackRftSnapshot,
-} from "./supabase-report-repository"
+import { loadNdeRegister, loadTestPackSummary, loadWeldLog } from "./supabase-report-repository"
 
-function queryClient(rows: Record<string, unknown>[], calls: unknown[], error: { message: string } | null = null) {
+/** A PostgREST stand-in that serves `rows` in pages of at most `cap`, whatever range is asked for. */
+function pagedClient(rows: Record<string, unknown>[], calls: unknown[], cap = 1000, error: { message: string } | null = null) {
   return {
     from(table: string) {
       calls.push(["from", table])
+      let from = 0
       const query = {
         select(columns: string) { calls.push(["select", columns]); return query },
         eq(field: string, value: string) { calls.push(["eq", field, value]); return query },
         order(field: string) { calls.push(["order", field]); return query },
-        then(resolve: (value: unknown) => void) { resolve({ data: rows, error }) },
+        range(start: number, end: number) { calls.push(["range", start, end]); from = start; return query },
+        then(resolve: (value: unknown) => void) {
+          resolve({ data: error ? null : rows.slice(from, from + cap), error })
+        },
       }
       return query
     },
   } as never
 }
 
-const request = {
-  projectId: "project-a",
-  projectCode: "EP-100",
-  generatedAt: new Date("2026-08-09T10:00:00Z"),
-}
-
-test("fabrication snapshot is project-scoped and preserves read-model values", async () => {
-  const calls: unknown[] = []
-  const snapshot = await loadFabricationProgressSnapshot(queryClient([{
-    spool_number: "SP-1", weld_number: "W-1", weld_location: "shop", wps_code: "WPS-1",
-    welders: ["W-01"], weld_on: "2026-08-08", obligation_pending: 1, obligation_total: 2,
-  }], calls), request)
-
-  assert.deepEqual(snapshot.rows, [{
-    spoolNumber: "SP-1", weldNumber: "W-1", weldLocation: "shop", wpsCode: "WPS-1",
-    welders: ["W-01"], weldedOn: "2026-08-08", ndePending: 1, ndeTotal: 2,
-  }])
-  assert.ok(calls.some((call) => JSON.stringify(call) === JSON.stringify(["from", "weld_progress_summary"])))
-  assert.ok(calls.some((call) => JSON.stringify(call) === JSON.stringify(["eq", "project_id", "project-a"])))
+const weldRow = (id: string) => ({
+  weld_joint_revision_id: id, project_id: "project-a", isometric_id: "iso-1", iso_number: "ISO-1",
+  revision_number: "R0", line_number: null, spool_number: "SP-1", weld_number: `W-${id}`, weld_location: "shop",
+  weld_type_code: null, diameter_inch: 6, thickness_mm: null, wps_code: null, welder_codes: null, weld_on: null,
+  nde_methods: null, nde_pending: 0, nde_rejected: 0, pwht_required: false, pwht_accepted: false,
+  trace_numbers: null, test_pack_id: null, test_pack_number: null,
 })
 
-test("test pack snapshot is project-scoped and normalizes legacy null counts", async () => {
-  const calls: unknown[] = []
-  const snapshot = await loadTestPackRftSnapshot(queryClient([{
-    test_pack_number: "TP-1", lifecycle: "active", is_rft: null, rft_on: null,
-    member_count: null, spool_total: 3, weld_or_support_pending_count: 2, nde_pending_count: null,
-    pwht_pending_count: 0, flange_pending_count: 1, line_check_pending_count: 1, x_open_count: 0,
-  }], calls), request)
+const has = (calls: unknown[], call: unknown[]) => calls.some((entry) => JSON.stringify(entry) === JSON.stringify(call))
 
-  assert.deepEqual(snapshot.rows, [{
-    testPackNumber: "TP-1", lifecycle: "active", isRft: false, rftOn: null,
-    memberCount: 0, spoolTotal: 3, weldOrSupportPendingCount: 2, ndePendingCount: 0,
-    pwhtPendingCount: 0, flangePendingCount: 1, lineCheckPendingCount: 1, xOpenCount: 0,
-  }])
-  assert.ok(calls.some((call) => JSON.stringify(call) === JSON.stringify(["from", "test_pack_readiness"])))
-  assert.ok(calls.some((call) => JSON.stringify(call) === JSON.stringify(["eq", "project_id", "project-a"])))
+test("the weld log loader reads past the row cap, ordered by a unique key", async () => {
+  const calls: unknown[] = []
+  const rows = await loadWeldLog(pagedClient(["1", "2", "3", "4", "5"].map(weldRow), calls, 2), { projectId: "project-a" })
+
+  assert.equal(rows.length, 5)
+  assert.ok(has(calls, ["from", "weld_log_rows"]))
+  assert.ok(has(calls, ["eq", "project_id", "project-a"]))
+  assert.ok(has(calls, ["order", "weld_joint_revision_id"]))
 })
 
-test("report snapshot read errors remain visible to the caller", async () => {
+test("the weld log loader turns empty arrays and nulls into plain values", async () => {
+  const [row] = await loadWeldLog(pagedClient([weldRow("1")], []), { projectId: "project-a" })
+
+  assert.deepEqual(row.welderCodes, [])
+  assert.deepEqual(row.ndeMethods, [])
+  assert.deepEqual(row.traceNumbers, [])
+  assert.equal(row.lineNumber, null)
+  assert.equal(row.diameterInch, 6)
+})
+
+test("a test pack filter narrows the read to that pack", async () => {
+  const calls: unknown[] = []
+  await loadNdeRegister(pagedClient([], calls), { projectId: "project-a", testPackId: "tp-1" })
+
+  assert.ok(has(calls, ["from", "nde_register_rows"]))
+  assert.ok(has(calls, ["eq", "test_pack_id", "tp-1"]))
+  assert.ok(has(calls, ["order", "obligation_id"]))
+})
+
+test("loader read errors remain visible to the caller", async () => {
   await assert.rejects(
-    loadFabricationProgressSnapshot(queryClient([], [], { message: "read denied" }), request),
+    loadTestPackSummary(pagedClient([], [], 1000, { message: "read denied" }), { projectId: "project-a" }),
     /read denied/,
   )
 })

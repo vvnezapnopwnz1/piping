@@ -1,29 +1,37 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import {
-  buildReportFileName,
-  REPORT_DEFINITIONS,
-} from "./report"
+import { buildReportFileName, DOCUMENT_DEFINITIONS, documentDefinition } from "./report"
 
-test("Demo Lite exposes only the two real project snapshot reports", () => {
+test("the document list is the four project registers and the test pack dossier", () => {
   assert.deepEqual(
-    REPORT_DEFINITIONS.map((report) => report.code),
-    ["RPT-F-001", "RPT-T-001"],
+    DOCUMENT_DEFINITIONS.map((definition) => [definition.code, definition.scope]),
+    [
+      ["RPT-W-001", "project"],
+      ["RPT-N-001", "project"],
+      ["RPT-P-001", "project"],
+      ["RPT-T-002", "project"],
+      ["DOS-T-001", "testPack"],
+    ],
   )
+  assert.ok(DOCUMENT_DEFINITIONS.every((definition) => definition.requiredCapability === "reports.view"))
+})
+
+test("document file names are stable, project-specific and sortable", () => {
+  const weldLog = documentDefinition("RPT-W-001")
+  assert.ok(weldLog)
   assert.equal(
-    REPORT_DEFINITIONS.every((report) => report.requiredCapability === "reports.view"),
-    true,
+    buildReportFileName(weldLog, "UPG-1 / Area A", new Date("2026-10-18T10:11:12Z"), "xlsx"),
+    "UPG-1-Area-A-weld-log-2026-10-18.xlsx",
+  )
+  const dossier = documentDefinition("DOS-T-001")
+  assert.ok(dossier)
+  assert.equal(
+    buildReportFileName(dossier, "UPG-1", new Date("2026-10-18T10:11:12Z"), "pdf", "TP-100-01"),
+    "UPG-1-test-pack-dossier-TP-100-01-2026-10-18.pdf",
   )
 })
 
-test("report filenames are stable, project-specific, and sortable", () => {
-  assert.equal(
-    buildReportFileName(
-      REPORT_DEFINITIONS[0],
-      "EP-100 / Area A",
-      new Date("2026-08-09T10:11:12Z"),
-    ),
-    "EP-100-Area-A-fabrication-progress-2026-08-09.xlsx",
-  )
+test("an unknown code has no definition", () => {
+  assert.equal(documentDefinition("RPT-F-001"), undefined)
 })

@@ -29,6 +29,13 @@ export function compareCodes(a: string, b: string): number {
   return a.localeCompare(b, "ru", { numeric: true })
 }
 
+/** A database date (`YYYY-MM-DD`) as the reader writes it, without a time-zone shift. */
+export function formatDocumentDate(value: string | null, locale: DocumentLocale): string | null {
+  if (!value) return null
+  const [year, month, day] = value.slice(0, 10).split("-")
+  return locale === "ru" ? `${day}.${month}.${year}` : `${day}/${month}/${year}`
+}
+
 /** Title, project, snapshot time and author: the four lines on top of every document. */
 export function headerLines(header: DocumentHeader, chrome: DocumentChrome): [string, string, string, string] {
   const generated = new Intl.DateTimeFormat(header.locale === "ru" ? "ru-RU" : "en-GB", {

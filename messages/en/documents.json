@@ -1,23 +1,130 @@
 {
   "title": "Reports",
-  "description": "Download real project snapshots from the current Supabase data.",
+  "description": "Project registers built from the current project data, ready to hand over.",
   "noProject": "Select a project to view reports.",
   "reports": {
-    "RPT-F-001": {
-      "title": "Fabrication Progress",
-      "description": "Project snapshot of completed weld progress and NDE workload."
+    "RPT-W-001": {
+      "title": "Welding log",
+      "description": "Every weld of the current revisions: location, size, WPS, welders, date, NDE, PWHT and heat numbers."
     },
-    "RPT-T-001": {
-      "title": "Test Pack RFT Pursuit",
-      "description": "Project snapshot of Test Pack readiness and outstanding blockers."
+    "RPT-N-001": {
+      "title": "NDE register",
+      "description": "Every NDE obligation with its method, batch, laboratory, result and report number."
+    },
+    "RPT-P-001": {
+      "title": "Punch list",
+      "description": "Category X punch items of the test packs, open and closed."
+    },
+    "RPT-T-002": {
+      "title": "Test pack summary",
+      "description": "Each test pack with its system, test medium and pressure, welds, readiness and test dates."
+    },
+    "DOS-T-001": {
+      "title": "Test pack handover dossier",
+      "description": "Composition, pressure test record blank, weld history, NDE and punch items of one test pack."
     }
   },
   "download": "Download {format}",
-  "downloaded": "File downloaded from the current project snapshot.",
+  "downloaded": "File downloaded from the current project data.",
   "error": {
     "unknownReport": "Could not generate report: this report does not exist.",
     "failed": "Could not generate report: {detail}",
     "failedNoDetail": "Could not generate report."
   },
-  "note": "Demo Lite creates browser downloads only. It does not retain document history, snapshots, or handover artifacts."
+  "note": "Each file is built from the current project data and is not stored in PipeQC.",
+  "chrome": {
+    "generated": "Snapshot",
+    "author": "Prepared by",
+    "page": "Page {n} of {total}",
+    "noRecords": "No records"
+  },
+  "columns": {
+    "iso": "ISO",
+    "revision": "Revision",
+    "line": "Line",
+    "spool": "Spool",
+    "weld": "Weld",
+    "location": "Location",
+    "weldType": "Weld type",
+    "diameter": "Diameter, in",
+    "thickness": "Thickness, mm",
+    "wps": "WPS",
+    "welders": "Welder stamps",
+    "weldedOn": "Welded on",
+    "ndeMethods": "NDE methods",
+    "ndeStatus": "NDE",
+    "pwht": "PWHT",
+    "heat": "Heat numbers",
+    "testPack": "Test pack",
+    "method": "Method",
+    "selection": "Extent",
+    "disposition": "Status",
+    "batch": "Batch",
+    "laboratory": "Laboratory",
+    "examinedOn": "Examined on",
+    "outcome": "Result",
+    "report": "Report No.",
+    "defect": "Defect",
+    "item": "No.",
+    "code": "Code",
+    "description": "Description",
+    "checkingDate": "Raised on",
+    "completionDate": "Cleared on",
+    "status": "Status",
+    "system": "System",
+    "subsystem": "Subsystem",
+    "medium": "Test medium",
+    "testPressure": "Test pressure",
+    "isoCount": "ISOs",
+    "welds": "Welds done / total",
+    "openX": "Open X items",
+    "rft": "Ready for test",
+    "rftOn": "Ready on",
+    "testingStarted": "Test started",
+    "testingCompleted": "Test completed",
+    "precommissioning": "Pre-commissioning completed"
+  },
+  "values": {
+    "location": {
+      "shop": "shop",
+      "assembly": "assembly",
+      "field": "field"
+    },
+    "selection": {
+      "full": "full",
+      "spot": "spot"
+    },
+    "disposition": {
+      "pending": "pending",
+      "issued": "issued",
+      "satisfied": "done",
+      "rejected": "rejected",
+      "waived": "waived",
+      "superseded": "superseded"
+    },
+    "outcome": {
+      "accepted": "accepted",
+      "rejected": "rejected"
+    },
+    "ndeStatus": {
+      "pending": "pending",
+      "rejected": "rejected",
+      "done": "done"
+    },
+    "pwht": {
+      "required": "required",
+      "accepted": "accepted"
+    },
+    "punchStatus": {
+      "open": "open",
+      "closed": "cleared"
+    },
+    "medium": {
+      "H": "hydraulic",
+      "P": "pneumatic",
+      "V": "visual"
+    },
+    "yes": "yes",
+    "no": "no"
+  }
 }
