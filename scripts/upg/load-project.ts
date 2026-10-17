@@ -64,7 +64,7 @@ async function idByCode(client: SupabaseClient<Database>, table: "project_servic
   return (data as { id: string }).id
 }
 
-async function createPwhtRules(client: SupabaseClient<Database>, projectId: string): Promise<number> {
+export async function createPwhtRules(client: SupabaseClient<Database>, projectId: string): Promise<number> {
   const { data: existing } = await client.from("nde_matrix_rules").select("id").eq("project_id", projectId).eq("pwht_required", true)
   if ((existing ?? []).length > 0) return 0
   for (const rule of PWHT_FORM_RULES) {
