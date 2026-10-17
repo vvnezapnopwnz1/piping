@@ -19,6 +19,11 @@ export const UPG_PROJECT = {
 export const SHOP_SUBCONTRACTOR = "FAB-A"
 export const FIELD_SUBCONTRACTOR = "ERC-A"
 export const LINE_SERVICE = "PROCESS"
+export const LINE_SERVICES = [
+  { code: "PROCESS", description: "Технологическая среда" },
+  { code: "AIR", description: "Сжатый воздух" },
+  { code: "WATER", description: "Техническая вода" },
+] as const
 /** CS300 welds at or above this wall thickness need PWHT. Entered by hand in the NDE matrix form. */
 export const PWHT_THRESHOLD_MM = 12
 

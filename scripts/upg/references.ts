@@ -4,7 +4,7 @@
  * makes the project its own. The six families that arrive from Excel are empty here on purpose.
  */
 import { DEMO_MANIFEST, type DemoReferences } from "../demo/manifest"
-import { FIELD_SUBCONTRACTOR, PDS_AREAS, SERVICE_CLASSES, SHOP_SUBCONTRACTOR, SYSTEMS } from "./dataset"
+import { FIELD_SUBCONTRACTOR, LINE_SERVICES, PDS_AREAS, SERVICE_CLASSES, SHOP_SUBCONTRACTOR, SYSTEMS } from "./dataset"
 
 const base = DEMO_MANIFEST.references
 
@@ -61,6 +61,13 @@ export const UPG_REFERENCES: DemoReferences = {
   subsystems: SYSTEMS.flatMap((system) =>
     system.subsystems.map((sub) => ({ ...base.subsystems[0], key: `${system.code}|${sub.code}`, code: sub.code, description: sub.description, status: "active" as const, systemCode: system.code })),
   ),
+  lineServices: LINE_SERVICES.map((service) => ({
+    ...base.lineServices[0],
+    key: service.code,
+    code: service.code,
+    description: service.description,
+    status: "active" as const,
+  })),
   pipingMaterialRecords: [],
   weldingProcedures: [],
   welders: [],

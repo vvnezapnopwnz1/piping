@@ -22,12 +22,20 @@ test("the families imported from Excel are empty, so the reconciler never touche
   }
 })
 
-test("UPG-1 brings its own PDS areas, classes, systems, subsystems and the field subcontractor", () => {
+test("UPG-1 brings its own PDS areas, classes, systems, subsystems, line services and the field subcontractor", () => {
   assert.deepEqual(UPG_REFERENCES.pdsAreas.map((area) => area.code), PDS_AREAS.map((area) => area.code))
   assert.deepEqual(UPG_REFERENCES.serviceClasses.map((row) => row.code).sort(), Object.keys(SERVICE_CLASSES).sort())
   assert.deepEqual(UPG_REFERENCES.systems.map((row) => row.code), SYSTEMS.map((system) => system.code))
   assert.equal(UPG_REFERENCES.subsystems.length, SYSTEMS.flatMap((system) => system.subsystems).length)
   assert.ok(UPG_REFERENCES.subcontractors.some((row) => row.code === "ERC-A"))
+  assert.deepEqual(
+    UPG_REFERENCES.lineServices.map((row) => ({ code: row.code, description: row.description })),
+    [
+      { code: "PROCESS", description: "Технологическая среда" },
+      { code: "AIR", description: "Сжатый воздух" },
+      { code: "WATER", description: "Техническая вода" },
+    ],
+  )
 })
 
 test("spooling material types carry the WPS material codes, so record_weld_progress can match a WPS to the spool", () => {
