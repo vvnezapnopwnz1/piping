@@ -52,3 +52,34 @@
 `nde_register_rows` 2,0 с, `spool_fabrication_readiness` 2,3 с (приложение не читает), `test_pack_document_rows` 1,4 с (один пакет).
 Все они читают таблицы через `spool_revision_project_id()` и аналоги. Общая правка помощников нужна только с решением
 владельца: если они перестанут работать с правами вызывающего, срезы по PDS-зонам перестанут идти через `spool_revisions`.
+
+## Поправка: замер `count(*)` занижал вьюхи с соединениями
+
+`select count(*) from <вьюха>` позволяет планировщику отбросить соединения, колонки которых не нужны. Приложение читает
+колонки (`is_rft`, `rft_on` и другие), поэтому честный замер берёт строку целиком:
+`select count(md5(t::text)) from <вьюха> t where project_id = …` (скрипт в сессии, `time-full.sql`).
+По нему `test_pack_readiness` и `isometric_readiness` были медленными (по 2,9 и 3,0 с), хотя `count(*)` показывал 82 и 28 мс.
+Именно это видно на KZ: запрос `test_pack_readiness?select=test_pack_id,is_rft` оставался медленным после первой миграции.
+
+Миграция `20261018101000_isometric_readiness_speed.sql`: `isometric_readiness` берёт пять фактов из `fabrication_spool_projections`
+вместо `spool_fabrication_readiness`. Строки до и после совпадают (48 строк обоих проектов; тест `120`).
+
+| Вьюха (строка целиком, UPG-1, локально) | До Task 2, мс | После Task 2, мс | После `…101000`, мс |
+|---|---|---|---|
+| `spool_erection_readiness` | 1 387 | 27 | 15 |
+| `isometric_readiness` | 3 017 | 3 017 | **317** |
+| `test_pack_readiness` | 2 867 | 2 867 | **433** |
+| `test_pack_workflow` | 3 282 | 3 282 | **804** |
+| `weld_log_rows` | 4 327 | 4 327 | 4 108 |
+| `nde_register_rows` | 2 090 | 2 090 | 1 984 |
+| `test_pack_document_rows` | 4 327 | 4 327 | 2 279 |
+| `spool_fabrication_readiness` (приложение не читает) | 2 466 | 2 466 | 2 386 |
+
+Остаток `isometric_readiness` (около 290 из 317 мс) — `flange_joint_readiness`: `flange_joint_revisions` читается через
+`spool_revision_project_id()`, около 2 мс на катушку. Проекции для фланцев нет. `test_pack_workflow` считает `isometric_readiness`
+дважды, поэтому его время почти равно двум таким чтениям.
+
+**Общая правка помощников прав не сделана.** Сделать `spool_revision_project_id()` и `isometric_revision_project_id()`
+`SECURITY DEFINER` ускоряет всё (в пробе `weld_joint_revisions` 1,8 с → 58 мс), но снимает ограничение по PDS-зоне, которое сейчас
+доходит до таблиц сварки, опор и материалов через вложенный RLS `spool_revisions` и `isometric_revisions`. Нужны отдельные
+RESTRICTIVE-политики на этих таблицах и тест на PDS-субподрядчика. Это отдельное решение.
