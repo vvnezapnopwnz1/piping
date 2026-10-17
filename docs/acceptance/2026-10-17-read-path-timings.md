@@ -31,3 +31,24 @@
 
 Не снят: подключение агента к серверу KZ запрещено правилами сессии. Владелец снимает колонку «KZ, мс» тем же
 скриптом (`explain (analyze)` от оператора на `app` базе) или разрешает агенту доступ только на чтение.
+
+## После Task 2 (миграция `20261018100000_erection_readiness_speed.sql`, локально, UPG-1)
+
+| Вьюха | До, мс | После, мс |
+|---|---|---|
+| `spool_erection_readiness` | 1 387 | **18** |
+| `isometric_readiness` | 28 | 16 |
+| `test_pack_readiness` | 82 | 53 |
+| `test_pack_workflow` | 5 504 | 3 527 |
+
+Строки `spool_erection_readiness` до и после сверены построчно по всем проектам стенда (UPG-1 и SHOWCASE-1, 112 строк): расхождений нет.
+
+**Причина.** `spool_revision_project_id()` работает с правами вызывающего, поэтому на каждой строке `weld_joint_revisions`,
+`spool_revision_materials` и других таблиц заново считается RLS таблицы `spool_revisions` (около 2 мс за вызов).
+Вьюха теперь читает `fabrication_spool_projections` (одна проверка права на проект на строку); пять фактов, которые она считала
+на лету, проекция хранит сама (`recompute_erection_spool_projection`).
+
+**Остаются выше 250 мс локально (кандидаты Task 3):** `test_pack_workflow` 3,5 с, `weld_log_rows` 2,3 с,
+`nde_register_rows` 2,0 с, `spool_fabrication_readiness` 2,3 с (приложение не читает), `test_pack_document_rows` 1,4 с (один пакет).
+Все они читают таблицы через `spool_revision_project_id()` и аналоги. Общая правка помощников нужна только с решением
+владельца: если они перестанут работать с правами вызывающего, срезы по PDS-зонам перестанут идти через `spool_revisions`.
