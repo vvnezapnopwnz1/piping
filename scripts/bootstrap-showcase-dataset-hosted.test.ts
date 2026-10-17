@@ -2,14 +2,13 @@ import assert from "node:assert/strict"
 import test from "node:test"
 
 import {
-  fetchHostedPublishableKey,
+  hostedPublishableKeyFromEnvironment,
   parseHostedShowcaseSeedArguments,
   runSeedHostedShowcase,
   type SeedHostedShowcaseDependencies,
   type SeedHostedShowcaseInput,
-  type SpawnCaptureLike,
 } from "./bootstrap-showcase-dataset-hosted"
-import { PIPEQC_HOSTED_DEMO_PROJECT_REF } from "./demo/hosted-target"
+import { PIPEQC_HOSTED_DEMO_ORIGIN } from "./demo/hosted-target"
 import type { ShowcaseSeedContext } from "./bootstrap-showcase-dataset"
 import type { ShowcaseSeedPort } from "./demo/supabase-demo-stand"
 
@@ -26,7 +25,7 @@ function baseInput(
 ): SeedHostedShowcaseInput {
   return {
     argv: ["--confirm-hosted-showcase-seed"],
-    supabaseUrl: `https://${PIPEQC_HOSTED_DEMO_PROJECT_REF}.supabase.co`,
+    supabaseUrl: PIPEQC_HOSTED_DEMO_ORIGIN,
     serviceRoleKey: "FAKE-SERVICE-KEY",
     password: "FAKE-PASSWORD-12345",
     ...overrides,
@@ -118,7 +117,7 @@ test("runSeedHostedShowcase runs project setup then engineering seeding in order
   ])
   assert.equal(dependencies.seedCalls.length, 1)
   assert.deepEqual(dependencies.seedCalls[0], {
-    url: `https://${PIPEQC_HOSTED_DEMO_PROJECT_REF}.supabase.co`,
+    url: PIPEQC_HOSTED_DEMO_ORIGIN,
     serviceKey: "FAKE-SERVICE-KEY",
     publishableKey: "FAKE-PUBLISHABLE-KEY",
     password: "FAKE-PASSWORD-12345",
@@ -219,43 +218,18 @@ test("runSeedHostedShowcase reports failure when seedEngineeringData throws, wit
   )
 })
 
-test("fetchHostedPublishableKey throws on a nonzero exit status", () => {
-  const spawn: SpawnCaptureLike = () => ({ status: 1, stdout: "" })
-  assert.throws(() => fetchHostedPublishableKey(spawn))
+test("hostedPublishableKeyFromEnvironment throws when the key is missing or blank", () => {
+  assert.throws(() => hostedPublishableKeyFromEnvironment({}))
+  assert.throws(() =>
+    hostedPublishableKeyFromEnvironment({ SUPABASE_PUBLISHABLE_KEY: "  " }),
+  )
 })
 
-test("fetchHostedPublishableKey throws on empty stdout", () => {
-  const spawn: SpawnCaptureLike = () => ({ status: 0, stdout: "" })
-  assert.throws(() => fetchHostedPublishableKey(spawn))
-})
-
-test("fetchHostedPublishableKey throws on malformed JSON", () => {
-  const spawn: SpawnCaptureLike = () => ({
-    status: 0,
-    stdout: "{not valid json",
-  })
-  assert.throws(() => fetchHostedPublishableKey(spawn))
-})
-
-test("fetchHostedPublishableKey throws when no publishable-type entry exists", () => {
-  const spawn: SpawnCaptureLike = () => ({
-    status: 0,
-    stdout: JSON.stringify({
-      keys: [{ type: "secret", api_key: "FAKE-SECRET-KEY" }],
+test("hostedPublishableKeyFromEnvironment returns the configured key", () => {
+  assert.equal(
+    hostedPublishableKeyFromEnvironment({
+      SUPABASE_PUBLISHABLE_KEY: "FAKE-PUBLISHABLE-KEY",
     }),
-  })
-  assert.throws(() => fetchHostedPublishableKey(spawn))
-})
-
-test("fetchHostedPublishableKey returns the publishable entry's api_key", () => {
-  const spawn: SpawnCaptureLike = () => ({
-    status: 0,
-    stdout: JSON.stringify({
-      keys: [
-        { type: "secret", api_key: "FAKE-SECRET-KEY" },
-        { type: "publishable", api_key: "FAKE-PUBLISHABLE-KEY" },
-      ],
-    }),
-  })
-  assert.equal(fetchHostedPublishableKey(spawn), "FAKE-PUBLISHABLE-KEY")
+    "FAKE-PUBLISHABLE-KEY",
+  )
 })

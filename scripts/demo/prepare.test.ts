@@ -14,7 +14,6 @@ import {
   runHostedReset,
   runPrepareHostedDemo,
 } from "../prepare-hosted-demo"
-import { PIPEQC_HOSTED_DEMO_PROJECT_REF } from "./hosted-target"
 import { runCheckDemo } from "../check-track12-demo"
 import { runHostedCheckDemo } from "../check-hosted-demo"
 import {
@@ -3527,22 +3526,18 @@ test("hosted scripts prefer the Marketplace secret key over the legacy service-r
   )
 })
 
-test("hosted reset links the fixed project before resetting its remote database", () => {
+test("hosted reset refuses on the self-hosted stand without running any command", () => {
   const calls: unknown[][] = []
 
-  runHostedReset((command, args, options) => {
-    calls.push([command, args, options])
-    return { status: 0 }
-  })
-
-  assert.deepEqual(calls, [
-    [
-      "supabase",
-      ["link", "--project-ref", PIPEQC_HOSTED_DEMO_PROJECT_REF],
-      { stdio: "inherit" },
-    ],
-    ["supabase", ["db", "reset", "--linked", "--yes"], { stdio: "inherit" }],
-  ])
+  assert.throws(
+    () =>
+      runHostedReset((command, args, options) => {
+        calls.push([command, args, options])
+        return { status: 0 }
+      }),
+    /not automated on the self-hosted stand/,
+  )
+  assert.deepEqual(calls, [])
 })
 
 test("hosted preparation rejects a foreign project before any CLI or gateway call", async () => {

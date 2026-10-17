@@ -1,10 +1,7 @@
 import { spawnSync } from "node:child_process"
 import { pathToFileURL } from "node:url"
 
-import {
-  PIPEQC_HOSTED_DEMO_PROJECT_REF,
-  assertHostedSupabaseTarget,
-} from "./demo/hosted-target"
+import { assertHostedSupabaseTarget } from "./demo/hosted-target"
 import {
   prepareDemoStand,
   type DemoStandPort,
@@ -56,21 +53,11 @@ export function parseHostedPrepareArguments(
   return { confirmed: true }
 }
 
-function runCommand(spawn: SpawnSyncLike, args: string[]): void {
-  let result
-  try {
-    result = spawn("supabase", args, { stdio: "inherit" })
-  } catch {
-    throw new Error("The hosted database reset failed.")
-  }
-  if (result.error !== undefined || result.status !== 0) {
-    throw new Error("The hosted database reset failed.")
-  }
-}
-
-export function runHostedReset(spawn: SpawnSyncLike): void {
-  runCommand(spawn, ["link", "--project-ref", PIPEQC_HOSTED_DEMO_PROJECT_REF])
-  runCommand(spawn, ["db", "reset", "--linked", "--yes"])
+// The hosted stand is self-hosted on the KZ server and holds live data: there is no project to
+// link, and a reset is an owner-run server procedure, never a script step. The spawn port stays
+// so that a refused reset provably runs no command.
+export function runHostedReset(_spawn: SpawnSyncLike): void {
+  throw new Error("The hosted database reset is not automated on the self-hosted stand.")
 }
 
 function safeCheckId(id: string): string {

@@ -1,14 +1,10 @@
-import { spawnSync } from "node:child_process"
 import { pathToFileURL } from "node:url"
 
 import {
   seedShowcaseEngineeringData,
   type ShowcaseSeedContext,
 } from "./bootstrap-showcase-dataset"
-import {
-  PIPEQC_HOSTED_DEMO_PROJECT_REF,
-  assertHostedSupabaseTarget,
-} from "./demo/hosted-target"
+import { assertHostedSupabaseTarget } from "./demo/hosted-target"
 import { createHostedSupabaseDemoStandCore } from "./demo/supabase-demo-stand"
 import type { ShowcaseSeedPort } from "./demo/supabase-demo-stand"
 import { hostedAdminKeyFromEnvironment } from "./prepare-hosted-demo"
@@ -46,41 +42,16 @@ export function parseHostedShowcaseSeedArguments(
   return { confirmed: true }
 }
 
-export type SpawnCaptureLike = (
-  command: string,
-  args: readonly string[],
-) => { readonly status: number | null; readonly stdout: string }
-
-export function fetchHostedPublishableKey(
-  spawn: SpawnCaptureLike = (command, args) =>
-    spawnSync(command, args, { encoding: "utf8" }),
+// The self-hosted stand has no management API to list keys, so the publishable key comes from the
+// same environment file as the secret key.
+export function hostedPublishableKeyFromEnvironment(
+  environment: Readonly<Record<string, string | undefined>>,
 ): string {
-  const result = spawn("supabase", [
-    "projects",
-    "api-keys",
-    "--project-ref",
-    PIPEQC_HOSTED_DEMO_PROJECT_REF,
-    "--output-format",
-    "json",
-  ])
-  if (result.status !== 0 || !result.stdout) {
-    throw new Error("Fetching the hosted publishable key failed.")
+  const key = environment.SUPABASE_PUBLISHABLE_KEY?.trim()
+  if (!key) {
+    throw new Error("SUPABASE_PUBLISHABLE_KEY must be set.")
   }
-  let parsed: {
-    readonly keys: readonly { readonly type: string; readonly api_key: string }[]
-  }
-  try {
-    parsed = JSON.parse(result.stdout) as {
-      readonly keys: readonly { readonly type: string; readonly api_key: string }[]
-    }
-  } catch {
-    throw new Error("The hosted publishable key response was not valid JSON.")
-  }
-  const publishable = parsed.keys.find((key) => key.type === "publishable")
-  if (!publishable) {
-    throw new Error("The hosted project has no publishable API key.")
-  }
-  return publishable.api_key
+  return key
 }
 
 export async function runSeedHostedShowcase(
@@ -168,7 +139,7 @@ async function main(): Promise<0 | 1> {
     },
     {
       createPort: createHostedSupabaseDemoStandCore,
-      fetchPublishableKey: fetchHostedPublishableKey,
+      fetchPublishableKey: () => hostedPublishableKeyFromEnvironment(process.env),
       seedEngineeringData: seedShowcaseEngineeringData,
       writeLine: (line) => console.log(line),
     },

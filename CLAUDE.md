@@ -55,6 +55,12 @@ npm run demo:showcase   # seeds SHOWCASE-1; demo:check stays green afterwards
 
 The hosted stand is separate and holds curated acceptance data. Never re-seed it unprompted.
 
+Since 2026-10-17 the hosted stand is the self-hosted Supabase on the KZ server (hoster.kz, `ssh mextech`):
+app `https://app.piping-qc-work.shop`, API `https://supabase.piping-qc-work.shop`. Releases follow
+`docs/runbooks/hosted-stand-operations.md`: migrations before the app image. The cloud project
+`lmjkqcdmxehknipeoeye` and the Vercel deployment are **frozen**: never `supabase db push --linked`,
+`supabase link` or `vercel deploy` to them.
+
 ## Backend: keep one rule in one place
 
 The backend is meant to be simple to read and change. Check every new function, view, policy and

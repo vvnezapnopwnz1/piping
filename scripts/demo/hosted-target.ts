@@ -1,6 +1,6 @@
-export const PIPEQC_HOSTED_DEMO_PROJECT_REF = "lmjkqcdmxehknipeoeye"
-
-const PIPEQC_HOSTED_DEMO_ORIGIN = `https://${PIPEQC_HOSTED_DEMO_PROJECT_REF}.supabase.co`
+// The self-hosted Supabase on the KZ server (hoster.kz) is the only hosted PipeQC stand.
+// The former cloud project lmjkqcdmxehknipeoeye is frozen and must not be targeted.
+export const PIPEQC_HOSTED_DEMO_ORIGIN = "https://supabase.piping-qc-work.shop"
 
 export function assertHostedSupabaseTarget(value: string): URL {
   let target: URL
