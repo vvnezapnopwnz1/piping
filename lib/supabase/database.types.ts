@@ -567,8 +567,13 @@ export type Database = {
           is_rft: boolean
           iso_number: string
           laydown_on: string | null
+          last_field_support_on: string | null
+          last_field_weld_on: string | null
           line_checked: number
           line_total: number
+          material_checked_on: string | null
+          material_line_checked: number
+          material_line_total: number
           material_check_on: string | null
           nde_pending: number
           painted_on: string | null
@@ -618,8 +623,13 @@ export type Database = {
           is_rft?: boolean
           iso_number: string
           laydown_on?: string | null
+          last_field_support_on?: string | null
+          last_field_weld_on?: string | null
           line_checked?: number
           line_total?: number
+          material_checked_on?: string | null
+          material_line_checked?: number
+          material_line_total?: number
           material_check_on?: string | null
           nde_pending?: number
           painted_on?: string | null
@@ -668,8 +678,13 @@ export type Database = {
           is_rft?: boolean
           iso_number?: string
           laydown_on?: string | null
+          last_field_support_on?: string | null
+          last_field_weld_on?: string | null
           line_checked?: number
           line_total?: number
+          material_checked_on?: string | null
+          material_line_checked?: number
+          material_line_total?: number
           material_check_on?: string | null
           nde_pending?: number
           painted_on?: string | null
