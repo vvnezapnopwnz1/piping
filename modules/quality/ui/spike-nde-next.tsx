@@ -3,10 +3,12 @@
 // THROWAWAY SPIKE (2026-10-17). Russian only, no tests. One queue: what waits for a result, what waits for a batch.
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Check, ChevronDown, ChevronRight } from "lucide-react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 import { Badge } from "@/components/ui/badge"
 import { DataTable, useTableUrlState, type DataColumn } from "@/components/ui/data-table"
 import { Button } from "@/components/ui/button"
+import { NdeDashboardScreen } from "./nde-dashboard-screen"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { NDT_METHODS, jointStatusLabel, type NdeBatch, type NdeObligation, type NdtMethod, type CoverageRegime } from "../domain/nde-batch"
 import {
@@ -51,7 +53,19 @@ const JOINT_COLUMNS: DataColumn<NdeObligation>[] = [
   { id: "coverage", header: "Объём", numeric: true, value: (ob) => `${ob.requiredCoverage} %` },
 ]
 
+const TABS = ["joints", "waiting_result", "waiting_batch", "closed", "summary"] as const
+type Tab = (typeof TABS)[number]
+
 export function SpikeNdeNext({ projectId }: { projectId: string }) {
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+  const router = useRouter()
+  const tab: Tab = TABS.find((candidate) => candidate === searchParams.get("tab")) ?? "joints"
+  const goTab = (next: Tab) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("tab", next)
+    router.replace(`${pathname}?${params.toString()}`)
+  }
   const [obligations, setObligations] = useState<NdeObligation[]>([])
   const [batches, setBatches] = useState<NdeBatch[]>([])
   const [refs, setRefs] = useState<QualityReferentials | null>(null)
@@ -66,7 +80,6 @@ export function SpikeNdeNext({ projectId }: { projectId: string }) {
   const [regime, setRegime] = useState<CoverageRegime>("spot")
   const [percent, setPercent] = useState("10")
   const [reject, setReject] = useState<{ ob: NdeObligation; code: string; welder: string; welders: string[] } | null>(null)
-  const [showClosed, setShowClosed] = useState(false)
   const [jointTable, setJointTable] = useTableUrlState({ namespace: "nx" })
 
   const reload = useCallback(async () => {
@@ -142,9 +155,26 @@ export function SpikeNdeNext({ projectId }: { projectId: string }) {
         <Button variant="outline" onClick={() => setCreating((v) => !v)}>Создать партию</Button>
       </div>
 
-      <p className="text-sm text-muted-foreground">
-        Ждут результата: {inWork.reduce((n, b) => n + (byBatch.get(b.batchNumber) ?? []).filter((o) => o.disposition === "issued").length, 0)} стыков в {inWork.length} партиях · ждут включения в партию: {waitingForBatch.length} · закрыто партий: {closed.length}
-      </p>
+      <div role="tablist" className="flex flex-wrap gap-1 border-b">
+        {([
+          ["joints", "Стыки", obligations.length],
+          ["waiting_result", "Ждут результата", inWork.reduce((n, b) => n + (byBatch.get(b.batchNumber) ?? []).filter((o) => o.disposition === "issued").length, 0)],
+          ["waiting_batch", "Ждут партию", waitingForBatch.length],
+          ["closed", "Закрытые партии", closed.length],
+          ["summary", "Сводка", null],
+        ] as const).map(([id, label, count]) => (
+          <button
+            key={id}
+            role="tab"
+            aria-selected={tab === id}
+            type="button"
+            onClick={() => goTab(id)}
+            className={`-mb-px border-b-2 px-3 py-2 text-sm ${tab === id ? "border-primary font-semibold" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+          >
+            {label}{count !== null && <span className="ml-1.5 rounded bg-muted px-1.5 text-xs">{count}</span>}
+          </button>
+        ))}
+      </div>
 
       {creating && (
         <div className="flex flex-wrap items-end gap-3 rounded-lg border bg-card p-3">
@@ -166,8 +196,7 @@ export function SpikeNdeNext({ projectId }: { projectId: string }) {
       )}
       {message && <p className="rounded border bg-muted px-3 py-2 text-sm">{message}</p>}
 
-      <section className="space-y-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Ждут результата</h2>
+      {tab === "waiting_result" && <section className="space-y-2">
         {inWork.length === 0 && <p className="rounded-lg border p-4 text-sm text-muted-foreground">Выданных партий нет</p>}
         {inWork.map((b) => {
           const all = byBatch.get(b.batchNumber) ?? []
@@ -204,9 +233,9 @@ export function SpikeNdeNext({ projectId }: { projectId: string }) {
             </div>
           )
         })}
-      </section>
+      </section>}
 
-      {reject && refs && (
+      {tab === "waiting_result" && reject && refs && (
         <div className="space-y-2 rounded-lg border border-destructive bg-card p-3">
           <p className="text-sm font-medium">Брак: {reject.ob.weldNumber}</p>
           <div className="flex flex-wrap items-end gap-3">
@@ -228,8 +257,7 @@ export function SpikeNdeNext({ projectId }: { projectId: string }) {
         </div>
       )}
 
-      <section className="space-y-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Ждут включения в партию</h2>
+      {tab === "waiting_batch" && <section className="space-y-2">
         {groups.length === 0 && drafts.length === 0 && <p className="rounded-lg border p-4 text-sm text-muted-foreground">Все стыки уже в партиях</p>}
         {groups.map(([groupKey, items]) => {
           const [m, r] = groupKey.split("|") as [NdtMethod, CoverageRegime]
@@ -246,10 +274,10 @@ export function SpikeNdeNext({ projectId }: { projectId: string }) {
             <Button size="sm" disabled={busy !== null} onClick={() => void run("issue", async () => { const c = getSupabaseBrowserClient(); await allocateNdeBatchCandidates(c, b.id, b.coverageRegime === "spot" ? 10 : 100, key("allocate")); await issueNdeBatch(c, b.id, key("issue")) })}>Выдать</Button>
           </div>
         ))}
-      </section>
+      </section>}
 
-      <section className="space-y-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Все стыки ({obligations.length})</h2>
+      {tab === "joints" && <section className="space-y-2">
+        
         <DataTable
           columns={JOINT_COLUMNS}
           rows={obligations}
@@ -260,18 +288,17 @@ export function SpikeNdeNext({ projectId }: { projectId: string }) {
           emptyTitle="Стыков нет"
           emptyDescription="Стыки появляются, когда сварены и подпадают под правило контроля"
         />
-      </section>
+      </section>}
 
-      <section>
-        <button type="button" onClick={() => setShowClosed(!showClosed)} className="flex items-center gap-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          {showClosed ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />} Закрытые партии ({closed.length})
-        </button>
-        {showClosed && (
-          <ul className="mt-2 space-y-1 text-sm">
+      {tab === "closed" && (
+        <section>
+          <ul className="space-y-1 text-sm">
             {closed.map((b) => <li key={b.id} className="flex justify-between rounded border px-3 py-1.5"><span className="font-mono">{b.batchNumber}</span><span className="text-muted-foreground">{METHOD_TEXT[b.method]} · {REGIME_TEXT[b.coverageRegime]} · {(byBatch.get(b.batchNumber) ?? []).length} стыков · {b.closedOn ?? b.issuedOn ?? ""}</span></li>)}
           </ul>
-        )}
-      </section>
+        </section>
+      )}
+
+      {tab === "summary" && <NdeDashboardScreen projectId={projectId} />}
     </div>
   )
 }
