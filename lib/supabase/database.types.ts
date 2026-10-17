@@ -6707,13 +6707,6 @@ export type Database = {
           },
         ]
       }
-      spool_revision_projects: {
-        Row: {
-          project_id: string | null
-          spool_revision_id: string | null
-        }
-        Relationships: []
-      }
       spool_revisions: {
         Row: {
           created_at: string
@@ -9538,6 +9531,13 @@ export type Database = {
             referencedColumns: ["spool_revision_id"]
           },
         ]
+      }
+      spool_revision_projects: {
+        Row: {
+          project_id: string | null
+          spool_revision_id: string | null
+        }
+        Relationships: []
       }
       spool_stage_events: {
         Row: {
