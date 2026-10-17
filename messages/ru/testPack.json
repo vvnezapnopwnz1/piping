@@ -481,6 +481,9 @@
       "yReinstatement": "ждёт обратной сборки Y",
       "precommissioning": "ждёт пусконаладки",
       "previous": "ждёт предыдущего шага"
-    }
+    },
+    "isoReady": "готова",
+    "isoBlocked": "не готова",
+    "spoolPending": "ждёт контроля: {nde}, термообработки: {pwht}"
   }
 }

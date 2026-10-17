@@ -481,6 +481,9 @@
       "yReinstatement": "waiting for Y reinstatement",
       "precommissioning": "waiting for pre-commissioning",
       "previous": "waiting for the previous step"
-    }
+    },
+    "isoReady": "ready",
+    "isoBlocked": "blocked",
+    "spoolPending": "waiting for NDE: {nde}, PWHT: {pwht}"
   }
 }

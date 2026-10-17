@@ -57,9 +57,14 @@ function waits(row: PackWorkflowRow, stage: string): StepText[] {
   return codes.map((code) => ({ key: WAIT_REASONS[code] ?? "steps.wait.previous" }))
 }
 
+/** The readiness counters of a pack or of one isometric as reason lines, in a fixed order, zeros skipped. */
+export function rftReasonLines(counts: Record<string, unknown> | null | undefined): StepText[] {
+  const source = counts ?? {}
+  return RFT_REASONS.filter(([code]) => Number(source[code] ?? 0) > 0).map(([code, key]) => ({ key, values: { count: Number(source[code]) } }))
+}
+
 export function buildPackSteps(row: PackWorkflowRow): PackStep[] {
-  const rftCounts = (((row.blockers ?? {}) as Record<string, unknown>).rft ?? {}) as Record<string, number>
-  const rftReasons = RFT_REASONS.filter(([code]) => Number(rftCounts[code] ?? 0) > 0).map(([code, key]) => ({ key, values: { count: Number(rftCounts[code]) } }))
+  const rftReasons = rftReasonLines(((row.blockers ?? {}) as Record<string, unknown>).rft as Record<string, unknown> | undefined)
   const lineTotal = count(row, "line_check_total")
   const lineDone = count(row, "line_check_completed")
   const clearTotal = count(row, "item_clearance_total")

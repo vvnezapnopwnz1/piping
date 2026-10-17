@@ -13,6 +13,7 @@ import { listTestPackCatalog, type TestPackCatalogRow } from "../infrastructure/
 import { listTestPackWorkflowRows } from "../infrastructure/test-pack-rows"
 import { resolvePackSelection } from "./pack-selection"
 import { StepBody } from "./steps/step-body"
+import { TestPackBuilderScreen } from "./test-pack-builder-screen"
 import { TestPackList } from "./test-pack-list"
 import { useTestPackTranslations } from "./test-pack-i18n"
 import { PackSteps } from "./test-pack-steps"
@@ -72,15 +73,22 @@ export function TestPacksScreen({ projectId, initialStep }: { projectId: string;
     router.replace(`${pathname}?${next.toString()}`, { scroll: false })
   }
 
-  const showingPack = selection.kind !== "none"
+  const creating = canManage && params.get("new") === "1" && selection.kind === "none"
+  const showingPack = selection.kind !== "none" || creating
   return (
     <div className="flex h-[calc(100dvh-150px)] min-h-[420px] gap-4">
       <div className={`${showingPack ? "hidden lg:flex" : "flex"} w-full min-h-0 flex-col lg:w-[340px] lg:flex-none`}>
-        <TestPackList packs={packs} stages={stages} selectedId={pack?.id ?? null} onSelect={(id) => selectPack(id, { push: true, extra: { step: null } })} onCreate={() => selectPack(null, { extra: { step: "composition" } })} canManage={canManage} />
+        <TestPackList packs={packs} stages={stages} selectedId={pack?.id ?? null} onSelect={(id) => selectPack(id, { push: true, extra: { step: null, new: null } })} onCreate={() => selectPack(null, { push: true, extra: { new: "1", step: null } })} canManage={canManage} />
       </div>
       <section className={`${showingPack ? "block" : "hidden lg:block"} min-h-0 min-w-0 flex-1 overflow-y-auto rounded-lg border bg-card`}>
         {selection.kind === "not_found" && loaded && <p className="p-6 text-sm text-muted-foreground">{t("screen.notFound")}</p>}
-        {selection.kind === "none" && <p className="p-6 text-sm text-muted-foreground">{t("screen.selectPack")}</p>}
+        {selection.kind === "none" && !creating && <p className="p-6 text-sm text-muted-foreground">{t("screen.selectPack")}</p>}
+        {creating && (
+          <div className="p-4">
+            <Button size="sm" variant="ghost" className="-ml-2 mb-2 lg:hidden" onClick={() => selectPack(null, { extra: { new: null } })}>{t("screen.back")}</Button>
+            <TestPackBuilderScreen projectId={projectId} canManage={canManage} isNew />
+          </div>
+        )}
         {pack && row && (
           <>
             <header className="sticky top-0 z-20 flex h-[76px] flex-wrap items-center justify-between gap-2 border-b bg-card px-4">
