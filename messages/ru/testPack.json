@@ -415,5 +415,72 @@
   "mode": {
     "preparation": "Подготовка",
     "progress": "Ход работ"
+  },
+  "screen": {
+    "title": "Тест-пакеты",
+    "searchPlaceholder": "Номер пакета",
+    "newPack": "Новый пакет",
+    "selectPack": "Выберите пакет слева",
+    "notFound": "Тест-пакет не найден",
+    "noPacks": "Тест-пакетов нет",
+    "back": "Все пакеты",
+    "isoCount": "{count} изометрик",
+    "filter": {
+      "all": "Все",
+      "waiting": "Ждут готовности",
+      "active": "В работе",
+      "done": "Завершены"
+    },
+    "stage": {
+      "awaiting_rft": "Ждёт готовности",
+      "blinding_assigned": "Заглушки",
+      "blinded": "Готов к испытанию",
+      "testing": "Идёт испытание",
+      "awaiting_y_reinstatement": "Ждёт обратной сборки Y",
+      "ready_for_precommissioning": "Ждёт пусконаладки",
+      "awaiting_z_reinstatement": "Ждёт обратной сборки Z",
+      "complete": "Завершён"
+    },
+    "readOnly": "Пакет можно смотреть, но нельзя менять",
+    "archived": "Пакет в архиве, только чтение"
+  },
+  "steps": {
+    "title": {
+      "composition": "Состав",
+      "readiness": "Готовность к испытанию",
+      "line_check": "Проверка линии",
+      "item_clearance": "Замечания категории X",
+      "blinding": "Заглушки",
+      "testing": "Испытание",
+      "y_reinstatement": "Обратная сборка Y",
+      "precommissioning": "Пусконаладка",
+      "z_reinstatement": "Обратная сборка Z"
+    },
+    "summary": {
+      "readySince": "готов с {date}",
+      "notAssigned": "ещё не назначена",
+      "isoProgress": "{done} из {total} изометрик",
+      "punchProgress": "{done} из {total} закрыто",
+      "doneOn": "выполнено {date}",
+      "startedOn": "начато {date}",
+      "jointProgress": "{done} из {total} соединений"
+    },
+    "reason": {
+      "noSpools": "нет катушек",
+      "weldOrSupportPending": "не сварено или нет опор: {count}",
+      "flangePending": "фланцы не собраны: {count}",
+      "ndePending": "ждёт контроля: {count}",
+      "pwhtPending": "ждёт термообработки: {count}",
+      "lineCheckPending": "проверка линии не завершена: {count}",
+      "xOpen": "открытых замечаний X: {count}"
+    },
+    "wait": {
+      "rft": "пакет ещё не готов к испытанию",
+      "blinding": "ждёт заглушек",
+      "testing": "ждёт испытания",
+      "yReinstatement": "ждёт обратной сборки Y",
+      "precommissioning": "ждёт пусконаладки",
+      "previous": "ждёт предыдущего шага"
+    }
   }
 }

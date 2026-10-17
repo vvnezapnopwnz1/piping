@@ -415,5 +415,72 @@
   "mode": {
     "preparation": "Preparation",
     "progress": "Progress"
+  },
+  "screen": {
+    "title": "Test packs",
+    "searchPlaceholder": "Pack number",
+    "newPack": "New pack",
+    "selectPack": "Select a pack on the left",
+    "notFound": "Test pack not found",
+    "noPacks": "No test packs",
+    "back": "All packs",
+    "isoCount": "{count} ISO",
+    "filter": {
+      "all": "All",
+      "waiting": "Waiting for readiness",
+      "active": "In progress",
+      "done": "Complete"
+    },
+    "stage": {
+      "awaiting_rft": "Waiting for readiness",
+      "blinding_assigned": "Blinding",
+      "blinded": "Ready to test",
+      "testing": "Testing in progress",
+      "awaiting_y_reinstatement": "Waiting for Y reinstatement",
+      "ready_for_precommissioning": "Waiting for pre-commissioning",
+      "awaiting_z_reinstatement": "Waiting for Z reinstatement",
+      "complete": "Complete"
+    },
+    "readOnly": "You can view this pack but not change it",
+    "archived": "This pack is archived and read-only"
+  },
+  "steps": {
+    "title": {
+      "composition": "Composition",
+      "readiness": "Readiness for test",
+      "line_check": "Line check",
+      "item_clearance": "Category X items",
+      "blinding": "Blinding",
+      "testing": "Testing",
+      "y_reinstatement": "Y reinstatement",
+      "precommissioning": "Pre-commissioning",
+      "z_reinstatement": "Z reinstatement"
+    },
+    "summary": {
+      "readySince": "ready since {date}",
+      "notAssigned": "not assigned yet",
+      "isoProgress": "{done} of {total} ISOs",
+      "punchProgress": "{done} of {total} cleared",
+      "doneOn": "done {date}",
+      "startedOn": "started {date}",
+      "jointProgress": "{done} of {total} joints"
+    },
+    "reason": {
+      "noSpools": "no spools",
+      "weldOrSupportPending": "welds or supports not done: {count}",
+      "flangePending": "flanges not assembled: {count}",
+      "ndePending": "waiting for NDE: {count}",
+      "pwhtPending": "waiting for PWHT: {count}",
+      "lineCheckPending": "line check not complete: {count}",
+      "xOpen": "open Category X items: {count}"
+    },
+    "wait": {
+      "rft": "the pack is not ready for test yet",
+      "blinding": "waiting for blinding",
+      "testing": "waiting for testing",
+      "yReinstatement": "waiting for Y reinstatement",
+      "precommissioning": "waiting for pre-commissioning",
+      "previous": "waiting for the previous step"
+    }
   }
 }
