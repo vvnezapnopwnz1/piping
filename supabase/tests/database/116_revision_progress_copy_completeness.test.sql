@@ -1,5 +1,5 @@
 begin;
-select plan(15);
+select plan(19);
 
 insert into auth.users (id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at)
 values ('10000000-0000-0000-0000-000000000116', 'authenticated', 'authenticated', 'revision.copy@example.test', 'not-used', now(), now(), now());
@@ -77,6 +77,15 @@ values ('40000000-0000-0000-0000-000000000116', '30000000-0000-0000-0000-0000000
 insert into public.material_check_items (material_check_record_id, spool_revision_material_id, piping_material_record_id, checked_quantity)
 values ('40000000-0000-0000-0000-000000000116', '3d000000-0000-0000-0000-000000000116', '3e000000-0000-0000-0000-000000000116', 2);
 
+insert into public.supports (id, project_id, support_number)
+values ('42000000-0000-0000-0000-000000000116', '30000000-0000-0000-0000-000000000116', 'SUP-116');
+insert into public.support_revisions (id, support_id, spool_revision_id, support_type, quantity)
+values
+  ('43000000-0000-0000-0000-000000000116', '42000000-0000-0000-0000-000000000116', '39000000-0000-0000-0000-000000000116', 'SHOE', 1),
+  ('43000000-0000-0000-0000-000000000117', '42000000-0000-0000-0000-000000000116', '39000000-0000-0000-0000-000000000117', 'SHOE', 1);
+insert into public.support_progress_records (id, project_id, support_revision_id, spool_revision_id, phase, installed_on, recorded_by)
+values ('44000000-0000-0000-0000-000000000116', '30000000-0000-0000-0000-000000000116', '43000000-0000-0000-0000-000000000116', '39000000-0000-0000-0000-000000000116', 'fabrication', date '2026-02-07', '10000000-0000-0000-0000-000000000116');
+
 insert into public.revision_change_items (
   id, project_id, isometric_id, isometric_revision_id, previous_isometric_revision_id,
   entity_type, entity_id, entity_key, change_type
@@ -93,15 +102,15 @@ values
 
 select is(
   (select array_agg(progress_kind order by progress_kind)::text from public.revision_progress_copies where change_item_id = '41000000-0000-0000-0000-000000000116'),
-  '{fabrication_start,material_check,weld_progress}',
-  'done-without-modification authorizes material and weld copying alongside construction progress'
+  '{fabrication_start,material_check,support_progress,weld_progress}',
+  'done-without-modification authorizes material, weld and support copying alongside construction progress'
 );
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000116', true);
 select set_config('request.jwt.claims', '{"sub":"10000000-0000-0000-0000-000000000116","role":"authenticated"}', true);
-select is(public.materialize_progress_copies('37000000-0000-0000-0000-000000000117', 'revision-copy-116'), 2,
-  'done-without-modification materializes both the material and weld records');
+select is(public.materialize_progress_copies('37000000-0000-0000-0000-000000000117', 'revision-copy-116'), 3,
+  'done-without-modification materializes the material, weld and support records');
 reset role;
 
 select is((select count(*)::int from public.material_check_records where spool_revision_id = '39000000-0000-0000-0000-000000000117'), 1,
@@ -128,8 +137,17 @@ select is((select array_agg(point_type order by point_type)::text from public.we
   'weld-point types are retained');
 select is((select count(*)::int from public.nde_obligations where weld_joint_revision_id = '3b000000-0000-0000-0000-000000000117'), 0,
   'weld-progress copying does not fabricate NDE outcomes');
-select is((select count(*)::int from public.revision_progress_copies where change_item_id = '41000000-0000-0000-0000-000000000116' and copied_payload <> '{}'::jsonb), 2,
+select is((select count(*)::int from public.revision_progress_copies where change_item_id = '41000000-0000-0000-0000-000000000116' and copied_payload <> '{}'::jsonb), 3,
   'each copied record keeps materialization provenance');
+
+select is((select count(*)::int from public.support_progress_records where support_revision_id = '43000000-0000-0000-0000-000000000117'), 1,
+  'an installed support stays installed on the replacement revision');
+select is((select installed_on from public.support_progress_records where support_revision_id = '43000000-0000-0000-0000-000000000117'), date '2026-02-07',
+  'the support keeps its installation date');
+select is((select phase::text from public.support_progress_records where support_revision_id = '43000000-0000-0000-0000-000000000117'), 'fabrication',
+  'the support keeps the phase it was installed in');
+select is((select support_recorded from public.fabrication_spool_projections where spool_revision_id = '39000000-0000-0000-0000-000000000117'), 1,
+  'the replacement spool projection counts the carried support');
 
 select * from finish();
 rollback;
