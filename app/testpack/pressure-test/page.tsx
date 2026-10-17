@@ -1,5 +1,3 @@
-import { PressureTestHomeScreen } from "@/modules/pressure-test/ui/pressure-test-home-screen"
+"use client"
 
-export default function PressureTestPage() {
-  return <PressureTestHomeScreen />
-}
+export { TestPacksPage as default } from "@/modules/pressure-test/ui/test-packs-page"

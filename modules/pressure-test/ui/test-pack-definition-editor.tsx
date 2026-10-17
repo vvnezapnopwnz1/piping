@@ -288,7 +288,9 @@ export function TestPackDefinitionEditor({
             {dynamicFields.map(({ field, label, type, required, unit }) => (
               <div key={field} className="space-y-1.5">
                 <Label htmlFor={`def-${field}`}>
-                  {label} {unit ? `(${unit})` : required ? "*" : ""}
+                  {t(label)}
+                  {unit ? <span className="text-muted-foreground"> ({unit})</span> : null}
+                  {required ? <span className="text-destructive"> *</span> : null}
                 </Label>
                 <Input
                   id={`def-${field}`}

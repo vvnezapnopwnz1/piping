@@ -1,5 +1,3 @@
-import { PressureTestProgressScreen } from "@/modules/pressure-test/ui/pressure-test-progress-screen"
+"use client"
 
-export default function ItemClearanceProgressPage() {
-  return <PressureTestProgressScreen requestType="item_clearance" />
-}
+export { TestPacksPage as default } from "@/modules/pressure-test/ui/test-packs-page"

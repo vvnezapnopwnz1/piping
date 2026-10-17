@@ -1,5 +1,3 @@
-import { RequestPreparationScreen } from "@/modules/pressure-test/ui/request-preparation-screen"
+"use client"
 
-export default function ReinstatementPreparationPage() {
-  return <RequestPreparationScreen requestType="reinstatement" progressHref="/testpack/pressure-test/reinstatement/progress" />
-}
+export { TestPacksPage as default } from "@/modules/pressure-test/ui/test-packs-page"

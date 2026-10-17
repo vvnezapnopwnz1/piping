@@ -20,7 +20,6 @@ import {
   Bolt,
   Inbox,
   GitBranch,
-  ListPlus,
 } from 'lucide-react'
 import type { Messages } from '@/i18n/messages'
 import type { Capability } from '@/modules/access/domain/capability'
@@ -162,16 +161,18 @@ export const workspaceAreas: readonly WorkspaceArea[] = [
     href: '/testpack',
     icon: FlaskConical,
     children: [
-      { title: 'dashboard', href: '/testpack', icon: LayoutDashboard },
-      { title: 'builder', href: '/testpack/builder', icon: ListPlus, context: TEST_PACK },
       {
-        // The pack workbench carries the whole pressure-test sequence for one pack (Workflow tab).
-        // The cross-pack worklists keep their addresses as parts of it, not as a tab of their own.
-        title: 'explorer',
-        href: '/testpack/explorer',
-        icon: FolderTree,
+        // One screen: the pack list and the selected pack's step timeline. The old pages keep their addresses
+        // and open it (legacy-address.ts); they are this page, not tabs of their own.
+        title: 'testPacks',
+        href: '/testpack',
+        icon: FlaskConical,
         context: TEST_PACK,
-        aliases: [{ title: 'pressureTest', href: '/testpack/pressure-test' }],
+        aliases: [
+          { title: 'builder', href: '/testpack/builder' },
+          { title: 'explorer', href: '/testpack/explorer' },
+          { title: 'pressureTest', href: '/testpack/pressure-test' },
+        ],
       },
     ],
   },

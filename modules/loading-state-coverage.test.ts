@@ -49,7 +49,8 @@ const EXEMPT = new Map<string, string>([
 ])
 
 test("the audit still covers the screens it was written against", () => {
-  assert.ok(screens.length >= 28, `expected at least 28 screens, found ${screens.length}`)
+  // 28 before the Test Packs redesign replaced the dashboard, workbench, explorer and the pressure-test screens by one.
+  assert.ok(screens.length >= 24, `expected at least 24 screens, found ${screens.length}`)
 })
 
 test("every shared frame a screen may delegate its loading state to actually renders one", () => {

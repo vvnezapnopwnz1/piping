@@ -1,5 +1,3 @@
-import { RequestPreparationScreen } from "@/modules/pressure-test/ui/request-preparation-screen"
+"use client"
 
-export default function BlindingPreparationPage() {
-  return <RequestPreparationScreen requestType="blinding" progressHref="/testpack/pressure-test/blinding/progress" />
-}
+export { TestPacksPage as default } from "@/modules/pressure-test/ui/test-packs-page"

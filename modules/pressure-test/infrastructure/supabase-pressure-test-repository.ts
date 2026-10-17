@@ -313,35 +313,6 @@ export async function listTestingPrecommWorklist(client: Client, projectId: stri
   return data ?? []
 }
 
-/** What the server lets each pack do next (`test_pack_workflow.available_operations`), by pack id. */
-export async function listAvailableOperations(client: Client, projectId: string): Promise<Record<string, string[]>> {
-  const { data, error } = await client.from("test_pack_workflow").select("test_pack_id, available_operations").eq("project_id", projectId)
-  fail(error)
-  return Object.fromEntries((data ?? []).map((row) => [row.test_pack_id ?? "", row.available_operations ?? []]))
-}
-
-/** The server's stage of every pack (`test_pack_workflow.canonical_state`), by pack id. */
-export async function listTestPackStages(client: Client, projectId: string): Promise<Record<string, string>> {
-  const { data, error } = await client.from("test_pack_workflow").select("test_pack_id, canonical_state").eq("project_id", projectId)
-  fail(error)
-  return Object.fromEntries((data ?? []).map((row) => [row.test_pack_id ?? "", row.canonical_state ?? "awaiting_rft"]))
-}
-
-export type TestPackStageStates = Pick<
-  TestPackWorkflowRow,
-  "test_pack_id" | "canonical_state" | "rft_state" | "blinding_state" | "testing_state" | "y_state" | "precomm_state" | "z_state"
->
-
-/** Every pack's per-stage state as the server computed it: ready, ongoing, completed, blocked or not_applicable. */
-export async function listTestPackStageStates(client: Client, projectId: string): Promise<TestPackStageStates[]> {
-  const { data, error } = await client
-    .from("test_pack_workflow")
-    .select("test_pack_id, canonical_state, rft_state, blinding_state, testing_state, y_state, precomm_state, z_state")
-    .eq("project_id", projectId)
-  fail(error)
-  return data ?? []
-}
-
 export async function listReinstatementWorklist(client: Client, projectId: string, testPackId?: string): Promise<ReinstatementWorklistRow[]> {
   let query = client.from("reinstatement_worklist").select("*").eq("project_id", projectId)
   if (testPackId) query = query.eq("test_pack_id", testPackId)

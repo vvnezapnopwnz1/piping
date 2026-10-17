@@ -1,5 +1,3 @@
-import { RequestPreparationScreen } from "@/modules/pressure-test/ui/request-preparation-screen"
+"use client"
 
-export default function LineCheckPage() {
-  return <RequestPreparationScreen requestType="line_check" progressHref="/testpack/pressure-test/line-check/progress" />
-}
+export { TestPacksPage as default } from "@/modules/pressure-test/ui/test-packs-page"

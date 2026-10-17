@@ -1,5 +1,3 @@
-import { PressureTestProgressScreen } from "@/modules/pressure-test/ui/pressure-test-progress-screen"
+"use client"
 
-export default function LineCheckProgressPage() {
-  return <PressureTestProgressScreen requestType="line_check" />
-}
+export { TestPacksPage as default } from "@/modules/pressure-test/ui/test-packs-page"

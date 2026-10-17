@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useWorkContextParam } from "@/components/pipeqc/work-context"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { useOptionalAccess } from "@/modules/access/ui/access-context"
@@ -76,13 +77,14 @@ export function TestPacksScreen({ projectId, initialStep }: { projectId: string;
   const creating = canManage && params.get("new") === "1" && selection.kind === "none"
   const showingPack = selection.kind !== "none" || creating
   return (
-    <div className="flex h-[calc(100dvh-150px)] min-h-[420px] gap-4">
+    <div className="flex h-[calc(100dvh-140px)] min-h-[420px] gap-4">
       <div className={`${showingPack ? "hidden lg:flex" : "flex"} w-full min-h-0 flex-col lg:w-[340px] lg:flex-none`}>
         <TestPackList packs={packs} stages={stages} selectedId={pack?.id ?? null} onSelect={(id) => selectPack(id, { push: true, extra: { step: null, new: null } })} onCreate={() => selectPack(null, { push: true, extra: { new: "1", step: null } })} canManage={canManage} />
       </div>
       <section className={`${showingPack ? "block" : "hidden lg:block"} min-h-0 min-w-0 flex-1 overflow-y-auto rounded-lg border bg-card`}>
+        {!loaded && <div className="space-y-2 p-4"><Skeleton className="h-6 w-1/3" /><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></div>}
         {selection.kind === "not_found" && loaded && <p className="p-6 text-sm text-muted-foreground">{t("screen.notFound")}</p>}
-        {selection.kind === "none" && !creating && <p className="p-6 text-sm text-muted-foreground">{t("screen.selectPack")}</p>}
+        {selection.kind === "none" && !creating && loaded && <p className="p-6 text-sm text-muted-foreground">{t("screen.selectPack")}</p>}
         {creating && (
           <div className="p-4">
             <Button size="sm" variant="ghost" className="-ml-2 mb-2 lg:hidden" onClick={() => selectPack(null, { extra: { new: null } })}>{t("screen.back")}</Button>

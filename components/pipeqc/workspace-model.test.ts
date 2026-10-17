@@ -30,10 +30,10 @@ test("an area appears only with pages the user may open, and opens on the first 
 })
 
 test("a path belongs to its longest matching page", () => {
-  assert.equal(locate("/testpack/explorer", all)?.page?.title, "explorer")
-  assert.equal(locate("/testpack", all)?.page?.title, "dashboard")
-  // The pressure-test worklists are part of the pack workbench, not a tab of their own.
-  assert.equal(locate("/testpack/pressure-test/line-check/progress", all)?.page?.title, "explorer")
+  // Test Packs is one screen; the old addresses are that page, not tabs of their own.
+  assert.equal(locate("/testpack/explorer", all)?.page?.title, "testPacks")
+  assert.equal(locate("/testpack", all)?.page?.title, "testPacks")
+  assert.equal(locate("/testpack/pressure-test/line-check/progress", all)?.page?.title, "testPacks")
   assert.equal(locate("/nde/dashboard", all)?.page?.title, "dashboard")
   assert.equal(locate("/erection/rft", all)?.area.id, "erection")
   // Routes that render the same screen as a step are that step, not a page of their own.
@@ -58,9 +58,9 @@ test("the selected object travels only to pages that apply it", () => {
   assert.equal(hrefWithContext(spools, context), "/erection?spool=rev-1")
   assert.equal(hrefWithContext(flanges, context), "/erection/flange-progress")
   const testPacks = all.find((area) => area.id === "testpacks")!
-  const explorer = testPacks.pages.find((page) => page.href === "/testpack/explorer")!
-  assert.equal(hrefWithContext(explorer, context), "/testpack/explorer?testPackId=tp-9")
-  assert.equal(areaHrefWithContext(testPacks, context), "/testpack")
+  const packs = testPacks.pages.find((page) => page.href === "/testpack")!
+  assert.equal(hrefWithContext(packs, context), "/testpack?testPackId=tp-9")
+  assert.equal(areaHrefWithContext(testPacks, context), "/testpack?testPackId=tp-9")
   const nde = all.find((area) => area.id === "nde")!
   assert.equal(areaHrefWithContext(nde, context), "/nde?spool=rev-1")
 })
@@ -76,7 +76,7 @@ test("a return address must stay inside the app", () => {
 
 test("Back names the page it returns to", () => {
   assert.equal(returnLabel("/erection/dashboard", all, name), "Erection · Dashboard")
-  assert.equal(returnLabel("/testpack/explorer?testPackId=1", all, name), "Test Packs · Explorer")
+  assert.equal(returnLabel("/testpack/explorer?testPackId=1", all, name), "Test Packs")
   assert.equal(returnLabel("/reports", all, name), "Reports")
   assert.equal(returnLabel("/", all, name), "Overview")
 })
