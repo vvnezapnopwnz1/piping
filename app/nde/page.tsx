@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl"
 import { useOptionalAccess } from "@/modules/access/ui/access-context"
-import { NdeBatchScreen } from "@/modules/quality/ui/nde-batch-screen"
+import { NdeScreen } from "@/modules/quality/ui/nde-screen"
 
 export default function NDEPage() {
   const t = useTranslations("nde.pages")
@@ -10,10 +10,8 @@ export default function NDEPage() {
   const projectId = access?.access.projectId ?? null
 
   if (!projectId) {
-    return (
-      <p className="text-muted-foreground p-6 text-sm">{t("selectAProjectToManage")}</p>
-    )
+    return <p className="text-muted-foreground p-6 text-sm">{t("selectAProjectToManage")}</p>
   }
 
-  return <NdeBatchScreen projectId={projectId} />
+  return <NdeScreen projectId={projectId} />
 }

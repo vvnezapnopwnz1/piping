@@ -184,8 +184,14 @@ export const workspaceAreas: readonly WorkspaceArea[] = [
     icon: Scan,
     serves: ['fabrication', 'erection'],
     children: [
-      { title: 'batchManagement', href: '/nde', icon: Scan, context: SPOOL },
-      { title: 'dashboard', href: '/nde/dashboard', icon: Activity },
+      // One screen with tabs (`?tab=`); the dashboard address is an alias that opens the summary tab.
+      {
+        title: 'nde',
+        href: '/nde',
+        icon: Scan,
+        context: SPOOL,
+        aliases: [{ title: 'dashboard', href: '/nde/dashboard' }],
+      },
     ],
   },
   {

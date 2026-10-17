@@ -5,7 +5,6 @@ import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 
 import { errorDetail } from "@/i18n/format"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { NdeChartsPanel } from "./nde-charts-panel"
@@ -57,51 +56,22 @@ export function NdeDashboardScreen({ projectId }: { projectId: string }) {
   if (loading) return <Skeleton className="h-64 w-full" />
 
   return (
-    <div className="space-y-6 p-6">
-      <div>
-        <h2 className="text-xl font-bold tracking-tight">{t("ndeQualityDashboard")}</h2>
-        <p className="text-sm text-muted-foreground">
-          {t("realTimeMetricsDerivedFrom")}
-        </p>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("totalBatches")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{kpis?.totalBatches ?? 0}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("openBatches")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{kpis?.openBatches ?? 0}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("pendingObligations")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{kpis?.pendingObligations ?? 0}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("satisfiedObligations")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{kpis?.satisfiedObligations ?? 0}</div>
-          </CardContent>
-        </Card>
-      </div>
+    <div className="space-y-4">
+      <dl className="flex flex-wrap gap-x-8 gap-y-2 rounded-lg border bg-card px-4 py-3 text-sm">
+        {(
+          [
+            ["totalBatches", kpis?.totalBatches],
+            ["openBatches", kpis?.openBatches],
+            ["pendingObligations", kpis?.pendingObligations],
+            ["satisfiedObligations", kpis?.satisfiedObligations],
+          ] as const
+        ).map(([key, value]) => (
+          <div key={key} className="flex items-baseline gap-2">
+            <dt className="text-muted-foreground">{t(key)}</dt>
+            <dd className="text-lg font-semibold tabular-nums">{value ?? 0}</dd>
+          </div>
+        ))}
+      </dl>
 
       <NdeChartsPanel data={charts} loading={chartsLoadedProjectId !== projectId} />
     </div>

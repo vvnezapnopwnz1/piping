@@ -36,6 +36,7 @@ export const I18N_DONE_PATHS: readonly string[] = [
   "modules/projects/ui",
   "modules/projects/domain",
   "modules/quality/ui",
+  "modules/quality/application",
   "modules/quality/domain",
   "modules/tracking/ui",
   "modules/tracking/application",

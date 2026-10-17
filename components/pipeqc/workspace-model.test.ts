@@ -34,7 +34,7 @@ test("a path belongs to its longest matching page", () => {
   assert.equal(locate("/testpack/explorer", all)?.page?.title, "testPacks")
   assert.equal(locate("/testpack", all)?.page?.title, "testPacks")
   assert.equal(locate("/testpack/pressure-test/line-check/progress", all)?.page?.title, "testPacks")
-  assert.equal(locate("/nde/dashboard", all)?.page?.title, "dashboard")
+  assert.equal(locate("/nde/dashboard", all)?.page?.title, "nde")
   assert.equal(locate("/erection/rft", all)?.area.id, "erection")
   // Routes that render the same screen as a step are that step, not a page of their own.
   assert.equal(locate("/fabrication/pwht-release", all)?.page?.title, "spools")

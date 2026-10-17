@@ -12,10 +12,12 @@ import { errorDetail } from "@/i18n/format"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { jointState, ndeTab, NDE_TABS, type NdeTab } from "../domain/nde-joint-state"
 import type { NdeBatch, NdeObligation } from "../domain/nde-batch"
-import { loadNdeBatches, loadNdeObligations } from "../infrastructure/supabase-quality-repository"
+import { loadNdeBatches, loadNdeObligations, loadQualityReferentials, type QualityReferentials } from "../infrastructure/supabase-quality-repository"
 import { ClosedTab } from "./nde-tabs/closed"
 import { JointsTab } from "./nde-tabs/joints"
 import { SummaryTab } from "./nde-tabs/summary"
+import { WaitingBatchTab } from "./nde-tabs/waiting-batch"
+import { WaitingResultTab } from "./nde-tabs/waiting-result"
 
 /** One NDE screen: the table of every joint first, the work queues and the summary as tabs (`?tab=`). */
 export function NdeScreen({ projectId }: { projectId: string }) {
@@ -27,15 +29,17 @@ export function NdeScreen({ projectId }: { projectId: string }) {
   const tab = ndeTab(searchParams.get("tab"))
   const [obligations, setObligations] = useState<NdeObligation[]>([])
   const [batches, setBatches] = useState<NdeBatch[]>([])
+  const [referentials, setReferentials] = useState<QualityReferentials>({ welders: [], reworkCodes: [] })
   const [loading, setLoading] = useState(true)
   const [spoolContext] = useWorkContextParam("spool")
 
   const reload = useCallback(async () => {
     try {
       const client = getSupabaseBrowserClient()
-      const [nextObligations, nextBatches] = await Promise.all([loadNdeObligations(client, projectId), loadNdeBatches(client, projectId)])
+      const [nextObligations, nextBatches, nextReferentials] = await Promise.all([loadNdeObligations(client, projectId), loadNdeBatches(client, projectId), loadQualityReferentials(client, projectId)])
       setObligations(nextObligations)
       setBatches(nextBatches)
+      setReferentials(nextReferentials)
     } catch (error) {
       toast.error(tb("errors.failedToLoadNdeData"), { description: errorDetail(error) })
     } finally {
@@ -92,6 +96,8 @@ export function NdeScreen({ projectId }: { projectId: string }) {
       </div>
       {loading && tab !== "summary" && <Skeleton className="h-64 w-full" />}
       {!loading && tab === "joints" && <JointsTab obligations={visible} loading={false} />}
+      {!loading && tab === "waiting_result" && <WaitingResultTab obligations={obligations} batches={batches} referentials={referentials} onChanged={() => void reload()} />}
+      {!loading && tab === "waiting_batch" && <WaitingBatchTab projectId={projectId} obligations={obligations} batches={batches} onChanged={() => void reload()} />}
       {!loading && tab === "closed" && <ClosedTab batches={batches} obligations={obligations} />}
       {tab === "summary" && <SummaryTab projectId={projectId} />}
     </div>
