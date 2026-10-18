@@ -15,10 +15,10 @@ import {
 import { computeChecksum, readFirstSheetMatrix } from "../../modules/imports/infrastructure/xlsx-workbook"
 import { createNdeMatrixRule } from "../../modules/project-setup/infrastructure/supabase-welding-quality-reference-repository"
 import { PWHT_FORM_RULES, UPG_PROJECT } from "./dataset"
-import { addDays, importSheets } from "./files"
+import { importSheets } from "./files"
 import { findProjectId, readFixtureBytes, readFixtureText, readUpgEnv, signInOperator, upgTargetFromArgv, type UpgEnv } from "./operator"
 import { importSpoolgenPackage } from "./import-spooling"
-import { backdateUpgWps, prepareUpgReferences, startDateFromManifest } from "./setup-references"
+import { prepareUpgReferences, startDateFromManifest } from "./setup-references"
 
 const XLSX_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
@@ -113,7 +113,6 @@ export async function loadUpgProject(env: UpgEnv, options: { createProject: bool
     console.log(`${sheet.fileName}: ${result.skipped ? "already applied" : `${result.applied} rows`}`)
   }
   console.log(`PWHT form rules created: ${await createPwhtRules(client, projectId)}`)
-  console.log(`WPS backdated: ${await backdateUpgWps(env, UPG_PROJECT.activityCode, addDays(startDateFromManifest(), -14))}`)
 
   const blocked = await importSpoolgenPackage(client, projectId, { weld: readFixtureText("error/weld.txt") }, "UPG-1 error set", { expectBlockers: true })
   console.log(`Error set: ${blocked.status}, ${blocked.blockerCount} blockers (expected blocked).`)

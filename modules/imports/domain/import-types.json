@@ -71,6 +71,12 @@
     "header": "Thickness To",
     "required": true,
     "kind": "number"
+   },
+   {
+    "key": "approved_on",
+    "header": "Approved On",
+    "required": true,
+    "kind": "text"
    }
   ]
  },
@@ -102,6 +108,12 @@
     "header": "WPS Codes",
     "required": true,
     "kind": "textList"
+   },
+   {
+    "key": "expires_on",
+    "header": "Expires On",
+    "required": true,
+    "kind": "text"
    }
   ]
  },

@@ -46,7 +46,7 @@ select public.mark_import_job_uploaded(
 select public.record_import_validation(
   (select id from public.import_jobs where source_checksum = 'welder-import-110'),
   '[{"row_number":1,"action":"create","raw_values":{},"normalized_values":
-     {"welder_code":"W-110","welder_name":"Welder One","subcontractor":"FAB-110","wps_codes":["WPS-110-A","WPS-110-B"]}}]'::jsonb,
+     {"welder_code":"W-110","welder_name":"Welder One","subcontractor":"FAB-110","wps_codes":["WPS-110-A","WPS-110-B"],"expires_on":"2027-06-30"}}]'::jsonb,
   '[]'::jsonb
 );
 

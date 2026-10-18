@@ -92,6 +92,13 @@ function checkIsoDate(row: ParsedRow, key: string, issues: ImportRowIssue[]): vo
   }
 }
 
+/** A blank cell is the parser's REQUIRED; only a value that is there but is not a date is reported here. */
+function checkIsoDateIfPresent(row: ParsedRow, key: string, issues: ImportRowIssue[]): void {
+  const value = row.normalizedValues[key]
+  if (value === null || value === undefined || value === "") return
+  checkIsoDate(row, key, issues)
+}
+
 function checkCompositionRules(rows: readonly ParsedRow[], issues: ImportRowIssue[]): void {
   const metadataKeys = [
     "system", "subsystem", "test_pack_revision", "test_medium", "test_pressure",
@@ -140,7 +147,10 @@ export function applyTypeRules(
     if (importType === "welding_procedure") {
       checkRange(row, "diameter_from_inch", "diameter_to_inch", "diameter", issues)
       checkRange(row, "thickness_from_mm", "thickness_to_mm", "thickness", issues)
+      checkIsoDateIfPresent(row, "approved_on", issues)
     }
+
+    if (importType === "welder_qualification") checkIsoDateIfPresent(row, "expires_on", issues)
 
     if (importType === "thickness_flange") {
       checkPositive(row, "diameter_inch", issues)

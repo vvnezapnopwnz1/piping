@@ -33,6 +33,17 @@ test("every import sheet uses the app template header and validates without bloc
   }
 })
 
+test("the WPS and welder files carry their own dates, taken from the project start", () => {
+  const wps = importSheets(START).find((sheet) => sheet.importType === "welding_procedure")!
+  const approved = wps.matrix[0].indexOf("Approved On")
+  assert.ok(approved >= 0)
+  for (const row of wps.matrix.slice(1)) assert.equal(row[approved], addDays(START, -14))
+  const welders = importSheets(START).find((sheet) => sheet.importType === "welder_qualification")!
+  const expires = welders.matrix[0].indexOf("Expires On")
+  assert.ok(expires >= 0)
+  for (const row of welders.matrix.slice(1)) assert.equal(row[expires], addDays(START, 730))
+})
+
 test("the six import files are numbered in load order", () => {
   assert.deepEqual(importSheets(START).map((sheet) => sheet.fileName), [
     "01-pml.xlsx", "02-wps.xlsx", "03-welders.xlsx", "04-thickness.xlsx", "05-nde-matrix.xlsx", "06-test-packs.xlsx",

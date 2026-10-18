@@ -103,17 +103,24 @@ function pmlMatrix(): Cell[][] {
   return [templateHeaderRow("piping_material_list"), ...seen.values()]
 }
 
-function wpsMatrix(): Cell[][] {
+/** Procedures are approved before work starts, so a weld recorded in week 1 finds a valid WPS. */
+const WPS_APPROVED_DAYS_BEFORE_START = 14
+/** Welders are qualified for the whole 8-week run and well beyond it. */
+const WELDER_QUALIFIED_DAYS_AFTER_START = 730
+
+function wpsMatrix(startDate: string): Cell[][] {
+  const approvedOn = addDays(startDate, -WPS_APPROVED_DAYS_BEFORE_START)
   return [
     templateHeaderRow("welding_procedure"),
-    ...WELDING_PROCEDURES.map((wps) => [wps.code, wps.subcontractor, wps.materialType, wps.diameterFrom, wps.diameterTo, wps.thicknessFrom, wps.thicknessTo]),
+    ...WELDING_PROCEDURES.map((wps) => [wps.code, wps.subcontractor, wps.materialType, wps.diameterFrom, wps.diameterTo, wps.thicknessFrom, wps.thicknessTo, approvedOn]),
   ]
 }
 
-function weldersMatrix(): Cell[][] {
+function weldersMatrix(startDate: string): Cell[][] {
+  const expiresOn = addDays(startDate, WELDER_QUALIFIED_DAYS_AFTER_START)
   return [
     templateHeaderRow("welder_qualification"),
-    ...WELDERS.map((welder) => [welder.code, welder.name, welder.subcontractor, welder.wpsCodes.join(",")]),
+    ...WELDERS.map((welder) => [welder.code, welder.name, welder.subcontractor, welder.wpsCodes.join(","), expiresOn]),
   ]
 }
 
@@ -157,8 +164,8 @@ function compositionMatrix(startDate: string): Cell[][] {
 export function importSheets(startDate: string): ImportSheet[] {
   return [
     { importType: "piping_material_list", fileName: "01-pml.xlsx", title: "PML", matrix: pmlMatrix() },
-    { importType: "welding_procedure", fileName: "02-wps.xlsx", title: "WPS", matrix: wpsMatrix() },
-    { importType: "welder_qualification", fileName: "03-welders.xlsx", title: "Сварщики", matrix: weldersMatrix() },
+    { importType: "welding_procedure", fileName: "02-wps.xlsx", title: "WPS", matrix: wpsMatrix(startDate) },
+    { importType: "welder_qualification", fileName: "03-welders.xlsx", title: "Сварщики", matrix: weldersMatrix(startDate) },
     { importType: "thickness_flange", fileName: "04-thickness.xlsx", title: "Толщины", matrix: thicknessMatrix() },
     { importType: "nde_matrix", fileName: "05-nde-matrix.xlsx", title: "NDE", matrix: ndeMatrix() },
     { importType: "test_pack_composition", fileName: "06-test-packs.xlsx", title: "Тест-пакеты", matrix: compositionMatrix(startDate) },
@@ -171,10 +178,9 @@ export const README_LINES: readonly string[] = [
   "2. В терминале: npm run demo:project-setup -- --project UPG-1 --phase references",
   "3. Настройка проекта → Импорт: файлы imports/01…05 по порядку.",
   "4. Справочники проекта → NDE-матрица: ввести руками два правила CS300 с PWHT (лист «Ввести вручную»).",
-  "5. В терминале: npm run demo:project-setup -- --project UPG-1 --phase backdate-wps",
-  "6. Спулинг → Импорт: сначала error/weld.txt (ожидаем блокер), затем spooling/weld, trace, bolt, supp.",
-  "7. Test Packs → Импорт состава: imports/06-test-packs.xlsx.",
-  "8. Неделя 3: Спулинг → Импорт revision/*.txt и решения по ревизии.",
+  "5. Спулинг → Импорт: сначала error/weld.txt (ожидаем блокер), затем spooling/weld, trace, bolt, supp.",
+  "6. Test Packs → Импорт состава: imports/06-test-packs.xlsx.",
+  "7. Неделя 3: Спулинг → Импорт revision/*.txt и решения по ревизии.",
 ]
 
 function manualSheet(): Cell[][] {

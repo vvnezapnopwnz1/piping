@@ -4,9 +4,9 @@ import { toStoredIssues, validateSheet } from "./create-import"
 function run() {
   // Shape issues and type-rule issues arrive in one list.
   const outcome = validateSheet("welding_procedure", [
-    ["WPS Code", "Subcontractor", "Material Type", "Diameter From", "Diameter To", "Thickness From", "Thickness To"],
-    ["WPS-1", "SUB-A", "CS", "2", "1", "3", "9"],
-    ["WPS-2", "SUB-A", "CS", "1", "4", "3", "9"],
+    ["WPS Code", "Subcontractor", "Material Type", "Diameter From", "Diameter To", "Thickness From", "Thickness To", "Approved On"],
+    ["WPS-1", "SUB-A", "CS", "2", "1", "3", "9", "2026-09-01"],
+    ["WPS-2", "SUB-A", "CS", "1", "4", "3", "9", "2026-09-01"],
   ])
 
   assert.equal(outcome.rows.length, 2)
@@ -15,6 +15,13 @@ function run() {
   assert.equal(outcome.summary.blockerCount, 1)
   assert.equal(outcome.summary.conflictCount, 0)
   assert.equal(outcome.canSubmit, true, "a file with blockers may still be submitted for the record")
+
+  // The approval date is required: a blank cell is reported by name, never filled in.
+  const noDate = validateSheet("welding_procedure", [
+    ["WPS Code", "Subcontractor", "Material Type", "Diameter From", "Diameter To", "Thickness From", "Thickness To", "Approved On"],
+    ["WPS-1", "SUB-A", "CS", "1", "4", "3", "9", ""],
+  ])
+  assert.deepEqual(noDate.issues, [{ rowNumber: 1, columnName: "approved_on", severity: "blocker", code: "REQUIRED", header: "Approved On" }])
 
   const clean = validateSheet("piping_material_list", [
     ["MRR Number", "Ident Code", "Trace Number"],

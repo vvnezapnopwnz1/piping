@@ -2,12 +2,9 @@
  * demo:project-setup — the referentials of an existing UPG-1 project.
  *
  *   --phase references    referentials without an Excel import (run after the project is created)
- *   --phase backdate-wps  WPS approval dates to before the project started (run after 02-wps.xlsx)
  *
- * The WPS import has no approval column and stamps today (apply_import_commands.sql:461), while
- * record_weld_progress refuses a weld dated before its WPS approval. A real contractor approves
- * procedures before work starts, so the date is set back to that; the walkthrough journal records
- * the missing column as a finding.
+ * The WPS and welder dates are columns of 02-wps.xlsx and 03-welders.xlsx (files.ts), taken from the
+ * project start date: the server no longer invents them, and nothing sets them back afterwards.
  */
 import { createClient } from "@supabase/supabase-js"
 import { readFileSync } from "node:fs"
@@ -20,7 +17,7 @@ import {
   createSupabaseDemoStandCore,
 } from "../demo/supabase-demo-stand"
 import { UPG_PROJECT } from "./dataset"
-import { UPG_FIXTURE_DIR, addDays } from "./files"
+import { UPG_FIXTURE_DIR } from "./files"
 import { readUpgEnv, upgTargetFromArgv, type UpgTarget } from "./operator"
 import { UPG_REFERENCES } from "./references"
 
@@ -53,24 +50,6 @@ export async function prepareUpgReferences(env: ServiceEnv, projectCode: string)
   await core.prepareProjectReferencesFor(projectId, UPG_REFERENCES, new Date())
 }
 
-export async function backdateUpgWps(env: ServiceEnv, projectCode: string, approvedOn: string): Promise<number> {
-  const target = env.target ?? "local"
-  if (target === "hosted") {
-    assertHostedSupabaseTarget(env.url)
-  } else {
-    assertLocalSupabaseTarget(env.url)
-  }
-  const projectId = await projectIdOf(env, projectCode)
-  const admin = createClient(env.url, env.serviceRoleKey, { auth: { persistSession: false } })
-  const { data, error } = await admin
-    .from("project_welding_procedures")
-    .update({ approved_on: approvedOn })
-    .eq("project_id", projectId)
-    .select("id")
-  if (error) throw new Error(`Backdating WPS approval failed: ${error.message}`)
-  return (data ?? []).length
-}
-
 export function startDateFromManifest(): string {
   return (JSON.parse(readFileSync(join(UPG_FIXTURE_DIR, "manifest.json"), "utf8")) as { startDate: string }).startDate
 }
@@ -91,12 +70,8 @@ async function main(): Promise<void> {
   if (phase === "references") {
     await prepareUpgReferences(env, projectCode)
     console.log(`Referentials prepared for ${projectCode}.`)
-  } else if (phase === "backdate-wps") {
-    const approvedOn = addDays(startDateFromManifest(), -14)
-    const count = await backdateUpgWps(env, projectCode, approvedOn)
-    console.log(`${count} WPS of ${projectCode} approved on ${approvedOn}.`)
   } else {
-    throw new Error("Use --phase references or --phase backdate-wps.")
+    throw new Error("Use --phase references.")
   }
 }
 

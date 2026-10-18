@@ -53,8 +53,8 @@ function run() {
 
   // textList splits on comma and trims.
   const list = parseSheet("welder_qualification", [
-    ["Welder Code", "Welder Name", "Subcontractor", "WPS Codes"],
-    ["W-1", "Ivan", "SUB-A", "WPS-1, WPS-2"],
+    ["Welder Code", "Welder Name", "Subcontractor", "WPS Codes", "Expires On"],
+    ["W-1", "Ivan", "SUB-A", "WPS-1, WPS-2", "2027-06-30"],
   ])
   assert.deepEqual(list.rows[0].normalizedValues.wps_codes, ["WPS-1", "WPS-2"])
 

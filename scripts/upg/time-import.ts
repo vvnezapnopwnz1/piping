@@ -24,11 +24,11 @@ import {
   uploadSpoolgenFile,
 } from "../../modules/engineering/infrastructure/supabase-engineering-repository"
 import { UPG_ISOS, UPG_PROJECT, isoNumberOf, type UpgIso } from "./dataset"
-import { addDays, importSheets, spoolgenFiles } from "./files"
+import { importSheets, spoolgenFiles } from "./files"
 import { createPwhtRules, importExcelFile } from "./load-project"
 import { parseTimeImportArgs } from "./time-import-args"
 import { findProjectId, readUpgEnv, signInOperator, upgTargetFromArgv } from "./operator"
-import { backdateUpgWps, prepareUpgReferences, startDateFromManifest } from "./setup-references"
+import { prepareUpgReferences, startDateFromManifest } from "./setup-references"
 
 const PROJECT_CODE = "PERF-1"
 
@@ -104,7 +104,6 @@ async function main(): Promise<void> {
     for (const sheet of importSheets(startDateFromManifest()).filter((candidate) => candidate.importType !== "test_pack_composition")) {
       await importExcelFile(client, projectId, sheet.importType, sheet.fileName)
     }
-    await backdateUpgWps(env, PROJECT_CODE, addDays(startDateFromManifest(), -14))
   }
 
   await createPwhtRules(client, projectId)

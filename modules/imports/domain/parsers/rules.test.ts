@@ -22,6 +22,24 @@ function run() {
   assert.deepEqual(wps[0], { rowNumber: 1, columnName: "diameter_to_inch", severity: "blocker", code: "INVALID_RANGE", range: "diameter" })
   assert.deepEqual(wps[1], { rowNumber: 2, columnName: "thickness_to_mm", severity: "blocker", code: "INVALID_RANGE", range: "thickness" })
 
+  // Phase 4a F2: the dates come from the file. Blank is the parser's REQUIRED, malformed is INVALID_DATE here.
+  const wpsDates = applyTypeRules("welding_procedure", [
+    row(1, { approved_on: "31/12/2026" }),
+    row(2, { approved_on: "2026-09-01" }),
+    row(3, { approved_on: null }),
+    row(4, { approved_on: "2026-02-30" }),
+  ])
+  assert.deepEqual(wpsDates, [
+    { rowNumber: 1, columnName: "approved_on", severity: "blocker", code: "INVALID_DATE" },
+    { rowNumber: 4, columnName: "approved_on", severity: "blocker", code: "INVALID_DATE" },
+  ])
+  const welderDates = applyTypeRules("welder_qualification", [
+    row(1, { expires_on: "next year" }),
+    row(2, { expires_on: "2027-06-30" }),
+    row(3, { expires_on: null }),
+  ])
+  assert.deepEqual(welderDates, [{ rowNumber: 1, columnName: "expires_on", severity: "blocker", code: "INVALID_DATE" }])
+
   // Dossier 11.9: coverages are percentages.
   const nde = applyTypeRules("nde_matrix", [
     row(1, { weld_location: "shop", rt_coverage: 120 }),
