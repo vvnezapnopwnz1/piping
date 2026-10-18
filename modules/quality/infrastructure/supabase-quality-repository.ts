@@ -356,23 +356,16 @@ export async function loadNdeKpis(
   client: SupabaseClient<Database>,
   projectId: string
 ): Promise<NdeKpis> {
-  const { data: batches, error: bErr } = await client
-    .from("nde_batches")
-    .select("status", { count: "exact" })
-    .eq("project_id", projectId)
-  fail(bErr)
-
-  const rows = batches ?? []
+  // Counted on the rows, so the rows must be all of them: a pilot has thousands of obligations.
+  const rows = await selectAllRows((from, to) =>
+    client.from("nde_batches").select("id, status").eq("project_id", projectId).order("id").range(from, to),
+  )
   const totalBatches = rows.length
   const openBatches = rows.filter((r) => r.status === "draft" || r.status === "issued").length
 
-  const { data: obligations, error: oErr } = await client
-    .from("nde_obligations")
-    .select("disposition", { count: "exact" })
-    .eq("project_id", projectId)
-  fail(oErr)
-
-  const oblRows = obligations ?? []
+  const oblRows = await selectAllRows((from, to) =>
+    client.from("nde_obligations").select("id, disposition").eq("project_id", projectId).order("id").range(from, to),
+  )
   const pendingObligations = oblRows.filter(
     (r) => !["satisfied", "waived", "superseded"].includes(r.disposition ?? "")
   ).length

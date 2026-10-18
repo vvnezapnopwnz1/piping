@@ -1,5 +1,5 @@
 begin;
-select plan(12);
+select plan(19);
 
 -- Phase 4a, F2: WPS approval and welder expiry dates come from the file. A row without a valid date is
 -- refused at validation with its row and column; the server clock never fills them in.
@@ -25,9 +25,11 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub', '11000000-0000-0000-0000-000000001281', true);
 select set_config('request.jwt.claims', '{"sub":"11000000-0000-0000-0000-000000001281","role":"authenticated"}', true);
 
+reset role;
 select is(public.is_iso_date('2026-02-30'), false, 'a calendar impossibility is not a date');
 select is(public.is_iso_date('2026-10-01'), true, 'an ISO date is a date');
 select is(public.is_iso_date(''), false, 'an empty cell is not a date');
+set local role authenticated;
 
 -- WPS without the approval date, and with a malformed one
 select public.create_import_job('31000000-0000-0000-0000-000000001281', 'welding_procedure', 'wps.xlsx',
@@ -117,6 +119,54 @@ select is(
   (select count(*)::int from public.project_welding_procedures
    where project_id = '31000000-0000-0000-0000-000000001281' and code = 'WPS-128-A' and approved_on = date '2026-09-01'),
   1, 'applying the same file again leaves one WPS with the same date');
+
+-- The same welders file again is a no-op, not a unique violation
+select public.create_import_job('31000000-0000-0000-0000-000000001281', 'welder_qualification', 'welders.xlsx',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 1024, 'welder-dates-again');
+select public.mark_import_job_uploaded((select id from public.import_jobs where source_checksum = 'welder-dates-again'), '31000000-0000-0000-0000-000000001281/x/welders3.xlsx');
+select public.record_import_validation(
+  (select id from public.import_jobs where source_checksum = 'welder-dates-again'),
+  '[{"row_number":1,"action":"create","raw_values":{},"normalized_values":
+       {"welder_code":"W-128","welder_name":"Expired","subcontractor":"FAB-128","wps_codes":["WPS-128-A"],"expires_on":"2025-01-31"}}]'::jsonb,
+  '[]'::jsonb);
+select lives_ok($$select public.apply_import_job((select id from public.import_jobs where source_checksum = 'welder-dates-again'), false)$$,
+  'the same welders file applies again without a conflict');
+select is(
+  (select count(*)::int from public.welder_qualifications where project_id = '31000000-0000-0000-0000-000000001281' and welder_code = 'W-128'),
+  1, 'and leaves one welder');
+
+-- A welder file with another expiry is a conflict the user confirms
+select public.create_import_job('31000000-0000-0000-0000-000000001281', 'welder_qualification', 'welders.xlsx',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 1024, 'welder-dates-changed');
+select public.mark_import_job_uploaded((select id from public.import_jobs where source_checksum = 'welder-dates-changed'), '31000000-0000-0000-0000-000000001281/x/welders4.xlsx');
+select public.record_import_validation(
+  (select id from public.import_jobs where source_checksum = 'welder-dates-changed'),
+  '[{"row_number":1,"action":"create","raw_values":{},"normalized_values":
+       {"welder_code":"W-128","welder_name":"Expired","subcontractor":"FAB-128","wps_codes":["WPS-128-A"],"expires_on":"2027-12-31"}}]'::jsonb,
+  '[]'::jsonb);
+select throws_ok($$select public.apply_import_job((select id from public.import_jobs where source_checksum = 'welder-dates-changed'), false)$$,
+  'PQC14', null, 'a changed expiry is an unconfirmed overwrite conflict');
+select lives_ok($$select public.apply_import_job((select id from public.import_jobs where source_checksum = 'welder-dates-changed'), true)$$,
+  'and applies once confirmed');
+select is(
+  (select expires_on from public.welder_qualifications where project_id = '31000000-0000-0000-0000-000000001281' and welder_code = 'W-128'),
+  date '2027-12-31', 'the confirmed expiry replaces the old one');
+
+-- A WPS file with another approval date is a conflict, not a silent keep of the old date
+select public.create_import_job('31000000-0000-0000-0000-000000001281', 'welding_procedure', 'wps.xlsx',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 1024, 'wps-dates-changed');
+select public.mark_import_job_uploaded((select id from public.import_jobs where source_checksum = 'wps-dates-changed'), '31000000-0000-0000-0000-000000001281/x/wps4.xlsx');
+select public.record_import_validation(
+  (select id from public.import_jobs where source_checksum = 'wps-dates-changed'),
+  '[{"row_number":1,"action":"create","raw_values":{},"normalized_values":
+       {"wps_code":"WPS-128-A","subcontractor":"FAB-128","material_type":"CS-128","diameter_from_inch":1,"diameter_to_inch":12,"thickness_from_mm":2,"thickness_to_mm":20,"approved_on":"2026-01-10"}}]'::jsonb,
+  '[]'::jsonb);
+select throws_ok($$select public.apply_import_job((select id from public.import_jobs where source_checksum = 'wps-dates-changed'), false)$$,
+  'PQC14', null, 'a changed approval date is an unconfirmed overwrite conflict');
+select public.apply_import_job((select id from public.import_jobs where source_checksum = 'wps-dates-changed'), true);
+select is(
+  (select approved_on from public.project_welding_procedures where project_id = '31000000-0000-0000-0000-000000001281' and code = 'WPS-128-A'),
+  date '2026-01-10', 'a typo in the date can be corrected by importing the right one and confirming');
 
 select * from finish();
 rollback;

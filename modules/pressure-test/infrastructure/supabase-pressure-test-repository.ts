@@ -165,6 +165,8 @@ export async function listTestPackCatalog(client: Client, projectId: string): Pr
 export async function listTestPackReadiness(client: Client, projectId: string): Promise<TestPackReadinessRow[]> {
   const rows = await selectAllRows((from, to) =>
     client.from("test_pack_readiness").select(READINESS_SELECT).eq("project_id", projectId).order("test_pack_number").order("test_pack_id").range(from, to),
+    1000,
+    { stopOnShortPage: true },
   )
   return rows.map(toReadiness)
 }
@@ -172,6 +174,8 @@ export async function listTestPackReadiness(client: Client, projectId: string): 
 export async function listTestPackReleaseBacklog(client: Client, projectId: string): Promise<TestPackReadinessRow[]> {
   const rows = await selectAllRows((from, to) =>
     client.from("test_pack_release_backlog").select(READINESS_SELECT).eq("project_id", projectId).order("test_pack_number").order("test_pack_id").range(from, to),
+    1000,
+    { stopOnShortPage: true },
   )
   return rows.map(toReadiness)
 }

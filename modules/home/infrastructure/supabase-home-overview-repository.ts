@@ -67,6 +67,8 @@ export async function loadHomeTestPackSummary(
 ): Promise<HomeTestPackSummary> {
   const rows = await selectAllRows((from, to) =>
     client.from("test_pack_readiness").select("test_pack_id, is_rft").eq("project_id", projectId).order("test_pack_id").range(from, to),
+    1000,
+    { stopOnShortPage: true },
   )
   const readyForTest = rows.filter((row) => row.is_rft === true).length
   return { total: rows.length, readyForTest, blocked: rows.length - readyForTest }

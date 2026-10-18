@@ -1,5 +1,5 @@
 begin;
-select plan(7);
+select plan(13);
 
 insert into auth.users (id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at)
 values
@@ -44,13 +44,31 @@ select set_config('request.jwt.claims', '{"sub":"10000000-0000-0000-0000-0000000
 
 -- R0 import ------------------------------------------------------------------
 
+-- The helper belongs to the commands that call it; a signed-in user does not read it over REST.
+select ok(not has_function_privilege('authenticated', 'public.spooling_job_joint_limit()', 'execute'), 'a signed-in user cannot call the limit helper');
+select ok(not has_function_privilege('authenticated', 'public.is_iso_date(text)', 'execute'), 'nor the date helper');
+
+reset role;
 select is(public.spooling_job_joint_limit(), null, 'with no statement timeout there is no limit');
 
 set local statement_timeout = '8s';
 select is(public.spooling_job_joint_limit(), 8000, 'an 8 s role timeout allows 8,000 joints in one job');
 set local statement_timeout = '30s';
 select is(public.spooling_job_joint_limit(), 30000, 'the 30 s KZ timeout allows 30,000');
+set local statement_timeout = '1min';
+select is(public.spooling_job_joint_limit(), 60000, 'other units of the timeout are read too');
+set local statement_timeout = '8s';
+
+-- An operator's setting: a number wins, zero or less means no limit, a malformed value is ignored, never raised.
+select set_config('pipeqc.spooling_joint_limit', '7500', true);
+select is(public.spooling_job_joint_limit(), 7500, 'the operator setting wins over the timeout');
+select set_config('pipeqc.spooling_joint_limit', '0', true);
+select is(public.spooling_job_joint_limit(), null, 'zero means no limit, as it does for statement_timeout');
+select set_config('pipeqc.spooling_joint_limit', '20 000', true);
+select is(public.spooling_job_joint_limit(), 8000, 'a malformed setting is ignored and the timeout rule applies');
+select set_config('pipeqc.spooling_joint_limit', '', true);
 set local statement_timeout = 0;
+set local role authenticated;
 
 select public.create_spooling_import_job('30000000-0000-0000-0000-000000000421', 'R0 load');
 create temporary table spl_job as

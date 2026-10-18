@@ -30,6 +30,7 @@ const pressure = "modules/pressure-test/infrastructure/supabase-pressure-test-re
 const FUNCTION_LOADERS: ReadonlyArray<readonly [string, string]> = [
   [quality, "loadNdeBatches"],
   [quality, "loadNdeBatchObligationCounts"],
+  [quality, "loadNdeKpis"],
   [pressure, "listProjectIsometricNumbers"],
   [pressure, "listTestPackReadiness"],
   [pressure, "listTestPackReleaseBacklog"],

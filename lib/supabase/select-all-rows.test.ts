@@ -31,3 +31,14 @@ for (const size of [1000, 1001]) {
     assert.deepEqual(result, rows)
   })
 }
+
+test("selectAllRows with stopOnShortPage does not ask for the empty page after a short one", async () => {
+  const calls: Array<[number, number]> = []
+  const rows = Array.from({ length: 1500 }, (_, index) => index)
+  const result = await selectAllRows(async (from, to) => {
+    calls.push([from, to])
+    return { data: rows.slice(from, Math.min(to + 1, from + 1000)), error: null }
+  }, 1000, { stopOnShortPage: true })
+  assert.deepEqual(result, rows)
+  assert.deepEqual(calls, [[0, 999], [1000, 1999]])
+})

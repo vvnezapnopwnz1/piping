@@ -9,6 +9,11 @@
 -- the row and column named. apply_import_job reads the dates as given. A welder whose expiry is already
 -- in the past is stored as it is and shown as expired; weld recording refuses them, as before.
 --
+-- Importing a WPS or a welder that exists with another date is an overwrite conflict (SRV_OVERWRITE, the
+-- user confirms), and the confirmed date replaces the old one, so a mistyped date can be corrected. The
+-- same file again changes nothing: a welder that exists is updated in place instead of failing on the
+-- unique (project_id, welder_code).
+--
 -- One payload format: the UPG fixtures, the template and the parser change in the same commit and the
 -- "backdate-wps" phase of demo:project-setup is gone. Test: 128_reference_import_dates.test.sql.
 
@@ -29,7 +34,8 @@ end;
 $$;
 
 revoke all on function public.is_iso_date(text) from public, anon;
-grant execute on function public.is_iso_date(text) to authenticated, service_role;
+-- Used by the security definer import commands only; not part of the REST surface.
+revoke all on function public.is_iso_date(text) from authenticated;
 
 CREATE OR REPLACE FUNCTION public.revalidate_import_job(target_job_id uuid)
  RETURNS TABLE(blocker_count integer, conflict_count integer)
@@ -144,6 +150,20 @@ begin
     where r.job_id = target_job_id
       and r.action <> 'skip'
       and not public.is_iso_date(r.normalized_values ->> 'approved_on');
+
+    -- A WPS that exists with another approval date is an overwrite the user confirms; the same date is a no-op.
+    insert into public.import_job_issues (job_id, row_number, column_name, severity, code, message)
+    select
+      target_job_id, r.row_number, 'approved_on', 'conflict', 'SRV_OVERWRITE',
+      'This WPS already exists with another approval date and will be overwritten'
+    from public.import_job_rows r
+    join public.project_welding_procedures existing
+      on existing.project_id = job.project_id
+     and existing.code = coalesce(r.normalized_values ->> 'wps_code', r.normalized_values ->> 'code')
+    where r.job_id = target_job_id
+      and r.action <> 'skip'
+      and public.is_iso_date(r.normalized_values ->> 'approved_on')
+      and existing.approved_on is distinct from (r.normalized_values ->> 'approved_on')::date;
   end if;
 
   if job.import_type = 'welder_qualification' then
@@ -167,6 +187,20 @@ begin
     where r.job_id = target_job_id
       and r.action <> 'skip'
       and not public.is_iso_date(r.normalized_values ->> 'expires_on');
+
+    -- A welder that exists with another expiry is an overwrite the user confirms; the same expiry is a no-op.
+    insert into public.import_job_issues (job_id, row_number, column_name, severity, code, message)
+    select
+      target_job_id, r.row_number, 'expires_on', 'conflict', 'SRV_OVERWRITE',
+      'This welder already exists with another qualification expiry and will be overwritten'
+    from public.import_job_rows r
+    join public.welder_qualifications existing
+      on existing.project_id = job.project_id
+     and existing.welder_code = upper(trim(r.normalized_values ->> 'welder_code'))
+    where r.job_id = target_job_id
+      and r.action <> 'skip'
+      and public.is_iso_date(r.normalized_values ->> 'expires_on')
+      and existing.expires_on is distinct from (r.normalized_values ->> 'expires_on')::date;
   end if;
 
   return query
@@ -192,6 +226,7 @@ declare
   written integer := 0;
   row_rec record;
   new_id uuid;
+  existing_welder_id uuid;
 begin
   -- The row lock plus the status guard is what makes double-apply impossible even
   -- under concurrent calls.
@@ -326,15 +361,22 @@ begin
             diameter_to = excluded.diameter_to,
             thickness_from = excluded.thickness_from,
             thickness_to = excluded.thickness_to,
+            approved_on = excluded.approved_on,
             status = 'active',
             updated_at = timezone('utc', now())
       returning id into new_id;
 
     elsif job.import_type = 'welder_qualification' then
+      -- A welder that exists is updated in place: the same file again is a no-op, not a unique violation.
+      select w.id into existing_welder_id
+      from public.welder_qualifications w
+      where w.project_id = job.project_id
+        and w.welder_code = upper(trim(row_rec.normalized_values ->> 'welder_code'));
+
       select saved.id into new_id
       from public.save_welder_qualification(
         job.project_id,
-        null,
+        existing_welder_id,
         jsonb_build_object(
           'welder_code', row_rec.normalized_values ->> 'welder_code',
           'full_name', coalesce(row_rec.normalized_values ->> 'welder_name', row_rec.normalized_values ->> 'full_name', row_rec.normalized_values ->> 'welder_code'),

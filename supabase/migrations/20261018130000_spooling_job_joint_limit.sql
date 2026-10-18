@@ -10,10 +10,11 @@
 -- finish and the user saw only "The engineering action could not be completed".
 --
 -- The limit is a rule the server owns: 1,000 joints per second of the role's statement_timeout, which is
--- 1 ms per joint against the 0.55-0.7 ms measured (9,800 joints took 6.9 s of 8 s), so about a third of
--- the time is margin (8 s -> 8,000 joints; 30 s -> 30,000). An operator who measured a different speed sets `pipeqc.spooling_joint_limit` on the database
--- (`alter database postgres set pipeqc.spooling_joint_limit = '20000'`); the setting wins when present.
--- A statement_timeout of 0 means no limit. The import is split by area and applied part by part.
+-- 1 ms per joint against the 0.55-0.7 ms measured (9,800 joints took 6.9 s of 8 s), a margin of about
+-- 1.4x on the machine measured (8 s -> 8,000 joints; 30 s -> 30,000). That protects a stand as fast as the
+-- local one; a slower stand (KZ is not measured) must set a lower number first, see below. An operator who measured a different speed sets `pipeqc.spooling_joint_limit` on the database
+-- (`alter database postgres set pipeqc.spooling_joint_limit = '7500'`); the setting wins when present, and
+-- zero or less means no limit. A statement_timeout of 0 also means no limit. The import is split by area and applied part by part.
 --
 -- Same rows as before for every job within the limit. Test: 127_spooling_job_joint_limit.test.sql.
 
@@ -24,11 +25,13 @@ stable
 set search_path = public, pg_temp
 as $$
 declare
-  configured text := nullif(current_setting('pipeqc.spooling_joint_limit', true), '');
+  configured text := nullif(trim(current_setting('pipeqc.spooling_joint_limit', true)), '');
   timeout_seconds numeric;
 begin
-  if configured is not null then
-    return configured::integer;
+  -- The operator's number wins; zero or less means no limit. A value that is not a whole number is
+  -- ignored rather than raised: every spooling job validates through here.
+  if configured ~ '^-?\d{1,9}$' then
+    return case when configured::integer <= 0 then null else configured::integer end;
   end if;
   timeout_seconds := extract(epoch from nullif(current_setting('statement_timeout'), '0')::interval);
   if timeout_seconds is null then
@@ -38,8 +41,8 @@ begin
 end;
 $$;
 
-revoke all on function public.spooling_job_joint_limit() from public, anon;
-grant execute on function public.spooling_job_joint_limit() to authenticated;
+-- Called by the security definer commands only; not part of the REST surface.
+revoke all on function public.spooling_job_joint_limit() from public, anon, authenticated;
 
 create or replace function public.revalidate_spooling_import_job(target_job_id uuid)
 returns table (blocker_count integer, warning_count integer, unresolved_count integer)
