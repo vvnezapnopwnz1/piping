@@ -3,10 +3,11 @@
  * demo:time-import — how long applying a spooling import takes at pilot size.
  *
  *   npm run demo:time-import -- --copies 5 [--per-job 5]   local stand only; --per-job puts that many copies in one job
+ *   npm run demo:time-import -- --isos 1400 [--per-job 5]  the same, sized by a target ISO count
  *
  * Creates (or reuses) the project PERF-1, loads the UPG references into it, and imports the 40 UPG
  * ISOs `copies` times under renumbered ISOs (copies 5 = 200 ISOs, about 2,900 joints). Prints the
- * time of the apply command alone, the one that has to fit the role's statement_timeout. PERF-1 is a
+ * time of each phase (register, validate, apply); apply and validate have to fit the role's statement_timeout. PERF-1 is a
  * measurement project: nothing reads it but this script, and a second run imports only what is missing.
  */
 import type { SupabaseClient } from "@supabase/supabase-js"
@@ -25,6 +26,7 @@ import {
 import { UPG_ISOS, UPG_PROJECT, isoNumberOf, type UpgIso } from "./dataset"
 import { addDays, importSheets, spoolgenFiles } from "./files"
 import { createPwhtRules, importExcelFile } from "./load-project"
+import { parseTimeImportArgs } from "./time-import-args"
 import { findProjectId, readUpgEnv, signInOperator, upgTargetFromArgv } from "./operator"
 import { backdateUpgWps, prepareUpgReferences, startDateFromManifest } from "./setup-references"
 
@@ -46,7 +48,14 @@ const sha256Hex = async (text: string): Promise<string> => {
   return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, "0")).join("")
 }
 
-async function importOnce(client: SupabaseClient<Database>, projectId: string, copy: number, perJob: number): Promise<number> {
+interface PhaseTimes {
+  readonly registerMs: number
+  readonly validateMs: number
+  readonly applyMs: number
+}
+
+async function importOnce(client: SupabaseClient<Database>, projectId: string, copy: number, perJob: number): Promise<PhaseTimes> {
+  const registerStarted = Date.now()
   const files = spoolgenFiles(Array.from({ length: perJob }, (_, offset) => renumbered(copy + offset)).flat())
   const submission = buildSpoolgenSubmission(files)
   const job = await createSpoolingImportJob(client, projectId, `PERF copy ${copy}`)
@@ -59,24 +68,22 @@ async function importOnce(client: SupabaseClient<Database>, projectId: string, c
     await registerSpoolgenFile(client, job.id, role, file, await sha256Hex(text), objectPath)
   }
   await recordSpoolingValidation(client, job.id, submission.rows, submission.issues)
+  const registerMs = Date.now() - registerStarted
+  const validateStarted = Date.now()
   const counts = await revalidateSpoolingImportJob(client, job.id)
+  const validateMs = Date.now() - validateStarted
   if (counts.blockerCount > 0) {
     const { data } = await client.from("import_job_issues").select("code, message, row_number").eq("job_id", job.id).eq("severity", "blocker").limit(3)
     throw new Error(`Copy ${copy}: ${counts.blockerCount} blockers, e.g. ${JSON.stringify(data)}`)
   }
   const started = Date.now()
   await applySpoolingImportJob(client, job.id)
-  return Date.now() - started
+  return { registerMs, validateMs, applyMs: Date.now() - started }
 }
 
 async function main(): Promise<void> {
   if (upgTargetFromArgv(process.argv) !== "local") throw new Error("demo:time-import runs on the local stand only.")
-  const copiesIndex = process.argv.indexOf("--copies")
-  const copies = copiesIndex >= 0 ? Number(process.argv[copiesIndex + 1]) : 5
-  if (!Number.isInteger(copies) || copies < 1) throw new Error("Use --copies N with N >= 1.")
-  const perJobIndex = process.argv.indexOf("--per-job")
-  const perJob = perJobIndex >= 0 ? Number(process.argv[perJobIndex + 1]) : 1
-  if (!Number.isInteger(perJob) || perJob < 1) throw new Error("Use --per-job K with K >= 1.")
+  const { copies, perJob } = parseTimeImportArgs(process.argv)
 
   const env = readUpgEnv(process.env, "local")
   const client = await signInOperator(env)
@@ -105,10 +112,8 @@ async function main(): Promise<void> {
   for (let copy = 1; copy <= copies; copy += perJob) {
     const { count } = await client.from("isometrics").select("id", { count: "exact", head: true }).eq("project_id", projectId).like("iso_number", `UPG-${Math.floor((1001 + copy * 10_000) / 1000)}00-%`)
     if ((count ?? 0) > 0) { console.log(`copy ${copy}: already imported`); continue }
-    const ms = await importOnce(client, projectId, copy, perJob)
-
-
-    console.log(`copies ${copy}-${copy + perJob - 1}: apply ${ms} ms`)
+    const times = await importOnce(client, projectId, copy, perJob)
+    console.log(`copies ${copy}-${copy + perJob - 1}: register ${times.registerMs} ms, validate ${times.validateMs} ms, apply ${times.applyMs} ms`)
   }
   const { count: isoCount } = await client.from("isometrics").select("id", { count: "exact", head: true }).eq("project_id", projectId)
   console.log(`${PROJECT_CODE}: ${isoCount} ISOs`)
