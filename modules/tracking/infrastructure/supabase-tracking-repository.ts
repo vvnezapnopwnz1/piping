@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 
 import type { Database } from "@/lib/supabase/database.types"
+import { selectAllRows } from "@/lib/supabase/select-all-rows"
 import { normalizeTrackingError } from "../application/manage-tracking"
 import {
   normalizeTrackingDirection,
@@ -21,6 +22,7 @@ interface QueryLike extends PromiseLike<QueryResult> {
   select(columns: string): QueryLike
   eq(field: string, value: string): QueryLike
   order(field: string, options?: { ascending?: boolean }): QueryLike
+  range(from: number, to: number): QueryLike
 }
 interface TrackingClient {
   from(table: string): QueryLike
@@ -50,16 +52,21 @@ function number(row: Row, field: string): number {
   return Number.isFinite(value) ? value : 0
 }
 
-async function loadRows(client: SupabaseClient<Database>, table: string, columns: string, projectId: string, orderField?: string): Promise<Row[]> {
-  let query = trackingClient(client).from(table).select(columns).eq("project_id", projectId)
-  if (orderField) query = query.order(orderField, { ascending: false })
-  const { data, error } = await query
-  fail(error)
-  return data ?? []
+/** `keys` is a column set that is unique per row; it breaks ties so the pages of one read never overlap. */
+async function loadRows(client: SupabaseClient<Database>, table: string, columns: string, projectId: string, keys: readonly string[], orderField?: string): Promise<Row[]> {
+  // A pilot has thousands of spools and an event for every scan: the read must go past the 1,000-row cap.
+  return selectAllRows<Row>(async (from, to) => {
+    let query = trackingClient(client).from(table).select(columns).eq("project_id", projectId)
+    if (orderField) query = query.order(orderField, { ascending: false })
+    for (const key of keys) query = query.order(key)
+    const { data, error } = await query.range(from, to)
+    fail(error) // the tracking error mapping, not selectAllRows' generic one
+    return { data, error: null }
+  })
 }
 
 export async function loadTrackingWorklist(client: SupabaseClient<Database>, projectId: string): Promise<TrackingWorklistRow[]> {
-  const rows = await loadRows(client, "spool_tracking_worklist", "project_id, spool_id, spool_revision_id, iso_number, spool_number, pds_area_code, construction_status, current_location_id, current_location_code, is_in_transit, has_ever_scanned, is_active, last_event_at", projectId)
+  const rows = await loadRows(client, "spool_tracking_worklist", "project_id, spool_id, spool_revision_id, iso_number, spool_number, pds_area_code, construction_status, current_location_id, current_location_code, is_in_transit, has_ever_scanned, is_active, last_event_at", projectId, ["spool_id", "spool_revision_id"])
   return rows.map((row) => ({
     projectId: text(row, "project_id"), spoolId: text(row, "spool_id"), spoolRevisionId: text(row, "spool_revision_id"),
     isoNumber: text(row, "iso_number"), spoolNumber: text(row, "spool_number"), pdsAreaCode: nullableText(row, "pds_area_code"),
@@ -70,7 +77,7 @@ export async function loadTrackingWorklist(client: SupabaseClient<Database>, pro
 }
 
 export async function loadTrackingEvents(client: SupabaseClient<Database>, projectId: string): Promise<TrackingEventRow[]> {
-  const rows = await loadRows(client, "spool_location_events", "id, project_id, spool_id, spool_revision_id, location_id, project_locations(code), device_id, operator_membership_id, direction, occurred_at, source, compensates_event_id, reason, recorded_at", projectId, "occurred_at")
+  const rows = await loadRows(client, "spool_location_events", "id, project_id, spool_id, spool_revision_id, location_id, project_locations(code), device_id, operator_membership_id, direction, occurred_at, source, compensates_event_id, reason, recorded_at", projectId, ["id"], "occurred_at")
   return rows.map((row) => ({
     id: text(row, "id"), projectId: text(row, "project_id"), spoolId: text(row, "spool_id"), spoolRevisionId: text(row, "spool_revision_id"),
     locationId: text(row, "location_id"),
@@ -82,7 +89,7 @@ export async function loadTrackingEvents(client: SupabaseClient<Database>, proje
 }
 
 export async function loadTrackingOccupancy(client: SupabaseClient<Database>, projectId: string): Promise<TrackingOccupancyRow[]> {
-  const rows = await loadRows(client, "tracking_location_occupancy", "project_id, location_id, category_code, location_code, location_description, capacity, current_count, remaining_capacity", projectId)
+  const rows = await loadRows(client, "tracking_location_occupancy", "project_id, location_id, category_code, location_code, location_description, capacity, current_count, remaining_capacity", projectId, ["location_id", "category_code"])
   return rows.map((row) => ({
     projectId: text(row, "project_id"), locationId: text(row, "location_id"), categoryCode: text(row, "category_code"), locationCode: text(row, "location_code"),
     locationDescription: text(row, "location_description"), capacity: row.capacity === null || row.capacity === undefined ? null : number(row, "capacity"),
@@ -91,22 +98,22 @@ export async function loadTrackingOccupancy(client: SupabaseClient<Database>, pr
 }
 
 export async function loadTrackingTransitAlerts(client: SupabaseClient<Database>, projectId: string): Promise<TrackingTransitAlertRow[]> {
-  const rows = await loadRows(client, "spool_transit_alerts", "project_id, spool_id, iso_number, spool_number, departure_location_code, transit_started_at, transit_days, maximum_transit_time_days, is_overdue", projectId, "transit_started_at")
+  const rows = await loadRows(client, "spool_transit_alerts", "project_id, spool_id, iso_number, spool_number, departure_location_code, transit_started_at, transit_days, maximum_transit_time_days, is_overdue", projectId, ["spool_id"], "transit_started_at")
   return rows.map((row) => ({ projectId: text(row, "project_id"), spoolId: text(row, "spool_id"), isoNumber: text(row, "iso_number"), spoolNumber: text(row, "spool_number"), departureLocationCode: nullableText(row, "departure_location_code"), transitStartedAt: text(row, "transit_started_at"), transitDays: number(row, "transit_days"), maximumTransitTimeDays: number(row, "maximum_transit_time_days"), isOverdue: row.is_overdue === true }))
 }
 
 export async function loadTrackingDeviceUsage(client: SupabaseClient<Database>, projectId: string): Promise<TrackingDeviceUsageRow[]> {
-  const rows = await loadRows(client, "tracking_device_usage", "project_id, device_id, device_code, operator_membership_id, location_id, location_code, scan_count, last_used_at", projectId, "last_used_at")
+  const rows = await loadRows(client, "tracking_device_usage", "project_id, device_id, device_code, operator_membership_id, location_id, location_code, scan_count, last_used_at", projectId, ["device_id", "operator_membership_id", "location_id"], "last_used_at")
   return rows.map((row) => ({ projectId: text(row, "project_id"), deviceId: text(row, "device_id"), deviceCode: text(row, "device_code"), operatorMembershipId: text(row, "operator_membership_id"), locationId: text(row, "location_id"), locationCode: text(row, "location_code"), scanCount: number(row, "scan_count"), lastUsedAt: text(row, "last_used_at") }))
 }
 
 export async function loadTrackingDeviceManagement(client: SupabaseClient<Database>, projectId: string): Promise<TrackingDeviceManagementRow[]> {
-  const rows = await loadRows(client, "tracking_device_management", "project_id, device_id, device_code, device_description, device_status, assigned_membership_id, assignment_status, scan_count, most_frequent_operator_membership_id, most_frequent_location_code, last_used_at", projectId)
+  const rows = await loadRows(client, "tracking_device_management", "project_id, device_id, device_code, device_description, device_status, assigned_membership_id, assignment_status, scan_count, most_frequent_operator_membership_id, most_frequent_location_code, last_used_at", projectId, ["device_id"])
   return rows.map((row) => ({ projectId: text(row, "project_id"), deviceId: text(row, "device_id"), deviceCode: text(row, "device_code"), deviceDescription: text(row, "device_description"), deviceStatus: text(row, "device_status"), assignedMembershipId: nullableText(row, "assigned_membership_id"), assignmentStatus: nullableText(row, "assignment_status"), scanCount: number(row, "scan_count"), mostFrequentOperatorMembershipId: nullableText(row, "most_frequent_operator_membership_id"), mostFrequentLocationCode: nullableText(row, "most_frequent_location_code"), lastUsedAt: nullableText(row, "last_used_at") }))
 }
 
 export async function loadTrackingInconsistencies(client: SupabaseClient<Database>, projectId: string): Promise<TrackingInconsistencyRow[]> {
-  const rows = await loadRows(client, "spool_tracking_inconsistencies", "project_id, spool_id, event_id, occurred_at, issue_code", projectId, "occurred_at")
+  const rows = await loadRows(client, "spool_tracking_inconsistencies", "project_id, spool_id, event_id, occurred_at, issue_code", projectId, ["event_id", "issue_code"], "occurred_at")
   return rows.map((row) => ({ projectId: text(row, "project_id"), spoolId: text(row, "spool_id"), eventId: text(row, "event_id"), occurredAt: text(row, "occurred_at"), issueCode: text(row, "issue_code") }))
 }
 

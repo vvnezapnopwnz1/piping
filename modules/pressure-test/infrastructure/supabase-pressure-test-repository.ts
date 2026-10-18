@@ -163,15 +163,17 @@ export async function listTestPackCatalog(client: Client, projectId: string): Pr
 }
 
 export async function listTestPackReadiness(client: Client, projectId: string): Promise<TestPackReadinessRow[]> {
-  const { data, error } = await client.from("test_pack_readiness").select(READINESS_SELECT).eq("project_id", projectId).order("test_pack_number")
-  fail(error)
-  return (data ?? []).map(toReadiness)
+  const rows = await selectAllRows((from, to) =>
+    client.from("test_pack_readiness").select(READINESS_SELECT).eq("project_id", projectId).order("test_pack_number").order("test_pack_id").range(from, to),
+  )
+  return rows.map(toReadiness)
 }
 
 export async function listTestPackReleaseBacklog(client: Client, projectId: string): Promise<TestPackReadinessRow[]> {
-  const { data, error } = await client.from("test_pack_release_backlog").select(READINESS_SELECT).eq("project_id", projectId).order("test_pack_number")
-  fail(error)
-  return (data ?? []).map(toReadiness)
+  const rows = await selectAllRows((from, to) =>
+    client.from("test_pack_release_backlog").select(READINESS_SELECT).eq("project_id", projectId).order("test_pack_number").order("test_pack_id").range(from, to),
+  )
+  return rows.map(toReadiness)
 }
 
 export async function listTestPackMembers(client: Client, projectId: string, testPackId: string): Promise<TestPackMemberRow[]> {
@@ -272,9 +274,10 @@ export async function listProjectSubsystems(client: Client, projectId: string): 
 
 /** Readiness carries no business ISO number, so the label is resolved from the owning project. */
 export async function listProjectIsometricNumbers(client: Client, projectId: string): Promise<IsometricNumberRow[]> {
-  const { data, error } = await client.from("isometrics").select("id, iso_number").eq("project_id", projectId).order("iso_number")
-  fail(error)
-  return (data ?? []).map((row) => ({ id: row.id, isoNumber: row.iso_number }))
+  const rows = await selectAllRows((from, to) =>
+    client.from("isometrics").select("id, iso_number").eq("project_id", projectId).order("iso_number").order("id").range(from, to),
+  )
+  return rows.map((row) => ({ id: row.id, isoNumber: row.iso_number }))
 }
 
 export async function listAvailableIsometricReadiness(client: Client, projectId: string): Promise<IsometricReadinessRow[]> {
@@ -284,43 +287,48 @@ export async function listAvailableIsometricReadiness(client: Client, projectId:
 }
 
 export async function listLineCheckWorklist(client: Client, projectId: string, testPackId?: string): Promise<LineCheckWorklistRow[]> {
-  let query = client.from("line_check_worklist").select("*").eq("project_id", projectId)
-  if (testPackId) query = query.eq("test_pack_id", testPackId)
-  const { data, error } = await query.order("assigned_on")
-  fail(error)
-  return data ?? []
+  // A pilot has more than a thousand ISOs, items or flanges to walk; the tie-break keys keep pages from overlapping.
+  return selectAllRows((from, to) => {
+    let query = client.from("line_check_worklist").select("*").eq("project_id", projectId)
+    if (testPackId) query = query.eq("test_pack_id", testPackId)
+    return query.order("assigned_on").order("request_id").order("isometric_id").range(from, to)
+  })
 }
 
 export async function listItemClearanceWorklist(client: Client, projectId: string, testPackId?: string): Promise<ItemClearanceWorklistRow[]> {
-  let query = client.from("item_clearance_worklist").select("*").eq("project_id", projectId)
-  if (testPackId) query = query.eq("test_pack_id", testPackId)
-  const { data, error } = await query.order("assigned_on")
-  fail(error)
-  return data ?? []
+  // A pilot has more than a thousand ISOs, items or flanges to walk; the tie-break keys keep pages from overlapping.
+  return selectAllRows((from, to) => {
+    let query = client.from("item_clearance_worklist").select("*").eq("project_id", projectId)
+    if (testPackId) query = query.eq("test_pack_id", testPackId)
+    return query.order("assigned_on").order("request_id").order("punch_item_id").range(from, to)
+  })
 }
 
 export async function listBlindingWorklist(client: Client, projectId: string, testPackId?: string): Promise<BlindingWorklistRow[]> {
-  let query = client.from("blinding_worklist").select("*").eq("project_id", projectId)
-  if (testPackId) query = query.eq("test_pack_id", testPackId)
-  const { data, error } = await query.order("assigned_on")
-  fail(error)
-  return data ?? []
+  // A pilot has more than a thousand ISOs, items or flanges to walk; the tie-break keys keep pages from overlapping.
+  return selectAllRows((from, to) => {
+    let query = client.from("blinding_worklist").select("*").eq("project_id", projectId)
+    if (testPackId) query = query.eq("test_pack_id", testPackId)
+    return query.order("assigned_on").order("request_id").range(from, to)
+  })
 }
 
 export async function listTestingPrecommWorklist(client: Client, projectId: string, testPackId?: string): Promise<TestingPrecommWorklistRow[]> {
-  let query = client.from("testing_precomm_worklist").select("*").eq("project_id", projectId)
-  if (testPackId) query = query.eq("test_pack_id", testPackId)
-  const { data, error } = await query.order("test_pack_id")
-  fail(error)
-  return data ?? []
+  // A pilot has more than a thousand ISOs, items or flanges to walk; the tie-break keys keep pages from overlapping.
+  return selectAllRows((from, to) => {
+    let query = client.from("testing_precomm_worklist").select("*").eq("project_id", projectId)
+    if (testPackId) query = query.eq("test_pack_id", testPackId)
+    return query.order("test_pack_id").range(from, to)
+  })
 }
 
 export async function listReinstatementWorklist(client: Client, projectId: string, testPackId?: string): Promise<ReinstatementWorklistRow[]> {
-  let query = client.from("reinstatement_worklist").select("*").eq("project_id", projectId)
-  if (testPackId) query = query.eq("test_pack_id", testPackId)
-  const { data, error } = await query.order("request_number")
-  fail(error)
-  return data ?? []
+  // A pilot has more than a thousand ISOs, items or flanges to walk; the tie-break keys keep pages from overlapping.
+  return selectAllRows((from, to) => {
+    let query = client.from("reinstatement_worklist").select("*").eq("project_id", projectId)
+    if (testPackId) query = query.eq("test_pack_id", testPackId)
+    return query.order("request_number").order("request_id").order("flange_joint_revision_id").range(from, to)
+  })
 }
 
 export async function listRequestDetails(client: Client, projectId: string, requestId: string): Promise<RequestDetailsRow | null> {

@@ -38,10 +38,19 @@ test("the test pack summary counts packs and their Ready for Test flag in the op
           return {
             eq(column: string, value: string) {
               calls.push([table, columns, column, value])
-              return Promise.resolve({
-                data: [{ test_pack_id: "a", is_rft: true }, { test_pack_id: "b", is_rft: false }, { test_pack_id: "c", is_rft: null }],
-                error: null,
-              })
+              return {
+                order() {
+                  return {
+                    // One page of rows, then the empty page selectAllRows stops on.
+                    range(from: number) {
+                      return Promise.resolve({
+                        data: from === 0 ? [{ test_pack_id: "a", is_rft: true }, { test_pack_id: "b", is_rft: false }, { test_pack_id: "c", is_rft: null }] : [],
+                        error: null,
+                      })
+                    },
+                  }
+                },
+              }
             },
           }
         },
@@ -51,5 +60,5 @@ test("the test pack summary counts packs and their Ready for Test flag in the op
 
   const { loadHomeTestPackSummary } = await import("./supabase-home-overview-repository")
   assert.deepEqual(await loadHomeTestPackSummary(client, "project-1"), { total: 3, readyForTest: 1, blocked: 2 })
-  assert.deepEqual(calls, [["test_pack_readiness", "test_pack_id, is_rft", "project_id", "project-1"]])
+  assert.deepEqual(calls[0], ["test_pack_readiness", "test_pack_id, is_rft", "project_id", "project-1"])
 })

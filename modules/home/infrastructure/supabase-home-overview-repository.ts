@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 
+import { selectAllRows } from "@/lib/supabase/select-all-rows"
+
 import type { Database } from "@/lib/supabase/database.types"
 import {
   toExecutiveOverview,
@@ -63,12 +65,9 @@ export async function loadHomeTestPackSummary(
   client: SupabaseClient<Database>,
   projectId: string,
 ): Promise<HomeTestPackSummary> {
-  const { data, error } = await client
-    .from("test_pack_readiness")
-    .select("test_pack_id, is_rft")
-    .eq("project_id", projectId)
-  fail(error)
-  const rows = data ?? []
+  const rows = await selectAllRows((from, to) =>
+    client.from("test_pack_readiness").select("test_pack_id, is_rft").eq("project_id", projectId).order("test_pack_id").range(from, to),
+  )
   const readyForTest = rows.filter((row) => row.is_rft === true).length
   return { total: rows.length, readyForTest, blocked: rows.length - readyForTest }
 }

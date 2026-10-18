@@ -62,11 +62,13 @@ export async function listFlangeWorklist(client: SupabaseClient<Database>, proje
 }
 
 export async function listFlangeHistory(client: SupabaseClient<Database>, projectId: string, flangeJointRevisionId?: string): Promise<Array<Record<string, unknown>>> {
-  let query = client.from("flange_progress_history").select("*").eq("project_id", projectId)
-  if (flangeJointRevisionId) query = query.eq("flange_joint_revision_id", flangeJointRevisionId)
-  const { data, error } = await query.order("recorded_at", { ascending: false })
-  fail(error)
-  return (data ?? []) as Array<Record<string, unknown>>
+  // The history of the whole project grows with every record and never shrinks: page it.
+  const data = await selectAllRows((from, to) => {
+    let query = client.from("flange_progress_history").select("*").eq("project_id", projectId)
+    if (flangeJointRevisionId) query = query.eq("flange_joint_revision_id", flangeJointRevisionId)
+    return query.order("recorded_at", { ascending: false }).order("id").range(from, to)
+  })
+  return data as Array<Record<string, unknown>>
 }
 
 export async function listFlangeFormOptions(client: SupabaseClient<Database>, projectId: string): Promise<FlangeFormOptions> {

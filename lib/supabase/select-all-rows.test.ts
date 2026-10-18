@@ -22,3 +22,12 @@ test("selectAllRows throws the server message", async () => {
     /boom/,
   )
 })
+
+for (const size of [1000, 1001]) {
+  test(`selectAllRows reads a list of exactly ${size} rows in full, with PostgREST's 1,000-row cap`, async () => {
+    const rows = Array.from({ length: size }, (_, index) => index)
+    const result = await selectAllRows(async (from, to) => ({ data: rows.slice(from, Math.min(to + 1, from + 1000)), error: null }))
+    assert.equal(result.length, size)
+    assert.deepEqual(result, rows)
+  })
+}

@@ -84,14 +84,17 @@ export async function loadNdeBatches(
   client: SupabaseClient<Database>,
   projectId: string
 ): Promise<NdeBatch[]> {
-  const { data, error } = await client
-    .from("nde_batches")
-    .select(
-      "id, project_id, batch_number, method, coverage_regime, responsible_welder_qualification_id, ndt_subcontractor_id, status, issued_on, returned_on, closed_on, report_number, created_at, escalated_at, escalation_reason"
-    )
-    .eq("project_id", projectId)
-    .order("created_at", { ascending: false })
-  fail(error)
+  const data = await selectAllRows((from, to) =>
+    client
+      .from("nde_batches")
+      .select(
+        "id, project_id, batch_number, method, coverage_regime, responsible_welder_qualification_id, ndt_subcontractor_id, status, issued_on, returned_on, closed_on, report_number, created_at, escalated_at, escalation_reason"
+      )
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(from, to),
+  )
   return required(data).map(toBatch)
 }
 
@@ -152,11 +155,15 @@ export async function loadNdeBatchObligationCounts(
   client: SupabaseClient<Database>,
   projectId: string
 ): Promise<Record<string, number>> {
-  const { data, error } = await client
-    .from("nde_batch_items")
-    .select("batch_id, nde_batches!inner(project_id)")
-    .eq("nde_batches.project_id", projectId)
-  fail(error)
+  // One row per obligation in a batch: a pilot batches thousands of joints, far past the 1,000-row cap.
+  const data = await selectAllRows((from, to) =>
+    client
+      .from("nde_batch_items")
+      .select("batch_id, nde_batches!inner(project_id)")
+      .eq("nde_batches.project_id", projectId)
+      .order("id")
+      .range(from, to),
+  )
   const counts: Record<string, number> = {}
   for (const row of required(data) as Row[]) {
     const batchId = row.batch_id as string

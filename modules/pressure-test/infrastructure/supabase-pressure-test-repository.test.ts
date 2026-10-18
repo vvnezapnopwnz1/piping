@@ -69,12 +69,16 @@ test("subsystem options carry the owning system so the selector can depend on it
 
 test("ISO numbers are resolved from the current project so the Builder can label readiness rows", async () => {
   const calls: Call[] = []
-  const rows = await listProjectIsometricNumbers(
-    recordingClient(calls, [{ id: "iso-1001", iso_number: "ISO-DEMO-1001" }]),
-    "project-1",
-  )
+  // Read in pages past the 1,000-row cap: the rows come in the first page, the empty page ends the read.
+  const builder = {
+    select: (columns: string) => { calls.push(["select", columns]); return builder },
+    eq: (field: string, value: unknown) => { calls.push(["eq", field, value]); return builder },
+    order: (column: string) => { calls.push(["order", column]); return builder },
+    range: (from: number) => Promise.resolve({ data: from === 0 ? [{ id: "iso-1001", iso_number: "ISO-DEMO-1001" }] : [], error: null }),
+  }
+  const rows = await listProjectIsometricNumbers({ from: (name: string) => { calls.push(["from", name]); return builder } } as never, "project-1")
   assert.deepEqual(calls[0], ["from", "isometrics"])
-  assert.deepEqual(filters(calls), [["eq", "project_id", "project-1"]])
+  assert.deepEqual(filters(calls).slice(0, 1), [["eq", "project_id", "project-1"]])
   assert.deepEqual(rows, [{ id: "iso-1001", isoNumber: "ISO-DEMO-1001" }])
 })
 

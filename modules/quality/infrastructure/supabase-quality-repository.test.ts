@@ -127,10 +127,14 @@ function selectClient(data: Record<string, unknown>[], calls: unknown[]) {
   return {
     from(table: string) {
       calls.push(["from", table])
+      let pageFrom = 0
       const query = {
         select(columns: string) { calls.push(["select", columns]); return query },
         eq(field: string, value: string) { calls.push(["eq", field, value]); return query },
-        then(resolve: (value: unknown) => void) { resolve({ data, error: null }) },
+        order(field: string) { calls.push(["order", field]); return query },
+        // The rows come in the first page; the empty page after it ends the read.
+        range(from: number) { pageFrom = from; return query },
+        then(resolve: (value: unknown) => void) { resolve({ data: pageFrom === 0 ? data : [], error: null }) },
       }
       return query
     },
