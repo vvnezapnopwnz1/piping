@@ -11284,6 +11284,35 @@ export type Database = {
         }
         Returns: number
       }
+      correct_construction_progress: {
+        Args: {
+          correction_reason: string
+          new_occurred_on: string
+          target_idempotency_key?: string
+          target_phase: Database["public"]["Enums"]["construction_phase"]
+          target_spool_revision_id: string
+          target_stage: Database["public"]["Enums"]["construction_stage"]
+        }
+        Returns: {
+          actor_id: string | null
+          compensates_event_id: string | null
+          created_at: string
+          id: string
+          occurred_on: string
+          payload: NonNullable<Json>
+          phase: Database["public"]["Enums"]["construction_phase"]
+          project_id: string
+          source: string
+          spool_revision_id: string
+          stage: Database["public"]["Enums"]["construction_stage"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "construction_progress_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       correct_weld_progress: {
         Args: {
           corrections: Json

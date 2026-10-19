@@ -43,6 +43,7 @@ import { SpoolStageTimeline } from "./spool-stage-timeline"
 import { panelMode } from "../panel-mode"
 import styles from "../spool-workbench.module.css"
 import { useGateReason } from "../gate-reason"
+import { StageDateCorrection } from "./stage-date-correction"
 
 export function MaterialCheckScreen({
   projectId,
@@ -356,6 +357,15 @@ export function MaterialCheckScreen({
                 >
                   {t("recordStartFab")}
                 </Button>
+                {spool.dates.start_fab ? (
+                  <StageDateCorrection
+                    spoolRevisionId={spool.spoolRevisionId}
+                    stage="start_fab"
+                    currentDate={spool.dates.start_fab}
+                    disabled={pendingAction !== null || loadState !== "ready"}
+                    onCorrected={reloadAll}
+                  />
+                ) : null}
                 <Button
                   type="button"
                   variant="outline"

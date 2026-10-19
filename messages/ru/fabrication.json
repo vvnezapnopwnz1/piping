@@ -195,6 +195,16 @@
     "optional": "(необязательно)",
     "placedInLaydownOn": "Размещена на площадке хранения {date}"
   },
+  "dateCorrection": {
+    "open": "Исправить дату",
+    "newDate": "Новая дата",
+    "reason": "Причина",
+    "reasonPlaceholder": "Почему дата меняется",
+    "confirm": "Сохранить исправление",
+    "cancel": "Отмена",
+    "saved": "Дата исправлена.",
+    "couldNotBeSaved": "Не удалось исправить дату."
+  },
   "materialCheck": {
     "recordedStatusCouldNotBe": "Записано, но статус не обновился. Обновите ещё раз.",
     "startFabRecorded": "Начало изготовления записано.",

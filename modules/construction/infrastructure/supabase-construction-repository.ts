@@ -717,6 +717,29 @@ export async function recordConstructionProgress(
   fail(error)
 }
 
+/**
+ * Corrects a recorded Start Fab or Sent to Paint date. The server compensates the event that stands and
+ * records the new date with the reason; nothing is rewritten.
+ */
+export async function correctConstructionProgress(
+  client: SupabaseClient<Database>,
+  spoolRevisionId: string,
+  stage: "start_fab" | "sent_to_paint",
+  occurredOn: string,
+  reason: string,
+  idempotencyKey: string,
+): Promise<void> {
+  const { error } = await client.rpc("correct_construction_progress", {
+    target_spool_revision_id: spoolRevisionId,
+    target_phase: "fabrication",
+    target_stage: stage,
+    new_occurred_on: occurredOn,
+    correction_reason: reason,
+    target_idempotency_key: idempotencyKey,
+  })
+  fail(error)
+}
+
 export interface Qc13Form {
   id: string
   formNumber: string

@@ -34,6 +34,7 @@ import { SpoolStageTimeline } from "./spool-stage-timeline"
 import { panelMode } from "../panel-mode"
 import styles from "../spool-workbench.module.css"
 import { useGateReason } from "../gate-reason"
+import { StageDateCorrection } from "./stage-date-correction"
 
 const today = () => new Date().toISOString().slice(0, 10)
 
@@ -357,9 +358,18 @@ export function PaintLaydownScreen({
               </Card>
             ) : (
               <div className="space-y-4">
-                <p className="text-xs text-muted-foreground">
-                  {t("sentToPaintOn", { date: spool.dates.sent_to_paint ?? "" })}
-                </p>
+                <div className="flex flex-wrap items-center gap-3">
+                  <p className="text-xs text-muted-foreground">
+                    {t("sentToPaintOn", { date: spool.dates.sent_to_paint ?? "" })}
+                  </p>
+                  <StageDateCorrection
+                    spoolRevisionId={spool.spoolRevisionId}
+                    stage="sent_to_paint"
+                    currentDate={spool.dates.sent_to_paint}
+                    disabled={pendingAction !== null}
+                    onCorrected={reload}
+                  />
+                </div>
                 <Card>
                   <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
                     <CardTitle>{t("painting")}</CardTitle>

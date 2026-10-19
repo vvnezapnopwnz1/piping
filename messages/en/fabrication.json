@@ -165,6 +165,16 @@
     "optional": "(optional)",
     "placedInLaydownOn": "Placed in laydown {date}"
   },
+  "dateCorrection": {
+    "open": "Correct date",
+    "newDate": "New date",
+    "reason": "Reason",
+    "reasonPlaceholder": "Why the date changes",
+    "confirm": "Save correction",
+    "cancel": "Cancel",
+    "saved": "Date corrected.",
+    "couldNotBeSaved": "The date could not be corrected."
+  },
   "materialCheck": {
     "recordedStatusCouldNotBe": "Recorded; status could not be refreshed. Retry refresh.",
     "startFabRecorded": "Start Fab recorded.",
