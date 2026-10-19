@@ -46,6 +46,8 @@ export function jointStatusLabel(obligation: {
   if (cycleKind === "repair") return `R${cycleOrdinal}`
   if (coverageRegime === "mandatory_100") return disposition === "pending" ? "H" : "HS"
   if (disposition === "satisfied") return "NR"
+  // Released by the accepted sample of its spot batch; NR is the examined joint, so this one has its own code.
+  if (disposition === "waived") return "NRW"
   if (disposition === "pending") return "S"
   return "SS"
 }

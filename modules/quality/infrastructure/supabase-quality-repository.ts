@@ -74,8 +74,11 @@ export function toObligation(row: Row): NdeObligation {
       ((row.spool_revisions as Row | null)?.spools as Row | null)?.spool_number as string ?? "",
     // nde_batch_items carries `unique (obligation_id)`, so an obligation belongs to at most one
     // batch and PostgREST embeds the join row as a to-one object.
+    // nde_batch_population is unique on obligation_id too: a spot joint reserved by a batch is "in" it
+    // without being one of its examined joints, so the screens do not offer it to another batch.
     batchNumber:
       ((row.nde_batch_items as Row | null)?.nde_batches as Row | null)?.batch_number as string ??
+      ((row.nde_batch_population as Row | null)?.nde_batches as Row | null)?.batch_number as string ??
       null,
   }
 }
@@ -107,7 +110,7 @@ export async function loadNdeObligations(
     client
       .from("nde_obligations")
       .select(
-        "id, project_id, weld_joint_revision_id, spool_revision_id, method, required_coverage, selection_mode, coverage_regime, disposition, cycle_kind, cycle_ordinal, parent_obligation_id, responsible_welder_qualification_id, weld_joint_revisions(weld_joints(weld_number)), spool_revisions(spools(spool_number)), nde_batch_items(nde_batches(batch_number))"
+        "id, project_id, weld_joint_revision_id, spool_revision_id, method, required_coverage, selection_mode, coverage_regime, disposition, cycle_kind, cycle_ordinal, parent_obligation_id, responsible_welder_qualification_id, weld_joint_revisions(weld_joints(weld_number)), spool_revisions(spools(spool_number)), nde_batch_items(nde_batches(batch_number)), nde_batch_population(nde_batches(batch_number))"
       )
       .eq("project_id", projectId)
       .order("id")

@@ -2623,6 +2623,40 @@ export type Database = {
           },
         ]
       }
+      nde_batch_population: {
+        Row: {
+          batch_id: string
+          created_at: string
+          obligation_id: string
+        }
+        ComputedFields: never
+        Insert: {
+          batch_id: string
+          created_at?: string
+          obligation_id: string
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          obligation_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nde_batch_population_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "nde_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nde_batch_population_obligation_id_fkey"
+            columns: ["obligation_id"]
+            isOneToOne: true
+            referencedRelation: "nde_obligations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nde_batches: {
         Row: {
           batch_number: string

@@ -78,6 +78,7 @@ export function WaitingBatchTab({ projectId, obligations, batches, onChanged }: 
         </label>
         <Button disabled={busy || !canCreateBatch(obligations, method, regime) || !(Number(percent) > 0 && Number(percent) <= 100)} onClick={() => void createAndIssue(method, regime, Number(percent))}>{t("createAndIssue")}</Button>
       </div>
+      {regime === "spot" && <p className="text-sm text-muted-foreground">{t("spotHint")}</p>}
       {groups.size === 0 && drafts.length === 0 && <p className="rounded-lg border p-4 text-sm text-muted-foreground">{t("noWaiting")}</p>}
       {[...groups.entries()].map(([key, items]) => {
         const [m, r] = key.split("|") as [NdtMethod, CoverageRegime]

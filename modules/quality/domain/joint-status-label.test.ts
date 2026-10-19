@@ -40,6 +40,14 @@ const CASES: {
     why: "released with the batch, not itself examined",
   },
   {
+    disposition: "waived",
+    cycleKind: "original",
+    cycleOrdinal: 0,
+    coverageRegime: "spot",
+    expected: "NRW",
+    why: "released by the accepted sample of its spot batch, never examined",
+  },
+  {
     disposition: "pending",
     cycleKind: "original",
     cycleOrdinal: 0,
