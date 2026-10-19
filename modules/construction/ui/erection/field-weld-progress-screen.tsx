@@ -24,6 +24,7 @@ import { weldColumns } from "../weld-columns"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { describeFieldWeldProgressGate } from "../../application/record-field-weld-progress"
 import { toWeldProgressPayload } from "../../application/record-weld-progress"
+import { weldFormChoices } from "../../application/weld-form-choices"
 import { toStageEvidence } from "../../application/describe-erection-readiness"
 import {
   firstMissingPredecessor,
@@ -32,8 +33,10 @@ import {
 import type { ErectionStage } from "../../domain/erection-stage"
 import type { PointAssignment, WeldPointType } from "../../domain/weld-progress"
 import {
+  loadAreaSubcontractors,
   loadWeldFormReferentials,
   loadWeldSummaries,
+  type AreaSubcontractors,
   type WeldFormReferentials,
   type WeldSummary,
 } from "../../infrastructure/supabase-construction-repository"
@@ -114,7 +117,8 @@ export function FieldWeldProgressScreen({
   const [browsingJoints, setBrowsingJoints] = useState(false)
 
   const [referentials, setReferentials] = useState<WeldFormReferentials>(EMPTY_REFERENTIALS)
-  const [subcontractorId, setSubcontractorId] = useState("")
+  const [pickedSubcontractorId, setSubcontractorId] = useState("")
+  const [areaFor, setAreaFor] = useState<{ spoolRevisionId: string; area: AreaSubcontractors | null } | null>(null)
   const [procedureId, setProcedureId] = useState("")
   const [weldOn, setWeldOn] = useState(today())
   const [rootWelderId, setRootWelderId] = useState("")
@@ -174,6 +178,21 @@ export function FieldWeldProgressScreen({
     }
   }, [projectId])
 
+  useEffect(() => {
+    if (!spoolRevisionId) return
+    let cancelled = false
+    void loadAreaSubcontractors(getSupabaseBrowserClient(), spoolRevisionId)
+      .then((loaded) => {
+        if (!cancelled) setAreaFor({ spoolRevisionId, area: loaded })
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) toast.error(t("weldingReferentialsCouldNotBe"), { description: errorDetail(error) })
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [spoolRevisionId])
+
   const reloadWelds = useCallback(
     async (reselectJointId?: string) => {
       if (!spoolRevisionId) return
@@ -231,6 +250,16 @@ export function FieldWeldProgressScreen({
         ]
       : []
 
+  const area = areaFor && areaFor.spoolRevisionId === spoolRevisionId ? areaFor.area : null
+  const choices = weldFormChoices({
+    weldLocation: "field",
+    area,
+    pickedSubcontractorId,
+    procedures: referentials.procedures,
+    welders: referentials.welders,
+  })
+  const subcontractorId = choices.subcontractorId
+  const fixedSubcontractor = referentials.subcontractors.find((item) => item.id === subcontractorId)
   const procedure = referentials.procedures.find((item) => item.id === procedureId)
 
   const gate =
@@ -569,23 +598,42 @@ export function FieldWeldProgressScreen({
                       ) : null}
 
                       <div className={embedded ? styles.weldFields : "grid gap-3 sm:grid-cols-2"}>
-                        <label className="text-sm font-medium">
-                          {t("subcontractor")}
-                          <select
-                            ref={subcontractorRef}
-                            className="mt-1 w-full rounded border px-2 py-1"
-                            value={subcontractorId}
-                            disabled={isSaving || commands.pending || selectedWeld.isLocked}
-                            onChange={(event) => setSubcontractorId(event.target.value)}
-                          >
-                            <option value="">{t("select")}</option>
-                            {referentials.subcontractors.map((item) => (
-                              <option key={item.id} value={item.id}>
-                                {item.code} — {item.name}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
+                        {choices.isFixedByArea ? (
+                          <div className="text-sm font-medium">
+                            {t("subcontractor")}
+                            <p className="mt-1 w-full rounded border bg-muted px-2 py-1 font-normal">
+                              {fixedSubcontractor
+                                ? `${fixedSubcontractor.code} — ${fixedSubcontractor.name}`
+                                : "—"}
+                            </p>
+                            <span className="text-xs font-normal text-muted-foreground">
+                              {tw("subcontractorFromArea")}
+                            </span>
+                          </div>
+                        ) : (
+                          <label className="text-sm font-medium">
+                            {t("subcontractor")}
+                            <select
+                              ref={subcontractorRef}
+                              className="mt-1 w-full rounded border px-2 py-1"
+                              value={subcontractorId}
+                              disabled={isSaving || commands.pending || selectedWeld.isLocked}
+                              onChange={(event) => {
+                                setSubcontractorId(event.target.value)
+                                setProcedureId("")
+                                setRootWelderId("")
+                                setCapWelderId("")
+                              }}
+                            >
+                              <option value="">{t("select")}</option>
+                              {referentials.subcontractors.map((item) => (
+                                <option key={item.id} value={item.id}>
+                                  {item.code} — {item.name}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        )}
                         <label className="text-sm font-medium">
                           WPS
                           <select
@@ -596,7 +644,7 @@ export function FieldWeldProgressScreen({
                             onChange={(event) => setProcedureId(event.target.value)}
                           >
                             <option value="">{t("select")}</option>
-                            {referentials.procedures.map((item) => (
+                            {choices.procedures.map((item) => (
                               <option key={item.id} value={item.id}>
                                 {item.code}
                               </option>
@@ -613,7 +661,7 @@ export function FieldWeldProgressScreen({
                             onChange={(event) => setRootWelderId(event.target.value)}
                           >
                             <option value="">{t("select")}</option>
-                            {referentials.welders.map((item) => (
+                            {choices.welders.map((item) => (
                               <option key={item.id} value={item.id}>
                                 {item.welderCode}
                               </option>
@@ -630,7 +678,7 @@ export function FieldWeldProgressScreen({
                             onChange={(event) => setCapWelderId(event.target.value)}
                           >
                             <option value="">{t("select")}</option>
-                            {referentials.welders.map((item) => (
+                            {choices.welders.map((item) => (
                               <option key={item.id} value={item.id}>
                                 {item.welderCode}
                               </option>

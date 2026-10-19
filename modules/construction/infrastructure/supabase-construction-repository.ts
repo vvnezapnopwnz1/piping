@@ -593,6 +593,30 @@ export async function loadWeldFormReferentials(
   }
 }
 
+export interface AreaSubcontractors {
+  shopSubcontractorId: string | null
+  fieldSubcontractorId: string | null
+}
+
+/** The shop and field subcontractor of the PDS area the spool's isometric belongs to (manual 3.4). */
+export async function loadAreaSubcontractors(
+  client: SupabaseClient<Database>,
+  spoolRevisionId: string,
+): Promise<AreaSubcontractors | null> {
+  const { data, error } = await client
+    .from("spool_revisions")
+    .select("isometric_revisions(project_pds_areas(shop_subcontractor_id, field_subcontractor_id))")
+    .eq("id", spoolRevisionId)
+    .maybeSingle()
+  fail(error)
+  const area = (data as Row | null)?.isometric_revisions?.project_pds_areas
+  if (!area) return null
+  return {
+    shopSubcontractorId: area.shop_subcontractor_id ?? null,
+    fieldSubcontractorId: area.field_subcontractor_id ?? null,
+  }
+}
+
 export async function loadObligations(
   client: SupabaseClient<Database>,
   spoolRevisionId: string,

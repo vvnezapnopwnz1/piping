@@ -242,6 +242,7 @@
     "notRequired": "Not required",
     "thisWeldJointIsLocked": "This weld joint is locked and does not accept progress.",
     "subcontractor": "Subcontractor",
+    "subcontractorFromArea": "Set by the PDS area",
     "select": "Select…",
     "rootWelder": "Root welder",
     "capWelder": "Cap welder",

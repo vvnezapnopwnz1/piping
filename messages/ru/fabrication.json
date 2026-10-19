@@ -272,6 +272,7 @@
     "notRequired": "Не требуется",
     "thisWeldJointIsLocked": "Этот стык заблокирован и не принимает записи.",
     "subcontractor": "Субподрядчик",
+    "subcontractorFromArea": "Задан зоной PDS",
     "select": "Выберите…",
     "rootWelder": "Сварщик корня",
     "capWelder": "Сварщик облицовки",

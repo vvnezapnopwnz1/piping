@@ -16,12 +16,15 @@ import { useMarkInputsRecorded, useRequestLeave } from "@/components/pipeqc/unsa
 import { weldColumns } from "../weld-columns"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { describeWeldProgressGate, toWeldProgressPayload } from "../../application/record-weld-progress"
+import { weldFormChoices } from "../../application/weld-form-choices"
 import type { PointAssignment, WeldPointType } from "../../domain/weld-progress"
 import {
+  loadAreaSubcontractors,
   loadSpoolStatus,
   loadWeldFormReferentials,
   loadWeldSummaries,
   recordWeldProgress,
+  type AreaSubcontractors,
   type WeldFormReferentials,
   type WeldSummary,
 } from "../../infrastructure/supabase-construction-repository"
@@ -63,7 +66,8 @@ export function WeldProgressScreen({
   const markRecorded = useMarkInputsRecorded()
 
   const [referentials, setReferentials] = useState<WeldFormReferentials>(EMPTY_REFERENTIALS)
-  const [subcontractorId, setSubcontractorId] = useState("")
+  const [pickedSubcontractorId, setSubcontractorId] = useState("")
+  const [areaFor, setAreaFor] = useState<{ spoolRevisionId: string; area: AreaSubcontractors | null } | null>(null)
   const [procedureId, setProcedureId] = useState("")
   const [weldOn, setWeldOn] = useState(today())
   const [rootWelderId, setRootWelderId] = useState("")
@@ -123,6 +127,21 @@ export function WeldProgressScreen({
     }
   }, [projectId])
 
+  useEffect(() => {
+    if (!spoolRevisionId) return
+    let cancelled = false
+    void loadAreaSubcontractors(getSupabaseBrowserClient(), spoolRevisionId)
+      .then((loaded) => {
+        if (!cancelled) setAreaFor({ spoolRevisionId, area: loaded })
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) toast.error(t("weldingReferentialsCouldNotBe"), { description: errorDetail(error) })
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [spoolRevisionId])
+
   const reloadWelds = useCallback(
     async (reselectJointId?: string) => {
       if (!spoolRevisionId) return
@@ -181,6 +200,16 @@ export function WeldProgressScreen({
         ]
       : []
 
+  const area = areaFor && areaFor.spoolRevisionId === spoolRevisionId ? areaFor.area : null
+  const choices = weldFormChoices({
+    weldLocation: selected?.weldLocation ?? "shop",
+    area,
+    pickedSubcontractorId,
+    procedures: referentials.procedures,
+    welders: referentials.welders,
+  })
+  const subcontractorId = choices.subcontractorId
+  const fixedSubcontractor = referentials.subcontractors.find((item) => item.id === subcontractorId)
   const procedure = referentials.procedures.find((item) => item.id === procedureId)
 
   const gate =
@@ -430,23 +459,42 @@ export function WeldProgressScreen({
                     ) : null}
 
                     <div className={embedded ? styles.weldFields : "grid gap-3 sm:grid-cols-2"}>
-                      <label className="text-sm font-medium">
-                        {t("subcontractor")}
-                        <select
-                          ref={subcontractorRef}
-                          className="mt-1 w-full rounded border px-2 py-1"
-                          value={subcontractorId}
-                          disabled={pendingAction !== null || selected.isLocked}
-                          onChange={(event) => setSubcontractorId(event.target.value)}
-                        >
-                          <option value="">{t("select")}</option>
-                          {referentials.subcontractors.map((item) => (
-                            <option key={item.id} value={item.id}>
-                              {item.code} — {item.name}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
+                      {choices.isFixedByArea ? (
+                        <div className="text-sm font-medium">
+                          {t("subcontractor")}
+                          <p className="mt-1 w-full rounded border bg-muted px-2 py-1 font-normal">
+                            {fixedSubcontractor
+                              ? `${fixedSubcontractor.code} — ${fixedSubcontractor.name}`
+                              : "—"}
+                          </p>
+                          <span className="text-xs font-normal text-muted-foreground">
+                            {t("subcontractorFromArea")}
+                          </span>
+                        </div>
+                      ) : (
+                        <label className="text-sm font-medium">
+                          {t("subcontractor")}
+                          <select
+                            ref={subcontractorRef}
+                            className="mt-1 w-full rounded border px-2 py-1"
+                            value={subcontractorId}
+                            disabled={pendingAction !== null || selected.isLocked}
+                            onChange={(event) => {
+                              setSubcontractorId(event.target.value)
+                              setProcedureId("")
+                              setRootWelderId("")
+                              setCapWelderId("")
+                            }}
+                          >
+                            <option value="">{t("select")}</option>
+                            {referentials.subcontractors.map((item) => (
+                              <option key={item.id} value={item.id}>
+                                {item.code} — {item.name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      )}
                       <label className="text-sm font-medium">
                         WPS
                         <select
@@ -457,7 +505,7 @@ export function WeldProgressScreen({
                           onChange={(event) => setProcedureId(event.target.value)}
                         >
                           <option value="">{t("select")}</option>
-                          {referentials.procedures.map((item) => (
+                          {choices.procedures.map((item) => (
                             <option key={item.id} value={item.id}>
                               {item.code}
                             </option>
@@ -474,7 +522,7 @@ export function WeldProgressScreen({
                           onChange={(event) => setRootWelderId(event.target.value)}
                         >
                           <option value="">{t("select")}</option>
-                          {referentials.welders.map((item) => (
+                          {choices.welders.map((item) => (
                             <option key={item.id} value={item.id}>
                               {item.welderCode}
                             </option>
@@ -491,7 +539,7 @@ export function WeldProgressScreen({
                           onChange={(event) => setCapWelderId(event.target.value)}
                         >
                           <option value="">{t("select")}</option>
-                          {referentials.welders.map((item) => (
+                          {choices.welders.map((item) => (
                             <option key={item.id} value={item.id}>
                               {item.welderCode}
                             </option>
