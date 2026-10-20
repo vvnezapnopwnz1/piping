@@ -5,4 +5,6 @@ assert.deepEqual([...SPOOLGEN_ISSUE_CODES], ["EMPTY_FILE", "MISSING_COLUMN", "MI
 assert.equal(isSpoolgenIssueCode("ORPHAN_SPOOL"), true)
 assert.equal(isSpoolgenIssueCode("SRV_WPS_MISSING"), false)
 // The stored text is the code: the sentence is chosen on screen, in the user's language.
-assert.deepEqual(spoolgenIssue("MISSING_VALUE", 3, "weld_number"), { rowNumber: 3, columnName: "weld_number", severity: "blocker", code: "MISSING_VALUE", message: "MISSING_VALUE" })
+assert.deepEqual(spoolgenIssue("MISSING_VALUE", 3, "weld_number"), { rowNumber: 3, columnName: "weld_number", severity: "blocker", code: "MISSING_VALUE", message: "MISSING_VALUE", fileName: null })
+// An issue may name the file it was found in, and may be a warning rather than a blocker.
+assert.deepEqual(spoolgenIssue("MISSING_VALUE", 12, "spool_number", { fileName: "ISO-1001.pcf", severity: "warning" }), { rowNumber: 12, columnName: "spool_number", severity: "warning", code: "MISSING_VALUE", message: "MISSING_VALUE", fileName: "ISO-1001.pcf" })

@@ -37,7 +37,7 @@ function run() {
 
   // The stored row keeps the code as its text: the sentence is chosen on screen, not saved.
   assert.deepEqual(toStoredIssues(outcome.issues), [
-    { rowNumber: 1, columnName: "diameter_to_inch", severity: "blocker", code: "INVALID_RANGE", message: "INVALID_RANGE" },
+    { rowNumber: 1, columnName: "diameter_to_inch", severity: "blocker", code: "INVALID_RANGE", message: "INVALID_RANGE", fileName: null },
   ])
 
   console.log("All create-import.test.ts assertions passed!")

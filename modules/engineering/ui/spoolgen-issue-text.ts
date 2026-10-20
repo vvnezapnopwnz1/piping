@@ -9,6 +9,7 @@ export interface StoredSpoolgenIssueText {
   code: string
   columnName: string | null
   message: string
+  fileName?: string | null
 }
 
 /**

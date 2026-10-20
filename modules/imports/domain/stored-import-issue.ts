@@ -11,4 +11,6 @@ export interface StoredImportIssue {
   severity: ImportIssueSeverity
   code: string
   message: string
+  /** The file the issue was found in; null for a one-file import and for issues the server derives. */
+  fileName: string | null
 }

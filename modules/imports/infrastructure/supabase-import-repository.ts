@@ -172,7 +172,7 @@ export async function loadImportIssues(
 ): Promise<ImportIssue[]> {
   const { data, error } = await client
     .from("import_job_issues")
-    .select("row_number, column_name, severity, code, message")
+    .select("row_number, column_name, severity, code, message, file_name")
     .eq("job_id", jobId)
     .order("row_number", { ascending: true })
 
@@ -183,6 +183,7 @@ export async function loadImportIssues(
     severity: row.severity,
     code: row.code,
     message: row.message,
+    fileName: row.file_name ?? null,
   }))
 }
 

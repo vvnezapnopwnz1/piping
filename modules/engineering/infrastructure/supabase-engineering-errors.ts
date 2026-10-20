@@ -10,7 +10,7 @@ export function mapSupabaseEngineeringError(error: { code?: string; message?: st
     case "PQC22": return "Every revised spool and every weld inside a reworked spool needs a decision before this import can be applied."
     case "PQC23": return "That revision number already exists for this isometric. Choose another one."
     case "PQC24": return "This import is not in a state where that action is allowed."
-    case "PQC25": return "weld.txt is required before a SpoolGen import can be validated or applied."
+    case "PQC25": return "A weld file or a PCF file is required before a spooling import can be validated or applied."
     case "PQC26": return "The import still has blocking issues. Fix them in the source files and upload again."
     case "42501": return "You do not have permission to manage spooling data for this project."
     case "23505": return "That business number already exists in this project."

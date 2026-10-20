@@ -1382,6 +1382,7 @@ export type Database = {
           code: string
           column_name: string | null
           created_at: string
+          file_name: string | null
           id: string
           job_id: string
           message: string
@@ -1393,6 +1394,7 @@ export type Database = {
           code: string
           column_name?: string | null
           created_at?: string
+          file_name?: string | null
           id?: string
           job_id: string
           message: string
@@ -1403,6 +1405,7 @@ export type Database = {
           code?: string
           column_name?: string | null
           created_at?: string
+          file_name?: string | null
           id?: string
           job_id?: string
           message?: string
@@ -13148,7 +13151,7 @@ export type Database = {
         | "rework"
       revision_status: "draft" | "accepted" | "superseded"
       role_kind: "access" | "functional"
-      spoolgen_file_role: "weld" | "trace" | "bolt" | "supp"
+      spoolgen_file_role: "weld" | "trace" | "bolt" | "supp" | "pcf"
       system_reference_kind:
         | "material_type"
         | "film_quantity"
@@ -13360,7 +13363,7 @@ export const Constants = {
       ],
       revision_status: ["draft", "accepted", "superseded"],
       role_kind: ["access", "functional"],
-      spoolgen_file_role: ["weld", "trace", "bolt", "supp"],
+      spoolgen_file_role: ["weld", "trace", "bolt", "supp", "pcf"],
       system_reference_kind: [
         "material_type",
         "film_quantity",

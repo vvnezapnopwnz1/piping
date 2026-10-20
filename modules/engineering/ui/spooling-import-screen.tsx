@@ -91,9 +91,9 @@ export function SpoolingImportScreen({
       }
       const client = getSupabaseBrowserClient();
       const job = await createSpoolingImportJob(client, projectId, null);
-      for (const role of presentRoles) {
+      for (const [index, role] of presentRoles.entries()) {
         const file = files[role] as File;
-        const path = spoolingObjectPath(projectId, job.id, role);
+        const path = spoolingObjectPath(projectId, job.id, role, index, file.name);
         await uploadSpoolgenFile(client, path, file);
         await registerSpoolgenFile(
           client,

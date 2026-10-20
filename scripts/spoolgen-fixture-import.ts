@@ -123,6 +123,7 @@ export async function importSpoolgenDefinition(
       severity: issue.severity,
       code: issue.code,
       message: issue.message,
+      file_name: issue.fileName,
     })),
   })
   if (validation.error) throw new Error(validation.error.message)

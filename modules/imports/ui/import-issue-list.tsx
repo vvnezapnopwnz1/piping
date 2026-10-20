@@ -26,6 +26,7 @@ const SEVERITY_STYLE: Record<ImportIssueSeverity, string> = {
 /**
  * `StoredImportIssue` rows come from the SpoolGen import in `modules/engineering`, which still sends its
  * own sentence; they show it until that module moves to codes. Import validation never produces one.
+ * An import of many files names the file before the row: `ISO-1001.pcf · Row 12 · spool_number`.
  */
 export function ImportIssueList({ issues }: { issues: readonly (ImportRowIssue | StoredImportIssue)[] }) {
   const t = useTranslations("spooling")
@@ -48,6 +49,7 @@ export function ImportIssueList({ issues }: { issues: readonly (ImportRowIssue |
             className="bg-transparent"
           />
           <span className="font-mono text-xs">
+            {"fileName" in issue && issue.fileName ? `${issue.fileName} · ` : ""}
             {issue.rowNumber === null ? t("issueList.sheet") : t("issueList.row", { row: issue.rowNumber })}
             {issue.columnName ? ` · ${issue.columnName}` : ""}
           </span>

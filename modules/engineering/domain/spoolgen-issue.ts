@@ -27,10 +27,17 @@ export interface SpoolgenIssue {
   severity: ImportIssueSeverity
   code: SpoolgenIssueCode
   message: SpoolgenIssueCode
+  /** The file the problem is in, when the import has more than one of a kind (PCF, tables). */
+  fileName: string | null
 }
 
-export function spoolgenIssue(code: SpoolgenIssueCode, rowNumber: number | null, columnName: string | null): SpoolgenIssue {
-  return { rowNumber, columnName, severity: "blocker", code, message: code }
+export function spoolgenIssue(
+  code: SpoolgenIssueCode,
+  rowNumber: number | null,
+  columnName: string | null,
+  options: { fileName?: string | null; severity?: ImportIssueSeverity } = {},
+): SpoolgenIssue {
+  return { rowNumber, columnName, severity: options.severity ?? "blocker", code, message: code, fileName: options.fileName ?? null }
 }
 
 export function isSpoolgenIssueCode(value: string): value is SpoolgenIssueCode {

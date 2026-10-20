@@ -38,5 +38,6 @@ export function toStoredIssues(issues: readonly ImportRowIssue[]): StoredImportI
     severity: issue.severity,
     code: issue.code,
     message: issue.code,
+    fileName: null,
   }))
 }

@@ -99,7 +99,7 @@ async function run() {
     client,
     "job-1",
     [{ rowNumber: 1, rawValues: {}, normalizedValues: { ident_code: "ID-1" }, action: "create" }],
-    [{ rowNumber: 1, columnName: "ident_code", severity: "warning", code: "X", message: "m" }]
+    [{ rowNumber: 1, columnName: "ident_code", severity: "warning", code: "X", message: "m", fileName: null }]
   )
   const validated = rpcCalls.find((call) => call.name === "record_import_validation")
   assert.equal(validated!.args.target_job_id, "job-1")
