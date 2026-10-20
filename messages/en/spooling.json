@@ -96,7 +96,7 @@
     "ISO_MIXED_LINE": "The isometric carries more than one line number.",
     "ISO_MIXED_REVISION": "The isometric carries more than one revision number.",
     "FILE_EMPTY": "{file} is empty.",
-    "FILE_TOO_LARGE": "{file} is larger than the {limit} MB limit for SpoolGen files.",
+    "FILE_TOO_LARGE": "{file} is larger than the {limit} MB limit for one file.",
     "MISSING_REQUIRED_FILE": "{file} is required before a SpoolGen import can be validated.",
     "PCF_UNKNOWN_UNITS": "{file} could not be read: UNITS-BORE is missing or is not INCH, MM or INCH-SIXTEENTH.",
     "PCF_NO_WELDS": "{file} has no WELD block; welds not written as a WELD block are not read.",
@@ -105,15 +105,90 @@
     "DUPLICATE_FILE": "A file named {file} was added more than once."
   },
   "importScreen": {
-    "title": "SpoolGen import",
-    "files": "{count} of {total} files",
     "hint": "Upload the SpoolGen export. Only weld.txt is required; each file is limited to {limit} MB.",
     "replace": "Replace {file}",
     "validate": "Validate files",
     "jobCreated": "Job created. Review the decisions below before applying.",
-    "requiredFile": "weld.txt is required before a SpoolGen import can be validated.",
     "validated": "Validated {rows, plural, one {# row} other {# rows}}: {errors, plural, one {# error} other {# errors}}, {warnings, plural, one {# warning} other {# warnings}}.",
-    "failed": "The import could not be validated."
+    "failed": "The import could not be validated.",
+    "tooMany": "{count, plural, one {# file was} other {# files were}} not added: one import takes at most {limit} files."
+  },
+  "sources": {
+    "title": "Import spools and welds",
+    "choose": "Choose where the files come from.",
+    "unverified": "Set up from the documentation; not yet checked on a customer's file.",
+    "aveva": {
+      "hint": "PCF files from AVEVA E3D or PDMS, one per isometric."
+    },
+    "hexagon": {
+      "hint": "PCF files from Smart 3D or CADWorx, one per isometric."
+    },
+    "plant3d": {
+      "hint": "PCF files from AutoCAD Plant 3D, one per isometric."
+    },
+    "table": {
+      "hint": "A weld register in Excel or CSV, with materials, flange joints and supports in files of their own. Match the columns once and save them as a template."
+    },
+    "spoolgen": {
+      "hint": "The four SpoolGen text files: weld.txt is required, trace.txt, bolt.txt and supp.txt are optional."
+    }
+  },
+  "table": {
+    "hint": "The first sheet of a workbook is read, or the rows of a CSV or text file; the first row holds the headers. Only the weld file is required; each file is limited to {limit} MB.",
+    "role": {
+      "weld": "Welds: isometric, spool and weld",
+      "trace": "Materials and heat numbers",
+      "bolt": "Flange joints and bolting",
+      "supp": "Supports"
+    },
+    "choose": "Choose file",
+    "remove": "Remove {file}",
+    "mapColumns": "Match columns",
+    "readFailed": "{file} could not be read.",
+    "weldRequired": "Add the weld file to validate.",
+    "unmatched": "Match every required column before validating."
+  },
+  "mapping": {
+    "title": "Columns of {file}",
+    "hint": "Choose the column that holds each field. Fields marked * are required. Diameters are read in inches: a column in millimetres is not converted.",
+    "notInFile": "Not in the file",
+    "recheck": "Check again",
+    "fields": {
+      "iso_number": "Isometric number",
+      "revision_number": "Revision",
+      "pds_area": "PDS area",
+      "service_class": "Service class",
+      "line_number": "Line number",
+      "sheet_number": "Sheet number",
+      "spool_number": "Spool number",
+      "spool_weight_kg": "Spool weight, kg",
+      "material_class": "Material class",
+      "weld_number": "Weld number",
+      "weld_type": "Weld type",
+      "weld_location": "Shop or field",
+      "diameter_inch": "Diameter, inches",
+      "thickness_mm": "Wall thickness, mm",
+      "ident_code": "Ident code",
+      "description": "Description",
+      "quantity": "Quantity",
+      "unit": "Unit",
+      "trace_number": "Heat / trace number",
+      "flange_number": "Flange joint number",
+      "flange_rating": "Flange rating",
+      "bolt_size": "Bolt size",
+      "bolt_quantity": "Number of bolts",
+      "joint_type": "Joint type",
+      "support_number": "Support number",
+      "support_type": "Support type"
+    }
+  },
+  "templates": {
+    "label": "Template",
+    "name": "Template name",
+    "saveAs": "Save as template",
+    "saved": "Template \"{name}\" saved.",
+    "saveFailed": "The template could not be saved.",
+    "loadFailed": "The project's templates could not be loaded."
   },
   "revision": {
     "title": "Revision decisions",
@@ -178,7 +253,7 @@
     "browse": "Browse",
     "revisions": "Revision history",
     "selectBrowse": "Select a project to browse engineering data.",
-    "selectImport": "Select a project to import SpoolGen files.",
+    "selectImport": "Select a project to import spools and welds.",
     "selectRevisions": "Select a project to see revision history."
   }
 }

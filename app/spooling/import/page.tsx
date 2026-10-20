@@ -5,7 +5,7 @@ import { useCallback, useState } from "react"
 
 import { useOptionalAccess } from "@/modules/access/ui/access-context"
 import { RevisionWorkbench } from "@/modules/engineering/ui/revision-workbench"
-import { SpoolingImportScreen } from "@/modules/engineering/ui/spooling-import-screen"
+import { SpoolingImport } from "@/modules/engineering/ui/spooling-import"
 
 export default function SpoolingImportPage() {
   const t = useTranslations("spooling.pages")
@@ -24,7 +24,7 @@ export default function SpoolingImportPage() {
 
   return (
     <div className="space-y-4">
-      <SpoolingImportScreen projectId={projectId} canManage={canManage} onValidated={setJobId} />
+      <SpoolingImport projectId={projectId} canManage={canManage} onValidated={setJobId} />
       <RevisionWorkbench jobId={jobId} canManage={canManage} onApplied={onApplied} />
     </div>
   )

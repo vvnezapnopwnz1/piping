@@ -203,6 +203,8 @@ async function recordFabrication(browser: Browser, baseUrl: string, statePath: s
     console.log("📁 Navigating to Spooling / Import...")
     await gotoAndRecord(page, `${baseUrl}/spooling/import`, "Importing engineering 3D CAD & SpoolGen fabrication packages", timeline)
 
+    // The import screen opens on its source tiles; the four SpoolGen files are one of them.
+    await clickAndRecord(page.getByRole("button", { name: /^SpoolGen/ }), "Choosing the SpoolGen source", timeline)
     const demoDataDir = path.join(process.cwd(), "demo-data", "spoolgen")
     const fileInputs = page.locator('input[type="file"]')
     const files = [
