@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { SPOOLING_BUCKET, loadJobIssues, recordSpoolingValidation, spoolingObjectPath, toPreviewChangeItem } from "./supabase-engineering-repository"
+import { SPOOLING_BUCKET, SPOOLING_BUCKET_MEDIA_TYPES, loadJobIssues, recordSpoolingValidation, spoolingObjectPath, toPreviewChangeItem, uploadSpoolgenFile } from "./supabase-engineering-repository"
 
 assert.equal(SPOOLING_BUCKET, "project-spooling")
 // One folder per role; the index keeps many files of one role apart and the name is made safe for a storage key.
@@ -22,3 +22,17 @@ async function issuesKeepTheirFile() {
   assert.equal((await loadJobIssues(client, "j"))[0].fileName, "ISO-1001.pcf")
 }
 void issuesKeepTheirFile()
+
+// The browser takes a file's type from the OS: Linux calls a .pcf a font, Windows calls a .csv an Excel file. The
+// bucket refuses a type it does not list, so anything outside its list is uploaded as octet-stream.
+async function uploadTypeIsOneTheBucketTakes() {
+  const types: string[] = []
+  const client: any = { storage: { from: () => ({ upload: async (_path: string, _file: File, options: { contentType: string }) => { types.push(options.contentType); return { error: null } } }) } }
+  const xlsx = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  await uploadSpoolgenFile(client, "p/j/pcf/000-ISO-1.pcf", new File(["ISOGEN-FILES"], "ISO-1.pcf", { type: "application/x-font-pcf" }))
+  await uploadSpoolgenFile(client, "p/j/weld/000-welds.xlsx", new File(["x"], "welds.xlsx", { type: xlsx }))
+  await uploadSpoolgenFile(client, "p/j/pcf/001-ISO-2.pcf", new File(["ISOGEN-FILES"], "ISO-2.pcf"))
+  assert.deepEqual(types, ["application/octet-stream", xlsx, "application/octet-stream"])
+  assert.ok(SPOOLING_BUCKET_MEDIA_TYPES.includes(xlsx))
+}
+void uploadTypeIsOneTheBucketTakes()
