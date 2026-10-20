@@ -20,7 +20,7 @@ import {
 } from "../domain/spoolgen-file";
 import {
   computeFileChecksum,
-  readTextFile,
+  readSourceFile,
 } from "../infrastructure/spoolgen-file-reader";
 import {
   createSpoolingImportJob,
@@ -82,7 +82,7 @@ export function SpoolingImportScreen({
     try {
       const texts: Partial<Record<SpoolgenFileRole, string>> = {};
       for (const role of presentRoles)
-        texts[role] = await readTextFile(files[role] as File);
+        texts[role] = (await readSourceFile(files[role] as File)).text;
       const submission = buildSpoolgenSubmission(texts);
       if (!submission.canSubmit) {
         setIssues(submission.issues);
