@@ -1,5 +1,5 @@
 begin;
-select plan(12);
+select plan(13);
 
 -- A weld whose file gives no wall thickness takes it from the project's thickness rule for its service class
 -- and diameter. The file's thickness, when there is one, is kept. Every check, the preview and the apply read
@@ -130,5 +130,13 @@ select is(
   'with no rule to take it from, the staged thickness stays empty');
 
 reset role;
+
+-- Shape pin, like 124: every check reads spooling_staging, about twenty times per apply. A rule lookup per
+-- staged row let the planner evaluate engineering_numeric once per candidate rule of every weld (2-3.5 s per
+-- revalidate at 7,500 joints); the fill reads each class and diameter of the job once instead.
+select ok(
+  pg_get_functiondef('public.spooling_staging(uuid)'::regprocedure) ~* 'group by'
+  and pg_get_functiondef('public.spooling_staging(uuid)'::regprocedure) !~* 'join lateral',
+  'the fill looks up the rule once per class and diameter of the job, not once per staged row');
 select * from finish();
 rollback;
