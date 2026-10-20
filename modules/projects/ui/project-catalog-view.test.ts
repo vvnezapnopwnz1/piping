@@ -116,3 +116,15 @@ test("a project without a role says so in the open language", () => {
   assert.ok(renderIn("en", { projects: [noRole] }).includes("Project access"))
   assert.ok(renderIn("ru", { projects: [noRole] }).includes("Доступ к проекту"))
 })
+
+test("the create button appears only when the caller may create a project, in the open language", () => {
+  assert.ok(!render().includes("Create project"))
+  assert.ok(render({ onCreate() {} }).includes("Create project"))
+  assert.ok(renderIn("ru", { onCreate() {} }).includes("Создать проект"))
+})
+
+test("an account with no projects can still create one", () => {
+  const html = render({ projects: [], metadata: [], onCreate() {} })
+  assert.ok(html.includes("No active projects available"))
+  assert.ok(html.includes("Create project"))
+})

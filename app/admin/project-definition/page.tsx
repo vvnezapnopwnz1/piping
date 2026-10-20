@@ -14,26 +14,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSupabaseAuth } from "@/contexts/supabase-auth-context";
 import {
-  type ProjectCreationInput,
   type ProjectDefinition,
   type ProjectDefinitionInput,
-  validateProjectCreation,
   validateProjectDefinition,
 } from "@/lib/project-definition";
 import {
-  createProjectDefinition,
   loadProjectDefinition,
   saveProjectDefinition,
 } from "@/lib/supabase/project-definition";
@@ -42,6 +31,7 @@ import {
   getProjectLogoSignedUrl,
 } from "@/modules/project-setup/infrastructure/supabase-project-branding";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client";
+import { CreateProjectDialog } from "@/modules/projects/ui/create-project-dialog";
 import { formatDate } from "@/lib/utils";
 
 type ProjectDefinitionForm = Omit<
@@ -72,32 +62,12 @@ function toProjectDefinitionInput(
   };
 }
 
-type ProjectCreationForm = Omit<ProjectCreationInput, "maxTransitTimeDays"> & {
-  maxTransitTimeDays: string;
-};
-
-const emptyCreationForm: ProjectCreationForm = {
-  activityCode: "",
-  projectTitle: "",
-  owner: "",
-  contractor: "",
-  contractNumber: "",
-  maxTransitTimeDays: "1",
-};
-
 export default function ProjectDefinitionPage() {
   const t = useTranslations("projectSetup.projectDefinition");
 
-  const { access, user, reloadAccess, selectProject, synchronizeProjectDisplay } =
-    useSupabaseAuth();
+  const { access, synchronizeProjectDisplay } = useSupabaseAuth();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [createForm, setCreateForm] =
-    useState<ProjectCreationForm>(emptyCreationForm);
-  const [createErrors, setCreateErrors] = useState<
-    Partial<Record<keyof ProjectCreationInput, string>>
-  >({});
-  const [isCreating, setIsCreating] = useState(false);
 
   // Project creation is a platform-admin action: the INSERT policy on `projects` requires
   // `public.is_platform_admin()`, so showing the control to anyone else would only produce a
@@ -213,45 +183,6 @@ export default function ProjectDefinitionPage() {
       toast.error(t("unableToSave"));
     } finally {
       setIsSaving(false);
-    }
-  };
-
-  const handleCreateProject = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!user) return;
-
-    const validation = validateProjectCreation({
-      ...createForm,
-      maxTransitTimeDays: Number(createForm.maxTransitTimeDays),
-    });
-
-    if (!validation.isValid) {
-      setCreateErrors(validation.errors);
-      return;
-    }
-
-    setCreateErrors({});
-    setIsCreating(true);
-    try {
-      const created = await createProjectDefinition(
-        getSupabaseBrowserClient(),
-        user.id,
-        validation.value,
-      );
-      // The creator's Project Admin membership is written by the
-      // `projects_add_creator_as_admin` trigger, so the new project only becomes selectable
-      // after access is reloaded.
-      reloadAccess();
-      selectProject(created.id);
-      setIsCreateOpen(false);
-      setCreateForm(emptyCreationForm);
-      toast.success(t("created", { title: created.activityCode }));
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : t("unableToCreate"),
-      );
-    } finally {
-      setIsCreating(false);
     }
   };
 
@@ -409,141 +340,7 @@ export default function ProjectDefinitionPage() {
         </>
       ) : null}
 
-      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent>
-          <form onSubmit={handleCreateProject}>
-            <DialogHeader>
-              <DialogTitle>{t("createProject")}</DialogTitle>
-              <DialogDescription>
-                {t("createDialogDesc")}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-3">
-              <CreationField
-                id="cp-activity"
-                label={t("activityCode")}
-                placeholder={t("activityCodePlaceholder")}
-                value={createForm.activityCode}
-                error={createErrors.activityCode}
-                disabled={isCreating}
-                onChange={(value) =>
-                  setCreateForm((current) => ({
-                    ...current,
-                    activityCode: value.toUpperCase(),
-                  }))
-                }
-              />
-              <CreationField
-                id="cp-title"
-                label={t("projectTitle")}
-                placeholder={t("projectTitlePlaceholder")}
-                value={createForm.projectTitle}
-                error={createErrors.projectTitle}
-                disabled={isCreating}
-                onChange={(value) =>
-                  setCreateForm((current) => ({ ...current, projectTitle: value }))
-                }
-              />
-              <CreationField
-                id="cp-owner"
-                label={t("owner")}
-                placeholder={t("ownerPlaceholder")}
-                value={createForm.owner}
-                error={createErrors.owner}
-                disabled={isCreating}
-                onChange={(value) =>
-                  setCreateForm((current) => ({ ...current, owner: value }))
-                }
-              />
-              <CreationField
-                id="cp-contractor"
-                label={t("contractor")}
-                placeholder={t("contractorPlaceholder")}
-                value={createForm.contractor}
-                error={createErrors.contractor}
-                disabled={isCreating}
-                onChange={(value) =>
-                  setCreateForm((current) => ({ ...current, contractor: value }))
-                }
-              />
-              <CreationField
-                id="cp-contract-number"
-                label={t("contractNumberOptional")}
-                placeholder={t("contractNumberPlaceholder")}
-                value={createForm.contractNumber}
-                disabled={isCreating}
-                onChange={(value) =>
-                  setCreateForm((current) => ({ ...current, contractNumber: value }))
-                }
-              />
-              <CreationField
-                id="cp-transit"
-                label={t("maxTransitTimeDays")}
-                type="number"
-                value={createForm.maxTransitTimeDays}
-                error={createErrors.maxTransitTimeDays}
-                disabled={isCreating}
-                onChange={(value) =>
-                  setCreateForm((current) => ({
-                    ...current,
-                    maxTransitTimeDays: value,
-                  }))
-                }
-              />
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsCreateOpen(false)}
-                disabled={isCreating}
-              >
-                {t("cancel")}
-              </Button>
-              <Button type="submit" disabled={isCreating}>
-                {isCreating ? <SavingLabel text={t("saving")} /> : t("createProject")}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
-
-function CreationField({
-  id,
-  label,
-  value,
-  onChange,
-  disabled,
-  error,
-  placeholder,
-  type,
-}: {
-  id: string;
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  disabled: boolean;
-  error?: string;
-  placeholder?: string;
-  type?: string;
-}) {
-  return (
-    <div className="grid gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
-      <Input
-        id={id}
-        type={type}
-        min={type === "number" ? 1 : undefined}
-        value={value}
-        placeholder={placeholder}
-        disabled={disabled}
-        onChange={(event) => onChange(event.target.value)}
-        className={error ? "border-destructive" : ""}
-      />
-      {error ? <p className="text-xs text-destructive">{error}</p> : null}
+      <CreateProjectDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
     </div>
   );
 }

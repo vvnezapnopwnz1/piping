@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl"
 import * as React from "react"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 
 import { AccessPendingScreen } from "@/components/auth/access-pending-screen"
 import { AuthErrorScreen } from "@/components/auth/auth-error-screen"
@@ -65,6 +65,17 @@ function LoadingScreen() {
   )
 }
 
+// Demo stand: the shared platform admin starts with no project, so land on the catalog where it can create one.
+const IS_DEMO_STAND = Boolean(process.env.NEXT_PUBLIC_DEMO_AUTOLOGIN_EMAIL)
+
+function DemoCatalogRedirect() {
+  const router = useRouter()
+  React.useEffect(() => {
+    router.replace("/projects")
+  }, [router])
+  return <LoadingScreen />
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { accessState, error, access, signOut, user } = useSupabaseAuth()
   const pathname = usePathname()
@@ -77,7 +88,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     case "login":
       return <LoginScreen />
     case "access_pending":
-      return <AccessPendingScreen email={user?.email} onSignOut={signOut} />
+      return IS_DEMO_STAND ? (
+        <DemoCatalogRedirect />
+      ) : (
+        <AccessPendingScreen email={user?.email} onSignOut={signOut} />
+      )
     case "catalog":
       return <ProjectCatalogShell>{children}</ProjectCatalogShell>
     case "shell":

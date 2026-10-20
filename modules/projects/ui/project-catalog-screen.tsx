@@ -10,7 +10,11 @@ import {
   resolveProjectToOpen,
   type ProjectCatalogMetadata,
 } from "../domain/project-catalog"
-import { loadProjectCatalogMetadata } from "../infrastructure/supabase-project-catalog"
+import {
+  loadIsPlatformAdmin,
+  loadProjectCatalogMetadata,
+} from "../infrastructure/supabase-project-catalog"
+import { CreateProjectDialog } from "./create-project-dialog"
 import { ProjectCatalogView } from "./project-catalog-view"
 import styles from "./project-catalog.module.css"
 
@@ -20,6 +24,11 @@ export function ProjectCatalogScreen() {
   const [query, setQuery] = React.useState("")
   const [pendingId, setPendingId] = React.useState<string | null>(null)
   const [attempt, setAttempt] = React.useState(0)
+  const [isCreateOpen, setIsCreateOpen] = React.useState(false)
+  const [platformAdmin, setPlatformAdmin] = React.useState<{
+    userId: string
+    value: boolean
+  } | null>(null)
   const ids = React.useMemo(
     () => projectAccesses.map((project) => project.projectId),
     [projectAccesses],
@@ -51,6 +60,22 @@ export function ProjectCatalogScreen() {
     }
   }, [attempt, ids, scope])
 
+  // Only a platform admin may create a project (RLS on `projects` decides); a failed read just hides the button.
+  React.useEffect(() => {
+    if (!user) return
+    let cancelled = false
+    void loadIsPlatformAdmin(getSupabaseBrowserClient(), user.id).then(
+      (value) => {
+        if (!cancelled) setPlatformAdmin({ userId: user.id, value })
+      },
+      () => {},
+    )
+    return () => {
+      cancelled = true
+    }
+  }, [user])
+  const canCreate = platformAdmin?.userId === user?.id && platformAdmin?.value === true
+
   // Navigate only after the provider has committed the selected project and its scope.
   React.useEffect(() => {
     if (
@@ -81,6 +106,7 @@ export function ProjectCatalogScreen() {
         query={query}
         onQuery={setQuery}
         onRetry={() => setAttempt((value) => value + 1)}
+        onCreate={canCreate ? () => setIsCreateOpen(true) : undefined}
         onOpen={(id) => {
           // Returning keeps the open project; there is nothing to switch.
           if (access && id === access.projectId) {
@@ -92,6 +118,15 @@ export function ProjectCatalogScreen() {
           setPendingId(project.projectId)
           selectProject(project.projectId)
         }}
+      />
+      <CreateProjectDialog
+        open={isCreateOpen}
+        onOpenChange={setIsCreateOpen}
+        // A full navigation: the new project joins the access list only on a fresh load, and the
+        // address names it as the project to open, at the first setup step.
+        onCreated={(created) =>
+          window.location.assign(withProject("/admin", created.activityCode))
+        }
       />
     </main>
   )

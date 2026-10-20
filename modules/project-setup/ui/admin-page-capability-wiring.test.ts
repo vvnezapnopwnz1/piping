@@ -25,19 +25,24 @@ assert.ok(
 
 
 /**
- * Create Project lives on `/admin/project-definition`, which is where `/admin` already promises
- * it ("Create and configure the active project record") while the screen only ever loaded and
- * updated. The database has always allowed the insert — policy "authenticated users can create
- * projects" plus the `projects_add_creator_as_admin` trigger — and it is restricted to platform
- * administrators, so the control must be too.
+ * Create Project is offered on `/admin/project-definition`, which is where `/admin` already
+ * promises it ("Create and configure the active project record"), and on the project catalog.
+ * Both open the one `CreateProjectDialog`. The database has always allowed the insert — policy
+ * "authenticated users can create projects" plus the `projects_add_creator_as_admin` trigger —
+ * and it is restricted to platform administrators, so the control must be too.
  */
 const projectDefinitionPage = readFileSync(
   "app/admin/project-definition/page.tsx",
   "utf8",
 )
 
+const createProjectDialog = readFileSync(
+  "modules/projects/ui/create-project-dialog.tsx",
+  "utf8",
+)
+
 assert.ok(
-  projectDefinitionPage.includes("createProjectDefinition"),
+  projectDefinitionPage.includes("<CreateProjectDialog"),
   "the project definition page has no create path, so a project can still only be renamed into existence",
 )
 
@@ -47,7 +52,7 @@ assert.ok(
 )
 
 assert.ok(
-  /onSubmit=\{handleCreateProject\}/.test(projectDefinitionPage),
+  /onSubmit=\{handleSubmit\}/.test(createProjectDialog),
   "the Create Project dialog has no form wired to a submit handler",
 )
 
@@ -55,14 +60,14 @@ assert.ok(
 // session would hand the user a field the database is about to reject.
 assert.ok(
   /createProjectDefinition\(\s*getSupabaseBrowserClient\(\),\s*user\.id/.test(
-    projectDefinitionPage,
+    createProjectDialog,
   ),
   "the create call must pass the session user id as the creator, not a form value",
 )
 
 // A new membership only appears in the project selector after access is reloaded.
 assert.ok(
-  projectDefinitionPage.includes("reloadAccess"),
+  createProjectDialog.includes("reloadAccess"),
   "creating a project must reload access so the new project reaches the project selector",
 )
 

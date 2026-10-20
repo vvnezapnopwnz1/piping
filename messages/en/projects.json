@@ -6,6 +6,7 @@
     "placeholder": "Search projects, owners or contracts…"
   },
   "count": "{count} available to your account",
+  "create": "Create project",
   "error": {
     "text": "Project details could not be loaded. You can still open a project.",
     "retry": "Try again"

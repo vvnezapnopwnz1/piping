@@ -11,36 +11,64 @@ import { LocaleToggle } from "@/components/pipeqc/locale-switch"
 import { errorDetail } from "@/i18n/format"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 
+// Demo stand only. Both values are inlined into the public bundle at build time, so they must belong
+// to a throwaway account on an isolated Supabase project, never to a production one.
+const DEMO_EMAIL = process.env.NEXT_PUBLIC_DEMO_AUTOLOGIN_EMAIL
+const DEMO_PASSWORD = process.env.NEXT_PUBLIC_DEMO_AUTOLOGIN_PASSWORD
+
 export function LoginScreen() {
   const [email, setEmail] = React.useState("")
   const [password, setPassword] = React.useState("")
   const t = useTranslations("auth.login")
+  const tShell = useTranslations("shell")
   const [error, setError] = React.useState<{ title: string; detail?: string } | null>(null)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const [demoPending, setDemoPending] = React.useState(Boolean(DEMO_EMAIL && DEMO_PASSWORD))
+
+  const signIn = React.useCallback(
+    async (credentials: { email: string; password: string }) => {
+      setError(null)
+      setIsSubmitting(true)
+
+      try {
+        const { error: signInError } =
+          await getSupabaseBrowserClient().auth.signInWithPassword(credentials)
+
+        if (signInError) {
+          setError(
+            signInError.code === "invalid_credentials"
+              ? { title: t("invalidCredentials") }
+              : { title: t("failed"), detail: errorDetail(signInError) },
+          )
+        }
+      } catch (signInError) {
+        setError({ title: t("failed"), detail: errorDetail(signInError) })
+      } finally {
+        setIsSubmitting(false)
+      }
+    },
+    [t],
+  )
+
+  // One attempt per mount: if the demo account is rejected the manual form stays available.
+  const demoAttempted = React.useRef(false)
+  React.useEffect(() => {
+    if (!DEMO_EMAIL || !DEMO_PASSWORD || demoAttempted.current) return
+    demoAttempted.current = true
+    void signIn({ email: DEMO_EMAIL, password: DEMO_PASSWORD }).finally(() => setDemoPending(false))
+  }, [signIn])
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setError(null)
-    setIsSubmitting(true)
+    await signIn({ email, password })
+  }
 
-    try {
-      const { error: signInError } = await getSupabaseBrowserClient().auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (signInError) {
-        setError(
-          signInError.code === "invalid_credentials"
-            ? { title: t("invalidCredentials") }
-            : { title: t("failed"), detail: errorDetail(signInError) },
-        )
-      }
-    } catch (signInError) {
-      setError({ title: t("failed"), detail: errorDetail(signInError) })
-    } finally {
-      setIsSubmitting(false)
-    }
+  if (demoPending) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
+        <p className="text-sm text-muted-foreground">{tShell("loading")}</p>
+      </main>
+    )
   }
 
   return (

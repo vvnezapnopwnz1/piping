@@ -1,6 +1,6 @@
 import * as React from "react"
 import { useTranslations } from "next-intl"
-import { ArrowRight, Building2, CornerUpLeft, Search, ShieldCheck } from "lucide-react"
+import { ArrowRight, Building2, CornerUpLeft, Plus, Search, ShieldCheck } from "lucide-react"
 import type { ProjectAccessSummary } from "@/modules/access/infrastructure/supabase-access-repository"
 import {
   filterProjectCatalog,
@@ -19,6 +19,8 @@ export interface ProjectCatalogViewProps {
   onQuery: (query: string) => void
   onOpen: (id: string) => void
   onRetry: () => void
+  /** Present only for someone the database lets create a project. */
+  onCreate?: () => void
 }
 
 export function ProjectCatalogView({
@@ -32,6 +34,7 @@ export function ProjectCatalogView({
   onQuery,
   onOpen,
   onRetry,
+  onCreate,
 }: ProjectCatalogViewProps) {
   const t = useTranslations("projects")
   const tc = useTranslations("codes.accessRole")
@@ -59,6 +62,17 @@ export function ProjectCatalogView({
           />
         </label>
         <span className="catalog-count">{t("count", { count: projects.length })}</span>
+        {onCreate && (
+          <button
+            type="button"
+            className="catalog-open"
+            data-variant="primary"
+            onClick={onCreate}
+          >
+            <Plus aria-hidden="true" size={16} />
+            {t("create")}
+          </button>
+        )}
       </div>
       {detailsState === "error" && (
         <div className="catalog-error" role="alert">
