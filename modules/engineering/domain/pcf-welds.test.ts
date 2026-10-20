@@ -108,3 +108,36 @@ const master = pcfToWeldRecords(parsePcf([
   "WELD", "    MASTER-COMPONENT-IDENTIFIER 11", "    END-POINT 200 0 0 50", "    SKEY WW", "    REPEAT-WELD-IDENTIFIER 2",
 ].join("\n")), "ISO-9.pcf", { pdsArea: "PDS-A", settings: { ...DEFAULT_PCF_SETTINGS, weldTypeByCode: { BW: "BW-P", SW: "SW-P" } } })
 assert.deepEqual(master.records.map((record) => [record.values.weld_type, record.values.spool_number]), [["SW-P", "S-1"], ["BW-P", "S-1"]])
+
+// A weld looks only inside its own pipeline: a tie-in weld that opens L-2 borrows nothing from L-1, it takes L-2's values or misses them
+const tieIn = read([
+  "UNITS-BORE MM",
+  "PIPELINE-REFERENCE L-1", "    REVISION 1", "    PIPING-SPEC CS150",
+  "PIPE", "    END-POINT 0 0 0 100 BW", "    END-POINT 1000 0 0 100 BW", "    SPOOL-IDENTIFIER L1-S1",
+  "PIPELINE-REFERENCE L-2", "    REVISION 1", "    PIPING-SPEC SS300",
+  "WELD", "    END-POINT 1000 0 0 100", "    SKEY WS", "    REPEAT-WELD-IDENTIFIER T1",
+].join("\n"), { isoNumberFrom: "pipelineReference" })
+assert.deepEqual(["iso_number", "line_number", "spool_number", "service_class", "weld_type", "diameter_inch"].map((key) => tieIn.records[0].values[key]), ["L-2", "L-2", "", "SS300", "", "4"])
+assert.deepEqual(tieIn.issues, [at("MISSING_VALUE", 12, "spool_number"), at("MISSING_VALUE", 12, "weld_type")])
+// Component identifiers may restart in each pipeline: the master is found in the weld's own pipeline
+const restarted = read([
+  "UNITS-BORE MM",
+  "PIPELINE-REFERENCE L-1", "    REVISION 0", "    PIPING-SPEC CS150",
+  "PIPE", "    COMPONENT-IDENTIFIER 1", "    END-POINT 0 0 0 50 SW", "    END-POINT 100 0 0 50 SW", "    SPOOL-IDENTIFIER S-1",
+  "PIPELINE-REFERENCE L-2", "    REVISION 0", "    PIPING-SPEC CS150",
+  "ELBOW", "    COMPONENT-IDENTIFIER 2", "    END-POINT 500 0 0 80 BW", "    END-POINT 600 0 0 80 BW", "    SPOOL-IDENTIFIER S-2",
+  "PIPE", "    COMPONENT-IDENTIFIER 1", "    END-POINT 600 0 0 80 BW", "    END-POINT 900 0 0 80 BW",
+  "WELD", "    MASTER-COMPONENT-IDENTIFIER 1", "    END-POINT 600 0 0", "    SKEY WW", "    REPEAT-WELD-IDENTIFIER 7",
+].join("\n"))
+assert.deepEqual(restarted.issues, [])
+assert.deepEqual(["weld_type", "diameter_inch", "spool_number", "line_number"].map((key) => restarted.records[0].values[key]), ["BW", "3", "S-2", "L-2"])
+
+// A weld with no bore takes the bore of its part's end at the weld; a part whose ends differ never lends its first end
+const reducer = read([
+  "UNITS-BORE MM", "PIPELINE-REFERENCE L-1", "    REVISION 0", "    PIPING-SPEC CS150",
+  "REDUCER-CONCENTRIC", "    END-POINT 0 0 0 100 BW", "    END-POINT 200 0 0 50 BW", "    SKEY RCBW", "    SPOOL-IDENTIFIER S-1",
+  "WELD", "    END-POINT 300 0 0", "    SKEY WW", "    REPEAT-WELD-IDENTIFIER 1",
+  "WELD", "    END-POINT 200 0 0", "    SKEY WW", "    REPEAT-WELD-IDENTIFIER 2",
+].join("\n"))
+assert.deepEqual(reducer.records.map((record) => [record.values.weld_number, record.values.weld_type, record.values.diameter_inch]), [["1", "BW", ""], ["2", "BW", "2"]])
+assert.deepEqual(reducer.issues, [at("MISSING_VALUE", 10, "diameter_inch")])

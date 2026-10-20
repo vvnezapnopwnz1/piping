@@ -98,9 +98,9 @@
     "FILE_EMPTY": "Файл {file} пуст.",
     "FILE_TOO_LARGE": "Файл {file} больше допустимых {limit} МБ для файлов SpoolGen.",
     "MISSING_REQUIRED_FILE": "Без файла {file} импорт SpoolGen проверить нельзя.",
-    "PCF_UNKNOWN_UNITS": "Не удалось прочитать {file}: в UNITS-BORE указано не INCH, MM или INCH-SIXTEENTH.",
+    "PCF_UNKNOWN_UNITS": "Не удалось прочитать файл {file}: UNITS-BORE не задан или не равен INCH, MM или INCH-SIXTEENTH.",
     "PCF_NO_WELDS": "В файле {file} нет ни одного блока WELD; стыки без блока WELD не читаются.",
-    "PCF_BORE_UNKNOWN": "Диаметр стыка в миллиметрах не стандартный DN, в дюймы он не переводится.",
+    "PCF_BORE_UNKNOWN": "Диаметр стыка в миллиметрах не входит в ряд стандартных DN, поэтому его нельзя перевести в дюймы.",
     "PCF_SPOOL_FROM_FILE_NAME": "В файле {file} нет SPOOL-IDENTIFIER: все его стыки отнесены к одной катушке, названной по имени файла.",
     "DUPLICATE_FILE": "Файл с именем {file} добавлен больше одного раза."
   },

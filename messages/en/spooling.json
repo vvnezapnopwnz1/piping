@@ -98,7 +98,7 @@
     "FILE_EMPTY": "{file} is empty.",
     "FILE_TOO_LARGE": "{file} is larger than the {limit} MB limit for SpoolGen files.",
     "MISSING_REQUIRED_FILE": "{file} is required before a SpoolGen import can be validated.",
-    "PCF_UNKNOWN_UNITS": "Could not read {file}: its UNITS-BORE is not INCH, MM or INCH-SIXTEENTH.",
+    "PCF_UNKNOWN_UNITS": "{file} could not be read: UNITS-BORE is missing or is not INCH, MM or INCH-SIXTEENTH.",
     "PCF_NO_WELDS": "{file} has no WELD block; welds not written as a WELD block are not read.",
     "PCF_BORE_UNKNOWN": "The weld's bore in millimetres is not a standard DN, so it has no size in inches.",
     "PCF_SPOOL_FROM_FILE_NAME": "{file} has no SPOOL-IDENTIFIER: all its welds are put in one spool named after the file.",
