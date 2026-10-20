@@ -10,10 +10,7 @@ import {
   resolveProjectToOpen,
   type ProjectCatalogMetadata,
 } from "../domain/project-catalog"
-import {
-  loadIsPlatformAdmin,
-  loadProjectCatalogMetadata,
-} from "../infrastructure/supabase-project-catalog"
+import { loadProjectCatalogMetadata } from "../infrastructure/supabase-project-catalog"
 import { CreateProjectDialog } from "./create-project-dialog"
 import { ProjectCatalogView } from "./project-catalog-view"
 import styles from "./project-catalog.module.css"
@@ -25,10 +22,6 @@ export function ProjectCatalogScreen() {
   const [pendingId, setPendingId] = React.useState<string | null>(null)
   const [attempt, setAttempt] = React.useState(0)
   const [isCreateOpen, setIsCreateOpen] = React.useState(false)
-  const [platformAdmin, setPlatformAdmin] = React.useState<{
-    userId: string
-    value: boolean
-  } | null>(null)
   const ids = React.useMemo(
     () => projectAccesses.map((project) => project.projectId),
     [projectAccesses],
@@ -60,21 +53,9 @@ export function ProjectCatalogScreen() {
     }
   }, [attempt, ids, scope])
 
-  // Only a platform admin may create a project (RLS on `projects` decides); a failed read just hides the button.
-  React.useEffect(() => {
-    if (!user) return
-    let cancelled = false
-    void loadIsPlatformAdmin(getSupabaseBrowserClient(), user.id).then(
-      (value) => {
-        if (!cancelled) setPlatformAdmin({ userId: user.id, value })
-      },
-      () => {},
-    )
-    return () => {
-      cancelled = true
-    }
-  }, [user])
-  const canCreate = platformAdmin?.userId === user?.id && platformAdmin?.value === true
+  // Only a platform admin may create a project (RLS on `projects` decides). The flag arrives with
+  // every project the server lists, so an account that sees no project has no button.
+  const canCreate = projectAccesses.some((project) => project.isPlatformAdmin)
 
   // Navigate only after the provider has committed the selected project and its scope.
   React.useEffect(() => {

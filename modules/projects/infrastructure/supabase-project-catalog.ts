@@ -14,17 +14,3 @@ export async function loadProjectCatalogMetadata(
   if (error) throw new Error("Project details could not be loaded.")
   return data ?? []
 }
-
-/** Whether the signed-in user may create projects: the flag the INSERT policy on `projects` checks. */
-export async function loadIsPlatformAdmin(
-  client: SupabaseClient<Database>,
-  userId: string,
-): Promise<boolean> {
-  const { data, error } = await client
-    .from("profiles")
-    .select("is_platform_admin")
-    .eq("id", userId)
-    .maybeSingle()
-  if (error) throw new Error("Platform admin status could not be loaded.")
-  return data?.is_platform_admin === true
-}
