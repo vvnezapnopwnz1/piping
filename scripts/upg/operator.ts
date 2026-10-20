@@ -4,6 +4,7 @@ import { join } from "node:path"
 
 import type { Database } from "../../lib/supabase/database.types"
 import { assertHostedSupabaseTarget } from "../demo/hosted-target"
+import { assertPublicDemoSupabaseTarget } from "../demo/public-demo-target"
 import { hostedAdminKeyFromEnvironment } from "../prepare-hosted-demo"
 import { isLocalhost } from "../spoolgen-fixture-import"
 import { UPG_FIXTURE_DIR } from "./files"
@@ -11,19 +12,23 @@ import { UPG_FIXTURE_DIR } from "./files"
 /** The account that creates UPG-1 in the UI, and so its project admin. */
 export const UPG_OPERATOR_EMAIL = "track01.platform-admin@example.test"
 
-export type UpgTarget = "local" | "hosted"
+export type UpgTarget = "local" | "hosted" | "demo"
 
 export const UPG_HOSTED_CONFIRMATION = "--confirm-hosted-upg"
+export const UPG_DEMO_CONFIRMATION = "--confirm-demo-upg"
 
 export interface UpgEnv {
   readonly url: string
   readonly publishableKey: string
   readonly password: string
   readonly serviceRoleKey: string
+  /** The account the commands run as: the UPG operator locally and on app., the shared demo admin on the public demo. */
+  readonly operatorEmail: string
   readonly target: UpgTarget
 }
 
 export function upgTargetFromArgv(argv: readonly string[]): UpgTarget {
+  if (argv.includes(UPG_DEMO_CONFIRMATION)) return "demo"
   return argv.includes(UPG_HOSTED_CONFIRMATION) ? "hosted" : "local"
 }
 
@@ -31,6 +36,25 @@ export function readUpgEnv(
   env: NodeJS.ProcessEnv = process.env,
   target: UpgTarget = "local",
 ): UpgEnv {
+  if (target === "demo") {
+    const url = assertPublicDemoSupabaseTarget(env.SUPABASE_URL ?? "").origin
+    const serviceRoleKey = (env.SUPABASE_SECRET_KEY || env.SUPABASE_SERVICE_ROLE_KEY || "").trim()
+    const publishableKey = env.SUPABASE_PUBLISHABLE_KEY?.trim() ?? ""
+    const operatorEmail = env.PIPEQC_DEMO_EMAIL?.trim() ?? ""
+    const password = env.PIPEQC_DEMO_PASSWORD ?? ""
+
+    const missing: string[] = []
+    if (!serviceRoleKey) missing.push("SUPABASE_SECRET_KEY")
+    if (!publishableKey) missing.push("SUPABASE_PUBLISHABLE_KEY")
+    if (!operatorEmail) missing.push("PIPEQC_DEMO_EMAIL")
+    if (!password) missing.push("PIPEQC_DEMO_PASSWORD")
+    if (missing.length > 0) {
+      throw new Error(`${missing.join(", ")} must be set in the demo server environment.`)
+    }
+
+    return { url, publishableKey, password, serviceRoleKey, operatorEmail, target }
+  }
+
   if (target === "hosted") {
     const targetUrl = assertHostedSupabaseTarget(env.SUPABASE_URL ?? "")
     const url = targetUrl.origin
@@ -49,7 +73,7 @@ export function readUpgEnv(
       )
     }
 
-    return { url, publishableKey, password, serviceRoleKey, target }
+    return { url, publishableKey, password, serviceRoleKey, operatorEmail: UPG_OPERATOR_EMAIL, target }
   }
 
   const url = env.SUPABASE_URL ?? ""
@@ -60,13 +84,13 @@ export function readUpgEnv(
   if (!publishableKey || !password || !serviceRoleKey) {
     throw new Error("SUPABASE_SERVICE_ROLE_KEY, a publishable key and TRACK01_FIXTURE_PASSWORD must be set in .env.local.")
   }
-  return { url, publishableKey, password, serviceRoleKey, target }
+  return { url, publishableKey, password, serviceRoleKey, operatorEmail: UPG_OPERATOR_EMAIL, target }
 }
 
 export async function signInOperator(env: UpgEnv): Promise<SupabaseClient<Database>> {
   const client = createClient<Database>(env.url, env.publishableKey, { auth: { persistSession: false } })
-  const { error } = await client.auth.signInWithPassword({ email: UPG_OPERATOR_EMAIL, password: env.password })
-  if (error) throw new Error(`Could not sign in as ${UPG_OPERATOR_EMAIL}: ${error.message}`)
+  const { error } = await client.auth.signInWithPassword({ email: env.operatorEmail, password: env.password })
+  if (error) throw new Error(`Could not sign in as ${env.operatorEmail}: ${error.message}`)
   return client
 }
 

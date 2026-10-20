@@ -139,8 +139,8 @@ export async function loadUpgProject(env: UpgEnv, options: { createProject: bool
 if (process.argv[1]?.endsWith("load-project.ts")) {
   const target = upgTargetFromArgv(process.argv)
   const env = readUpgEnv(process.env, target)
-  if (target === "hosted") {
-    console.log(`Target: ${env.url} (hosted)`)
+  if (target !== "local") {
+    console.log(`Target: ${env.url} (${target})`)
   }
   loadUpgProject(env, { createProject: process.argv.includes("--create-project") }).catch((error: unknown) => {
     console.error(error instanceof Error ? error.message : String(error))

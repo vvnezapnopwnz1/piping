@@ -43,6 +43,9 @@
     "demo:project-setup:hosted": "tsx scripts/upg/setup-references.ts",
     "demo:project-load:hosted": "tsx scripts/upg/load-project.ts",
     "demo:week:hosted": "tsx scripts/upg/run-week.ts",
+    "demo:project-setup:demo": "tsx scripts/upg/setup-references.ts --confirm-demo-upg",
+    "demo:project-load:demo": "tsx scripts/upg/load-project.ts --confirm-demo-upg",
+    "demo:week:demo": "tsx scripts/upg/run-week.ts --confirm-demo-upg",
     "demo:time-import": "tsx --env-file-if-exists=.env.local scripts/upg/time-import.ts",
     "demo:read-timings": "tsx --env-file-if-exists=.env.local scripts/upg/time-reads.ts",
     "demo:read-timings:hosted": "tsx scripts/upg/time-reads.ts --confirm-hosted-upg"

@@ -12,8 +12,10 @@ import { join } from "node:path"
 
 import { assertHostedSupabaseTarget } from "../demo/hosted-target"
 import { assertLocalSupabaseTarget } from "../demo/local-target"
+import { assertPublicDemoSupabaseTarget } from "../demo/public-demo-target"
 import {
   createHostedSupabaseDemoStandCore,
+  createPublicDemoSupabaseDemoStandCore,
   createSupabaseDemoStandCore,
 } from "../demo/supabase-demo-stand"
 import { UPG_PROJECT } from "./dataset"
@@ -37,6 +39,17 @@ async function projectIdOf(env: ServiceEnv, projectCode: string): Promise<string
 
 export async function prepareUpgReferences(env: ServiceEnv, projectCode: string): Promise<void> {
   const target = env.target ?? "local"
+  if (target === "demo") {
+    // The public demo holds no TRACK01 fixture, so the golden-project path cannot run there.
+    assertPublicDemoSupabaseTarget(env.url)
+    const projectId = await projectIdOf(env, projectCode)
+    await createPublicDemoSupabaseDemoStandCore(env.url, env.serviceRoleKey).prepareStandaloneProjectReferences(
+      projectId,
+      UPG_REFERENCES,
+      new Date(),
+    )
+    return
+  }
   if (target === "hosted") {
     assertHostedSupabaseTarget(env.url)
   } else {
@@ -62,8 +75,8 @@ function argument(name: string): string | undefined {
 async function main(): Promise<void> {
   const target = upgTargetFromArgv(process.argv)
   const env = readUpgEnv(process.env, target)
-  if (target === "hosted") {
-    console.log(`Target: ${env.url} (hosted)`)
+  if (target !== "local") {
+    console.log(`Target: ${env.url} (${target})`)
   }
   const projectCode = argument("--project") ?? UPG_PROJECT.activityCode
   const phase = argument("--phase")

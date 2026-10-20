@@ -32,8 +32,8 @@ async function main(): Promise<number> {
   const projectCode = argument("--project") ?? UPG_PROJECT.activityCode
   const target = upgTargetFromArgv(process.argv)
   const env = readUpgEnv(process.env, target)
-  if (target === "hosted") {
-    console.log(`Target: ${env.url} (hosted)`)
+  if (target !== "local") {
+    console.log(`Target: ${env.url} (${target})`)
   }
   const client = await signInOperator(env)
   const projectId = await findProjectId(client, projectCode)

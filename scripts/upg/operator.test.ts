@@ -2,9 +2,11 @@ import assert from "node:assert/strict"
 import test from "node:test"
 
 import { PIPEQC_HOSTED_DEMO_ORIGIN } from "../demo/hosted-target"
+import { PIPEQC_PUBLIC_DEMO_ORIGIN } from "../demo/public-demo-target"
 import {
   readUpgEnv,
   upgTargetFromArgv,
+  UPG_DEMO_CONFIRMATION,
   UPG_HOSTED_CONFIRMATION,
 } from "./operator"
 
@@ -117,3 +119,42 @@ test("running without confirmation flag against KZ variables refuses as non-loca
   )
 })
 
+
+const demo = {
+  SUPABASE_URL: PIPEQC_PUBLIC_DEMO_ORIGIN,
+  SUPABASE_PUBLISHABLE_KEY: "demo-publishable-key",
+  SUPABASE_SECRET_KEY: "demo-secret-key",
+  PIPEQC_DEMO_EMAIL: "demo@example.test",
+  PIPEQC_DEMO_PASSWORD: "demo-password-value",
+} as unknown as NodeJS.ProcessEnv
+
+test("demo target runs as the shared demo admin on the public demo origin only", () => {
+  const env = readUpgEnv(demo, "demo")
+  assert.equal(env.url, PIPEQC_PUBLIC_DEMO_ORIGIN)
+  assert.equal(env.operatorEmail, "demo@example.test")
+
+  for (const url of [PIPEQC_HOSTED_DEMO_ORIGIN, "https://app.piping-qc-work.shop", "http://127.0.0.1:54321"]) {
+    assert.throws(
+      () => readUpgEnv({ ...demo, SUPABASE_URL: url } as unknown as NodeJS.ProcessEnv, "demo"),
+      /PipeQC public demo/,
+      url,
+    )
+  }
+})
+
+test("the app and local targets keep the UPG operator account", () => {
+  assert.equal(readUpgEnv(local).operatorEmail, "track01.platform-admin@example.test")
+  assert.equal(readUpgEnv(hosted, "hosted").operatorEmail, "track01.platform-admin@example.test")
+})
+
+test("missing demo variables are named, never echoed", () => {
+  assert.throws(
+    () => readUpgEnv({ ...demo, PIPEQC_DEMO_PASSWORD: "" } as unknown as NodeJS.ProcessEnv, "demo"),
+    (error: Error) => error.message.includes("PIPEQC_DEMO_PASSWORD") && !error.message.includes("demo-secret-key"),
+  )
+})
+
+test("the demo target needs its own exact flag", () => {
+  assert.equal(upgTargetFromArgv(["--week", "1", UPG_DEMO_CONFIRMATION]), "demo")
+  assert.equal(upgTargetFromArgv(["--confirm-demo"]), "local")
+})

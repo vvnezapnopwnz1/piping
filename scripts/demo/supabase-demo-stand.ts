@@ -27,6 +27,7 @@ import {
 } from "./manifest"
 import { assertLocalSupabaseTarget } from "./local-target"
 import { assertHostedSupabaseTarget } from "./hosted-target"
+import { assertPublicDemoSupabaseTarget } from "./public-demo-target"
 import type {
   DemoSpoolgenSnapshot,
   DemoStandSnapshot,
@@ -2857,6 +2858,34 @@ export class SupabaseDemoStandCore {
   }
 
 
+  /**
+   * Referentials for an example project on a stand with no TRACK01 fixture (the public demo): the
+   * system entries and rules the plan names, then the project's own families. Nothing here refers to
+   * a golden-project membership, so the scope and device families are left out.
+   */
+  async prepareStandaloneProjectReferences(
+    targetProjectId: string,
+    references: DemoReferences,
+    preparedOn: Date,
+  ): Promise<void> {
+    const unused = "unused-without-a-golden-project"
+    const plan = buildDemoReferencePlan(
+      {
+        goldenProjectId: targetProjectId,
+        membershipIds: { projectAdminA: unused, qcEditor: unused, ndeSubcontractor: unused },
+      },
+      preparedOn,
+      targetProjectId,
+      references,
+    )
+    await this.reconcileReferenceBatches(systemReferenceBatches(plan))
+    await this.reconcileReferenceBatches(
+      projectReferenceBatches({ ...plan, project_device_users: [] }).filter(
+        (batch) => batch.rows.length > 0,
+      ),
+    )
+  }
+
   // Resolves the ids of every manifest user `resolveShowcasePrerequisiteIds` needs: the
   // golden-project reference memberships plus any user with a SHOWCASE-1 membership.
   private async resolveShowcaseUserIds(): Promise<void> {
@@ -5503,6 +5532,18 @@ const createGateway: DemoAdminGatewayFactory = (
   new SupabaseAdminGateway(
     createClient<Database>(url, serviceRoleKey, options),
   )
+
+export function createPublicDemoSupabaseDemoStandCore(
+  url: string,
+  serviceRoleKey: string,
+): SupabaseDemoStandCore {
+  return createSupabaseDemoStandCore(
+    url,
+    serviceRoleKey,
+    createGateway,
+    assertPublicDemoSupabaseTarget,
+  )
+}
 
 export function createSupabaseDemoStandCore(
   url: string,
