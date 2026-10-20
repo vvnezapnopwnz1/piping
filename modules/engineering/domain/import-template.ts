@@ -1,3 +1,5 @@
+import { isSpoolgenFileRole, type SpoolgenFileRole } from "./spoolgen-file"
+
 /** Where a weld is made, spelled the way the server stores it. */
 export type WeldLocation = "shop" | "assembly" | "field"
 
@@ -23,4 +25,108 @@ export const DEFAULT_PCF_SETTINGS: PcfTemplateSettings = {
   serviceClassBySpec: {},
   isoNumberFrom: "fileName",
   defaultRevision: null,
+}
+
+/** The tiles of the import screen, in order: three PCF sources, an Excel/CSV table, and the four fixed SpoolGen files. */
+export const IMPORT_SOURCE_IDS = ["aveva", "hexagon", "plant3d", "table", "spoolgen"] as const
+export type ImportSourceId = (typeof IMPORT_SOURCE_IDS)[number]
+
+export function isImportSourceId(value: string): value is ImportSourceId {
+  return (IMPORT_SOURCE_IDS as readonly string[]).includes(value)
+}
+
+/** Which column of a file holds which contract field, per file role: contract key → the file's header. */
+export interface TableTemplateSettings {
+  kind: "table"
+  columns: Partial<Record<SpoolgenFileRole, Record<string, string>>>
+}
+
+export type ImportTemplateSettings = PcfTemplateSettings | TableTemplateSettings
+
+/** A template as the import screen uses it. `id` is null for a built-in preset, which has no row. */
+export interface ImportTemplate {
+  id: string | null
+  source: ImportSourceId
+  name: string
+  settings: ImportTemplateSettings
+}
+
+/** The project's active codes a template or a drop-down can name. */
+export interface ImportReferences {
+  pdsAreas: string[]
+  serviceClasses: string[]
+  weldTypes: string[]
+}
+
+/** The kind of settings a source takes: the PCF sources read keywords, the others read columns. */
+export function templateKindOf(source: ImportSourceId): ImportTemplateSettings["kind"] {
+  return source === "aveva" || source === "hexagon" || source === "plant3d" ? "pcf" : "table"
+}
+
+const pcfPreset = (): PcfTemplateSettings => structuredClone(DEFAULT_PCF_SETTINGS)
+
+/**
+ * One per source, in the order of the tiles. Product names, not words, so they need no translation. The three
+ * PCF presets share the defaults until a real file from a customer shows how the systems differ.
+ */
+export const BUILT_IN_TEMPLATES: readonly ImportTemplate[] = [
+  { id: null, source: "aveva", name: "AVEVA E3D / PDMS", settings: pcfPreset() },
+  { id: null, source: "hexagon", name: "Smart 3D / CADWorx", settings: pcfPreset() },
+  { id: null, source: "plant3d", name: "Plant 3D", settings: pcfPreset() },
+  { id: null, source: "table", name: "Excel / CSV", settings: { kind: "table", columns: {} } },
+  { id: null, source: "spoolgen", name: "SpoolGen", settings: { kind: "table", columns: {} } },
+]
+
+const WELD_LOCATIONS: readonly string[] = ["shop", "assembly", "field"]
+const ISO_NUMBER_SOURCES: readonly string[] = ["fileName", "pipelineReference"]
+
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value)
+
+/** A map of strings to strings whose keys go through `key`, or null when it is not one. `fromEntries` keeps a key like __proto__ a plain key. */
+function stringMap(value: unknown, key: (name: string) => string, allowed?: readonly string[]): Record<string, string> | null {
+  if (!isRecord(value)) return null
+  const entries = Object.entries(value)
+  if (!entries.every(([, entry]) => typeof entry === "string" && (allowed === undefined || allowed.includes(entry)))) return null
+  return Object.fromEntries(entries.map(([name, entry]) => [key(name), entry as string]))
+}
+
+const asIs = (name: string) => name
+const upper = (name: string) => name.toUpperCase()
+
+function parseTableSettings(value: Record<string, unknown>): TableTemplateSettings | null {
+  if (value.columns === undefined) return { kind: "table", columns: {} }
+  if (!isRecord(value.columns)) return null
+  const columns: TableTemplateSettings["columns"] = {}
+  for (const [role, headers] of Object.entries(value.columns)) {
+    const map = stringMap(headers, asIs)
+    if (map === null || !isSpoolgenFileRole(role)) return null
+    columns[role] = map
+  }
+  return { kind: "table", columns }
+}
+
+function parsePcfSettings(value: Record<string, unknown>): PcfTemplateSettings | null {
+  const defaults = pcfPreset()
+  const weldLocationBySkey = value.weldLocationBySkey === undefined ? defaults.weldLocationBySkey : stringMap(value.weldLocationBySkey, upper, WELD_LOCATIONS)
+  const weldTypeByCode = value.weldTypeByCode === undefined ? defaults.weldTypeByCode : stringMap(value.weldTypeByCode, upper)
+  const serviceClassBySpec = value.serviceClassBySpec === undefined ? defaults.serviceClassBySpec : stringMap(value.serviceClassBySpec, asIs)
+  const isoNumberFrom = value.isoNumberFrom === undefined ? defaults.isoNumberFrom : value.isoNumberFrom
+  const defaultRevision = value.defaultRevision === undefined ? defaults.defaultRevision : value.defaultRevision
+  if (weldLocationBySkey === null || weldTypeByCode === null || serviceClassBySpec === null) return null
+  if (typeof isoNumberFrom !== "string" || !ISO_NUMBER_SOURCES.includes(isoNumberFrom)) return null
+  if (defaultRevision !== null && typeof defaultRevision !== "string") return null
+  return { kind: "pcf", weldLocationBySkey: weldLocationBySkey as PcfTemplateSettings["weldLocationBySkey"], weldTypeByCode, serviceClassBySpec, isoNumberFrom: isoNumberFrom as PcfTemplateSettings["isoNumberFrom"], defaultRevision }
+}
+
+/**
+ * Settings read back from the database, or null when they are not a template. The shape is checked strictly
+ * (every value a string, a role or a word the import knows); a PCF template fills what it omits from the
+ * defaults. SKEY and weld-type keys are upper-cased because the weld derivation looks them up in upper case;
+ * PIPING-SPEC keys stay as written.
+ */
+export function parseTemplateSettings(value: unknown): ImportTemplateSettings | null {
+  if (!isRecord(value)) return null
+  if (value.kind === "table") return parseTableSettings(value)
+  if (value.kind === "pcf") return parsePcfSettings(value)
+  return null
 }
