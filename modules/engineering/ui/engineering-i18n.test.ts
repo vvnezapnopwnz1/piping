@@ -54,6 +54,15 @@ test("file issues name the file and the limit", () => {
   assert.match(describeSpoolgenIssue(t, { code: "FILE_TOO_LARGE", columnName: "trace", message: "FILE_TOO_LARGE" }), /trace\.txt.*4/)
 })
 
+test("an issue about one PCF file names that file", () => {
+  for (const locale of ["en", "ru"] as const) {
+    const t = createTranslator({ locale, messages: messagesFor(locale), namespace: "spooling" })
+    for (const code of ["PCF_UNKNOWN_UNITS", "PCF_NO_WELDS", "PCF_SPOOL_FROM_FILE_NAME", "DUPLICATE_FILE"]) {
+      assert.match(describeSpoolgenIssue(t, { code, columnName: null, message: code, fileName: "ISO-1001.pcf" }), /ISO-1001\.pcf/, `${locale} ${code}`)
+    }
+  }
+})
+
 test("the Russian plural of unresolved items counts one, few and many", () => {
   const t = createTranslator({ locale: "ru", messages: messagesFor("ru"), namespace: "spooling" })
   const text = (count: number) => describeRevisionReason(t, { code: "unresolved", count })

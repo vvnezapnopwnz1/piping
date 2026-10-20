@@ -2,8 +2,8 @@ import type { SpoolingTranslator } from "@/modules/imports/ui/spooling-translato
 import { SPOOLGEN_MAX_FILE_BYTES } from "../domain/spoolgen-file"
 import { isSpoolgenIssueCode } from "../domain/spoolgen-issue"
 
-/** Codes whose `columnName` is the file role, not a column. */
-const FILE_CODES = new Set(["EMPTY_FILE", "FILE_EMPTY", "FILE_TOO_LARGE", "MISSING_REQUIRED_FILE"])
+/** Codes about a whole file. The sentence names the issue's file, else `<role>.txt` for the four SpoolGen files. */
+const FILE_CODES = new Set(["EMPTY_FILE", "FILE_EMPTY", "FILE_TOO_LARGE", "MISSING_REQUIRED_FILE", "PCF_UNKNOWN_UNITS", "PCF_NO_WELDS", "PCF_SPOOL_FROM_FILE_NAME", "DUPLICATE_FILE"])
 
 export interface StoredSpoolgenIssueText {
   code: string
@@ -20,6 +20,6 @@ export function describeSpoolgenIssue(t: SpoolingTranslator, issue: StoredSpoolg
   if (!isSpoolgenIssueCode(issue.code)) return issue.message
   const column = issue.columnName ?? ""
   return t(`spoolgenIssues.${issue.code}`, FILE_CODES.has(issue.code)
-    ? { file: `${column}.txt`, limit: SPOOLGEN_MAX_FILE_BYTES / (1024 * 1024) }
+    ? { file: issue.fileName ?? `${column}.txt`, limit: SPOOLGEN_MAX_FILE_BYTES / (1024 * 1024) }
     : { column })
 }

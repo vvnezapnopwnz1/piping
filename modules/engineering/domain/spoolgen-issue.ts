@@ -13,6 +13,11 @@ export const SPOOLGEN_ISSUE_CODES = [
   "FILE_EMPTY",
   "FILE_TOO_LARGE",
   "MISSING_REQUIRED_FILE",
+  "PCF_UNKNOWN_UNITS",
+  "PCF_NO_WELDS",
+  "PCF_BORE_UNKNOWN",
+  "PCF_SPOOL_FROM_FILE_NAME",
+  "DUPLICATE_FILE",
 ] as const
 export type SpoolgenIssueCode = (typeof SPOOLGEN_ISSUE_CODES)[number]
 

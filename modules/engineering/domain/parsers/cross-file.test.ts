@@ -10,3 +10,7 @@ const mixed = checkIsoUniformity([weld(1), weld(2, { service_class: "SC-B" }), w
 assert.ok(mixed.some((issue) => issue.code === "ISO_MIXED_SERVICE_CLASS"))
 assert.ok(mixed.some((issue) => issue.code === "ISO_MIXED_LINE"))
 assert.ok(mixed.some((issue) => issue.code === "ISO_MIXED_REVISION"))
+// An issue names the file of the record it points at
+const filed = (record: SpoolgenRecord, fileName: string): SpoolgenRecord => ({ ...record, fileName })
+assert.deepEqual(checkCrossFileConsistency({ ...emptyFileSet(), bolt: [filed({ role: "bolt", lineNumber: 4, fileName: null, values: { iso_number: "ISO-A", spool_number: "SP-9" } }, "bolts.csv")] }).map((issue) => [issue.rowNumber, issue.fileName]), [[4, "bolts.csv"]])
+assert.deepEqual(checkIsoUniformity([filed(weld(12), "ISO-A.pcf"), filed(weld(30, { line_number: "L-2" }), "ISO-A.pcf")]), [{ rowNumber: 12, columnName: "line_number", severity: "blocker", code: "ISO_MIXED_LINE", message: "ISO_MIXED_LINE", fileName: "ISO-A.pcf" }])

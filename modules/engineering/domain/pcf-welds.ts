@@ -1,0 +1,70 @@
+import type { PcfTemplateSettings, WeldLocation } from "./import-template"
+import { attribute, endPoints, type PcfBlock, type PcfBoreUnit, type PcfFile, type PcfPoint } from "./parsers/pcf"
+import type { SpoolgenRecord } from "./parsers/spoolgen-parser"
+import { requiredKeysFor } from "./spoolgen-contract"
+import { spoolgenIssue, type SpoolgenIssue, type SpoolgenIssueCode } from "./spoolgen-issue"
+
+// DN in millimetres → nominal size in inches by table, so DN 100 is exactly 4 (100 / 25.4 would miss the thickness rule and the WPS range).
+const DN_TO_INCH = new Map([[6, 0.125], [8, 0.25], [10, 0.375], [15, 0.5], [20, 0.75], [25, 1], [32, 1.25], [40, 1.5], [50, 2], [65, 2.5], [80, 3], [90, 3.5], [100, 4], [125, 5], [150, 6], [200, 8], [250, 10], [300, 12], [350, 14], [400, 16], [450, 18], [500, 20], [550, 22], [600, 24], [650, 26], [700, 28], [750, 30], [800, 32], [850, 34], [900, 36], [1000, 40], [1050, 42], [1200, 48]])
+export function boreToInch(value: number, unit: PcfBoreUnit): number | null {
+  if (unit === "MM") return DN_TO_INCH.get(value) ?? null
+  return unit === "INCH-SIXTEENTH" ? value / 16 : value
+}
+
+const LOCATION_BY_CATEGORY: Record<string, WeldLocation> = { FABRICATION: "shop", ERECTION: "field" }
+// The PDS area is chosen on screen once for the whole upload, so it is checked there, not on every weld. A PCF weld must say where it is made: an empty location would be stored as shop.
+const CHECKED_KEYS = [...requiredKeysFor("weld").filter((key) => key !== "pds_area"), "weld_location"]
+// An empty attribute counts as absent. A template map is read by its own keys only, so a spec named "constructor" stays a spec.
+const read = (block: PcfBlock | null, keyword: string): string | null => (block === null ? null : attribute(block, keyword) || null)
+const code = (block: PcfBlock | null, keyword: string): string | null => read(block, keyword)?.toUpperCase() ?? null
+const mapped = <T extends string>(map: Record<string, T>, key: string | null): T | null => (key !== null && Object.hasOwn(map, key) ? map[key] : null)
+const sameSpot = (a: PcfPoint, b: PcfPoint) => Math.abs(a.x - b.x) < 0.01 && Math.abs(a.y - b.y) < 0.01 && Math.abs(a.z - b.z) < 0.01
+const withoutExtension = (fileName: string) => fileName.replace(/\.[^.]*$/, "")
+
+/**
+ * One SpoolGen weld record per WELD block, in file order. The weld's part is its master component, else the nearest part
+ * before it, else after it (a part is a non-WELD block with an END-POINT, so a MESSAGE-SQUARE or SUPPORT is skipped).
+ * Implied welds (two components with no WELD between them) are not read in this version. Values the file does not give
+ * are missing values at the weld's line; a weld without REPEAT-WELD-IDENTIFIER gives no record, its number is never invented.
+ */
+export function pcfToWeldRecords(file: PcfFile, fileName: string, context: { pdsArea: string; settings: PcfTemplateSettings }): { records: SpoolgenRecord[]; issues: SpoolgenIssue[] } {
+  const { settings } = context
+  const issue = (issueCode: SpoolgenIssueCode, row: number | null, column: string | null, severity: "blocker" | "warning" = "blocker") => spoolgenIssue(issueCode, row, column, { fileName, severity })
+  if (file.boreUnit === null) return { records: [], issues: [issue("PCF_UNKNOWN_UNITS", null, null)] }
+  const unit = file.boreUnit; const blocks = file.components; const points = blocks.map(endPoints)
+  if (!blocks.some((block) => block.keyword === "WELD")) return { records: [], issues: [issue("PCF_NO_WELDS", null, null)] }
+  const isPart = (index: number) => blocks[index].keyword !== "WELD" && points[index].length > 0
+  const hasSpool = (index: number) => read(blocks[index], "SPOOL-IDENTIFIER") !== null
+  const nearest = (from: number, test: (index: number) => boolean): number | null => {
+    for (let index = from - 1; index >= 0; index -= 1) if (test(index)) return index
+    for (let index = from + 1; index < blocks.length; index += 1) if (test(index)) return index
+    return null
+  }
+  const blockAt = (index: number | null) => (index === null ? null : blocks[index])
+  const partById = new Map<string, number>()
+  blocks.forEach((block, index) => { const id = read(block, "COMPONENT-IDENTIFIER"); if (id !== null && block.keyword !== "WELD" && !partById.has(id)) partById.set(id, index) })
+  const spoolInFile = blocks.some((_, index) => hasSpool(index))
+  const records: SpoolgenRecord[] = []; const issues: SpoolgenIssue[] = spoolInFile ? [] : [issue("PCF_SPOOL_FROM_FILE_NAME", null, "spool_number", "warning")]
+  blocks.forEach((weld, at) => {
+    if (weld.keyword !== "WELD") return
+    const pipeline = file.pipelines.filter((candidate) => candidate.line < weld.line).at(-1) ?? null
+    const partAt = partById.get(read(weld, "MASTER-COMPONENT-IDENTIFIER") ?? "") ?? nearest(at, isPart); const part = blockAt(partAt); const partPoints = partAt === null ? [] : points[partAt]
+    const weldPoint = points[at][0] ?? null; const partEnd = weldPoint === null ? null : partPoints.find((point) => sameSpot(point, weldPoint)) ?? null
+    const rawType = code(weld, "WELD-TYPE") ?? partEnd?.endType ?? code(part, "SKEY")?.slice(-2) ?? null
+    const spec = read(weld, "PIPING-SPEC") ?? read(part, "PIPING-SPEC") ?? read(pipeline, "PIPING-SPEC")
+    const spool = spoolInFile ? read(weld, "SPOOL-IDENTIFIER") ?? read(part, "SPOOL-IDENTIFIER") ?? read(blockAt(nearest(at, hasSpool)), "SPOOL-IDENTIFIER") ?? "" : withoutExtension(fileName)
+    const bore = weldPoint?.bore ?? partEnd?.bore ?? partPoints[0]?.bore ?? null; const inch = bore === null ? null : boreToInch(bore, unit)
+    const values: Record<string, string> = {
+      iso_number: settings.isoNumberFrom === "pipelineReference" ? pipeline?.value ?? "" : withoutExtension(fileName),
+      revision_number: read(pipeline, "REVISION") ?? settings.defaultRevision ?? "", pds_area: context.pdsArea,
+      service_class: spec === null ? "" : mapped(settings.serviceClassBySpec, spec) ?? spec, line_number: pipeline?.value ?? "", sheet_number: "",
+      spool_number: spool, spool_weight_kg: "", material_class: "", weld_number: read(weld, "REPEAT-WELD-IDENTIFIER") ?? "",
+      weld_type: rawType === null ? "" : mapped(settings.weldTypeByCode, rawType) ?? rawType,
+      weld_location: mapped(settings.weldLocationBySkey, code(weld, "SKEY")) ?? mapped(LOCATION_BY_CATEGORY, code(weld, "CATEGORY")) ?? "",
+      diameter_inch: inch === null ? "" : String(inch), thickness_mm: "",
+    }
+    for (const key of CHECKED_KEYS) if (values[key] === "") issues.push(issue(key === "diameter_inch" && bore !== null ? "PCF_BORE_UNKNOWN" : "MISSING_VALUE", weld.line, key))
+    if (values.weld_number !== "") records.push({ role: "weld", lineNumber: weld.line, fileName, values })
+  })
+  return { records, issues }
+}
