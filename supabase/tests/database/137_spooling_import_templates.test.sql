@@ -1,5 +1,5 @@
 begin;
-select plan(19);
+select plan(22);
 
 -- Import templates are project data: a person who can view spooling reads them, a person who can manage
 -- spooling writes them, nobody else (another project, anon) reaches them. Access lives in the policies only.
@@ -19,11 +19,13 @@ values
   ('30000000-0000-0000-0000-000000001372', 'TPL-B', 'Templates B', 'Owner', 'Contractor', 1, '10000000-0000-0000-0000-000000001371');
 
 -- Project Admin manages spooling; Project Reader views it and nothing more; the outsider belongs to project B only.
+-- The manager also manages project B, so a row could be moved there if the table let a manager write project_id.
 insert into public.project_memberships (id, project_id, user_id, role, access_role_code, is_active)
 values
   ('20000000-0000-0000-0000-000000001371', '30000000-0000-0000-0000-000000001371', '10000000-0000-0000-0000-000000001372', 'system_admin', 'project_admin', true),
   ('20000000-0000-0000-0000-000000001372', '30000000-0000-0000-0000-000000001371', '10000000-0000-0000-0000-000000001373', 'project_manager', 'project_reader', true),
-  ('20000000-0000-0000-0000-000000001373', '30000000-0000-0000-0000-000000001372', '10000000-0000-0000-0000-000000001374', 'system_admin', 'project_admin', true);
+  ('20000000-0000-0000-0000-000000001373', '30000000-0000-0000-0000-000000001372', '10000000-0000-0000-0000-000000001374', 'system_admin', 'project_admin', true),
+  ('20000000-0000-0000-0000-000000001374', '30000000-0000-0000-0000-000000001372', '10000000-0000-0000-0000-000000001372', 'system_admin', 'project_admin', true);
 
 insert into public.spooling_import_templates (id, project_id, source, name, settings)
 values ('70000000-0000-0000-0000-000000001371', '30000000-0000-0000-0000-000000001371', 'aveva', 'E3D seeded', '{"kind":"pcf"}');
@@ -76,11 +78,25 @@ select is(
   '10000000-0000-0000-0000-000000001372'::uuid,
   'the template remembers who created it');
 
+select throws_ok(
+  $$insert into public.spooling_import_templates (project_id, source, name, settings, created_by)
+    values ('30000000-0000-0000-0000-000000001371', 'table', 'Forged author', '{"kind":"table","columns":{}}', '10000000-0000-0000-0000-000000001371')$$,
+  '42501',
+  null,
+  'a manager cannot name another profile as the creator of a template');
+
 select results_eq(
   $$update public.spooling_import_templates set name = 'Excel registry 2', settings = '{"kind":"table","columns":{}}'
     where name = 'Excel registry' returning name$$,
   $$values ('Excel registry 2')$$,
   'a user with spooling.manage changes a template');
+
+select throws_ok(
+  $$update public.spooling_import_templates set project_id = '30000000-0000-0000-0000-000000001372'
+    where name = 'Excel registry 2'$$,
+  '42501',
+  null,
+  'a manager of both projects cannot move a template from one to the other');
 
 select throws_ok(
   $$insert into public.spooling_import_templates (project_id, source, name, settings)
@@ -110,13 +126,6 @@ select throws_ok(
   null,
   'a blank template name is refused');
 
-select throws_ok(
-  $$insert into public.spooling_import_templates (project_id, source, name, settings)
-    values ('30000000-0000-0000-0000-000000001372', 'aveva', 'Into project B', '{"kind":"pcf"}')$$,
-  '42501',
-  null,
-  'a manager of one project cannot write a template into another project');
-
 select results_eq(
   $$delete from public.spooling_import_templates where name = 'Excel registry 2' returning name$$,
   $$values ('Excel registry 2')$$,
@@ -133,9 +142,21 @@ select is_empty(
   'a member of another project reads no template of this project');
 
 select is_empty(
+  $$update public.spooling_import_templates set name = 'Outsider renamed'
+    where id = '70000000-0000-0000-0000-000000001371' returning id$$,
+  'a member of another project changes no template of this project');
+
+select is_empty(
   $$delete from public.spooling_import_templates
     where id = '70000000-0000-0000-0000-000000001371' returning id$$,
   'a member of another project deletes no template of this project');
+
+select throws_ok(
+  $$insert into public.spooling_import_templates (project_id, source, name, settings)
+    values ('30000000-0000-0000-0000-000000001371', 'aveva', 'Into project A', '{"kind":"pcf"}')$$,
+  '42501',
+  null,
+  'a member of another project cannot write a template into this project');
 
 -- anon: nothing -----------------------------------------------------------------------------------------------
 

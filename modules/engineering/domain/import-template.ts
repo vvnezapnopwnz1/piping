@@ -65,17 +65,28 @@ export function templateKindOf(source: ImportSourceId): ImportTemplateSettings["
 
 const pcfPreset = (): PcfTemplateSettings => structuredClone(DEFAULT_PCF_SETTINGS)
 
+/** Freezes a value and everything inside it. */
+function deepFreeze<T>(value: T): T {
+  if (typeof value === "object" && value !== null) {
+    Object.values(value).forEach(deepFreeze)
+    Object.freeze(value)
+  }
+  return value
+}
+
 /**
  * One per source, in the order of the tiles. Product names, not words, so they need no translation. The three
- * PCF presets share the defaults until a real file from a customer shows how the systems differ.
+ * PCF presets share the defaults until a real file from a customer shows how the systems differ. Frozen all the
+ * way down: a screen that edits a copy must get one from `parseTemplateSettings` or `structuredClone`, and
+ * cannot change a preset for the rest of the session.
  */
-export const BUILT_IN_TEMPLATES: readonly ImportTemplate[] = [
+export const BUILT_IN_TEMPLATES: readonly ImportTemplate[] = deepFreeze([
   { id: null, source: "aveva", name: "AVEVA E3D / PDMS", settings: pcfPreset() },
   { id: null, source: "hexagon", name: "Smart 3D / CADWorx", settings: pcfPreset() },
   { id: null, source: "plant3d", name: "Plant 3D", settings: pcfPreset() },
   { id: null, source: "table", name: "Excel / CSV", settings: { kind: "table", columns: {} } },
   { id: null, source: "spoolgen", name: "SpoolGen", settings: { kind: "table", columns: {} } },
-]
+] satisfies ImportTemplate[])
 
 const WELD_LOCATIONS: readonly string[] = ["shop", "assembly", "field"]
 const ISO_NUMBER_SOURCES: readonly string[] = ["fileName", "pipelineReference"]

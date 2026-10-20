@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { BUILT_IN_TEMPLATES, DEFAULT_PCF_SETTINGS, IMPORT_SOURCE_IDS, isImportSourceId, parseTemplateSettings, templateKindOf } from "./import-template"
+import { BUILT_IN_TEMPLATES, DEFAULT_PCF_SETTINGS, IMPORT_SOURCE_IDS, isImportSourceId, parseTemplateSettings, templateKindOf, type ImportTemplate } from "./import-template"
 
 // A table template keeps the column names a project's files use, per file role
 assert.deepEqual(parseTemplateSettings({ kind: "table", columns: { weld: { weld_number: "Шов" } } }), { kind: "table", columns: { weld: { weld_number: "Шов" } } })
@@ -74,6 +74,31 @@ assert.deepEqual(aveva.settings, DEFAULT_PCF_SETTINGS)
 assert.ok(aveva.settings.kind === "pcf" && hexagon.settings.kind === "pcf")
 assert.notEqual(aveva.settings.weldLocationBySkey, DEFAULT_PCF_SETTINGS.weldLocationBySkey)
 assert.notEqual(aveva.settings.weldLocationBySkey, hexagon.settings.weldLocationBySkey)
+
+// R18: a built-in preset is frozen all the way down, so a copy-and-edit screen cannot change it for the whole session
+const [preset] = BUILT_IN_TEMPLATES
+const presetSettings = preset.settings
+assert.ok(presetSettings.kind === "pcf")
+assert.ok(Object.isFrozen(BUILT_IN_TEMPLATES) && Object.isFrozen(preset) && Object.isFrozen(presetSettings))
+assert.ok(Object.isFrozen(presetSettings.weldLocationBySkey) && Object.isFrozen(presetSettings.weldTypeByCode) && Object.isFrozen(presetSettings.serviceClassBySpec))
+assert.throws(() => { presetSettings.weldLocationBySkey.ZZ = "field" }, TypeError)
+assert.throws(() => { presetSettings.weldLocationBySkey.WW = "field" }, TypeError)
+assert.throws(() => { preset.name = "Renamed" }, TypeError)
+assert.throws(() => { (BUILT_IN_TEMPLATES as ImportTemplate[]).push(preset) }, TypeError)
+assert.equal(presetSettings.weldLocationBySkey.ZZ, undefined)
+assert.equal(presetSettings.weldLocationBySkey.WW, "shop")
+const table = BUILT_IN_TEMPLATES.find((template) => template.source === "table")
+assert.ok(table?.settings.kind === "table" && Object.isFrozen(table.settings) && Object.isFrozen(table.settings.columns))
+assert.throws(() => { if (table.settings.kind === "table") table.settings.columns.weld = {} }, TypeError)
+// ...and parsing a frozen preset gives back a fresh, editable copy, as does cloning one
+const copy = parseTemplateSettings(presetSettings)
+assert.ok(copy?.kind === "pcf" && !Object.isFrozen(copy) && !Object.isFrozen(copy.weldLocationBySkey))
+copy.weldLocationBySkey.ZZ = "field"
+assert.equal(presetSettings.weldLocationBySkey.ZZ, undefined)
+const emptyCopy = parseTemplateSettings(table?.settings)
+assert.ok(emptyCopy?.kind === "table" && !Object.isFrozen(emptyCopy) && !Object.isFrozen(emptyCopy.columns))
+emptyCopy.columns.weld = { weld_number: "Шов" }
+assert.deepEqual(table?.settings, { kind: "table", columns: {} })
 
 // The kind of settings a source takes
 assert.equal(templateKindOf("aveva"), "pcf")
