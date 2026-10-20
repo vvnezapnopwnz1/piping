@@ -1,7 +1,7 @@
 export type Delimiter = "\t" | ";" | ","
 const DELIMITERS: readonly Delimiter[] = ["\t", ";", ","]
 const LINE_BREAK = /\r\n|\r|\n/
-// The most frequent delimiter outside quotes wins; a tie goes to the earlier one in tab, semicolon, comma order.
+// The delimiter is read from the first line with content. The most frequent one outside quotes wins; a tie goes to the earlier one in tab, semicolon, comma order.
 export function detectDelimiter(firstLine: string): Delimiter {
   const counts = new Map<string, number>(DELIMITERS.map((delimiter) => [delimiter, 0])); let quoted = false
   for (const char of firstLine) { if (char === '"') quoted = !quoted; else if (!quoted && counts.has(char)) counts.set(char, counts.get(char)! + 1) }
@@ -9,7 +9,7 @@ export function detectDelimiter(firstLine: string): Delimiter {
 }
 // A quote opens a quoted cell only at the start of a cell, so an inch mark inside a value (6" SCH40) stays literal.
 export function parseDelimited(text: string): string[][] {
-  const source = text.replace(/^﻿/, ""); const delimiter = detectDelimiter(source.split(LINE_BREAK, 1)[0])
+  const source = text.replace(/^﻿/, ""); const delimiter = detectDelimiter(source.split(LINE_BREAK).find((line) => line.trim() !== "") ?? "")
   const rows: string[][] = []; let row: string[] = []; let cell = ""; let quoted = false
   const endCell = () => { row.push(cell.trim()); cell = "" }
   const endRow = () => { endCell(); if (row.length > 1 || row[0] !== "") rows.push(row); row = [] }

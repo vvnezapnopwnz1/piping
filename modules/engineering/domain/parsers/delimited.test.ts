@@ -19,3 +19,6 @@ assert.deepEqual(parseDelimited("ISO;NOTE\nA;PIPE 6\" SCH40\n"), [["ISO", "NOTE"
 assert.deepEqual(parseDelimited('A;B\n ; "x" \n'), [["A", "B"], ["", "x"]])
 assert.deepEqual(parseDelimited("A;B\r1;2\r"), [["A", "B"], ["1", "2"]])
 assert.deepEqual(parseDelimited("A;B;C\n1;;3"), [["A", "B", "C"], ["1", "", "3"]])
+assert.deepEqual(parseDelimited("\nA;B\n1;2"), [["A", "B"], ["1", "2"]])
+assert.deepEqual(parseDelimited("   \r\n\r\nA;B\r\n1;2"), [["A", "B"], ["1", "2"]])
+assert.deepEqual(parseDelimited("  \t \nA,B\n1,2"), [["A", "B"], ["1", "2"]])

@@ -23,6 +23,11 @@ assert.equal(resolveColumns("weld", ["Weld No.", "Шов"], { weld_number: "шо
 assert.equal(resolveColumns("weld", ["Weld No.", "Шов"], { weld_number: "Нет такого" }).indexes.get("weld_number"), 0)
 assert.equal(resolveColumns("weld", ["", "Weld No."], { weld_number: "" }).indexes.get("weld_number"), 1)
 assert.deepEqual(resolveColumns("weld", ["ISO No.", "Шов"]).headers, ["ISO No.", "Шов"])
-const russian = resolveColumns("weld", ["Изометрия", "Ревизия", "PDS_AREA", "SERVICE_CLASS", "Катушка", "Стык", "Тип стыка", "Диаметр", "Толщина стенки", "Цех/монтаж", "Линия"])
+const russianHeaders = ["Изометрия", "Ревизия", "PDS_AREA", "SERVICE_CLASS", "Катушка", "Стык", "Тип стыка", "Диаметр", "Толщина стенки", "Цех/монтаж", "Линия"]
+// A Russian Диаметр/Ду column is millimetres, so it is never matched into the inch column on its own; a register maps it explicitly.
+assert.deepEqual(resolveColumns("weld", russianHeaders).missingRequired, ["diameter_inch"])
+assert.equal(resolveColumns("weld", russianHeaders.map((header) => (header === "Диаметр" ? "Ду" : header))).indexes.has("diameter_inch"), false)
+assert.equal(resolveColumns("bolt", ["Изометрия", "Катушка", "Фланец", "Диаметр", "Ду"]).indexes.has("diameter_inch"), false)
+const russian = resolveColumns("weld", russianHeaders, { diameter_inch: "Диаметр" })
 assert.deepEqual(russian.missingRequired, [])
 assert.deepEqual([russian.indexes.get("iso_number"), russian.indexes.get("revision_number"), russian.indexes.get("spool_number"), russian.indexes.get("weld_number"), russian.indexes.get("weld_type"), russian.indexes.get("diameter_inch"), russian.indexes.get("thickness_mm"), russian.indexes.get("weld_location"), russian.indexes.get("line_number")], [0, 1, 4, 5, 6, 7, 8, 9, 10])
