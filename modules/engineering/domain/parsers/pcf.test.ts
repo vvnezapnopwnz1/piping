@@ -54,7 +54,7 @@ assert.deepEqual(endPoints(parsePcf("PIPE\n    END-POINT 1 2").components[0]), [
 assert.deepEqual(endPoints(parsePcf("PIPE\n    END-POINT 1,5 2 3 4").components[0]), [])
 assert.deepEqual(endPoints(parsePcf("PIPE\n    END-POINT -1.5 2 -3 4 BW EXTRA").components[0]), [{ x: -1.5, y: 2, z: -3, bore: 4, endType: "BW" }])
 assert.deepEqual(endPoints(parsePcf("PIPE\n    COMPONENT-IDENTIFIER 1").components[0]), [])
-assert.deepEqual(endPoints(parsePcf("PIPE\n    end-point 0   0 0  4  bw").components[0]), [{ x: 0, y: 0, z: 0, bore: 4, endType: "bw" }])
+assert.deepEqual(endPoints(parsePcf("PIPE\n    end-point 0   0 0  4  bw").components[0]), [{ x: 0, y: 0, z: 0, bore: 4, endType: "BW" }])
 
 // attribute: first value, key case ignored, null when absent
 const dup = parsePcf("PIPE\n    ITEM-CODE A\n    ITEM-CODE B\n    EMPTY").components[0]
@@ -80,3 +80,35 @@ assert.equal(attribute(many.pipelines[0], "PIPING-SPEC"), null)
 assert.equal(attribute(many.pipelines[1], "PIPING-SPEC"), "AS1")
 assert.deepEqual(many.components.map((c) => c.keyword), ["PIPE", "ELBOW", "STRAY"])
 assert.deepEqual(many.materials.map((m) => m.value), ["1", "2"])
+
+// A pipeline with indented attributes of its own (Hexagon): an item with no attribute after it is a component, not a pipeline attribute
+const hexagon = parsePcf("PIPELINE-REFERENCE A\n    REVISION 1\nWELD\nPIPE\n    END-POINT 0 0 0 50\n    END-POINT 5 0 0 50")
+assert.deepEqual(hexagon.pipelines[0].attributes.map((r) => r.keyword), ["REVISION"])
+assert.deepEqual(hexagon.components.map((c) => c.keyword), ["WELD", "PIPE"])
+assert.equal(endPoints(hexagon.components[1]).length, 2)
+
+// A second pipeline after MATERIALS puts its components back into components
+const afterMaterials = parsePcf("PIPELINE-REFERENCE A\nPIPE\n    END-POINT 0 0 0 50\n    END-POINT 5 0 0 50\nMATERIALS\nMATERIAL-IDENTIFIER 1\n    ITEM-CODE X\nPIPELINE-REFERENCE B\nWELD\n    END-POINT 5 0 0 50\n    END-POINT 5 0 0 50")
+assert.deepEqual(afterMaterials.pipelines.map((p) => p.value), ["A", "B"])
+assert.deepEqual(afterMaterials.components.map((c) => c.keyword), ["PIPE", "WELD"])
+assert.deepEqual(afterMaterials.materials.map((m) => m.value), ["1"])
+assert.equal(attribute(afterMaterials.materials[0], "ITEM-CODE"), "X")
+
+// A file written in lower case reads the same: keywords and end types are stored upper-case
+const lower = parsePcf("units-bore mm\npipeline-reference L-1\n    revision 2\npipe\n    end-point 0 0 0 100 bw\nweld\n    end-point 0 0 0 100 bw\n    end-point 0 0 0 100 sw\nmaterials\nmaterial-identifier 1\n    item-code a")
+assert.equal(lower.boreUnit, "MM")
+assert.deepEqual(lower.header.map((r) => r.keyword), ["UNITS-BORE"])
+assert.equal(lower.pipelines[0].keyword, "PIPELINE-REFERENCE")
+assert.equal(lower.pipelines[0].attributes[0].keyword, "REVISION")
+assert.deepEqual(lower.components.map((c) => c.keyword), ["PIPE", "WELD"])
+assert.deepEqual(endPoints(lower.components[1]).map((p) => p.endType), ["BW", "SW"])
+assert.equal(lower.components[1].attributes[0].keyword, "END-POINT")
+assert.deepEqual(lower.materials.map((m) => m.keyword), ["MATERIAL-IDENTIFIER"])
+assert.equal(attribute(lower.materials[0], "ITEM-CODE"), "a")
+
+// A value keeps any character, line separators of Unicode included, and a line made of them is blank; nothing throws
+const separators = parsePcf("PIPE\n    DESCRIPTION a\u2028b\u2029c\n\u2028\n    TAG\u2028x\u2029")
+assert.equal(attribute(separators.components[0], "DESCRIPTION"), "a\u2028b\u2029c")
+assert.equal(attribute(separators.components[0], "TAG"), "x")
+assert.equal(parsePcf("PIPE\u2028WELD\n    END-POINT 1\u20282\u20293 4").components[0].keyword, "PIPE")
+assert.deepEqual(endPoints(parsePcf("PIPE\n    END-POINT 1\u20282\u20293 4").components[0]), [{ x: 1, y: 2, z: 3, bore: 4, endType: null }])
