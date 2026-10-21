@@ -21,6 +21,7 @@ import { readSourceFile } from "../infrastructure/spoolgen-file-reader"
 import { loadImportReferences, loadImportTemplates } from "../infrastructure/supabase-import-template-repository"
 import type { SpoolingUpload } from "../infrastructure/submit-spooling-import"
 import { ImportTemplateBar } from "./import-template-bar"
+import { ImportTemplateDownload } from "./import-template-download"
 import { PcfMappingEditor, type CodeKind } from "./pcf-mapping-editor"
 import { describeSpoolgenIssue } from "./spoolgen-issue-text"
 
@@ -141,6 +142,7 @@ export function PcfImportPanel({ projectId, source, canManage, busy, validated, 
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">{t("pcf.hint", { limit: SPOOLGEN_MAX_FILE_BYTES / (1024 * 1024), max: SPOOLING_MAX_FILES })}</p>
+      <ImportTemplateDownload source={source} references={references} disabled={busy} />
       <ImportTemplateBar projectId={projectId} source={source} templates={templates} chosenId={chosenId} settings={toSave} canSave={canManage} disabled={busy} onChoose={choose} onSaved={saved} />
       <div className="flex flex-wrap items-end gap-3">
         <div className="space-y-1.5">

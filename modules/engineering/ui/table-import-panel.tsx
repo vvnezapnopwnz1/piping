@@ -8,19 +8,20 @@ import { Button } from "@/components/ui/button"
 import { errorDetail } from "@/i18n/format"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import type { SheetMatrix } from "@/modules/imports/domain/parsers/registry"
-import { readFirstSheetMatrix } from "@/modules/imports/infrastructure/xlsx-workbook"
+import { readSheetMatrix } from "@/modules/imports/infrastructure/xlsx-workbook"
 import { ImportIssueList } from "@/modules/imports/ui/import-issue-list"
 import type { SpoolgenSubmission } from "../application/import-spooling"
 import { applyColumnDrafts, buildTableSubmission, columnMapOf, describeTableColumns, hasMappedColumn, pickTableFile, type ColumnDrafts, type TableSource } from "../application/import-table"
 import { createPickTickets } from "../application/pick-tickets"
-import { BUILT_IN_TEMPLATES, pickInitialTemplate, type ImportTemplate, type TableTemplateSettings } from "../domain/import-template"
+import { BUILT_IN_TEMPLATES, pickInitialTemplate, type ImportReferences, type ImportTemplate, type TableTemplateSettings } from "../domain/import-template"
 import { parseDelimited } from "../domain/parsers/delimited"
 import { SPOOLGEN_FILE_ROLES, SPOOLGEN_MAX_FILE_BYTES, SPOOLING_MAX_FILES, type SpoolgenFileRole } from "../domain/spoolgen-file"
 import { readSourceFile } from "../infrastructure/spoolgen-file-reader"
-import { loadImportTemplates } from "../infrastructure/supabase-import-template-repository"
+import { loadImportReferences, loadImportTemplates } from "../infrastructure/supabase-import-template-repository"
 import type { SpoolingUpload } from "../infrastructure/submit-spooling-import"
 import { ColumnMappingEditor } from "./column-mapping-editor"
 import { ImportTemplateBar } from "./import-template-bar"
+import { ImportTemplateDownload } from "./import-template-download"
 import { describeSpoolgenIssue } from "./spoolgen-issue-text"
 
 /** The two sources read as tables: Excel/CSV with a column map, and the four SpoolGen files with their fixed contract. */
@@ -31,9 +32,9 @@ const ACCEPT: Record<TableSourceId, string> = { table: ".xlsx,.xls,.csv,.txt", s
 const copyOf = (settings: ImportTemplate["settings"]): TableTemplateSettings => (settings.kind === "table" ? structuredClone(settings) : { kind: "table", columns: {} })
 const without = <T,>(record: Partial<Record<Role, T>>, role: Role): Partial<Record<Role, T>> => { const next = { ...record }; delete next[role]; return next }
 
-/** A workbook gives its first sheet; anything else is text in any of the encodings the reader knows. */
-async function readMatrix(source: TableSourceId, file: File): Promise<SheetMatrix> {
-  if (source === "table" && /\.xlsx?$/i.test(file.name)) return readFirstSheetMatrix(await file.arrayBuffer())
+/** A workbook gives the sheet of the role it is being uploaded for; anything else is text in any encoding the reader knows. */
+async function readMatrix(source: TableSourceId, role: Role, file: File): Promise<SheetMatrix> {
+  if (source === "table" && /\.xlsx?$/i.test(file.name)) return readSheetMatrix(await file.arrayBuffer(), role)
   return parseDelimited((await readSourceFile(file)).text)
 }
 
@@ -62,6 +63,8 @@ export function TableImportPanel({ projectId, source, canManage, busy, onEdit, o
   const [drafts, setDrafts] = useState<ColumnDrafts>({})
   const [opened, setOpened] = useState<Partial<Record<Role, true>>>({})
   const [templates, setTemplates] = useState<ImportTemplate[]>([])
+  // The project's codes, for the "Project codes" sheet of the template; null until they are loaded.
+  const [references, setReferences] = useState<ImportReferences | null>(null)
   const [chosenId, setChosenId] = useState<string | null>(null)
   const sources = useMemo<TableSource[]>(() => SPOOLGEN_FILE_ROLES.flatMap((role) => { const held = files[role]; return held ? [{ role, fileName: held.file.name, matrix: held.matrix }] : [] }), [files])
   // Only a mappable source can be asked to fix a missing column; the four fixed-contract files go to the server as they are.
@@ -77,7 +80,8 @@ export function TableImportPanel({ projectId, source, canManage, busy, onEdit, o
   useEffect(() => {
     if (!mappable) return
     let live = true
-    loadImportTemplates(getSupabaseBrowserClient(), projectId)
+    const client = getSupabaseBrowserClient()
+    loadImportTemplates(client, projectId)
       .then((rows) => {
         if (!live) return
         const own = rows.filter((row) => row.source === "table")
@@ -88,6 +92,9 @@ export function TableImportPanel({ projectId, source, canManage, busy, onEdit, o
         setSettings(copyOf(initial.settings))
       })
       .catch((error: unknown) => toast.error(t("templates.loadFailed"), { description: errorDetail(error) }))
+    loadImportReferences(client, projectId)
+      .then((loaded) => { if (live) setReferences(loaded) })
+      .catch((error: unknown) => { if (live) toast.error(t("templates.codesFailed"), { description: errorDetail(error) }) })
     return () => { live = false }
   }, [mappable, projectId, t])
 
@@ -103,7 +110,7 @@ export function TableImportPanel({ projectId, source, canManage, busy, onEdit, o
     const ticket = tickets.issue(role)
     setReading((current) => ({ ...current, [role]: taken.name }))
     try {
-      const matrix = await readMatrix(source, taken)
+      const matrix = await readMatrix(source, role, taken)
       if (!tickets.isCurrent(role, ticket)) return
       setFiles((current) => ({ ...current, [role]: { file: taken, matrix } }))
       setDrafts((current) => without(current, role))
@@ -135,6 +142,7 @@ export function TableImportPanel({ projectId, source, canManage, busy, onEdit, o
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">{mappable ? t("table.hint", { limit }) : t("importScreen.hint", { limit })}</p>
+      <ImportTemplateDownload source={source} references={mappable ? references : null} disabled={busy} />
       {mappable ? (
         <ImportTemplateBar projectId={projectId} source="table" templates={templates} chosenId={chosenId} settings={toSave} canSave={canManage && hasMappedColumn(toSave)} disabled={busy} onChoose={choose} onSaved={saved} />
       ) : null}
