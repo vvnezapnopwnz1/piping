@@ -165,7 +165,7 @@
     "readIssues": "Found while reading the files",
     "mapping": {
       "title": "Codes the project does not have",
-      "hint": "Choose the project's code for each code in the files. The choice applies at once and is saved with the template. A code kept as it is stops the import at validation.",
+      "hint": "Choose the project's code for each code in the files. The choice applies to this upload at once; it goes into a template when you press \"Save as template\". A code kept as it is stops the import at validation.",
       "serviceClasses": "Service class (PIPING-SPEC)",
       "weldTypes": "Weld type",
       "keep": "Keep as it is",

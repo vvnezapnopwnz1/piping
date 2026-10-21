@@ -22,6 +22,20 @@ export function describeImportIssue(t: SpoolingTranslator, issue: ImportRowIssue
   }
 }
 
+/**
+ * Where an issue was found: `ISO-1001.pcf · Row 12 · spool_number`. An issue of a whole file names only
+ * the file (`ISO-1002.pcf`); one with neither file nor row is about the whole set and reads "Sheet".
+ */
+export function describeIssueLocation(
+  t: SpoolingTranslator,
+  issue: { fileName?: string | null; rowNumber: number | null; columnName: string | null },
+): string {
+  const place = issue.rowNumber !== null
+    ? t("issueList.row", { row: issue.rowNumber })
+    : issue.fileName ? null : t("issueList.sheet")
+  return [issue.fileName, place, issue.columnName].filter(Boolean).join(" · ")
+}
+
 /** The label of an import type; a type the app does not know is shown by its code. */
 export function importTypeLabel(t: SpoolingTranslator, importType: string): string {
   const key = `importType.${importType}` as Parameters<SpoolingTranslator>[0]

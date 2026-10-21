@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl"
 import { StatusBadge, type StatusTone } from "@/components/ui/status-badge"
 import type { ImportIssueSeverity, ImportRowIssue } from "../domain/import-issue"
 import type { StoredImportIssue } from "../domain/stored-import-issue"
-import { describeImportIssue } from "./import-issue-text"
+import { describeImportIssue, describeIssueLocation } from "./import-issue-text"
 
 /**
  * Import severities are their own vocabulary — a `conflict` is not a workflow state — so they name
@@ -26,7 +26,7 @@ const SEVERITY_STYLE: Record<ImportIssueSeverity, string> = {
 /**
  * `StoredImportIssue` rows come from the SpoolGen import in `modules/engineering`, which still sends its
  * own sentence; they show it until that module moves to codes. Import validation never produces one.
- * An import of many files names the file before the row: `ISO-1001.pcf · Row 12 · spool_number`.
+ * An import of many files names the file before the row; see `describeIssueLocation`.
  */
 export function ImportIssueList({ issues }: { issues: readonly (ImportRowIssue | StoredImportIssue)[] }) {
   const t = useTranslations("spooling")
@@ -48,11 +48,7 @@ export function ImportIssueList({ issues }: { issues: readonly (ImportRowIssue |
             label={t(`severity.${issue.severity}`)}
             className="bg-transparent"
           />
-          <span className="font-mono text-xs">
-            {"fileName" in issue && issue.fileName ? `${issue.fileName} · ` : ""}
-            {issue.rowNumber === null ? t("issueList.sheet") : t("issueList.row", { row: issue.rowNumber })}
-            {issue.columnName ? ` · ${issue.columnName}` : ""}
-          </span>
+          <span className="font-mono text-xs">{describeIssueLocation(t, issue)}</span>
           <span>{"message" in issue ? issue.message : describeImportIssue(t, issue)}</span>
         </li>
       ))}

@@ -8,6 +8,7 @@ import { CHANGE_TYPES } from "../domain/diff"
 import { ENGINEERING_ENTITY_TYPES } from "../domain/entity"
 import { SPOOLGEN_ISSUE_CODES } from "../domain/spoolgen-issue"
 import type { RevisionApplyReason } from "../application/resolve-revision"
+import { describeIssueLocation } from "../../imports/ui/import-issue-text"
 import { describeRevisionReason } from "./revision-reason-text"
 import { describeSpoolgenIssue } from "./spoolgen-issue-text"
 
@@ -72,4 +73,28 @@ test("the Russian plural of unresolved items counts one, few and many", () => {
 
 test("spooling stays a finished Russian namespace", () => {
   assert.ok(RU_COMPLETE_NAMESPACES.includes("spooling"))
+})
+
+test("an issue of a whole file shows the file name and not the word sheet", () => {
+  for (const locale of ["en", "ru"] as const) {
+    const t = createTranslator({ locale, messages: messagesFor(locale), namespace: "spooling" })
+    const where = (fileName: string | null, rowNumber: number | null, columnName: string | null) =>
+      describeIssueLocation(t, { fileName, rowNumber, columnName })
+    assert.equal(where("ISO-1002.pcf", null, null), "ISO-1002.pcf", locale)
+    assert.equal(where("ISO-1002.pcf", null, "spool_number"), "ISO-1002.pcf · spool_number", locale)
+    assert.equal(where("weld.csv", 12, "weld_number"), `weld.csv · ${t("issueList.row", { row: 12 })} · weld_number`, locale)
+    assert.equal(where(null, null, null), t("issueList.sheet"), locale)
+  }
+})
+
+test("the import tab is not named after one source and the template hint leaves saving to the person", () => {
+  const nav = (locale: "en" | "ru") => createTranslator({ locale, messages: messagesFor(locale), namespace: "nav" })
+  assert.equal(nav("ru")("spoolGenImport"), "Импорт")
+  assert.equal(nav("en")("spoolGenImport"), "Import")
+  for (const locale of ["en", "ru"] as const) {
+    const t = createTranslator({ locale, messages: messagesFor(locale), namespace: "spooling" })
+    const hint = t("pcf.mapping.hint")
+    assert.ok(hint.includes(t("templates.saveAs")), `${locale}: the hint names the button that saves`)
+    assert.doesNotMatch(hint, /saved with the template|сохраняется вместе с шаблоном/, locale)
+  }
 })
