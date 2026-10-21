@@ -26,10 +26,47 @@ test("the sample PCF reads as one isometric, two spools and three welds, with no
   assert.equal(submission.rows.length, 6)
 })
 
-test("the sample says its units and is indented with spaces, as a PCF must be", () => {
+test("the sample says its units and is indented with spaces, the way CAD systems write a PCF", () => {
   assert.match(PCF_SAMPLE, /^UNITS-BORE MM$/m)
   assert.match(PCF_SAMPLE, /^ {4}PIPING-SPEC CS150$/m)
   assert.doesNotMatch(PCF_SAMPLE, /\t/)
+})
+
+// The reader takes no geometry, but a customer opens the sample in a viewer: a part that starts away from the one before,
+// a fitting of another size, or a flange turned across its pipe shows as a broken model there.
+type Part = { keyword: string; ends: number[][] }
+const parts = (): Part[] => {
+  const found: Part[] = []
+  for (const line of PCF_SAMPLE.split("\n")) {
+    if (/^[A-Z]/.test(line)) found.push({ keyword: line.split(" ")[0], ends: [] })
+    const point = line.match(/^ +END-POINT (\S+) (\S+) (\S+)/)
+    if (point && found.length > 0) found[found.length - 1].ends.push([Number(point[1]), Number(point[2]), Number(point[3])])
+  }
+  return found.filter((part) => part.ends.length > 0)
+}
+const tenth = (value: number) => Math.round(value * 10) / 10
+const run = (part: Part) => part.ends[1].map((value, axis) => tenth(value - part.ends[0][axis]))
+
+test("each part starts where the one before it ends, and each weld sits on that joint", () => {
+  const all = parts()
+  const pieces = all.filter((part) => part.keyword !== "WELD")
+  for (let index = 1; index < pieces.length; index += 1) {
+    assert.deepEqual(pieces[index].ends[0], pieces[index - 1].ends[1], `${pieces[index].keyword} ${index} starts where ${pieces[index - 1].keyword} ends`)
+  }
+  all.forEach((part, index) => {
+    if (part.keyword === "WELD") assert.deepEqual(part.ends[0], all[index - 1].ends[1], `weld ${index} sits at the end of the part before it`)
+  })
+})
+
+test("the DN100 long-radius elbow turns 152.4 mm each way, as the DN100 elbow of ISO-1001.pcf does", () => {
+  const elbow = parts().find((part) => part.keyword === "ELBOW")!
+  assert.deepEqual(run(elbow).map(Math.abs), [152.4, 152.4, 0])
+})
+
+test("the flange carries on in the direction of the pipe it is welded to", () => {
+  const pieces = parts().filter((part) => part.keyword !== "WELD")
+  const flange = pieces.findIndex((part) => part.keyword === "FLANGE")
+  assert.deepEqual(run(pieces[flange]).map(Math.sign), run(pieces[flange - 1]).map(Math.sign))
 })
 
 test("the sample names its file so the isometric number comes out as the file name", () => {

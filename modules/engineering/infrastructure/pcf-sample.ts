@@ -1,8 +1,10 @@
 /**
  * The sample PCF the three CAD tiles hand out: a sample, not a form, because a PCF is written by the CAD system. It is
- * the smallest file the reader accepts — the units, one pipeline, four parts and three WELD blocks that carry a number
- * (`REPEAT-WELD-IDENTIFIER`), a place (`SKEY` WW or WS) and a type (the end type of the part at the weld) — and
- * `pcf-sample.test.ts` runs it through `buildPcfSubmission`, so it cannot drift from what `pcf-welds.ts` reads.
+ * a short file with everything the reader uses — the units, one pipeline, four parts and three WELD blocks that carry a
+ * number (`REPEAT-WELD-IDENTIFIER`), a place (`SKEY` WW or WS) and a type (the end type of the part at the weld) — and
+ * `pcf-sample.test.ts` runs it through `buildPcfSubmission`, so it cannot drift from what `pcf-welds.ts` reads. The
+ * geometry is a real DN100 run (a 152.4 mm long-radius elbow, a flange in line with its pipe), because a customer may
+ * open the sample in a viewer; the same test keeps the parts joined end to end.
  * It lives in infrastructure, not in domain: the material descriptions are prose, and a domain file may not hold it.
  */
 export const PCF_SAMPLE_FILE_NAME = "ISO-5001.pcf"
@@ -29,8 +31,8 @@ WELD
 ELBOW
     COMPONENT-IDENTIFIER 3
     END-POINT 1500.0 0.0 0.0 100 BW
-    END-POINT 1728.6 228.6 0.0 100 BW
-    CENTRE-POINT 1500.0 228.6 0.0
+    END-POINT 1652.4 152.4 0.0 100 BW
+    CENTRE-POINT 1500.0 152.4 0.0
     ANGLE 9000
     SKEY ELBW
     ITEM-CODE ELB100LR90
@@ -38,25 +40,25 @@ ELBOW
 WELD
     COMPONENT-IDENTIFIER 4
     MASTER-COMPONENT-IDENTIFIER 3
-    END-POINT 1728.6 228.6 0.0 100
+    END-POINT 1652.4 152.4 0.0 100
     SKEY WS
     REPEAT-WELD-IDENTIFIER 2
 PIPE
     COMPONENT-IDENTIFIER 5
-    END-POINT 1728.6 228.6 0.0 100 BW
-    END-POINT 1728.6 1028.6 0.0 100 BW
+    END-POINT 1652.4 152.4 0.0 100 BW
+    END-POINT 1652.4 952.4 0.0 100 BW
     ITEM-CODE PIPE100
     SPOOL-IDENTIFIER 5001-S2
 WELD
     COMPONENT-IDENTIFIER 6
     MASTER-COMPONENT-IDENTIFIER 5
-    END-POINT 1728.6 1028.6 0.0 100
+    END-POINT 1652.4 952.4 0.0 100
     SKEY WW
     REPEAT-WELD-IDENTIFIER 3
 FLANGE
     COMPONENT-IDENTIFIER 7
-    END-POINT 1728.6 1028.6 0.0 100 BW
-    END-POINT 1788.6 1028.6 0.0 100 FL
+    END-POINT 1652.4 952.4 0.0 100 BW
+    END-POINT 1652.4 1012.4 0.0 100 FL
     SKEY FLWN
     ITEM-CODE FLWN100
     SPOOL-IDENTIFIER 5001-S2
