@@ -206,12 +206,18 @@
       "support_type": "Support type"
     }
   },
+  "templateErrors": {
+    "TEMPLATE_NAME_TAKEN": "A template with this name already exists in this project. Choose another name.",
+    "TEMPLATE_NAME_INVALID": "The template name or source is not allowed. A name takes 1 to 120 characters.",
+    "TEMPLATE_SETTINGS_INVALID": "The template settings do not fit its source.",
+    "TEMPLATE_REFUSED": "You cannot change the templates of this project.",
+    "TEMPLATE_SAVE_FAILED": "The template could not be saved."
+  },
   "templates": {
     "label": "Template",
     "name": "Template name",
     "saveAs": "Save as template",
     "saved": "Template \"{name}\" saved.",
-    "saveFailed": "The template could not be saved.",
     "loadFailed": "The project's templates could not be loaded."
   },
   "revision": {

@@ -1,9 +1,11 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { DEFAULT_PCF_SETTINGS, type ImportTemplate } from "../domain/import-template"
+import { DEFAULT_PCF_SETTINGS, ImportTemplateError, type ImportTemplate, type ImportTemplateErrorCode } from "../domain/import-template"
 import { deleteImportTemplate, loadImportReferences, loadImportTemplates, saveImportTemplate, toImportTemplate } from "./supabase-import-template-repository"
 
 type Call = [string, ...unknown[]]
+/** Rejects with a template error of this code: the screen translates the code, so the code is what is asserted. */
+const withCode = (code: ImportTemplateErrorCode) => (error: unknown) => error instanceof ImportTemplateError && error.code === code
 /** A query builder that records every call and, once awaited, answers with the result given for its table. */
 function fakeClient(results: Record<string, { data?: unknown; error?: { code?: string; message?: string } | null }>) {
   const calls: Call[] = []
@@ -68,20 +70,33 @@ test("a template with an id is updated inside its project, never inserted", asyn
 
 test("an update that changes no row is a refusal: row level security hides a row the user may not change", async () => {
   const { client } = fakeClient({ spooling_import_templates: { data: null } })
-  await assert.rejects(saveImportTemplate(client, "p-1", { ...draft, id: "t-1" }), /do not have permission/)
+  await assert.rejects(saveImportTemplate(client, "p-1", { ...draft, id: "t-1" }), withCode("TEMPLATE_REFUSED"))
 })
 
 test("settings that do not fit the source are refused before anything is written", async () => {
   const { client, calls } = fakeClient({})
-  await assert.rejects(saveImportTemplate(client, "p-1", { ...draft, source: "table" }), /do not fit/)
-  await assert.rejects(saveImportTemplate(client, "p-1", { ...draft, settings: { kind: "x" } as never }), /do not fit/)
+  await assert.rejects(saveImportTemplate(client, "p-1", { ...draft, source: "table" }), withCode("TEMPLATE_SETTINGS_INVALID"))
+  await assert.rejects(saveImportTemplate(client, "p-1", { ...draft, settings: { kind: "x" } as never }), withCode("TEMPLATE_SETTINGS_INVALID"))
   assert.deepEqual(calls, [])
 })
 
-test("a name that is taken and a value the table refuses each get their own message", async () => {
-  await assert.rejects(saveImportTemplate(fakeClient({ spooling_import_templates: { error: { code: "23505" } } }).client, "p-1", draft), /name already exists/)
-  await assert.rejects(saveImportTemplate(fakeClient({ spooling_import_templates: { error: { code: "23514" } } }).client, "p-1", draft), /name or source/)
-  await assert.rejects(saveImportTemplate(fakeClient({ spooling_import_templates: { error: { code: "42501" } } }).client, "p-1", draft), /do not have permission/)
+test("a name that is taken and a value the table refuses each get their own code, not a sentence", async () => {
+  const failing = (code: string) => fakeClient({ spooling_import_templates: { error: { code } } }).client
+  await assert.rejects(saveImportTemplate(failing("23505"), "p-1", draft), withCode("TEMPLATE_NAME_TAKEN"))
+  await assert.rejects(saveImportTemplate(failing("23514"), "p-1", draft), withCode("TEMPLATE_NAME_INVALID"))
+  await assert.rejects(saveImportTemplate(failing("42501"), "p-1", draft), withCode("TEMPLATE_REFUSED"))
+  await assert.rejects(saveImportTemplate(failing("XX000"), "p-1", draft), withCode("TEMPLATE_SAVE_FAILED"))
+})
+
+test("a code the client names carries no English sentence; a code from the server carries the server's text as detail", async () => {
+  const thrown = async (code: string): Promise<ImportTemplateError> => {
+    try { await saveImportTemplate(fakeClient({ spooling_import_templates: { error: { code } } }).client, "p-1", draft) } catch (error) { return error as ImportTemplateError }
+    throw new Error("the save did not fail")
+  }
+  assert.equal((await thrown("23505")).detail, undefined)
+  assert.equal((await thrown("23514")).detail, undefined)
+  assert.match((await thrown("42501")).detail ?? "", /do not have permission/)
+  assert.match((await thrown("XX000")).detail ?? "", /could not be completed/)
 })
 
 test("a template is deleted by id; a delete that removes no row is a refusal", async () => {

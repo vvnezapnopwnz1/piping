@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database, Json } from "@/lib/supabase/database.types"
-import { isImportSourceId, parseTemplateSettings, templateKindOf, type ImportReferences, type ImportTemplate } from "../domain/import-template"
+import { ImportTemplateError, isImportSourceId, parseTemplateSettings, templateKindOf, type ImportReferences, type ImportTemplate } from "../domain/import-template"
 import { mapSupabaseEngineeringError } from "./supabase-engineering-errors"
 
 export type { ImportReferences }
@@ -13,15 +13,18 @@ const TABLE = "spooling_import_templates"
 
 type DatabaseError = { code?: string; message?: string }
 
-/** The two codes a template write can hit for its own reasons get a sentence about templates; the rest use the engineering messages. */
-function failure(error: DatabaseError): Error {
-  if (error.code === "23505") return new Error("A template with this name already exists in this project. Choose another name.")
-  if (error.code === "23514") return new Error("The template name or source is not allowed. A name takes 1 to 120 characters.")
-  return new Error(mapSupabaseEngineeringError(error))
+/**
+ * The two codes a template write can hit for its own reasons get a template code the screen translates; a refusal and the
+ * rest keep the engineering message as detail.
+ */
+function failure(error: DatabaseError): ImportTemplateError {
+  if (error.code === "23505") return new ImportTemplateError("TEMPLATE_NAME_TAKEN")
+  if (error.code === "23514") return new ImportTemplateError("TEMPLATE_NAME_INVALID")
+  return new ImportTemplateError(error.code === "42501" ? "TEMPLATE_REFUSED" : "TEMPLATE_SAVE_FAILED", mapSupabaseEngineeringError(error))
 }
 
 /** Row level security hides a row the user may not change instead of failing, so no row back means no permission. */
-const refused = () => new Error(mapSupabaseEngineeringError({ code: "42501" }))
+const refused = () => failure({ code: "42501" })
 
 /** A stored row as a template, or null when it is not a usable one: settings that are no template, or of another kind than its source takes. */
 export function toImportTemplate(row: StoredTemplate): ImportTemplate | null {
@@ -41,7 +44,7 @@ export async function loadImportTemplates(client: Client, projectId: string): Pr
 /** Inserts a template without an id, updates one with an id. The settings are stored in the form the parser reads them back in. */
 export async function saveImportTemplate(client: Client, projectId: string, template: ImportTemplate): Promise<ImportTemplate> {
   const settings = parseTemplateSettings(template.settings)
-  if (settings === null || settings.kind !== templateKindOf(template.source)) throw new Error("The template settings do not fit its source.")
+  if (settings === null || settings.kind !== templateKindOf(template.source)) throw new ImportTemplateError("TEMPLATE_SETTINGS_INVALID")
   const values = { source: template.source, name: template.name.trim(), settings: settings as unknown as NonNullable<Json> }
   const { data, error } = template.id === null
     ? await client.from(TABLE).insert({ project_id: projectId, ...values }).select(TEMPLATE_COLUMNS).single()
@@ -49,7 +52,7 @@ export async function saveImportTemplate(client: Client, projectId: string, temp
   if (error) throw failure(error)
   if (data === null) throw refused()
   const saved = toImportTemplate(data)
-  if (saved === null) throw new Error(mapSupabaseEngineeringError(null))
+  if (saved === null) throw new ImportTemplateError("TEMPLATE_SAVE_FAILED", mapSupabaseEngineeringError(null))
   return saved
 }
 

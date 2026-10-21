@@ -149,3 +149,27 @@ export function parseTemplateSettings(value: unknown): ImportTemplateSettings | 
   if (value.kind === "pcf") return parsePcfSettings(value)
   return null
 }
+
+/** Why a template could not be saved, deleted or read. The screen turns the code into its words. */
+export const IMPORT_TEMPLATE_ERROR_CODES = [
+  "TEMPLATE_NAME_TAKEN", // a template with this name is already in the project
+  "TEMPLATE_NAME_INVALID", // the name or the source fails the table's check
+  "TEMPLATE_SETTINGS_INVALID", // the settings do not fit the template's source
+  "TEMPLATE_REFUSED", // the project's rules did not let this user change it
+  "TEMPLATE_SAVE_FAILED", // anything else
+] as const
+export type ImportTemplateErrorCode = (typeof IMPORT_TEMPLATE_ERROR_CODES)[number]
+
+/**
+ * A template error with a code. `detail` is the server's own sentence, kept only when the code does not say it all; the
+ * screen shows it under the translated title. A code the client names itself carries none.
+ */
+export class ImportTemplateError extends Error {
+  readonly code: ImportTemplateErrorCode
+  readonly detail: string | undefined
+  constructor(code: ImportTemplateErrorCode, detail?: string) {
+    super(detail ?? code)
+    this.code = code
+    this.detail = detail
+  }
+}

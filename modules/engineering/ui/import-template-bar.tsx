@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { errorDetail } from "@/i18n/format"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
-import { BUILT_IN_TEMPLATES, type ImportSourceId, type ImportTemplate, type ImportTemplateSettings } from "../domain/import-template"
+import { BUILT_IN_TEMPLATES, ImportTemplateError, type ImportSourceId, type ImportTemplate, type ImportTemplateSettings } from "../domain/import-template"
 import { saveImportTemplate } from "../infrastructure/supabase-import-template-repository"
 
 const BUILT_IN_ID = "built-in"
@@ -30,6 +30,7 @@ export function ImportTemplateBar({ projectId, source, templates, chosenId, sett
   onSaved: (template: ImportTemplate) => void
 }) {
   const t = useTranslations("spooling.templates")
+  const te = useTranslations("spooling.templateErrors")
   const id = useId()
   const builtIn = BUILT_IN_TEMPLATES.find((template) => template.source === source)!
   const [name, setName] = useState("")
@@ -43,7 +44,9 @@ export function ImportTemplateBar({ projectId, source, templates, chosenId, sett
       onSaved(saved)
       toast.success(t("saved", { name: saved.name }))
     } catch (error) {
-      toast.error(t("saveFailed"), { description: errorDetail(error) })
+      // A coded error is told in the screen's words, with the server's own sentence, if it sent one, beneath.
+      if (error instanceof ImportTemplateError) toast.error(te(error.code), { description: error.detail })
+      else toast.error(te("TEMPLATE_SAVE_FAILED"), { description: errorDetail(error) })
     } finally {
       setSaving(false)
     }

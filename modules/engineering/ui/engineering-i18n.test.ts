@@ -5,6 +5,7 @@ import { I18N_DONE_PATHS, RU_COMPLETE_NAMESPACES } from "@/i18n/coverage"
 import { messagesFor } from "@/i18n/messages"
 import { findUiLiterals } from "@/scripts/i18n/find-ui-literals"
 import { CHANGE_TYPES } from "../domain/diff"
+import { IMPORT_TEMPLATE_ERROR_CODES } from "../domain/import-template"
 import { ENGINEERING_ENTITY_TYPES } from "../domain/entity"
 import { SPOOLGEN_ISSUE_CODES } from "../domain/spoolgen-issue"
 import type { RevisionApplyReason } from "../application/resolve-revision"
@@ -96,5 +97,15 @@ test("the import tab is not named after one source and the template hint leaves 
     const hint = t("pcf.mapping.hint")
     assert.ok(hint.includes(t("templates.saveAs")), `${locale}: the hint names the button that saves`)
     assert.doesNotMatch(hint, /saved with the template|сохраняется вместе с шаблоном/, locale)
+  }
+})
+
+test("every template error code is a sentence the screen can show in both languages", () => {
+  for (const locale of ["en", "ru"] as const) {
+    const t = createTranslator({ locale, messages: messagesFor(locale), namespace: "spooling.templateErrors" })
+    for (const code of IMPORT_TEMPLATE_ERROR_CODES) {
+      assert.ok(t.has(code), `${locale} ${code}`)
+      assert.doesNotMatch(t(code), /\{|\}/, `${locale} ${code}`)
+    }
   }
 })
