@@ -12,6 +12,7 @@ import type { SpoolgenSubmission } from "../application/import-spooling"
 import type { ImportSourceId } from "../domain/import-template"
 import { submitSpoolingImport, type SpoolingUpload } from "../infrastructure/submit-spooling-import"
 import { ImportSourcePicker } from "./import-source-picker"
+import { PcfImportPanel } from "./pcf-import-panel"
 import { describeSpoolgenIssue } from "./spoolgen-issue-text"
 import { TableImportPanel } from "./table-import-panel"
 
@@ -50,6 +51,9 @@ export function SpoolingImport({ projectId, canManage, onValidated }: { projectI
         <ImportSourcePicker value={source} disabled={busy} onChange={(next) => { setSource(next); setIssues(null) }} />
         {source === "table" || source === "spoolgen" ? (
           <TableImportPanel key={source} projectId={projectId} source={source} canManage={canManage} busy={busy} onEdit={clearIssues} onSubmit={(submission, uploads) => void submit(submission, uploads)} />
+        ) : null}
+        {source === "aveva" || source === "hexagon" || source === "plant3d" ? (
+          <PcfImportPanel key={source} projectId={projectId} source={source} canManage={canManage} busy={busy} validated={issues !== null} onEdit={clearIssues} onSubmit={(submission, uploads) => void submit(submission, uploads)} />
         ) : null}
         {issues ? (
           <div className="space-y-2">

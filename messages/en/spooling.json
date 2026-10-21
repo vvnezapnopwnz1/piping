@@ -149,6 +149,29 @@
     "weldRequired": "Add the weld file to validate.",
     "unmatched": "Match every required column before validating."
   },
+  "pcf": {
+    "hint": "Add the PCF files of one upload, one per isometric. A file with the name of one already added replaces it. Each file is limited to {limit} MB, and one upload takes at most {max} files.",
+    "choose": "Add PCF files",
+    "count": "{count, plural, one {# file} other {# files}}",
+    "reading": "{count, plural, one {Reading # file…} other {Reading # files…}}",
+    "removeAll": "Remove all",
+    "pdsArea": "PDS area",
+    "pdsAreaPlaceholder": "Choose the PDS area",
+    "pdsAreaHint": "Every weld of this upload goes to this area.",
+    "noPdsAreas": "The project has no active PDS area. Add one in Project Setup first.",
+    "filesRequired": "Add PCF files to validate.",
+    "areaRequired": "Choose the PDS area to validate.",
+    "referencesFailed": "The project's codes could not be loaded.",
+    "readIssues": "Found while reading the files",
+    "mapping": {
+      "title": "Codes the project does not have",
+      "hint": "Choose the project's code for each code in the files. The choice applies at once and is saved with the template. A code kept as it is stops the import at validation.",
+      "serviceClasses": "Service class (PIPING-SPEC)",
+      "weldTypes": "Weld type",
+      "keep": "Keep as it is",
+      "choose": "Project code for {code}"
+    }
+  },
   "mapping": {
     "title": "Columns of {file}",
     "hint": "Choose the column that holds each field. Fields marked * are required. Diameters are read in inches: a column in millimetres is not converted.",
