@@ -85,3 +85,19 @@ node --import tsx --test modules/engineering/application/import-samples.test.ts
 - CSV сделан из UTF-8: `iconv -f UTF-8 -t CP1251`. Чтобы поправить, переведите назад (`iconv -f CP1251 -t UTF-8`), исправьте и
   переведите снова, сохранив CRLF. Файл в UTF-8 тест отклонит: кодировка должна остаться `windows-1251`.
 - Значения для каждого файла записаны в тесте таблицами. Изменили образец: поправьте таблицу и этот файл.
+
+## Чем скачанный шаблон отличается от образцов в этой папке
+
+Образцы в этой папке — то, что **читает** импорт: выгрузки систем проектирования и реестр из русской Windows. Их
+проверяет `modules/engineering/application/import-samples.test.ts`.
+
+Шаблоны, которые экран отдаёт кнопками на плитках, собираются в коде и в папке не лежат:
+
+- Excel/CSV — `modules/engineering/infrastructure/import-template-data.ts` (какие колонки и что в них) и
+  `modules/engineering/ui/import-template-sheets.ts` (листы «Справка» и «Коды проекта»);
+- SpoolGen — тот же файл данных плюс `modules/engineering/infrastructure/import-template-files.ts`;
+- PCF — `modules/engineering/infrastructure/pcf-sample.ts`.
+
+Их общее обещание проверяет `modules/engineering/application/import-template-roundtrip.test.ts`: скачанное,
+заполненное по строке-примеру, загружается без ошибок и без ручного сопоставления. Меняя образец здесь, сверьтесь с
+этим тестом: он держит и шаблон, и образцы.
