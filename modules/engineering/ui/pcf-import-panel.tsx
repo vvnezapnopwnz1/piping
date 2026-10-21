@@ -158,7 +158,7 @@ export function PcfImportPanel({ projectId, source, canManage, busy, validated, 
         </div>
         {referencesFailed !== null ? (
           <div role="alert" className="flex flex-wrap items-center gap-2 pb-2 text-xs text-danger-fg">
-            <span>{t("pcf.referencesFailed")}{referencesFailed.detail ? ` ${referencesFailed.detail}` : ""}</span>
+            <span>{t("templates.codesFailed")}{referencesFailed.detail ? ` ${referencesFailed.detail}` : ""}</span>
             <Button type="button" variant="outline" size="sm" onClick={retryReferences}>{t("pcf.retry")}</Button>
           </div>
         ) : (

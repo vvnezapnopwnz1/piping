@@ -163,7 +163,6 @@
     "noPdsAreas": "The project has no active PDS area. Add one in Project Setup first.",
     "filesRequired": "Add PCF files to validate.",
     "areaRequired": "Choose the PDS area to validate.",
-    "referencesFailed": "The project's codes could not be loaded.",
     "retry": "Retry",
     "readIssues": "Found while reading the files",
     "mapping": {
@@ -222,7 +221,43 @@
     "name": "Template name",
     "saveAs": "Save as template",
     "saved": "Template \"{name}\" saved.",
-    "loadFailed": "The project's templates could not be loaded."
+    "loadFailed": "The project's templates could not be loaded.",
+    "download": {
+      "tableXlsx": "Download the Excel template",
+      "tableCsv": "Download the CSV template (welds)",
+      "spoolgen": "Download the SpoolGen files",
+      "pcf": "Download a sample PCF",
+      "pcfReads": "This is a sample, not a form: a PCF is written by your CAD system. We read UNITS-BORE for the units, PIPELINE-REFERENCE, PIPING-SPEC, REVISION, SPOOL-IDENTIFIER, and WELD blocks with SKEY, CATEGORY, REPEAT-WELD-IDENTIFIER and WELD-TYPE.",
+      "required": "Required",
+      "optional": "Optional",
+      "exampleRow": "The second row is an example: replace its values with yours before uploading.",
+      "unit": { "inch": "inches", "mm": "mm", "kg": "kg", "count": "pieces" },
+      "allowed": { "weldLocation": "shop or assembly for a shop weld, field for a site weld" },
+      "source": {
+        "file": "From your own file",
+        "drawing": "From the isometric drawing",
+        "projectCodes": "A code of the project, from the \"Project codes\" sheet"
+      },
+      "help": {
+        "sheet": "Help",
+        "field": "Field",
+        "header": "Header in the file",
+        "required": "Is it required",
+        "unit": "Units",
+        "allowed": "Allowed values",
+        "source": "Where the value comes from"
+      },
+      "codes": {
+        "sheet": "Project codes",
+        "group": "Codes of the project",
+        "code": "Code",
+        "pdsArea": "PDS area",
+        "serviceClass": "Service class",
+        "weldType": "Weld type",
+        "unavailable": "The project's codes were not loaded, so this sheet is empty. Open the import screen again to download a template with them."
+      }
+    },
+    "codesFailed": "The project's codes could not be loaded."
   },
   "revision": {
     "title": "Revision decisions",
