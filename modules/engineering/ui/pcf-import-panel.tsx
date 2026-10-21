@@ -58,6 +58,9 @@ export function PcfImportPanel({ projectId, source, canManage, busy, validated, 
   const [files, setFiles] = useState<Held[]>([])
   const [pdsArea, setPdsArea] = useState("")
   const [references, setReferences] = useState<ImportReferences | null>(null)
+  // Why the project's codes are missing, once loading them failed; the panel offers a retry instead of waiting for them forever.
+  const [referencesFailed, setReferencesFailed] = useState<{ detail: string | undefined } | null>(null)
+  const [referencesAttempt, setReferencesAttempt] = useState(0)
   const [settings, setSettings] = useState<PcfTemplateSettings>(() => copyOf(BUILT_IN_TEMPLATES.find((template) => template.source === source)!.settings))
   const [choices, setChoices] = useState<CodeChoices>(NO_CHOICES)
   const [templates, setTemplates] = useState<ImportTemplate[]>([])
@@ -71,8 +74,7 @@ export function PcfImportPanel({ projectId, source, canManage, busy, validated, 
 
   useEffect(() => {
     let live = true
-    const client = getSupabaseBrowserClient()
-    loadImportTemplates(client, projectId)
+    loadImportTemplates(getSupabaseBrowserClient(), projectId)
       .then((rows) => {
         if (!live) return
         const own = rows.filter((row) => row.source === source)
@@ -84,11 +86,16 @@ export function PcfImportPanel({ projectId, source, canManage, busy, validated, 
         onEdit()
       })
       .catch((error: unknown) => { if (live) toast.error(t("templates.loadFailed"), { description: errorDetail(error) }) })
-    loadImportReferences(client, projectId)
-      .then((loaded) => { if (live) setReferences(loaded) })
-      .catch((error: unknown) => { if (live) toast.error(t("pcf.referencesFailed"), { description: errorDetail(error) }) })
     return () => { live = false }
   }, [onEdit, projectId, source, t])
+
+  useEffect(() => {
+    let live = true
+    loadImportReferences(getSupabaseBrowserClient(), projectId)
+      .then((loaded) => { if (live) setReferences(loaded) })
+      .catch((error: unknown) => { if (live) setReferencesFailed({ detail: errorDetail(error) }) })
+    return () => { live = false }
+  }, [projectId, referencesAttempt])
 
   const readFile = async (file: File, ticket: number) => {
     try {
@@ -120,6 +127,7 @@ export function PcfImportPanel({ projectId, source, canManage, busy, validated, 
   const saved = (template: ImportTemplate) => { setTemplates((current) => [template, ...current.filter((entry) => entry.id !== template.id)]); setChosenId(template.id); changeSettings(copyOf(template.settings)) }
   const chooseCode = (kind: CodeKind, code: string, target: string | null) => { touched.current = true; setChoices((current) => ({ ...current, [kind]: withChoice(current[kind], code, target) })); onEdit() }
   const chooseArea = (code: string) => { setPdsArea(code); onEdit() }
+  const retryReferences = () => { setReferencesFailed(null); setReferencesAttempt((attempt) => attempt + 1) }
   const validate = () => onSubmit(submission, files.map(({ file }) => ({ role: "pcf", file })))
 
   const reading = files.filter((held) => held.text === null).length
@@ -147,7 +155,14 @@ export function PcfImportPanel({ projectId, source, canManage, busy, validated, 
             </SelectContent>
           </Select>
         </div>
-        <p className={cn("pb-2 text-xs", noAreas ? "text-warning-fg" : "text-muted-foreground")}>{noAreas ? t("pcf.noPdsAreas") : t("pcf.pdsAreaHint")}</p>
+        {referencesFailed !== null ? (
+          <div role="alert" className="flex flex-wrap items-center gap-2 pb-2 text-xs text-danger-fg">
+            <span>{t("pcf.referencesFailed")}{referencesFailed.detail ? ` ${referencesFailed.detail}` : ""}</span>
+            <Button type="button" variant="outline" size="sm" onClick={retryReferences}>{t("pcf.retry")}</Button>
+          </div>
+        ) : (
+          <p className={cn("pb-2 text-xs", noAreas ? "text-warning-fg" : "text-muted-foreground")}>{noAreas ? t("pcf.noPdsAreas") : t("pcf.pdsAreaHint")}</p>
+        )}
       </div>
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-3 text-sm">

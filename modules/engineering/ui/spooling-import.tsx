@@ -20,12 +20,18 @@ import { TableImportPanel } from "./table-import-panel"
  * The import screen: the source tiles, the chosen source's upload, and after validation what the server found. Every
  * panel hands its rows and files to the same submit, so a job looks the same whatever the source.
  */
-export function SpoolingImport({ projectId, canManage, onValidated }: { projectId: string; canManage: boolean; onValidated: (jobId: string) => void }) {
+export function SpoolingImport({ projectId, canManage, onJobChange }: {
+  projectId: string
+  canManage: boolean
+  /** The job whose revisions are decided below the form: a new one after validation, null as soon as the form is edited. */
+  onJobChange: (jobId: string | null) => void
+}) {
   const t = useTranslations("spooling")
   const [source, setSource] = useState<ImportSourceId | null>(null)
   const [busy, setBusy] = useState(false)
   const [issues, setIssues] = useState<StoredImportIssue[] | null>(null)
-  const clearIssues = useCallback(() => setIssues(null), [])
+  // An edit drops the issues and the job they belong to, so decisions about an earlier upload never sit beside new files.
+  const clearIssues = useCallback(() => { setIssues(null); onJobChange(null) }, [onJobChange])
 
   const submit = useCallback(async (submission: SpoolgenSubmission, uploads: readonly SpoolingUpload[]) => {
     if (!canManage || busy) return
@@ -33,14 +39,14 @@ export function SpoolingImport({ projectId, canManage, onValidated }: { projectI
     try {
       const result = await submitSpoolingImport(getSupabaseBrowserClient(), projectId, submission, uploads)
       setIssues(result.issues)
-      onValidated(result.jobId)
+      onJobChange(result.jobId)
       toast.success(t("importScreen.validated", { rows: submission.rows.length, errors: result.counts.blockerCount, warnings: result.counts.warningCount }))
     } catch (error) {
       toast.error(t("importScreen.failed"), { description: errorDetail(error) })
     } finally {
       setBusy(false)
     }
-  }, [busy, canManage, onValidated, projectId, t])
+  }, [busy, canManage, onJobChange, projectId, t])
 
   return (
     <Card>
@@ -48,7 +54,7 @@ export function SpoolingImport({ projectId, canManage, onValidated }: { projectI
         <CardTitle>{t("sources.title")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <ImportSourcePicker value={source} disabled={busy} onChange={(next) => { setSource(next); setIssues(null) }} />
+        <ImportSourcePicker value={source} disabled={busy} onChange={(next) => { setSource(next); clearIssues() }} />
         {source === "table" || source === "spoolgen" ? (
           <TableImportPanel key={source} projectId={projectId} source={source} canManage={canManage} busy={busy} onEdit={clearIssues} onSubmit={(submission, uploads) => void submit(submission, uploads)} />
         ) : null}

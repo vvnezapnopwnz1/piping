@@ -7,7 +7,7 @@ import { SPOOLGEN_FILE_ROLES } from "../domain/spoolgen-file"
 import { parseDelimited } from "../domain/parsers/delimited"
 import { buildSpoolgenSubmission } from "./import-spooling"
 import type { TableTemplateSettings } from "../domain/import-template"
-import { applyColumnDrafts, buildTableSubmission, columnMapOf, describeTableColumns, hasMappedColumn, mergeColumnMaps, withColumnChoice, type TableSource } from "./import-table"
+import { applyColumnDrafts, buildTableSubmission, columnMapOf, describeTableColumns, hasMappedColumn, mergeColumnMaps, pickTableFile, withColumnChoice, type TableSource } from "./import-table"
 
 const HEADERS = ["Изометрия", "Ревизия", "Зона", "Класс", "Катушка", "Шов", "Тип", "Диаметр"]
 const register: TableSource = { role: "weld", fileName: "register.xlsx", matrix: [HEADERS, ["ISO-1", "R0", "PDS-A", "SC-01", "SP-1", "W-1", "BW", 6]] }
@@ -116,6 +116,28 @@ test("choosing 'not in the file' is the one way to take a saved mapping away", (
   const applied = applyColumnDrafts(settings, { weld: removed })
   assert.deepEqual(applied.columns.weld, {})
   assert.equal(hasMappedColumn(applied), false, "a template left with no mapped column is not worth saving")
+})
+
+test("a source with a fixed contract can be sent with a column missing: the server reports it, as the old screen did", () => {
+  const settings: TableTemplateSettings = { kind: "table", columns: {} }
+  const strict = buildTableSubmission([register], settings)
+  const lenient = buildTableSubmission([register], settings, { strictColumns: false })
+  assert.equal(strict.canSubmit, false, "Excel and CSV stay strict by default")
+  assert.equal(lenient.canSubmit, true, "the four-file source is sent")
+  assert.deepEqual(lenient.missingColumns, strict.missingColumns, "what is missing is still listed")
+  assert.equal(buildTableSubmission([], settings, { strictColumns: false }).canSubmit, false, "without a weld file nothing is sent in either mode")
+})
+
+test("a file picked for a role takes its slot and says which file it replaced", () => {
+  const file = (name: string, size = 10) => ({ name, size })
+  const first = pickTableFile("weld", undefined, file("a.csv"), 0)
+  assert.deepEqual([first.taken?.name, first.replaced], ["a.csv", undefined])
+  const second = pickTableFile("weld", file("a.csv"), file("b.csv"), 0)
+  assert.deepEqual([second.taken?.name, second.replaced?.name], ["b.csv", "a.csv"])
+  const same = pickTableFile("weld", file("a.csv"), file("a.csv"), 0)
+  assert.equal(same.replaced?.name, "a.csv", "the same name is a replacement too")
+  const empty = pickTableFile("weld", file("a.csv"), file("b.csv", 0), 0)
+  assert.deepEqual([empty.taken, empty.replaced, empty.refused.map((issue) => issue.code)], [undefined, undefined, ["FILE_EMPTY"]])
 })
 
 // Russian has every English key of the namespace: i18n/messages.test.ts holds that for `spooling`.

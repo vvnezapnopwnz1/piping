@@ -2,7 +2,7 @@ import type { TableTemplateSettings } from "../domain/import-template"
 import { emptyFileSet } from "../domain/parsers/cross-file"
 import { parseSpoolgenMatrix } from "../domain/parsers/spoolgen-parser"
 import { SPOOLGEN_CONTRACT, normalizeHeader, resolveColumns } from "../domain/spoolgen-contract"
-import { SPOOLGEN_FILE_ROLES, missingRequiredRoles, type SpoolgenFileRole } from "../domain/spoolgen-file"
+import { SPOOLGEN_FILE_ROLES, addPickedFiles, missingRequiredRoles, type SpoolgenFileRole } from "../domain/spoolgen-file"
 import { spoolgenIssue, type SpoolgenIssue } from "../domain/spoolgen-issue"
 import { buildSubmissionFromSet, type SpoolgenSubmission } from "./import-spooling"
 
@@ -21,9 +21,11 @@ const offeredHeaders = (row: readonly string[]): string[] => [...new Set(row.fil
 
 /**
  * One upload of table files, read through the template's column map. Each record and issue names its file. Nothing is
- * sent without a weld file or while a required field has no column; every other problem is the server's to report.
+ * sent without a weld file or, unless `strictColumns` is off, while a required field has no column; every other problem
+ * is the server's to report. A source with a fixed contract has no mapping to fix a missing column with, so it turns
+ * `strictColumns` off: the missing columns stay listed and the server reports them.
  */
-export function buildTableSubmission(sources: readonly TableSource[], settings: TableTemplateSettings): TableSubmission {
+export function buildTableSubmission(sources: readonly TableSource[], settings: TableTemplateSettings, options: { strictColumns?: boolean } = {}): TableSubmission {
   const set = emptyFileSet(); const issues: SpoolgenIssue[] = []; const missingColumns: MissingColumns = {}
   const ordered = SPOOLGEN_FILE_ROLES.flatMap((role) => sources.filter((source) => source.role === role))
   for (const source of ordered) {
@@ -36,7 +38,19 @@ export function buildTableSubmission(sources: readonly TableSource[], settings: 
   }
   const missingFiles = missingRequiredRoles(ordered.map((source) => source.role))
   for (const role of missingFiles) issues.push(spoolgenIssue("MISSING_REQUIRED_FILE", null, role))
-  return { ...buildSubmissionFromSet(set, issues, missingFiles.length === 0 && Object.keys(missingColumns).length === 0), missingColumns }
+  const columnsReady = options.strictColumns === false || Object.keys(missingColumns).length === 0
+  return { ...buildSubmissionFromSet(set, issues, missingFiles.length === 0 && columnsReady), missingColumns }
+}
+
+/**
+ * A file picked for a role: it takes the role's slot, and `replaced` is the file it pushed out, so the loss can be shown.
+ * A refused file (empty, over the size limit) takes nothing and replaces nothing. Files held by the other roles count
+ * toward the limit of one upload; the file of this role does not, as it is about to be replaced.
+ */
+export function pickTableFile<T extends { name: string; size: number }>(role: SpoolgenFileRole, held: T | undefined, picked: T, othersHeld: number) {
+  const { files, refused, overLimit } = addPickedFiles(role, [], [picked], othersHeld)
+  const taken = files.find((file) => file === picked)
+  return { taken, replaced: taken === undefined ? undefined : held, refused, overLimit }
 }
 
 /** Per role, the column map an open mapping editor shows and has not applied yet. */

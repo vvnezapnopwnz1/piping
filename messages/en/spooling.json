@@ -147,7 +147,9 @@
     "readFailed": "{file} could not be read.",
     "reading": "Reading {file}…",
     "weldRequired": "Add the weld file to validate.",
-    "unmatched": "Match every required column before validating."
+    "unmatched": "Match every required column before validating.",
+    "columnsLeftToServer": "Some required columns are missing from the files, as listed below. The files are still validated and the server reports them.",
+    "replaced": "{file} replaced {previous}."
   },
   "pcf": {
     "hint": "Add the PCF files of one upload, one per isometric. A file with the name of one already added replaces it. Each file is limited to {limit} MB, and one upload takes at most {max} files.",
@@ -162,6 +164,7 @@
     "filesRequired": "Add PCF files to validate.",
     "areaRequired": "Choose the PDS area to validate.",
     "referencesFailed": "The project's codes could not be loaded.",
+    "retry": "Retry",
     "readIssues": "Found while reading the files",
     "mapping": {
       "title": "Codes the project does not have",

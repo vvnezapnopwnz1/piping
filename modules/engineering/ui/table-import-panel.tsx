@@ -11,11 +11,11 @@ import type { SheetMatrix } from "@/modules/imports/domain/parsers/registry"
 import { readFirstSheetMatrix } from "@/modules/imports/infrastructure/xlsx-workbook"
 import { ImportIssueList } from "@/modules/imports/ui/import-issue-list"
 import type { SpoolgenSubmission } from "../application/import-spooling"
-import { applyColumnDrafts, buildTableSubmission, columnMapOf, describeTableColumns, hasMappedColumn, type ColumnDrafts, type TableSource } from "../application/import-table"
+import { applyColumnDrafts, buildTableSubmission, columnMapOf, describeTableColumns, hasMappedColumn, pickTableFile, type ColumnDrafts, type TableSource } from "../application/import-table"
 import { createPickTickets } from "../application/pick-tickets"
 import { BUILT_IN_TEMPLATES, pickInitialTemplate, type ImportTemplate, type TableTemplateSettings } from "../domain/import-template"
 import { parseDelimited } from "../domain/parsers/delimited"
-import { SPOOLGEN_FILE_ROLES, SPOOLGEN_MAX_FILE_BYTES, SPOOLING_MAX_FILES, addPickedFiles, type SpoolgenFileRole } from "../domain/spoolgen-file"
+import { SPOOLGEN_FILE_ROLES, SPOOLGEN_MAX_FILE_BYTES, SPOOLING_MAX_FILES, type SpoolgenFileRole } from "../domain/spoolgen-file"
 import { readSourceFile } from "../infrastructure/spoolgen-file-reader"
 import { loadImportTemplates } from "../infrastructure/supabase-import-template-repository"
 import type { SpoolingUpload } from "../infrastructure/submit-spooling-import"
@@ -64,7 +64,8 @@ export function TableImportPanel({ projectId, source, canManage, busy, onEdit, o
   const [templates, setTemplates] = useState<ImportTemplate[]>([])
   const [chosenId, setChosenId] = useState<string | null>(null)
   const sources = useMemo<TableSource[]>(() => SPOOLGEN_FILE_ROLES.flatMap((role) => { const held = files[role]; return held ? [{ role, fileName: held.file.name, matrix: held.matrix }] : [] }), [files])
-  const submission = useMemo(() => buildTableSubmission(sources, settings), [sources, settings])
+  // Only a mappable source can be asked to fix a missing column; the four fixed-contract files go to the server as they are.
+  const submission = useMemo(() => buildTableSubmission(sources, settings, { strictColumns: mappable }), [sources, settings, mappable])
   // The editors open now: a role with unmatched columns, or one opened by hand. Each shows its draft, else what is read now.
   const editors = useMemo(() => sources.flatMap((entry) => {
     if (!mappable || (submission.missingColumns[entry.role] === undefined && opened[entry.role] === undefined)) return []
@@ -94,10 +95,11 @@ export function TableImportPanel({ projectId, source, canManage, busy, onEdit, o
   const pick = async (role: Role, file: File | undefined) => {
     if (file === undefined) return
     const others = SPOOLGEN_FILE_ROLES.filter((other) => other !== role && files[other] !== undefined).length
-    const { files: [taken], refused, overLimit } = addPickedFiles(role, [], [file], others)
+    const { taken, replaced, refused, overLimit } = pickTableFile(role, files[role]?.file, file, others)
     for (const issue of refused) toast.error(describeSpoolgenIssue(t, issue))
     if (overLimit > 0) toast.error(t("importScreen.tooMany", { count: overLimit, limit: SPOOLING_MAX_FILES }))
     if (taken === undefined) return
+    if (replaced !== undefined) toast.info(t("table.replaced", { file: taken.name, previous: replaced.name }))
     const ticket = tickets.issue(role)
     setReading((current) => ({ ...current, [role]: taken.name }))
     try {
@@ -127,7 +129,7 @@ export function TableImportPanel({ projectId, source, canManage, busy, onEdit, o
   const validate = () => onSubmit(submission, SPOOLGEN_FILE_ROLES.flatMap((role) => { const held = files[role]; return held ? [{ role, file: held.file }] : [] }))
   const stillReading = Object.keys(reading).length > 0
   const unmatched = Object.keys(submission.missingColumns).length > 0
-  const reason = files.weld === undefined ? t("table.weldRequired") : unmatched ? t("table.unmatched") : null
+  const reason = files.weld === undefined ? t("table.weldRequired") : unmatched ? t(mappable ? "table.unmatched" : "table.columnsLeftToServer") : null
   const limit = SPOOLGEN_MAX_FILE_BYTES / (1024 * 1024)
 
   return (

@@ -24,7 +24,7 @@ export default function SpoolingImportPage() {
 
   return (
     <div className="space-y-4">
-      <SpoolingImport projectId={projectId} canManage={canManage} onValidated={setJobId} />
+      <SpoolingImport projectId={projectId} canManage={canManage} onJobChange={setJobId} />
       <RevisionWorkbench jobId={jobId} canManage={canManage} onApplied={onApplied} />
     </div>
   )

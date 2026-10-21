@@ -109,3 +109,14 @@ test("every template error code is a sentence the screen can show in both langua
     }
   }
 })
+
+test("the retry button, the replaced-file note and the four-file hint are written in both languages", () => {
+  for (const locale of ["en", "ru"] as const) {
+    const t = createTranslator({ locale, messages: messagesFor(locale), namespace: "spooling" })
+    assert.ok(t("pcf.retry").length > 0, `${locale} pcf.retry`)
+    assert.ok(t("pcf.referencesFailed").length > 0, `${locale} pcf.referencesFailed`)
+    const replaced = t("table.replaced", { file: "new.csv", previous: "old.csv" })
+    assert.ok(replaced.includes("new.csv") && replaced.includes("old.csv"), `${locale} ${replaced}`)
+    assert.ok(t("table.columnsLeftToServer").length > 0, `${locale} table.columnsLeftToServer`)
+  }
+})
