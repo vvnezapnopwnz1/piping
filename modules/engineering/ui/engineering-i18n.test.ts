@@ -128,3 +128,11 @@ test("a column list of the mapping editor is named after the field it chooses fo
     assert.ok(label.includes(t("fields.weld_number")), `${locale} ${label}`)
   }
 })
+
+test("the table hint names the sheet a workbook is read from, the role's own", () => {
+  for (const locale of ["en", "ru"] as const) {
+    const t = createTranslator({ locale, messages: messagesFor(locale), namespace: "spooling" })
+    const hint = t("table.hint", { limit: 4 })
+    for (const role of ["weld", "trace", "bolt", "supp"]) assert.ok(hint.includes(role), `${locale}: ${role}`)
+  }
+})

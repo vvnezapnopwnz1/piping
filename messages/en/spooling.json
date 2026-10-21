@@ -134,7 +134,7 @@
     }
   },
   "table": {
-    "hint": "The first sheet of a workbook is read, or the rows of a CSV or text file; the first row holds the headers. Only the weld file is required; each file is limited to {limit} MB.",
+    "hint": "A workbook is read from the sheet named after the file's role (weld, trace, bolt or supp), or from its first sheet if it has none; a CSV or text file is read as it is. The first row holds the headers. Only the weld file is required; each file is limited to {limit} MB.",
     "role": {
       "weld": "Welds: isometric, spool and weld",
       "trace": "Materials and heat numbers",
