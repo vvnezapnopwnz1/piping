@@ -1,5 +1,5 @@
 begin;
-select plan(14);
+select plan(15);
 
 -- One spooling import takes many files: several PCF files (one per isometric), Excel or CSV tables, or the
 -- four SpoolGen files. A file is one per job, role and name; the same name again replaces it. A job holds at
@@ -90,6 +90,13 @@ select is(
    where job_id = (select id from pcf_job) and row_number in (13, 14) and file_name is null),
   2,
   'an issue with an empty or missing file name stores no name');
+
+select throws_ok(
+  format($$select public.record_spooling_validation(%L, '[]'::jsonb, %L::jsonb)$$, (select id from pcf_job),
+         '[{"row_number":1,"severity":"warning","code":"PCF_SPOOL_FROM_FILE_NAME","message":"x","file_name":"' || repeat('a', 256) || '"}]'),
+  '23514',
+  null,
+  'an issue file name longer than 255 characters is refused');
 
 select lives_ok(
   format($$select public.apply_spooling_import_job(%L)$$, (select id from pcf_job)),

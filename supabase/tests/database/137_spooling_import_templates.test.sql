@@ -1,5 +1,5 @@
 begin;
-select plan(22);
+select plan(27);
 
 -- Import templates are project data: a person who can view spooling reads them, a person who can manage
 -- spooling writes them, nobody else (another project, anon) reaches them. Access lives in the policies only.
@@ -179,9 +179,54 @@ select is(
   'the seeded template is untouched');
 
 select is(
-  (select count(*)::int from pg_policies where schemaname = 'public' and tablename = 'spooling_import_templates'),
-  4,
-  'one policy per command: select, insert, update, delete');
+  (select count(*)::int from pg_policies where schemaname = 'public' and tablename = 'spooling_import_templates' and permissive = 'PERMISSIVE'),
+  1,
+  'one permissive policy opens the door for the members of the project');
+
+select is(
+  (select array_agg(cmd order by cmd) from pg_policies
+   where schemaname = 'public' and tablename = 'spooling_import_templates' and permissive = 'RESTRICTIVE'),
+  array['DELETE', 'INSERT', 'SELECT', 'UPDATE'],
+  'the capability checks are restrictive policies, one per command');
+
+-- A permissive policy added later (a role that reads everything) must not widen what the capability checks allow.
+create policy "later permissive grant" on public.spooling_import_templates for all to authenticated using (true) with check (true);
+
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"10000000-0000-0000-0000-000000001373","role":"authenticated"}', true);
+
+select throws_ok(
+  $$insert into public.spooling_import_templates (project_id, source, name, settings)
+    values ('30000000-0000-0000-0000-000000001371', 'table', 'Viewer, door open', '{"kind":"table","columns":{}}')$$,
+  '42501',
+  null,
+  'with a permissive grant added, a user with spooling.view still cannot insert');
+
+select is_empty(
+  $$update public.spooling_import_templates set name = 'Viewer, door open'
+    where id = '70000000-0000-0000-0000-000000001371' returning id$$,
+  'with a permissive grant added, the same user still changes no row');
+
+reset role;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"10000000-0000-0000-0000-000000001374","role":"authenticated"}', true);
+
+select is_empty(
+  $$select id from public.spooling_import_templates where project_id = '30000000-0000-0000-0000-000000001371'$$,
+  'with a permissive grant added, a member of another project still reads no template of this project');
+
+reset role;
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"10000000-0000-0000-0000-000000001374","role":"authenticated"}', true);
+
+select throws_ok(
+  $$insert into public.spooling_import_templates (project_id, source, name, settings)
+    values ('30000000-0000-0000-0000-000000001371', 'aveva', 'Outsider, door open', '{"kind":"pcf"}')$$,
+  '42501',
+  null,
+  'with a permissive grant added, a member of another project still cannot write into this project');
+
+reset role;
 
 select * from finish();
 rollback;

@@ -1,10 +1,11 @@
 begin;
-select plan(13);
+select plan(14);
 
 -- A weld whose file gives no wall thickness takes it from the project's thickness rule for its service class
--- and diameter. The file's thickness, when there is one, is kept. Every check, the preview and the apply read
--- the staged rows through spooling_staging, so the thickness is filled there once. PCF files carry no
--- thickness at all; a weld with no thickness and no rule is still blocked by SRV_THICKNESS_MISSING.
+-- and diameter. The file's thickness, when there is one, is kept. The fill happens once, when the rows are stored
+-- (record_spooling_validation), and the row keeps the value; every check, the preview and the apply read the
+-- stored rows through spooling_staging. PCF files carry no thickness at all; a weld with no thickness and no
+-- rule is still blocked by SRV_THICKNESS_MISSING. 138 holds the rule changing after the check.
 
 insert into auth.users (id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at)
 values ('10000000-0000-0000-0000-000000001351', 'authenticated', 'authenticated', 'thickness.rule@example.test', 'not-used', now(), now(), now());
@@ -65,6 +66,12 @@ select is(
    from public.spooling_staging((select id from rule_job)) s where s.staging_row_number = 4),
   '9',
   'the thickness the file gives is kept, not replaced by the rule');
+
+select is(
+  (select r.normalized_values ->> 'thickness_mm'
+   from public.import_job_rows r where r.job_id = (select id from rule_job) and r.row_number = 3),
+  '7.110',
+  'the thickness is stored on the row when the check is recorded, not worked out at each read');
 
 select * from public.revalidate_spooling_import_job((select id from rule_job));
 
@@ -131,12 +138,14 @@ select is(
 
 reset role;
 
--- Shape pin, like 124: every check reads spooling_staging, about twenty times per apply. A rule lookup per
--- staged row let the planner evaluate engineering_numeric once per candidate rule of every weld (2-3.5 s per
--- revalidate at 7,500 joints); the fill reads each class and diameter of the job once instead.
+-- Shape pin, like 124: every check reads spooling_staging, about twenty times per apply, so it reads the stored
+-- rows and no rule. The one lookup, per class and diameter of the job and not per staged row, is made when the
+-- check is recorded (a lookup per row let the planner evaluate engineering_numeric once per candidate rule of
+-- every weld: 2-3.5 s per revalidate at 7,500 joints).
 select ok(
-  pg_get_functiondef('public.spooling_staging(uuid)'::regprocedure) ~* 'group by'
-  and pg_get_functiondef('public.spooling_staging(uuid)'::regprocedure) !~* 'join lateral',
-  'the fill looks up the rule once per class and diameter of the job, not once per staged row');
+  pg_get_functiondef('public.spooling_staging(uuid)'::regprocedure) !~* 'project_thickness_flange_rules'
+  and pg_get_functiondef('public.record_spooling_validation(uuid, jsonb, jsonb)'::regprocedure) ~* 'group by'
+  and pg_get_functiondef('public.record_spooling_validation(uuid, jsonb, jsonb)'::regprocedure) !~* 'join lateral',
+  'staging reads stored rows; the rule is looked up once per class and diameter of the job when the check is recorded');
 select * from finish();
 rollback;
