@@ -11,9 +11,9 @@ import { errorDetail } from "@/i18n/format"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { cn } from "@/lib/utils"
 import { ImportIssueList } from "@/modules/imports/ui/import-issue-list"
-import { buildPcfSubmission, type PcfSource } from "../application/import-pcf"
+import { buildPcfSubmission, inFileNameOrder, type PcfSource } from "../application/import-pcf"
 import type { SpoolgenSubmission } from "../application/import-spooling"
-import { applyCodeChoices, findUnmappedCodes, type CodeChoices } from "../application/pcf-unmapped"
+import { applyCodeChoices, suggestCodesToMap, type CodeChoices } from "../application/pcf-unmapped"
 import { createPickTickets } from "../application/pick-tickets"
 import { BUILT_IN_TEMPLATES, DEFAULT_PCF_SETTINGS, pickInitialTemplate, type ImportReferences, type ImportTemplate, type PcfTemplateSettings } from "../domain/import-template"
 import { SPOOLGEN_MAX_FILE_BYTES, SPOOLING_MAX_FILES, addPickedFiles } from "../domain/spoolgen-file"
@@ -70,7 +70,7 @@ export function PcfImportPanel({ projectId, source, canManage, busy, validated, 
   const fromTemplate = useMemo(() => buildPcfSubmission(sources, { pdsArea, settings }), [sources, pdsArea, settings])
   const toSave = useMemo(() => applyCodeChoices(settings, choices), [settings, choices])
   const submission = useMemo(() => (choices === NO_CHOICES ? fromTemplate : buildPcfSubmission(sources, { pdsArea, settings: toSave })), [choices, fromTemplate, sources, pdsArea, toSave])
-  const unmapped = useMemo(() => (references === null ? null : findUnmappedCodes(fromTemplate, references)), [fromTemplate, references])
+  const unmapped = useMemo(() => (references === null ? null : suggestCodesToMap(fromTemplate, references)), [fromTemplate, references])
 
   useEffect(() => {
     let live = true
@@ -128,7 +128,8 @@ export function PcfImportPanel({ projectId, source, canManage, busy, validated, 
   const chooseCode = (kind: CodeKind, code: string, target: string | null) => { touched.current = true; setChoices((current) => ({ ...current, [kind]: withChoice(current[kind], code, target) })); onEdit() }
   const chooseArea = (code: string) => { setPdsArea(code); onEdit() }
   const retryReferences = () => { setReferencesFailed(null); setReferencesAttempt((attempt) => attempt + 1) }
-  const validate = () => onSubmit(submission, files.map(({ file }) => ({ role: "pcf", file })))
+  // Uploaded in name order, as the reader takes them: one set of files is one set of storage names whatever order they were picked in.
+  const validate = () => onSubmit(submission, inFileNameOrder(files, ({ file }) => file.name).map(({ file }) => ({ role: "pcf", file })))
 
   const reading = files.filter((held) => held.text === null).length
   const noAreas = references !== null && references.pdsAreas.length === 0

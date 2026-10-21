@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { DEFAULT_PCF_SETTINGS } from "../domain/import-template"
 import { spoolgenIssue } from "../domain/spoolgen-issue"
-import { buildPcfSubmission, type PcfSource } from "./import-pcf"
+import { buildPcfSubmission, type PcfSource, inFileNameOrder } from "./import-pcf"
 
 const pipeline = (line: string, weld: string) => [
   `PIPELINE-REFERENCE ${line}`, "    REVISION 1", "    PIPING-SPEC CS150",
@@ -49,3 +49,8 @@ const warned = buildPcfSubmission([{ fileName: "ISO-W.pcf", text: pcf(pipeline("
 assert.deepEqual(warned.issues.map((issue) => [issue.code, issue.fileName, issue.severity]), [["PCF_SPOOL_FROM_FILE_NAME", "ISO-W.pcf", "warning"], ["PCF_UNKNOWN_UNITS", "ISO-X.pcf", "blocker"]])
 assert.deepEqual(warned.summary, { blockerCount: 1, warningCount: 1 })
 assert.equal(warned.canSubmit, true)
+
+// Files are put in name order by code unit: the order the reader takes them in and an upload sends them in
+const picked = [{ fileName: "b.pcf" }, { fileName: "a.pcf" }, { fileName: "A.pcf" }, { fileName: "ISO-1002.pcf" }, { fileName: "ISO-1001.pcf" }]
+assert.deepEqual(inFileNameOrder(picked, (file) => file.fileName).map((file) => file.fileName), ["A.pcf", "ISO-1001.pcf", "ISO-1002.pcf", "a.pcf", "b.pcf"])
+assert.deepEqual(picked.map((file) => file.fileName).slice(0, 2), ["b.pcf", "a.pcf"], "the list given is not reordered in place")

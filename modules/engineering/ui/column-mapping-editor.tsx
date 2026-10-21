@@ -44,7 +44,7 @@ export function ColumnMappingEditor({ fileName, headers, columns, value, disable
                 {column.required ? " *" : null}
               </span>
               <Select value={index < 0 ? NOT_IN_FILE : String(index)} onValueChange={(choice) => choose(column.key, choice)} disabled={disabled}>
-                <SelectTrigger size="sm" className="w-56" aria-invalid={column.required && index < 0}>
+                <SelectTrigger size="sm" className="w-56" aria-label={t("chooseColumn", { field: t(`fields.${column.key as FieldKey}`) })} aria-invalid={column.required && index < 0}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

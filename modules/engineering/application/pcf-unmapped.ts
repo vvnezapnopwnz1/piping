@@ -9,11 +9,12 @@ export interface CodeChoices { serviceClasses: Record<string, string>; weldTypes
 const sortedUnique = (codes: Iterable<string>) => [...new Set(codes)].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
 
 /**
- * The service classes and weld types of the upload's welds that the project has no active code for. They are only
- * offered for mapping: the server still refuses a code the project does not have. An empty value is a missing value
- * the reader has already reported, not a code.
+ * A suggestion for the person, not a readiness check: the service classes and weld types of the upload's welds that the
+ * project has no active code for, offered for mapping. The rule belongs to the server, which refuses such a code with
+ * SRV_SERVICE_CLASS_MISSING or SRV_WELD_TYPE_MISSING whatever this finds, so nothing is held back or let through here.
+ * An empty value is a missing value the reader has already reported, not a code.
  */
-export function findUnmappedCodes(submission: SpoolgenSubmission, references: ImportReferences): UnmappedCodes {
+export function suggestCodesToMap(submission: SpoolgenSubmission, references: ImportReferences): UnmappedCodes {
   const welds = submission.rows.map((row) => row.normalizedValues).filter((values) => values.entity_type === "weld_joint")
   const missing = (key: string, known: readonly string[]) => sortedUnique(welds.map((values) => values[key] ?? "").filter((code) => code !== "" && !known.includes(code)))
   return { serviceClasses: missing("service_class", references.serviceClasses), weldTypes: missing("weld_type", references.weldTypes) }

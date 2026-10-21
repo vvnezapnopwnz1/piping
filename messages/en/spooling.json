@@ -178,6 +178,7 @@
   "mapping": {
     "title": "Columns of {file}",
     "hint": "Choose the column that holds each field. Fields marked * are required. Diameters are read in inches: a column in millimetres is not converted.",
+    "chooseColumn": "Column for {field}",
     "notInFile": "Not in the file",
     "recheck": "Check again",
     "fields": {

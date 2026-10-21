@@ -120,3 +120,11 @@ test("the retry button, the replaced-file note and the four-file hint are writte
     assert.ok(t("table.columnsLeftToServer").length > 0, `${locale} table.columnsLeftToServer`)
   }
 })
+
+test("a column list of the mapping editor is named after the field it chooses for", () => {
+  for (const locale of ["en", "ru"] as const) {
+    const t = createTranslator({ locale, messages: messagesFor(locale), namespace: "spooling.mapping" })
+    const label = t("chooseColumn", { field: t("fields.weld_number") })
+    assert.ok(label.includes(t("fields.weld_number")), `${locale} ${label}`)
+  }
+})
