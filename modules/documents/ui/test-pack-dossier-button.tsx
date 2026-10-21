@@ -8,6 +8,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { useSupabaseAuth } from "@/contexts/supabase-auth-context"
 import { useOptionalAccess } from "@/modules/access/ui/access-context"
+import { downloadBlob } from "@/lib/download-blob"
 import { createRequestVersion } from "@/lib/request-version"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { generateTestPackDossier } from "../application/generate-dossier"
@@ -16,7 +17,6 @@ import { loadPdfFonts } from "../infrastructure/renderers/pdf-document"
 import { loadTestPackDossier } from "../infrastructure/supabase-report-repository"
 import { documentAuthor } from "./document-author"
 import { useDossierLabels } from "./document-labels"
-import { downloadBlob } from "./download-blob"
 
 /** Downloads the handover dossier of the open test pack: a PDF to sign or an XLSX to edit. */
 export function TestPackDossierButton({

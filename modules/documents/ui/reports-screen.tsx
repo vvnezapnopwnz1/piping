@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { downloadBlob } from "@/lib/download-blob"
 import { createRequestVersion } from "@/lib/request-version"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import { generateDocument, type GenerateDocumentResult } from "../application/generate-document"
@@ -18,7 +19,6 @@ import {
   loadWeldLog,
 } from "../infrastructure/supabase-report-repository"
 import { useDocumentLabels } from "./document-labels"
-import { downloadBlob } from "./download-blob"
 
 const PROJECT_DOCUMENTS = DOCUMENT_DEFINITIONS.filter((definition) => definition.scope === "project")
 
