@@ -7,7 +7,7 @@ import { SPOOLGEN_FILE_ROLES } from "../domain/spoolgen-file"
 import { parseDelimited } from "../domain/parsers/delimited"
 import { buildSpoolgenSubmission } from "./import-spooling"
 import type { TableTemplateSettings } from "../domain/import-template"
-import { applyColumnDrafts, buildTableSubmission, columnMapOf, describeTableColumns, hasMappedColumn, type TableSource } from "./import-table"
+import { applyColumnDrafts, buildTableSubmission, columnMapOf, describeTableColumns, hasMappedColumn, mergeColumnMaps, withColumnChoice, type TableSource } from "./import-table"
 
 const HEADERS = ["Изометрия", "Ревизия", "Зона", "Класс", "Катушка", "Шов", "Тип", "Диаметр"]
 const register: TableSource = { role: "weld", fileName: "register.xlsx", matrix: [HEADERS, ["ISO-1", "R0", "PDS-A", "SC-01", "SP-1", "W-1", "BW", 6]] }
@@ -93,6 +93,29 @@ test("a template with no mapped column is not worth saving", () => {
   assert.equal(hasMappedColumn({ kind: "table", columns: {} }), false)
   assert.equal(hasMappedColumn({ kind: "table", columns: { weld: {} } }), false)
   assert.equal(hasMappedColumn(applyColumnDrafts({ kind: "table", columns: {} }, { weld: { weld_number: "Шов" } })), true)
+})
+
+test("checking again keeps the saved mapping of a column this file does not have", () => {
+  const settings: TableTemplateSettings = { kind: "table", columns: { weld: { weld_number: "Шов" } } }
+  const source: TableSource = { role: "weld", fileName: "new.csv", matrix: [["Изометрия", "№ шва"], ["ISO-9", "W-1"]] }
+  const shown = columnMapOf(describeTableColumns(source, settings.columns.weld).columns)
+  assert.equal(shown.weld_number, undefined, "the editor shows no column for a field the file does not have")
+  const merged = mergeColumnMaps(settings.columns.weld ?? {}, shown)
+  assert.equal(merged.weld_number, "Шов", "the earlier mapping is alive")
+  assert.equal(merged.iso_number, "Изометрия", "what the file offers comes from the draft")
+  const applied = applyColumnDrafts(settings, { weld: shown })
+  assert.equal(applied.columns.weld?.weld_number, "Шов", "Check again and the saved template both keep it")
+  assert.deepEqual(settings.columns.weld, { weld_number: "Шов" }, "the earlier settings are not changed in place")
+})
+
+test("choosing 'not in the file' is the one way to take a saved mapping away", () => {
+  assert.deepEqual(withColumnChoice({ iso_number: "Изометрия" }, "weld_number", "Шов"), { iso_number: "Изометрия", weld_number: "Шов" })
+  const removed = withColumnChoice({ weld_number: "Шов" }, "weld_number", null)
+  assert.deepEqual(mergeColumnMaps({ weld_number: "Шов", spool_number: "Катушка" }, removed), { spool_number: "Катушка" })
+  const settings: TableTemplateSettings = { kind: "table", columns: { weld: { weld_number: "Шов" } } }
+  const applied = applyColumnDrafts(settings, { weld: removed })
+  assert.deepEqual(applied.columns.weld, {})
+  assert.equal(hasMappedColumn(applied), false, "a template left with no mapped column is not worth saving")
 })
 
 // Russian has every English key of the namespace: i18n/messages.test.ts holds that for `spooling`.

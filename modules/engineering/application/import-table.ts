@@ -47,9 +47,35 @@ export function columnMapOf(columns: readonly TableColumnChoice[]): Record<strin
   return Object.fromEntries(columns.flatMap((column) => (column.header === null ? [] : [[column.key, column.header]])))
 }
 
-/** The settings once each drafted role takes its draft, as "Check again" would; a template is saved from these. */
+/** A draft entry that says "this field has no column": the one way to take a saved mapping away. */
+const UNMAPPED = ""
+
+/**
+ * A draft laid over the saved map, not in place of it. A field the draft names takes the draft's header, or is dropped
+ * when the draft marks it unmapped; a field it does not name keeps its mapping. The editor shows only the fields this
+ * file has, so a mapping for a column this file lacks must survive "Check again" and a saved template.
+ */
+export function mergeColumnMaps(base: Readonly<Record<string, string>>, draft: Readonly<Record<string, string>>): Record<string, string> {
+  const merged = { ...base }
+  for (const [key, header] of Object.entries(draft)) {
+    if (header === UNMAPPED) delete merged[key]
+    else merged[key] = header
+  }
+  return merged
+}
+
+/** The editor's map once one field is given a header, or, with null, is chosen as "not in the file". */
+export function withColumnChoice(value: Readonly<Record<string, string>>, key: string, header: string | null): Record<string, string> {
+  return { ...value, [key]: header ?? UNMAPPED }
+}
+
+/** The settings once each drafted role takes its draft over its saved map, as "Check again" would; a template is saved from these. */
 export function applyColumnDrafts(settings: TableTemplateSettings, drafts: ColumnDrafts): TableTemplateSettings {
-  return Object.keys(drafts).length === 0 ? settings : { kind: "table", columns: { ...settings.columns, ...drafts } }
+  const roles = Object.keys(drafts) as SpoolgenFileRole[]
+  if (roles.length === 0) return settings
+  const columns = { ...settings.columns }
+  for (const role of roles) columns[role] = mergeColumnMaps(settings.columns[role] ?? {}, drafts[role] ?? {})
+  return { kind: "table", columns }
 }
 
 /** A template is worth saving only when it maps at least one column. */

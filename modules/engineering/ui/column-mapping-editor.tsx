@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { Messages } from "@/i18n/messages"
-import type { TableColumnChoice } from "../application/import-table"
+import { withColumnChoice, type TableColumnChoice } from "../application/import-table"
 
 type FieldKey = keyof Messages["spooling"]["mapping"]["fields"]
 const NOT_IN_FILE = "none"
@@ -12,7 +12,8 @@ const NOT_IN_FILE = "none"
 /**
  * Which column of one file holds which field. Every field of the role is offered, required or not; a Russian diameter
  * column is never matched by name, so it is chosen here. The choice is held by the panel, so saving a template can take
- * it as it is; nothing is read with it until "Check again".
+ * it as it is; nothing is read with it until "Check again". "Not in the file" is a choice to drop the mapping, and a field
+ * this file does not have shows it too without dropping anything.
  */
 export function ColumnMappingEditor({ fileName, headers, columns, value, disabled, onChange, onApply }: {
   fileName: string
@@ -25,10 +26,7 @@ export function ColumnMappingEditor({ fileName, headers, columns, value, disable
 }) {
   const t = useTranslations("spooling.mapping")
   const choose = (key: string, choice: string) => {
-    const next = { ...value }
-    if (choice === NOT_IN_FILE) delete next[key]
-    else next[key] = headers[Number(choice)]
-    onChange(next)
+    onChange(withColumnChoice(value, key, choice === NOT_IN_FILE ? null : headers[Number(choice)]))
   }
   return (
     <div className="space-y-3 rounded-md border bg-muted/30 p-3">
