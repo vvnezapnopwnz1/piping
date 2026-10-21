@@ -6,7 +6,8 @@ import { SPOOLGEN_CONTRACT } from "../domain/spoolgen-contract"
 import { SPOOLGEN_FILE_ROLES } from "../domain/spoolgen-file"
 import { parseDelimited } from "../domain/parsers/delimited"
 import { buildSpoolgenSubmission } from "./import-spooling"
-import { buildTableSubmission, describeTableColumns, type TableSource } from "./import-table"
+import type { TableTemplateSettings } from "../domain/import-template"
+import { applyColumnDrafts, buildTableSubmission, columnMapOf, describeTableColumns, hasMappedColumn, type TableSource } from "./import-table"
 
 const HEADERS = ["Изометрия", "Ревизия", "Зона", "Класс", "Катушка", "Шов", "Тип", "Диаметр"]
 const register: TableSource = { role: "weld", fileName: "register.xlsx", matrix: [HEADERS, ["ISO-1", "R0", "PDS-A", "SC-01", "SP-1", "W-1", "BW", 6]] }
@@ -72,6 +73,26 @@ test("the mapping editor is offered every field of the role, with the header eac
 test("the file's headers are offered once each, without cells no field can match", () => {
   const described = describeTableColumns({ role: "weld", fileName: "a.csv", matrix: [["Шов", "", " Шов ", "№", 2026]] })
   assert.deepEqual(described.headers, ["Шов", "2026"])
+})
+
+test("an open editor starts from, and Check again applies, the header each field is read from now", () => {
+  const shown = columnMapOf(describeTableColumns(register, { weld_number: "Шов" }).columns)
+  assert.deepEqual(shown, { iso_number: "Изометрия", revision_number: "Ревизия", spool_number: "Катушка", weld_number: "Шов" })
+})
+
+test("saving a template first applies what the open editors show, the way Check again does", () => {
+  const settings: TableTemplateSettings = { kind: "table", columns: { trace: { ident_code: "Код" }, weld: { weld_number: "Номер" } } }
+  const toSave = applyColumnDrafts(settings, { weld: MAPPING.weld })
+  assert.deepEqual(toSave, { kind: "table", columns: { trace: { ident_code: "Код" }, weld: MAPPING.weld } })
+  assert.equal(buildTableSubmission([register], toSave).canSubmit, true, "the saved template reads the register on the next upload")
+  assert.deepEqual(settings.columns.weld, { weld_number: "Номер" }, "the applied settings are not changed in place")
+  assert.equal(applyColumnDrafts(settings, {}), settings)
+})
+
+test("a template with no mapped column is not worth saving", () => {
+  assert.equal(hasMappedColumn({ kind: "table", columns: {} }), false)
+  assert.equal(hasMappedColumn({ kind: "table", columns: { weld: {} } }), false)
+  assert.equal(hasMappedColumn(applyColumnDrafts({ kind: "table", columns: {} }, { weld: { weld_number: "Шов" } })), true)
 })
 
 // Russian has every English key of the namespace: i18n/messages.test.ts holds that for `spooling`.

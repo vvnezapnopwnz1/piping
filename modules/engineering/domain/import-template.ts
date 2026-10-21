@@ -88,6 +88,14 @@ export const BUILT_IN_TEMPLATES: readonly ImportTemplate[] = deepFreeze([
   { id: null, source: "spoolgen", name: "SpoolGen", settings: { kind: "table", columns: {} } },
 ] satisfies ImportTemplate[])
 
+/**
+ * The template an upload starts on: the first of the project's templates for the source, which come newest first, so
+ * the mapping saved last is picked up at the next upload; the built-in preset when the project has none.
+ */
+export function pickInitialTemplate(source: ImportSourceId, projectTemplates: readonly ImportTemplate[]): ImportTemplate {
+  return projectTemplates.find((template) => template.source === source) ?? BUILT_IN_TEMPLATES.find((template) => template.source === source)!
+}
+
 const WELD_LOCATIONS: readonly string[] = ["shop", "assembly", "field"]
 const ISO_NUMBER_SOURCES: readonly string[] = ["fileName", "pipelineReference"]
 

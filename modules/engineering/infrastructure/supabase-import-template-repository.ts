@@ -31,9 +31,9 @@ export function toImportTemplate(row: StoredTemplate): ImportTemplate | null {
   return { id: row.id, source: row.source, name: row.name, settings }
 }
 
-/** The project's saved templates, by name. A row that does not read as a template is left out. */
+/** The project's saved templates, the most recently saved first. A row that does not read as a template is left out. */
 export async function loadImportTemplates(client: Client, projectId: string): Promise<ImportTemplate[]> {
-  const { data, error } = await client.from(TABLE).select(TEMPLATE_COLUMNS).eq("project_id", projectId).order("name")
+  const { data, error } = await client.from(TABLE).select(TEMPLATE_COLUMNS).eq("project_id", projectId).order("updated_at", { ascending: false }).order("name")
   if (error) throw failure(error)
   return (data ?? []).flatMap((row) => toImportTemplate(row) ?? [])
 }

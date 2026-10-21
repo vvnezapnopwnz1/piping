@@ -39,6 +39,24 @@ export function buildTableSubmission(sources: readonly TableSource[], settings: 
   return { ...buildSubmissionFromSet(set, issues, missingFiles.length === 0 && Object.keys(missingColumns).length === 0), missingColumns }
 }
 
+/** Per role, the column map an open mapping editor shows and has not applied yet. */
+export type ColumnDrafts = Partial<Record<SpoolgenFileRole, Record<string, string>>>
+
+/** The column map of the fields that have a header now: what an editor shows first, and what "Check again" applies untouched. */
+export function columnMapOf(columns: readonly TableColumnChoice[]): Record<string, string> {
+  return Object.fromEntries(columns.flatMap((column) => (column.header === null ? [] : [[column.key, column.header]])))
+}
+
+/** The settings once each drafted role takes its draft, as "Check again" would; a template is saved from these. */
+export function applyColumnDrafts(settings: TableTemplateSettings, drafts: ColumnDrafts): TableTemplateSettings {
+  return Object.keys(drafts).length === 0 ? settings : { kind: "table", columns: { ...settings.columns, ...drafts } }
+}
+
+/** A template is worth saving only when it maps at least one column. */
+export function hasMappedColumn(settings: TableTemplateSettings): boolean {
+  return Object.values(settings.columns).some((columnMap) => Object.keys(columnMap ?? {}).length > 0)
+}
+
 /** Every contract field of the file's role, for the mapping editor, and the headers the file offers. */
 export function describeTableColumns(source: TableSource, columnMap?: Readonly<Record<string, string>>): { headers: string[]; columns: TableColumnChoice[] } {
   const row = headerRow(source); const { indexes } = resolveColumns(source.role, row, columnMap)

@@ -145,6 +145,7 @@
     "remove": "Remove {file}",
     "mapColumns": "Match columns",
     "readFailed": "{file} could not be read.",
+    "reading": "Reading {file}…",
     "weldRequired": "Add the weld file to validate.",
     "unmatched": "Match every required column before validating."
   },

@@ -2,34 +2,34 @@
 
 import { XIcon } from "lucide-react"
 import { useTranslations } from "next-intl"
-import { useEffect, useId, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { errorDetail } from "@/i18n/format"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import type { SheetMatrix } from "@/modules/imports/domain/parsers/registry"
 import { readFirstSheetMatrix } from "@/modules/imports/infrastructure/xlsx-workbook"
 import { ImportIssueList } from "@/modules/imports/ui/import-issue-list"
 import type { SpoolgenSubmission } from "../application/import-spooling"
-import { buildTableSubmission, describeTableColumns, type TableSource } from "../application/import-table"
-import { BUILT_IN_TEMPLATES, type ImportTemplate, type TableTemplateSettings } from "../domain/import-template"
+import { applyColumnDrafts, buildTableSubmission, columnMapOf, describeTableColumns, hasMappedColumn, type ColumnDrafts, type TableSource } from "../application/import-table"
+import { createPickTickets } from "../application/pick-tickets"
+import { BUILT_IN_TEMPLATES, pickInitialTemplate, type ImportTemplate, type TableTemplateSettings } from "../domain/import-template"
 import { parseDelimited } from "../domain/parsers/delimited"
 import { SPOOLGEN_FILE_ROLES, SPOOLGEN_MAX_FILE_BYTES, SPOOLING_MAX_FILES, addPickedFiles, type SpoolgenFileRole } from "../domain/spoolgen-file"
 import { readSourceFile } from "../infrastructure/spoolgen-file-reader"
-import { loadImportTemplates, saveImportTemplate } from "../infrastructure/supabase-import-template-repository"
+import { loadImportTemplates } from "../infrastructure/supabase-import-template-repository"
 import type { SpoolingUpload } from "../infrastructure/submit-spooling-import"
 import { ColumnMappingEditor } from "./column-mapping-editor"
+import { ImportTemplateBar } from "./import-template-bar"
 import { describeSpoolgenIssue } from "./spoolgen-issue-text"
 
 /** The two sources read as tables: Excel/CSV with a column map, and the four SpoolGen files with their fixed contract. */
 export type TableSourceId = "table" | "spoolgen"
+type Role = SpoolgenFileRole
 
 const ACCEPT: Record<TableSourceId, string> = { table: ".xlsx,.xls,.csv,.txt", spoolgen: ".txt,.csv,.tsv" }
-const BUILT_IN_ID = "built-in"
 const copyOf = (settings: ImportTemplate["settings"]): TableTemplateSettings => (settings.kind === "table" ? structuredClone(settings) : { kind: "table", columns: {} })
+const without = <T,>(record: Partial<Record<Role, T>>, role: Role): Partial<Record<Role, T>> => { const next = { ...record }; delete next[role]; return next }
 
 /** A workbook gives its first sheet; anything else is text in any of the encodings the reader knows. */
 async function readMatrix(source: TableSourceId, file: File): Promise<SheetMatrix> {
@@ -38,8 +38,9 @@ async function readMatrix(source: TableSourceId, file: File): Promise<SheetMatri
 }
 
 /**
- * One file per role, weld required. Each file is read as soon as it is picked, so a table shows its unmatched columns
- * under its slot before anything is sent; the four SpoolGen files have a fixed contract and no mapping.
+ * One file per role, weld required. Each file is read as soon as it is picked (the newest pick of a role wins), so a
+ * table shows its unmatched columns under its slot before anything is sent. A table upload starts on the project's
+ * newest template; the four SpoolGen files have a fixed contract and no mapping.
  */
 export function TableImportPanel({ projectId, source, canManage, busy, onEdit, onSubmit }: {
   projectId: string
@@ -51,33 +52,80 @@ export function TableImportPanel({ projectId, source, canManage, busy, onEdit, o
 }) {
   const t = useTranslations("spooling")
   const tc = useTranslations("codes")
-  const inputs = useRef<Partial<Record<SpoolgenFileRole, HTMLInputElement | null>>>({})
-  const [files, setFiles] = useState<Partial<Record<SpoolgenFileRole, { file: File; matrix: SheetMatrix }>>>({})
+  const mappable = source === "table"
+  const inputs = useRef<Partial<Record<Role, HTMLInputElement | null>>>({})
+  const [tickets] = useState(() => createPickTickets<Role>())
+  const touched = useRef(false)
+  const [files, setFiles] = useState<Partial<Record<Role, { file: File; matrix: SheetMatrix }>>>({})
+  const [reading, setReading] = useState<Partial<Record<Role, string>>>({})
   const [settings, setSettings] = useState<TableTemplateSettings>(() => copyOf(BUILT_IN_TEMPLATES.find((template) => template.source === source)!.settings))
-  const [mapping, setMapping] = useState<Partial<Record<SpoolgenFileRole, boolean>>>({})
+  const [drafts, setDrafts] = useState<ColumnDrafts>({})
+  const [opened, setOpened] = useState<Partial<Record<Role, true>>>({})
+  const [templates, setTemplates] = useState<ImportTemplate[]>([])
+  const [chosenId, setChosenId] = useState<string | null>(null)
   const sources = useMemo<TableSource[]>(() => SPOOLGEN_FILE_ROLES.flatMap((role) => { const held = files[role]; return held ? [{ role, fileName: held.file.name, matrix: held.matrix }] : [] }), [files])
   const submission = useMemo(() => buildTableSubmission(sources, settings), [sources, settings])
-  const mappable = source === "table"
+  // The editors open now: a role with unmatched columns, or one opened by hand. Each shows its draft, else what is read now.
+  const editors = useMemo(() => sources.flatMap((entry) => {
+    if (!mappable || (submission.missingColumns[entry.role] === undefined && opened[entry.role] === undefined)) return []
+    const described = describeTableColumns(entry, settings.columns[entry.role])
+    return [{ ...entry, ...described, value: drafts[entry.role] ?? columnMapOf(described.columns) }]
+  }), [drafts, mappable, opened, settings, sources, submission])
+  const toSave = applyColumnDrafts(settings, Object.fromEntries(editors.map((editor) => [editor.role, editor.value])))
 
-  const edit = (next: (current: typeof files) => typeof files) => { setFiles(next); onEdit() }
-  const pick = async (role: SpoolgenFileRole, file: File | undefined) => {
+  useEffect(() => {
+    if (!mappable) return
+    let live = true
+    loadImportTemplates(getSupabaseBrowserClient(), projectId)
+      .then((rows) => {
+        if (!live) return
+        const own = rows.filter((row) => row.source === "table")
+        const initial = pickInitialTemplate("table", own)
+        setTemplates(own)
+        if (initial.id === null || touched.current) return
+        setChosenId(initial.id)
+        setSettings(copyOf(initial.settings))
+      })
+      .catch((error: unknown) => toast.error(t("templates.loadFailed"), { description: errorDetail(error) }))
+    return () => { live = false }
+  }, [mappable, projectId, t])
+
+  const changeSettings = (next: TableTemplateSettings, nextDrafts: ColumnDrafts) => { touched.current = true; setSettings(next); setDrafts(nextDrafts); onEdit() }
+  const pick = async (role: Role, file: File | undefined) => {
     if (file === undefined) return
     const others = SPOOLGEN_FILE_ROLES.filter((other) => other !== role && files[other] !== undefined).length
     const { files: [taken], refused, overLimit } = addPickedFiles(role, [], [file], others)
     for (const issue of refused) toast.error(describeSpoolgenIssue(t, issue))
     if (overLimit > 0) toast.error(t("importScreen.tooMany", { count: overLimit, limit: SPOOLING_MAX_FILES }))
     if (taken === undefined) return
+    const ticket = tickets.issue(role)
+    setReading((current) => ({ ...current, [role]: taken.name }))
     try {
       const matrix = await readMatrix(source, taken)
-      edit((current) => ({ ...current, [role]: { file: taken, matrix } }))
+      if (!tickets.isCurrent(role, ticket)) return
+      setFiles((current) => ({ ...current, [role]: { file: taken, matrix } }))
+      setDrafts((current) => without(current, role))
+      onEdit()
     } catch (error) {
-      toast.error(t("table.readFailed", { file: taken.name }), { description: errorDetail(error) })
+      if (tickets.isCurrent(role, ticket)) toast.error(t("table.readFailed", { file: taken.name }), { description: errorDetail(error) })
+    } finally {
+      if (tickets.isCurrent(role, ticket)) setReading((current) => without(current, role))
     }
   }
-  const remove = (role: SpoolgenFileRole) => { edit((current) => { const next = { ...current }; delete next[role]; return next }); setMapping((current) => ({ ...current, [role]: false })) }
-  const applyMapping = (role: SpoolgenFileRole, columnMap: Record<string, string>) => { setSettings((current) => ({ kind: "table", columns: { ...current.columns, [role]: columnMap } })); onEdit() }
-  const pickTemplate = (next: TableTemplateSettings) => { setSettings(next); onEdit() }
+  const remove = (role: Role) => {
+    tickets.cancel(role)
+    setReading((current) => without(current, role))
+    setFiles((current) => without(current, role))
+    setDrafts((current) => without(current, role))
+    setOpened((current) => without(current, role))
+    onEdit()
+  }
+  const draft = (role: Role, columnMap: Record<string, string>) => { touched.current = true; setDrafts((current) => ({ ...current, [role]: columnMap })) }
+  const apply = (role: Role, columnMap: Record<string, string>) => changeSettings(applyColumnDrafts(settings, { [role]: columnMap }), without(drafts, role))
+  const choose = (template: ImportTemplate) => { setChosenId(template.id); changeSettings(copyOf(template.settings), {}) }
+  const saved = (template: ImportTemplate) => { setTemplates((current) => [template, ...current.filter((entry) => entry.id !== template.id)]); setChosenId(template.id); changeSettings(copyOf(template.settings), {}) }
   const validate = () => onSubmit(submission, SPOOLGEN_FILE_ROLES.flatMap((role) => { const held = files[role]; return held ? [{ role, file: held.file }] : [] }))
+  const stillReading = Object.keys(reading).length > 0
   const unmatched = Object.keys(submission.missingColumns).length > 0
   const reason = files.weld === undefined ? t("table.weldRequired") : unmatched ? t("table.unmatched") : null
   const limit = SPOOLGEN_MAX_FILE_BYTES / (1024 * 1024)
@@ -85,12 +133,13 @@ export function TableImportPanel({ projectId, source, canManage, busy, onEdit, o
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">{mappable ? t("table.hint", { limit }) : t("importScreen.hint", { limit })}</p>
-      {mappable ? <TemplateBar projectId={projectId} canManage={canManage} disabled={busy} settings={settings} onPick={pickTemplate} /> : null}
+      {mappable ? (
+        <ImportTemplateBar projectId={projectId} source="table" templates={templates} chosenId={chosenId} settings={toSave} canSave={canManage && hasMappedColumn(toSave)} disabled={busy} onChoose={choose} onSaved={saved} />
+      ) : null}
       <div className="space-y-3">
         {SPOOLGEN_FILE_ROLES.map((role) => {
           const held = files[role]
-          const editing = mappable && held !== undefined && (submission.missingColumns[role] !== undefined || mapping[role] === true)
-          const described = editing && held ? describeTableColumns({ role, fileName: held.file.name, matrix: held.matrix }, settings.columns[role]) : null
+          const editor = editors.find((entry) => entry.role === role)
           return (
             <div key={role} className="space-y-2">
               <div className="flex flex-wrap items-center gap-3 text-sm">
@@ -106,25 +155,27 @@ export function TableImportPanel({ projectId, source, canManage, busy, onEdit, o
                 <Button type="button" variant={held ? "outline" : "default"} disabled={busy || !canManage} onClick={() => inputs.current[role]?.click()}>
                   {held ? t("importScreen.replace", { file: held.file.name }) : mappable ? t("table.choose") : tc(`spoolgenUpload.${role}`)}
                 </Button>
+                {reading[role] ? <span className="text-xs text-muted-foreground">{t("table.reading", { file: reading[role] })}</span> : null}
                 {held ? (
                   <Button type="button" variant="ghost" size="icon-sm" aria-label={t("table.remove", { file: held.file.name })} disabled={busy || !canManage} onClick={() => remove(role)}>
                     <XIcon />
                   </Button>
                 ) : null}
-                {mappable && held && !editing ? (
-                  <Button type="button" variant="link" size="sm" onClick={() => setMapping((current) => ({ ...current, [role]: true }))}>
+                {mappable && held && !editor ? (
+                  <Button type="button" variant="link" size="sm" onClick={() => setOpened((current) => ({ ...current, [role]: true }))}>
                     {t("table.mapColumns")}
                   </Button>
                 ) : null}
               </div>
-              {described && held ? (
+              {editor ? (
                 <ColumnMappingEditor
-                  key={`${held.file.name}|${held.file.lastModified}|${held.file.size}|${JSON.stringify(settings.columns[role] ?? {})}`}
-                  fileName={held.file.name}
-                  headers={described.headers}
-                  columns={described.columns}
+                  fileName={editor.fileName}
+                  headers={editor.headers}
+                  columns={editor.columns}
+                  value={editor.value}
                   disabled={busy}
-                  onApply={(columnMap) => applyMapping(role, columnMap)}
+                  onChange={(columnMap) => draft(role, columnMap)}
+                  onApply={() => apply(role, editor.value)}
                 />
               ) : null}
             </div>
@@ -132,7 +183,7 @@ export function TableImportPanel({ projectId, source, canManage, busy, onEdit, o
         })}
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        <Button type="button" loading={busy} disabled={!canManage || !submission.canSubmit} onClick={validate}>
+        <Button type="button" loading={busy} disabled={!canManage || !submission.canSubmit || stillReading} onClick={validate}>
           {t("importScreen.validate")}
         </Button>
         {reason ? <span className="text-sm text-muted-foreground">{reason}</span> : null}
@@ -140,76 +191,6 @@ export function TableImportPanel({ projectId, source, canManage, busy, onEdit, o
       {!mappable && unmatched ? (
         <ImportIssueList issues={submission.issues.filter((issue) => issue.code === "MISSING_COLUMN").map((issue) => ({ ...issue, message: describeSpoolgenIssue(t, issue) }))} />
       ) : null}
-    </div>
-  )
-}
-
-/** The built-in template and the project's own for Excel/CSV; the columns matched now can be saved under a new name. */
-function TemplateBar({ projectId, canManage, disabled, settings, onPick }: {
-  projectId: string
-  canManage: boolean
-  disabled: boolean
-  settings: TableTemplateSettings
-  onPick: (settings: TableTemplateSettings) => void
-}) {
-  const t = useTranslations("spooling.templates")
-  const id = useId()
-  const builtIn = BUILT_IN_TEMPLATES.find((template) => template.source === "table")!
-  const [templates, setTemplates] = useState<ImportTemplate[]>([])
-  const [chosen, setChosen] = useState(BUILT_IN_ID)
-  const [name, setName] = useState("")
-  const [saving, setSaving] = useState(false)
-
-  useEffect(() => {
-    let live = true
-    loadImportTemplates(getSupabaseBrowserClient(), projectId)
-      .then((rows) => { if (live) setTemplates(rows.filter((row) => row.source === "table")) })
-      .catch((error: unknown) => toast.error(t("loadFailed"), { description: errorDetail(error) }))
-    return () => { live = false }
-  }, [projectId, t])
-
-  const choose = (value: string) => {
-    setChosen(value)
-    onPick(copyOf((templates.find((template) => template.id === value) ?? builtIn).settings))
-  }
-  const save = async () => {
-    setSaving(true)
-    try {
-      const saved = await saveImportTemplate(getSupabaseBrowserClient(), projectId, { id: null, source: "table", name, settings })
-      setTemplates((current) => [...current, saved].sort((a, b) => a.name.localeCompare(b.name)))
-      setChosen(saved.id ?? BUILT_IN_ID)
-      setName("")
-      toast.success(t("saved", { name: saved.name }))
-    } catch (error) {
-      toast.error(t("saveFailed"), { description: errorDetail(error) })
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <div className="flex flex-wrap items-end gap-3">
-      <div className="space-y-1.5">
-        <Label htmlFor={`${id}-template`}>{t("label")}</Label>
-        <Select value={chosen} onValueChange={choose} disabled={disabled}>
-          <SelectTrigger id={`${id}-template`} className="w-64">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={BUILT_IN_ID}>{builtIn.name}</SelectItem>
-            {templates.map((template) => (
-              <SelectItem key={template.id} value={template.id ?? BUILT_IN_ID}>{template.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor={`${id}-name`}>{t("name")}</Label>
-        <Input id={`${id}-name`} className="w-64" maxLength={120} value={name} disabled={!canManage || disabled} onChange={(event) => setName(event.target.value)} />
-      </div>
-      <Button type="button" variant="outline" loading={saving} disabled={!canManage || disabled || name.trim() === ""} onClick={() => void save()}>
-        {t("saveAs")}
-      </Button>
     </div>
   )
 }

@@ -36,11 +36,11 @@ test("a row that is not a usable template is dropped, not guessed", () => {
   assert.equal(toImportTemplate({ ...pcfRow, source: "marian" }), null, "a source this build does not know")
 })
 
-test("the project's templates are read with a plain select, ordered by name, unusable rows left out", async () => {
+test("the project's templates are read with a plain select, newest first, unusable rows left out", async () => {
   const { client, calls } = fakeClient({ spooling_import_templates: { data: [pcfRow, tableRow, { id: "t-3", source: "table", name: "Broken", settings: { kind: "x" } }] } })
   const templates = await loadImportTemplates(client, "p-1")
   assert.deepEqual(templates.map((template) => template.id), ["t-1", "t-2"])
-  assert.deepEqual(calls, [["from", "spooling_import_templates"], ["select", "id, source, name, settings"], ["eq", "project_id", "p-1"], ["order", "name"]])
+  assert.deepEqual(calls, [["from", "spooling_import_templates"], ["select", "id, source, name, settings"], ["eq", "project_id", "p-1"], ["order", "updated_at", { ascending: false }], ["order", "name"]])
 })
 
 test("a read the server refuses throws its message", async () => {

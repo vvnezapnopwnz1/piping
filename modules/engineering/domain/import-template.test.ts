@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { BUILT_IN_TEMPLATES, DEFAULT_PCF_SETTINGS, IMPORT_SOURCE_IDS, isImportSourceId, parseTemplateSettings, templateKindOf, type ImportTemplate } from "./import-template"
+import { BUILT_IN_TEMPLATES, DEFAULT_PCF_SETTINGS, IMPORT_SOURCE_IDS, isImportSourceId, parseTemplateSettings, pickInitialTemplate, templateKindOf, type ImportSourceId, type ImportTemplate } from "./import-template"
 
 // A table template keeps the column names a project's files use, per file role
 assert.deepEqual(parseTemplateSettings({ kind: "table", columns: { weld: { weld_number: "Шов" } } }), { kind: "table", columns: { weld: { weld_number: "Шов" } } })
@@ -106,3 +106,8 @@ assert.equal(templateKindOf("hexagon"), "pcf")
 assert.equal(templateKindOf("plant3d"), "pcf")
 assert.equal(templateKindOf("table"), "table")
 assert.equal(templateKindOf("spoolgen"), "table")
+// An upload starts on the project's most recently saved template of its source (the list comes newest first), else on the built-in preset
+const savedTemplate = (id: string, source: ImportSourceId): ImportTemplate => ({ id, source, name: id, settings: { kind: "table", columns: {} } })
+assert.equal(pickInitialTemplate("table", [savedTemplate("pcf-newest", "aveva"), savedTemplate("table-newer", "table"), savedTemplate("table-older", "table")]).id, "table-newer")
+assert.equal(pickInitialTemplate("table", [savedTemplate("pcf-newest", "aveva")]), BUILT_IN_TEMPLATES.find((template) => template.source === "table"))
+assert.equal(pickInitialTemplate("spoolgen", []), BUILT_IN_TEMPLATES.find((template) => template.source === "spoolgen"))
