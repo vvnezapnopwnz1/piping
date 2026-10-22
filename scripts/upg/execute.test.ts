@@ -1,22 +1,23 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
+import { UPG_SPEC } from "./dataset"
 import { EXPECTED_REFUSALS, actionKey, summarizeRun, type ActionResult } from "./execute"
 import { buildProjectPlan, type UpgAction } from "./weeks"
 
-const plan = buildProjectPlan()
+const plan = buildProjectPlan(UPG_SPEC)
 const weld = plan.find((action) => action.kind === "weld")!
 const probe = plan.find((action) => action.kind === "field_support_probe")!
 
 test("keys are deterministic, prefixed and unique per action in a week", () => {
-  assert.equal(actionKey(1, weld), actionKey(1, weld))
-  assert.match(actionKey(1, weld), /^upg-w1-weld-/)
-  const keys = plan.filter((action) => action.day < 7).map((action) => actionKey(1, action))
+  assert.equal(actionKey(UPG_SPEC, 1, weld), actionKey(UPG_SPEC, 1, weld))
+  assert.match(actionKey(UPG_SPEC, 1, weld), /^upg-w1-weld-/)
+  const keys = plan.filter((action) => action.day < 7).map((action) => actionKey(UPG_SPEC, 1, action))
   assert.equal(new Set(keys).size, keys.length)
 })
 
 test("a suffix separates the steps inside one action", () => {
-  assert.notEqual(actionKey(7, weld, "a"), actionKey(7, weld, "b"))
+  assert.notEqual(actionKey(UPG_SPEC, 7, weld, "a"), actionKey(UPG_SPEC, 7, weld, "b"))
 })
 
 test("summarizeRun separates expected refusals from unexpected ones", () => {

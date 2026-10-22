@@ -3,8 +3,10 @@ import test from "node:test"
 
 import { DEMO_MANIFEST } from "../demo/manifest"
 import { buildDemoReferencePlan } from "../demo/supabase-demo-stand"
-import { PDS_AREAS, SERVICE_CLASSES, SYSTEMS, WELDING_PROCEDURES } from "./dataset"
-import { IMPORTED_FAMILIES, UPG_REFERENCES } from "./references"
+import { UPG_SPEC } from "./dataset"
+import { IMPORTED_FAMILIES, referencesFor } from "./references"
+
+const UPG_REFERENCES = referencesFor(UPG_SPEC)
 
 const ids = {
   goldenProjectId: "00000000-0000-0000-0000-000000000001",
@@ -23,10 +25,10 @@ test("the families imported from Excel are empty, so the reconciler never touche
 })
 
 test("UPG-1 brings its own PDS areas, classes, systems, subsystems, line services and the field subcontractor", () => {
-  assert.deepEqual(UPG_REFERENCES.pdsAreas.map((area) => area.code), PDS_AREAS.map((area) => area.code))
-  assert.deepEqual(UPG_REFERENCES.serviceClasses.map((row) => row.code).sort(), Object.keys(SERVICE_CLASSES).sort())
-  assert.deepEqual(UPG_REFERENCES.systems.map((row) => row.code), SYSTEMS.map((system) => system.code))
-  assert.equal(UPG_REFERENCES.subsystems.length, SYSTEMS.flatMap((system) => system.subsystems).length)
+  assert.deepEqual(UPG_REFERENCES.pdsAreas.map((area) => area.code), UPG_SPEC.pdsAreas.map((area) => area.code))
+  assert.deepEqual(UPG_REFERENCES.serviceClasses.map((row) => row.code).sort(), Object.keys(UPG_SPEC.serviceClasses).sort())
+  assert.deepEqual(UPG_REFERENCES.systems.map((row) => row.code), UPG_SPEC.systems.map((system) => system.code))
+  assert.equal(UPG_REFERENCES.subsystems.length, UPG_SPEC.systems.flatMap((system) => system.subsystems).length)
   assert.ok(UPG_REFERENCES.subcontractors.some((row) => row.code === "ERC-A"))
   assert.deepEqual(
     UPG_REFERENCES.lineServices.map((row) => ({ code: row.code, description: row.description })),
@@ -40,7 +42,7 @@ test("UPG-1 brings its own PDS areas, classes, systems, subsystems, line service
 
 test("spooling material types carry the WPS material codes, so record_weld_progress can match a WPS to the spool", () => {
   const typeCodes = UPG_REFERENCES.spoolingMaterialTypes.map((row) => row.code)
-  assert.deepEqual(typeCodes.sort(), [...new Set(WELDING_PROCEDURES.map((wps) => wps.materialType))].sort())
+  assert.deepEqual(typeCodes.sort(), [...new Set(UPG_SPEC.weldingProcedures.map((wps) => wps.materialType))].sort())
   for (const row of UPG_REFERENCES.spoolingMaterialClasses) assert.ok(typeCodes.includes(row.materialTypeCode), row.code)
 })
 

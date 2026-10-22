@@ -1,5 +1,6 @@
 // scripts/upg/time-import-args.ts
-import { UPG_ISOS } from "./dataset"
+import { isosOf } from "./builders"
+import { UPG_SPEC } from "./dataset"
 
 export interface TimeImportArgs {
   readonly copies: number
@@ -20,7 +21,7 @@ export function parseTimeImportArgs(argv: readonly string[]): TimeImportArgs {
   const copies = positiveInteger(argv, "--copies")
   if (isos !== null && copies !== null) throw new Error("Use either --isos or --copies, not both.")
   return {
-    copies: isos !== null ? Math.ceil(isos / UPG_ISOS.length) : (copies ?? 5),
+    copies: isos !== null ? Math.ceil(isos / isosOf(UPG_SPEC).length) : (copies ?? 5),
     perJob: positiveInteger(argv, "--per-job") ?? 1,
   }
 }

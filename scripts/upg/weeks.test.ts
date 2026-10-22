@@ -2,15 +2,17 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { OVERDUE_SPOOL, REJECT_WELD, THREAD_ISOS, UPG_ISOS } from "./dataset"
+import { isosOf } from "./builders"
+import { UPG_SPEC } from "./dataset"
 import { SITUATIONS, UPG_WEEK_COUNT, buildProjectPlan, buildWeekPlan, describeAction, weekOfDay, type UpgAction } from "./weeks"
 
-const plan = buildProjectPlan()
+const plan = buildProjectPlan(UPG_SPEC)
+const overdue = UPG_SPEC.special.overdueSpool!
 const automatic = plan.filter((action) => !action.manual)
 const spoolOf = (action: UpgAction): string | undefined => ("spool" in action ? action.spool : undefined)
 
 test("the plan is deterministic", () => {
-  assert.deepEqual(buildProjectPlan(), buildProjectPlan())
+  assert.deepEqual(buildProjectPlan(UPG_SPEC), buildProjectPlan(UPG_SPEC))
 })
 
 test("every action falls inside the eight weeks", () => {
@@ -20,7 +22,7 @@ test("every action falls inside the eight weeks", () => {
 })
 
 test("week plans partition the project plan", () => {
-  const weeks = Array.from({ length: UPG_WEEK_COUNT }, (_, index) => buildWeekPlan(index + 1, true))
+  const weeks = Array.from({ length: UPG_WEEK_COUNT }, (_, index) => buildWeekPlan(UPG_SPEC, index + 1, true))
   assert.equal(weeks.flat().length, plan.length)
   for (const [index, week] of weeks.entries()) {
     assert.ok(week.every((action) => weekOfDay(action.day) === index + 1))
@@ -30,10 +32,10 @@ test("week plans partition the project plan", () => {
 
 test("without --include-manual the week plan skips the thread, TP-100-01 and the revision", () => {
   for (let week = 1; week <= UPG_WEEK_COUNT; week += 1) {
-    for (const action of buildWeekPlan(week, false)) {
+    for (const action of buildWeekPlan(UPG_SPEC, week, false)) {
       assert.equal(action.manual, false)
       const spool = spoolOf(action)
-      if (spool) assert.ok(!THREAD_ISOS.some((iso) => spool.startsWith(`${iso}-`)), spool)
+      if (spool) assert.ok(!UPG_SPEC.special.threadIsos.some((iso) => spool.startsWith(`${iso}-`)), spool)
       if ("testPack" in action) assert.notEqual(action.testPack, "TP-100-01")
       assert.notEqual(action.kind, "revision")
     }
@@ -69,7 +71,7 @@ test("automatic actions cover every action-driven situation", () => {
 
 test("state-driven situations hold: the revision is manual, D welds half, C and D packs never start", () => {
   assert.ok(plan.some((action) => action.kind === "revision" && action.manual))
-  const dWelds = UPG_ISOS.filter((iso) => iso.cohort === "D").flatMap((iso) => iso.spools.flatMap((spool) => spool.welds.filter((weld) => weld.location === "shop")))
+  const dWelds = isosOf(UPG_SPEC).filter((iso) => iso.cohort === "D").flatMap((iso) => iso.spools.flatMap((spool) => spool.welds.filter((weld) => weld.location === "shop")))
   const dWelded = automatic.filter((action) => action.kind === "weld" && dWelds.some((weld) => weld.weldNumber === action.weld))
   assert.ok(dWelded.length > 0 && dWelded.length < dWelds.length)
   assert.ok(!plan.some((action) => "testPack" in action && ["TP-300-01", "TP-300-02"].includes(action.testPack)))
@@ -77,16 +79,16 @@ test("state-driven situations hold: the revision is manual, D welds half, C and 
 
 test("the rejected weld is in a shop NDE round and a repair round follows", () => {
   const rounds = plan.filter((action): action is Extract<UpgAction, { kind: "nde_round" }> => action.kind === "nde_round")
-  const rejecting = rounds.find((round) => round.reject.includes(REJECT_WELD))
+  const rejecting = rounds.find((round) => round.reject.includes(UPG_SPEC.special.rejectWeld!))
   assert.ok(rejecting)
   assert.ok(rounds.some((round) => round.day > rejecting.day && round.situation === "nde_reject_repair_tracer"))
 })
 
 test("the overdue spool leaves the laydown and never arrives on site", () => {
-  const moves = plan.filter((action) => action.kind === "tracking" && action.spool === OVERDUE_SPOOL)
+  const moves = plan.filter((action) => action.kind === "tracking" && action.spool === overdue)
   assert.ok(moves.some((action) => action.kind === "tracking" && action.direction === "out"))
   assert.ok(!moves.some((action) => action.kind === "tracking" && action.location === "SITE-A"))
-  assert.ok(!plan.some((action) => action.kind === "stage" && action.spool === OVERDUE_SPOOL && action.phase === "erection"))
+  assert.ok(!plan.some((action) => action.kind === "stage" && action.spool === overdue && action.phase === "erection"))
 })
 
 test("every action has a Russian description", () => {
@@ -94,7 +96,7 @@ test("every action has a Russian description", () => {
 })
 
 test("the shop NDE round of a cohort examines the thread spools too, so a thread spool can be released", () => {
-  const thread = UPG_ISOS.filter((iso) => iso.thread).flatMap((iso) => iso.spools.map((spool) => spool.spoolNumber))
+  const thread = isosOf(UPG_SPEC).filter((iso) => iso.thread).flatMap((iso) => iso.spools.map((spool) => spool.spoolNumber))
   const shopRounds = plan.filter((action): action is Extract<UpgAction, { kind: "nde_round" }> => action.kind === "nde_round" && action.label.endsWith("-shop"))
   for (const spool of thread) assert.ok(shopRounds.some((round) => round.spools.includes(spool)), spool)
 })
@@ -103,5 +105,14 @@ test("only the overdue spool leaves the laydown without arriving on site", () =>
   const tracking = plan.filter((action): action is Extract<UpgAction, { kind: "tracking" }> => action.kind === "tracking")
   const left = tracking.filter((action) => action.location === "LAYDOWN-A" && action.direction === "out").map((action) => action.spool)
   const arrived = new Set(tracking.filter((action) => action.location === "SITE-A" && action.direction === "in").map((action) => action.spool))
-  assert.deepEqual(left.filter((spool) => !arrived.has(spool)), [OVERDUE_SPOOL])
+  assert.deepEqual(left.filter((spool) => !arrived.has(spool)), [overdue])
+})
+
+test("without a revision, reject weld or overdue spool the plan has no revision action", () => {
+  const bare = { ...UPG_SPEC, special: { ...UPG_SPEC.special, revision: null, rejectWeld: null, overdueSpool: null } }
+  const barePlan = buildProjectPlan(bare)
+  assert.ok(!barePlan.some((action) => action.kind === "revision"))
+  assert.ok(!barePlan.some((action) => action.kind === "nde_round" && action.label === "B-revision"))
+  assert.ok(!barePlan.some((action) => action.kind === "nde_round" && action.reject.length > 0))
+  assert.ok(!barePlan.some((action) => action.kind === "weld" && action.weld === "2005-S1-W09"))
 })

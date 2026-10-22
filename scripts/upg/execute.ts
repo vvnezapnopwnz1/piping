@@ -3,11 +3,12 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 
 import type { Database } from "../../lib/supabase/database.types"
 import { materialCheckItemsFor } from "../demo/material-check-items"
-import { FIELD_SUBCONTRACTOR, LINE_SERVICE, REVISION_WELD, SERVICE_CLASSES, SHOP_SUBCONTRACTOR, WPS_BY_MATERIAL, spoolByNumber } from "./dataset"
+import { spoolByNumber } from "./builders"
 import { addDays } from "./files"
 import type { UpgIds } from "./ids"
 import { importSpoolgenPackage } from "./import-spooling"
 import { readFixtureText } from "./operator"
+import type { ProjectSpec } from "./spec"
 import { weekOfDay, type Situation, type UpgAction } from "./weeks"
 
 type Client = SupabaseClient<Database>
@@ -16,6 +17,7 @@ export interface RunContext {
   readonly client: Client
   readonly ids: UpgIds
   readonly startDate: string
+  readonly spec: ProjectSpec
 }
 
 export interface ActionResult {
@@ -45,8 +47,8 @@ const targetOf = (action: UpgAction): string => {
   }
 }
 
-export function actionKey(week: number, action: UpgAction, suffix?: string): string {
-  return ["upg", `w${week}`, action.kind, targetOf(action), suffix].filter(Boolean).join("-")
+export function actionKey(spec: ProjectSpec, week: number, action: UpgAction, suffix?: string): string {
+  return [spec.id, `w${week}`, action.kind, targetOf(action), suffix].filter(Boolean).join("-")
 }
 
 export function summarizeRun(results: readonly ActionResult[]) {
@@ -74,12 +76,12 @@ const required = <T>(value: T | undefined, what: string): T => {
 }
 
 async function weld(ctx: RunContext, action: Extract<UpgAction, { kind: "weld" }>, key: string, date: string): Promise<void> {
-  const found = spoolByNumber(action.spool)
+  const found = spoolByNumber(ctx.spec, action.spool)
   if (!found) throw new Error(`${action.spool} is not in the dataset.`)
-  const material = SERVICE_CLASSES[found.iso.serviceClass].materialTypeCode
+  const material = ctx.spec.serviceClasses[found.iso.serviceClass].materialTypeCode
   const field = action.phase === "erection"
-  const subcontractor = field ? FIELD_SUBCONTRACTOR : SHOP_SUBCONTRACTOR
-  const wpsCode = field ? WPS_BY_MATERIAL[material].field : WPS_BY_MATERIAL[material].shop
+  const subcontractor = field ? ctx.spec.fieldSubcontractor : ctx.spec.shopSubcontractor
+  const wpsCode = field ? ctx.spec.wpsByMaterial[material].field : ctx.spec.wpsByMaterial[material].shop
   const pool = ctx.ids.welders(subcontractor, wpsCode)
   if (pool.length < 2) throw new Error(`Fewer than two welders qualified for ${wpsCode}.`)
   const ordinal = Number(action.weld.replace(/.*-(W|FW)/, "")) || 0
@@ -140,14 +142,14 @@ async function ndeRound(ctx: RunContext, action: Extract<UpgAction, { kind: "nde
   const pairs = [...new Set(obligations.filter((row) => row.disposition === "pending").map((row) => `${row.method}|${row.coverage_regime}`))]
   for (const pair of pairs) {
     const [method, coverageRegime] = pair.split("|")
-    const batch = await rpc(ctx.client, "create_nde_batch", { target_project_id: ctx.ids.projectId, method, coverage_regime: coverageRegime, idempotency_key: actionKey(week, action, `batch-${pair}`) })
+    const batch = await rpc(ctx.client, "create_nde_batch", { target_project_id: ctx.ids.projectId, method, coverage_regime: coverageRegime, idempotency_key: actionKey(ctx.spec, week, action, `batch-${pair}`) })
     // A rerun gets the batch back from its receipt, but allocate and issue check the batch state
     // before their own receipt, so they refuse a batch that has moved on.
     const current = await ctx.client.from("nde_batches").select("status").eq("id", batch.id).single()
     if (current.error) throw new Error(current.error.message)
     if (current.data.status === "draft") {
-      await rpc(ctx.client, "allocate_nde_batch_candidates", { target_batch_id: batch.id, target_percentage: 100, idempotency_key: actionKey(week, action, `allocate-${pair}`) })
-      await rpc(ctx.client, "issue_nde_batch", { target_batch_id: batch.id, idempotency_key: actionKey(week, action, `issue-${pair}`) })
+      await rpc(ctx.client, "allocate_nde_batch_candidates", { target_batch_id: batch.id, target_percentage: 100, idempotency_key: actionKey(ctx.spec, week, action, `allocate-${pair}`) })
+      await rpc(ctx.client, "issue_nde_batch", { target_batch_id: batch.id, idempotency_key: actionKey(ctx.spec, week, action, `issue-${pair}`) })
     }
     batches.add(batch.id)
   }
@@ -167,10 +169,10 @@ async function ndeRound(ctx: RunContext, action: Extract<UpgAction, { kind: "nde
         examined_on: date,
         report_number: `RT-${week}-${String(n).padStart(3, "0")}`,
         ...(rejected ? { defect_rework_code_id: ctx.ids.reworkCode("POR") } : {}),
-        idempotency_key: actionKey(week, action, `result-${obligation.id}`),
+        idempotency_key: actionKey(ctx.spec, week, action, `result-${obligation.id}`),
       })
     }
-    await rpc(ctx.client, "close_nde_batch", { target_batch_id: batchId, returned_on_date: date, idempotency_key: actionKey(week, action, `close-${batchId}`) })
+    await rpc(ctx.client, "close_nde_batch", { target_batch_id: batchId, returned_on_date: date, idempotency_key: actionKey(ctx.spec, week, action, `close-${batchId}`) })
   }
   return true
 }
@@ -182,8 +184,9 @@ async function packMembers(ctx: RunContext, testPackId: string): Promise<string[
 }
 
 export async function executeAction(ctx: RunContext, action: UpgAction): Promise<ActionResult> {
+  const spec = ctx.spec
   const week = weekOfDay(action.day)
-  const key = actionKey(week, action)
+  const key = actionKey(spec, week, action)
   const date = addDays(ctx.startDate, action.day)
   const client = ctx.client
   const spoolRevision = (spool: string) => required(ctx.ids.spoolRevision(spool), spool)
@@ -210,7 +213,7 @@ export async function executeAction(ctx: RunContext, action: UpgAction): Promise
         const { data, error } = await client.from("support_revisions").select("id").eq("spool_revision_id", spoolRevision(action.spool)).eq("is_removed", false)
         if (error) throw new Error(error.message)
         for (const support of data ?? []) {
-          await rpc(client, action.kind === "support" ? "record_support_progress" : "record_field_support_progress", { target_support_revision_id: support.id, installed_on: date, idempotency_key: actionKey(week, action, support.id) })
+          await rpc(client, action.kind === "support" ? "record_support_progress" : "record_field_support_progress", { target_support_revision_id: support.id, installed_on: date, idempotency_key: actionKey(spec, week, action, support.id) })
         }
         break
       }
@@ -224,7 +227,7 @@ export async function executeAction(ctx: RunContext, action: UpgAction): Promise
         const open = (requirements.data ?? []).filter((row) => !done.has(row.id))
         if (open.length === 0) throw new Skip("no open PWHT requirement")
         for (const [index, requirement] of open.entries()) {
-          await rpc(client, "record_pwht_result", { target_requirement_id: requirement.id, chart_number: `PWHT-${action.spool}-${index + 1}`, performed_on: date, outcome: "accepted", idempotency_key: actionKey(week, action, requirement.id) })
+          await rpc(client, "record_pwht_result", { target_requirement_id: requirement.id, chart_number: `PWHT-${action.spool}-${index + 1}`, performed_on: date, outcome: "accepted", idempotency_key: actionKey(spec, week, action, requirement.id) })
         }
         break
       }
@@ -234,7 +237,7 @@ export async function executeAction(ctx: RunContext, action: UpgAction): Promise
       case "paint":
         await rpc(client, "record_paint_progress", {
           target_spool_revision_id: spoolRevision(action.spool),
-          line_service_id: ctx.ids.lineService(LINE_SERVICE),
+          line_service_id: ctx.ids.lineService(ctx.spec.lineService),
           details: { painted_on: date, final_qc_on: addDays(ctx.startDate, action.finalQcDay), measured_dft_microns: 260, w10p_form_number: `W10P-${action.spool}` },
           idempotency_key: key,
         })
@@ -258,7 +261,7 @@ export async function executeAction(ctx: RunContext, action: UpgAction): Promise
         })
         break
       case "nde_round":
-        if (action.requiresRevision && !ctx.ids.weldJointRevision(REVISION_WELD)) throw new Skip("revision R1 is not imported yet")
+        if (action.requiresRevision && !(ctx.spec.special.revision && ctx.ids.weldJointRevision(ctx.spec.special.revision.weld))) throw new Skip("revision R1 is not imported yet")
         if (!(await ndeRound(ctx, action, week, date))) throw new Skip("no pending NDE obligations")
         break
       case "line_check": {
@@ -268,7 +271,7 @@ export async function executeAction(ctx: RunContext, action: UpgAction): Promise
         for (const isometricId of await packMembers(ctx, packId)) {
           const isoNumber = [...action.punches.map((punch) => punch.iso)].find((number) => ctx.ids.iso(number) === isometricId)
           const punches = action.punches.filter((punch) => punch.iso === isoNumber).map((punch) => ({ punch_code_id: ctx.ids.punchCode(), description: punch.description, checking_date: resultDate }))
-          await rpc(client, "record_line_check_result", { target_request_id: request.id, target_isometric_id: isometricId, target_completed_on: resultDate, target_punches: punches, target_idempotency_key: actionKey(week, action, isometricId) })
+          await rpc(client, "record_line_check_result", { target_request_id: request.id, target_isometric_id: isometricId, target_completed_on: resultDate, target_punches: punches, target_idempotency_key: actionKey(spec, week, action, isometricId) })
         }
         break
       }
@@ -283,14 +286,14 @@ export async function executeAction(ctx: RunContext, action: UpgAction): Promise
         if (open.length === 0) throw new Skip("no open punch items")
         const request = await rpc(client, "assign_item_clearance", { target_test_pack_id: packId, target_punch_item_ids: open, target_team_id: ctx.ids.team("finishing"), target_assigned_on: date, target_idempotency_key: key })
         for (const punchId of open) {
-          await rpc(client, "record_punch_clearance", { target_request_id: request.id, target_punch_item_id: punchId, target_cleared_on: addDays(ctx.startDate, action.clearDay), target_idempotency_key: actionKey(week, action, punchId) })
+          await rpc(client, "record_punch_clearance", { target_request_id: request.id, target_punch_item_id: punchId, target_cleared_on: addDays(ctx.startDate, action.clearDay), target_idempotency_key: actionKey(spec, week, action, punchId) })
         }
         break
       }
       case "blinding": {
         const packId = required(ctx.ids.testPack(action.testPack), action.testPack)
         const request = await rpc(client, "assign_blinding", { target_test_pack_id: packId, target_team_id: ctx.ids.team("blinding"), target_assigned_on: date, target_idempotency_key: key })
-        await rpc(client, "record_blinding", { target_request_id: request.id, target_completed_on: addDays(ctx.startDate, action.recordDay), target_idempotency_key: actionKey(week, action, "record") })
+        await rpc(client, "record_blinding", { target_request_id: request.id, target_completed_on: addDays(ctx.startDate, action.recordDay), target_idempotency_key: actionKey(spec, week, action, "record") })
         break
       }
       case "pressure_stage":
@@ -309,7 +312,7 @@ export async function executeAction(ctx: RunContext, action: UpgAction): Promise
           await rpc(client, "record_reinstatement", {
             target_request_id: request.id, target_flange_joint_revision_id: row.flange_joint_revision_id, target_joint_date: addDays(ctx.startDate, action.recordDay),
             target_report_number: `RI-${row.flange_number}`, target_jointer_team_id: ctx.ids.team("jointer"), target_tag_number: `TAG-${row.flange_number}`,
-            target_idempotency_key: actionKey(week, action, row.flange_joint_revision_id),
+            target_idempotency_key: actionKey(spec, week, action, row.flange_joint_revision_id),
           })
         }
         break
@@ -319,8 +322,8 @@ export async function executeAction(ctx: RunContext, action: UpgAction): Promise
           .eq("isometrics.project_id", ctx.ids.projectId).eq("isometrics.iso_number", action.iso).eq("revision_number", "R1").eq("status", "accepted")
         if (current.error) throw new Error(current.error.message)
         if ((current.data ?? []).length > 0) throw new Skip("R1 is already imported")
-        const files = { weld: readFixtureText("revision/weld.txt"), trace: readFixtureText("revision/trace.txt"), bolt: readFixtureText("revision/bolt.txt"), supp: readFixtureText("revision/supp.txt") }
-        await importSpoolgenPackage(client, ctx.ids.projectId, files, "UPG-1 R1", { decision: "done_without_modification" })
+        const files = { weld: readFixtureText(ctx.spec, "revision/weld.txt"), trace: readFixtureText(ctx.spec, "revision/trace.txt"), bolt: readFixtureText(ctx.spec, "revision/bolt.txt"), supp: readFixtureText(ctx.spec, "revision/supp.txt") }
+        await importSpoolgenPackage(client, ctx.ids.projectId, files, `${ctx.spec.project.activityCode} R1`, { decision: "done_without_modification" })
         await ctx.ids.reload()
         break
       }

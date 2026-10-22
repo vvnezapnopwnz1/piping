@@ -1,11 +1,12 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { UPG_ISOS } from "./dataset"
+import { isosOf } from "./builders"
+import { UPG_SPEC } from "./dataset"
 import { parseTimeImportArgs } from "./time-import-args"
 
 test("--isos resolves to the copies that reach that many ISOs", () => {
-  assert.deepEqual(parseTimeImportArgs(["--isos", "1400"]), { copies: Math.ceil(1400 / UPG_ISOS.length), perJob: 1 })
+  assert.deepEqual(parseTimeImportArgs(["--isos", "1400"]), { copies: Math.ceil(1400 / isosOf(UPG_SPEC).length), perJob: 1 })
   assert.equal(parseTimeImportArgs(["--isos", "1400"]).copies, 35)
 })
 

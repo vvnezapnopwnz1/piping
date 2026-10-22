@@ -23,9 +23,11 @@ import {
   revalidateSpoolingImportJob,
   uploadSpoolgenFile,
 } from "../../modules/engineering/infrastructure/supabase-engineering-repository"
-import { UPG_ISOS, UPG_PROJECT, isoNumberOf, type UpgIso } from "./dataset"
+import { isoNumberOf, isosOf } from "./builders"
+import { UPG_SPEC } from "./dataset"
 import { importSheets, spoolgenFiles } from "./files"
 import { createPwhtRules, importExcelFile } from "./load-project"
+import type { UpgIso } from "./spec"
 import { parseTimeImportArgs } from "./time-import-args"
 import { findProjectId, readUpgEnv, signInOperator, upgTargetFromArgv } from "./operator"
 import { prepareUpgReferences, startDateFromManifest } from "./setup-references"
@@ -34,10 +36,10 @@ const PROJECT_CODE = "PERF-1"
 
 /** The UPG ISOs again under other numbers: every ISO, spool, weld, support and flange number is renamed. */
 function renumbered(copy: number): UpgIso[] {
-  return UPG_ISOS.map((iso) => {
+  return isosOf(UPG_SPEC).map((iso) => {
     const seq = iso.seq + copy * 10_000
     const text = JSON.stringify(iso)
-      .replaceAll(iso.isoNumber, isoNumberOf(seq))
+      .replaceAll(iso.isoNumber, isoNumberOf(UPG_SPEC, seq))
       .replaceAll(new RegExp(`\\b${iso.seq}-`, "g"), `${seq}-`)
     return { ...(JSON.parse(text) as UpgIso), seq }
   })
@@ -56,7 +58,7 @@ interface PhaseTimes {
 
 async function importOnce(client: SupabaseClient<Database>, projectId: string, copy: number, perJob: number): Promise<PhaseTimes> {
   const registerStarted = Date.now()
-  const files = spoolgenFiles(Array.from({ length: perJob }, (_, offset) => renumbered(copy + offset)).flat())
+  const files = spoolgenFiles(UPG_SPEC, Array.from({ length: perJob }, (_, offset) => renumbered(copy + offset)).flat())
   const submission = buildSpoolgenSubmission(files)
   const job = await createSpoolingImportJob(client, projectId, `PERF copy ${copy}`)
   for (const role of Object.keys(files) as (keyof typeof files)[]) {
@@ -93,23 +95,23 @@ async function main(): Promise<void> {
     const created = await createProjectDefinition(client, data.user!.id, {
       activityCode: PROJECT_CODE,
       projectTitle: "Замер импорта",
-      owner: UPG_PROJECT.owner,
-      contractor: UPG_PROJECT.contractor,
+      owner: UPG_SPEC.project.owner,
+      contractor: UPG_SPEC.project.contractor,
       contractNumber: "",
-      maxTransitTimeDays: UPG_PROJECT.maxTransitTimeDays,
+      maxTransitTimeDays: UPG_SPEC.project.maxTransitTimeDays,
     })
     projectId = created.id
     console.log(`Created ${PROJECT_CODE}.`)
-    await prepareUpgReferences(env, PROJECT_CODE)
-    for (const sheet of importSheets(startDateFromManifest()).filter((candidate) => candidate.importType !== "test_pack_composition")) {
-      await importExcelFile(client, projectId, sheet.importType, sheet.fileName)
+    await prepareUpgReferences(env, UPG_SPEC, PROJECT_CODE)
+    for (const sheet of importSheets(UPG_SPEC, startDateFromManifest(UPG_SPEC)).filter((candidate) => candidate.importType !== "test_pack_composition")) {
+      await importExcelFile(client, UPG_SPEC, projectId, sheet.importType, sheet.fileName)
     }
   }
 
-  await createPwhtRules(client, projectId)
+  await createPwhtRules(client, UPG_SPEC, projectId)
 
   for (let copy = 1; copy <= copies; copy += perJob) {
-    const { count } = await client.from("isometrics").select("id", { count: "exact", head: true }).eq("project_id", projectId).like("iso_number", `UPG-${Math.floor((1001 + copy * 10_000) / 1000)}00-%`)
+    const { count } = await client.from("isometrics").select("id", { count: "exact", head: true }).eq("project_id", projectId).like("iso_number", `${UPG_SPEC.isoPrefix}-${Math.floor((1001 + copy * 10_000) / 1000)}00-%`)
     if ((count ?? 0) > 0) { console.log(`copy ${copy}: already imported`); continue }
     const times = await importOnce(client, projectId, copy, perJob)
     console.log(`copies ${copy}-${copy + perJob - 1}: register ${times.registerMs} ms, validate ${times.validateMs} ms, apply ${times.applyMs} ms`)

@@ -7,7 +7,7 @@ import { assertHostedSupabaseTarget } from "../demo/hosted-target"
 import { assertPublicDemoSupabaseTarget } from "../demo/public-demo-target"
 import { hostedAdminKeyFromEnvironment } from "../prepare-hosted-demo"
 import { isLocalhost } from "../spoolgen-fixture-import"
-import { UPG_FIXTURE_DIR } from "./files"
+import type { ProjectSpec } from "./spec"
 
 /** The account that creates UPG-1 in the UI, and so its project admin. */
 export const UPG_OPERATOR_EMAIL = "track01.platform-admin@example.test"
@@ -100,5 +100,5 @@ export async function findProjectId(client: SupabaseClient<Database>, activityCo
   return (data as { id: string } | null)?.id ?? null
 }
 
-export const readFixtureText = (relative: string): string => readFileSync(join(UPG_FIXTURE_DIR, relative), "utf8")
-export const readFixtureBytes = (relative: string): Uint8Array => new Uint8Array(readFileSync(join(UPG_FIXTURE_DIR, relative)))
+export const readFixtureText = (spec: ProjectSpec, relative: string): string => readFileSync(join(spec.fixtureDir, relative), "utf8")
+export const readFixtureBytes = (spec: ProjectSpec, relative: string): Uint8Array => new Uint8Array(readFileSync(join(spec.fixtureDir, relative)))

@@ -2,7 +2,7 @@
 /**
  * demo:week — one construction week of UPG-1.
  *
- *   npm run demo:week -- --project UPG-1 --week 3 [--include-manual | --manual-kinds flange,tracking]
+ *   npm run demo:week -- [--dataset upg|nps] --project UPG-1 --week 3 [--include-manual | --manual-kinds flange,tracking]
  *
  * Manual actions (the thread, TP-100-01, the revision import) are listed for the walkthrough,
  * not executed, unless --include-manual (the stage A dry run). Exit code 1 only when a refusal
@@ -11,9 +11,9 @@
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 
-import { UPG_PROJECT } from "./dataset"
-import { addDays, UPG_FIXTURE_DIR } from "./files"
+import { specFromArgv } from "./dataset-arg"
 import { executeAction, summarizeRun, type ActionResult } from "./execute"
+import { addDays } from "./files"
 import { loadIds } from "./ids"
 import { findProjectId, readUpgEnv, signInOperator, upgTargetFromArgv } from "./operator"
 import { UPG_WEEK_COUNT, buildWeekPlan, describeAction } from "./weeks"
@@ -24,12 +24,13 @@ function argument(name: string): string | undefined {
 }
 
 async function main(): Promise<number> {
+  const spec = specFromArgv(process.argv)
   const week = Number(argument("--week"))
   if (!Number.isInteger(week) || week < 1 || week > UPG_WEEK_COUNT) throw new Error(`Use --week 1…${UPG_WEEK_COUNT}.`)
   const includeManual = process.argv.includes("--include-manual")
   // Walkthrough: run only these kinds of the thread's manual actions (the rest is done in the UI).
   const manualKinds = (argument("--manual-kinds") ?? "").split(",").filter(Boolean)
-  const projectCode = argument("--project") ?? UPG_PROJECT.activityCode
+  const projectCode = argument("--project") ?? spec.project.activityCode
   const target = upgTargetFromArgv(process.argv)
   const env = readUpgEnv(process.env, target)
   if (target !== "local") {
@@ -38,17 +39,17 @@ async function main(): Promise<number> {
   const client = await signInOperator(env)
   const projectId = await findProjectId(client, projectCode)
   if (!projectId) throw new Error(`Project ${projectCode} does not exist.`)
-  const startDate = (JSON.parse(readFileSync(join(UPG_FIXTURE_DIR, "manifest.json"), "utf8")) as { startDate: string }).startDate
+  const startDate = (JSON.parse(readFileSync(join(spec.fixtureDir, "manifest.json"), "utf8")) as { startDate: string }).startDate
   const ids = await loadIds(client, projectId)
 
-  const plan = buildWeekPlan(week, true)
+  const plan = buildWeekPlan(spec, week, true)
   const results: ActionResult[] = []
   for (const action of plan) {
     if (action.manual && !includeManual && !manualKinds.includes(action.kind)) {
       results.push({ action, outcome: "skipped", message: "manual" })
       continue
     }
-    results.push(await executeAction({ client, ids, startDate }, action))
+    results.push(await executeAction({ client, ids, startDate, spec }, action))
   }
 
   const first = addDays(startDate, (week - 1) * 7)
