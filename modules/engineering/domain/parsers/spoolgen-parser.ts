@@ -17,10 +17,10 @@ function normalizeCell(column: SpoolgenColumn, value: string): string {
   if (column.key === "weld_location") return WELD_LOCATIONS.get(value.toLowerCase()) ?? value
   return value
 }
-export function parseSpoolgenMatrix(role: SpoolgenFileRole, matrix: readonly (readonly unknown[])[], columnMap?: Readonly<Record<string, string>>): SpoolgenParseResult {
+export function parseSpoolgenMatrix(role: SpoolgenFileRole, matrix: readonly (readonly unknown[])[]): SpoolgenParseResult {
   const issues: SpoolgenIssue[] = []
   if (matrix.length === 0) return { records: [], issues: [spoolgenIssue("EMPTY_FILE", null, role)] }
-  const { indexes, missingRequired } = resolveColumns(role, matrix[0].map(cellText), columnMap)
+  const { indexes, missingRequired } = resolveColumns(role, matrix[0].map(cellText))
   if (missingRequired.length > 0) return { records: [], issues: missingRequired.map((key) => spoolgenIssue("MISSING_COLUMN", null, key)) }
   const records: SpoolgenRecord[] = []
   for (let line = 1; line < matrix.length; line += 1) {
@@ -32,4 +32,4 @@ export function parseSpoolgenMatrix(role: SpoolgenFileRole, matrix: readonly (re
   }
   return { records, issues }
 }
-export function parseSpoolgenFile(role: SpoolgenFileRole, text: string, columnMap?: Readonly<Record<string, string>>): SpoolgenParseResult { return parseSpoolgenMatrix(role, parseDelimited(text), columnMap) }
+export function parseSpoolgenFile(role: SpoolgenFileRole, text: string): SpoolgenParseResult { return parseSpoolgenMatrix(role, parseDelimited(text)) }

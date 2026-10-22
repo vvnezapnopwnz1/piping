@@ -45,7 +45,7 @@ test("every server code reaches the screen in Russian, through the entries", () 
   const header = ["ISO_NUMBER", "ISO_REVISION", "PDS_AREA", "SERVICE_CLASS", "SPOOL_NUMBER", "WELD_NUMBER", "WELD_TYPE", "DIAMETER_INCH", "WELD_LOCATION"]
   const weld: TableSource = { role: "weld", fileName: "book.xlsx", sheet: "weld", matrix: [header, ["ISO-1", "R0", "Z-9", "CS150", "S-1", "W-1", "BW", 4, "field"]], rowNumbers: [1, 2] }
   const trace: TableSource = { role: "trace", fileName: "book.xlsx", sheet: "trace", matrix: [["ISO_NUMBER", "SPOOL_NUMBER", "IDENT_CODE"], ["ISO-1", "S-9", "PIPE"]], rowNumbers: [1, 2] }
-  const submission = buildTableSubmission([weld, trace], { kind: "table", columns: {} })
+  const submission = buildTableSubmission([weld, trace])
   const rowOf = (kind: string) => submission.rows.find((row) => row.normalizedValues.entity_type === kind)!.rowNumber
   const raisedOn: Record<SpoolingServerIssueCode, number | null> = {
     SRV_PDS_MISSING: rowOf("isometric"), SRV_SERVICE_CLASS_MISSING: rowOf("isometric"),

@@ -153,7 +153,6 @@
     "hint": "Upload the SpoolGen export. Only weld.txt is required; each file is limited to {limit} MB.",
     "replace": "Replace {file}",
     "validate": "Validate files",
-    "jobCreated": "Job created. Review the decisions below before applying.",
     "validated": "Validated {rows, plural, one {# row} other {# rows}}: {errors, plural, one {# error} other {# errors}}, {warnings, plural, one {# warning} other {# warnings}}.",
     "failed": "The import could not be validated.",
     "tooMany": "{count, plural, one {# file was} other {# files were}} not added: one import takes at most {limit} files."
@@ -179,20 +178,16 @@
     }
   },
   "table": {
-    "hint": "A workbook is read from the sheet named after the file's role (weld, trace, bolt or supp), or from its first sheet if it has none; a CSV or text file is read as it is. The first row holds the headers. Only the weld file is required; each file is limited to {limit} MB.",
     "role": {
       "weld": "Welds: isometric, spool and weld",
       "trace": "Materials and heat numbers",
       "bolt": "Flange joints and bolting",
       "supp": "Supports"
     },
-    "choose": "Choose file",
     "remove": "Remove {file}",
-    "mapColumns": "Match columns",
     "readFailed": "{file} could not be read.",
     "reading": "Reading {file}…",
     "weldRequired": "Add the weld file to validate.",
-    "unmatched": "Match every required column before validating.",
     "columnsLeftToServer": "Some required columns are missing from the files, as listed below. The files are still validated and the server reports them.",
     "replaced": "{file} replaced {previous}."
   },
@@ -220,11 +215,6 @@
     }
   },
   "mapping": {
-    "title": "Columns of {file}",
-    "hint": "Choose the column that holds each field. Fields marked * are required. Diameters are read in inches: a column in millimetres is not converted.",
-    "chooseColumn": "Column for {field}",
-    "notInFile": "Not in the file",
-    "recheck": "Check again",
     "fields": {
       "iso_number": "Isometric number",
       "revision_number": "Revision",

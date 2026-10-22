@@ -39,9 +39,6 @@ assert.equal(parseSpoolgenMatrix("weld", [matrixHeader, ["ISO-A", "R0", "PDS-A",
 assert.deepEqual(parseSpoolgenMatrix("weld", []).issues.map((issue) => issue.code), ["EMPTY_FILE"])
 assert.equal(parseSpoolgenMatrix("weld", [["ISO_NUMBER", "DIAMETER_INCH"], ["ISO-A", 6]]).records.length, 0)
 assert.ok(parseSpoolgenMatrix("weld", [["ISO_NUMBER", "DIAMETER_INCH"], ["ISO-A", 6]]).issues.some((issue) => issue.code === "MISSING_COLUMN"))
-const mapped = parseSpoolgenMatrix("weld", [["Изометрия", "Рев", "Зона", "Класс", "Катушка", "Шов", "Тип", "Ду", "Стенка"], ["ISO-A", "R0", "PDS-A", "SC-A", "SP-1", "W-1", "BW", "6", "8"]], { revision_number: "Рев", pds_area: "Зона", service_class: "Класс", weld_type: "Тип", diameter_inch: "Ду", thickness_mm: "Стенка", weld_number: "Шов" })
-assert.equal(mapped.issues.length, 0)
-assert.equal(mapped.records[0].values.weld_number, "W-1")
 const location = (value: string) => parseSpoolgenMatrix("weld", [[...matrixHeader, "WELD_LOCATION"], ["ISO-A", "R0", "PDS-A", "SC-A", "SP-1", "W-1", "BW", "6", "8", value]]).records[0].values.weld_location
 for (const [input, expected] of [["цех", "shop"], ["Заводской", "shop"], ["SHOP", "shop"], ["s", "shop"], ["монтаж", "field"], ["Монтажный", "field"], ["Field", "field"], ["F", "field"], ["site", "field"], ["Assembly", "assembly"], ["unknown", "unknown"], ["", ""]])
   assert.equal(location(input), expected, input)

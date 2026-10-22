@@ -26,8 +26,7 @@ const ALLOWED: Readonly<Partial<Record<string, TemplateAllowedValues>>> = { weld
 
 /**
  * The columns of one role, in contract order, with the canonical header: the download needs no column mapping because
- * the reader matches exactly these headers (`resolveColumns` falls back to the canonical name even when the project's
- * saved template maps other ones).
+ * the reader matches exactly these headers (`resolveColumns`).
  */
 export function templateFieldsFor(role: SpoolgenFileRole): TemplateField[] {
   return SPOOLGEN_CONTRACT[role].map((column) => ({

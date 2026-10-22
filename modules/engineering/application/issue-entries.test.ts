@@ -16,7 +16,7 @@ const weld = (iso: string, spool: string, weldNumber: string, overrides: { pds?:
 /** A sheet whose header is in row 1 and whose data rows sit at the given Excel rows. */
 const sheet = (role: SpoolgenFileRole, header: unknown[], rows: readonly (readonly [number, unknown[]])[]): TableSource =>
   ({ role, fileName: "book.xlsx", sheet: role, matrix: [header, ...rows.map(([, cells]) => cells)], rowNumbers: [1, ...rows.map(([row]) => row)] })
-const submit = (...sources: TableSource[]) => buildTableSubmission(sources, { kind: "table", columns: {} })
+const submit = (...sources: TableSource[]) => buildTableSubmission(sources)
 const stored = (code: string, rowNumber: number | null, columnName: string | null, severity: StoredImportIssue["severity"] = "blocker"): StoredImportIssue => ({ code, rowNumber, columnName, severity, message: "m", fileName: null })
 const stagingRow = (submission: SpoolgenSubmission, kind: string, key: string, value: string) => {
   const found = submission.rows.find((row) => row.normalizedValues.entity_type === kind && row.normalizedValues[key] === value)

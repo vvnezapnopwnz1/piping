@@ -40,7 +40,7 @@ export function SpoolgenImportPanel({ canManage, busy, onEdit, onSubmit }: {
   const [reading, setReading] = useState<Partial<Record<Role, string>>>({})
   const sources = useMemo<TableSource[]>(() => SPOOLGEN_FILE_ROLES.flatMap((role) => { const held = files[role]; return held ? [{ role, fileName: held.file.name, matrix: held.matrix }] : [] }), [files])
   // The four fixed-contract files go to the server as they are, a missing column too: the server reports it.
-  const submission = useMemo(() => buildTableSubmission(sources, { kind: "table", columns: {} }, { strictColumns: false }), [sources])
+  const submission = useMemo(() => buildTableSubmission(sources), [sources])
 
   const pick = async (role: Role, file: File | undefined) => {
     if (file === undefined) return

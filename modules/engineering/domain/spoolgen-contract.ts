@@ -14,12 +14,12 @@ export const SPOOLGEN_CONTRACT: Record<SpoolgenFileRole, readonly SpoolgenColumn
   supp: [iso, spool, text("support_number", "SUPPORT_NUMBER", ["SUPPORT", "SUPPNO", "SUPPORTNO", "SUPPORTNUMBER"], true), text("support_type", "SUPPORT_TYPE", ["SUPPORTTYPE", "SUPPTYPE"]), number("quantity", "QUANTITY", ["QTY", "NOOFF"])],
 }
 export interface ResolvedColumns { indexes: Map<string, number>; missingRequired: string[]; headers: string[] }
-// A mapped header (columnMap: key -> header text) wins; otherwise the canonical header or any alias. Empty headers never match.
-export function resolveColumns(role: SpoolgenFileRole, headerRow: readonly string[], columnMap?: Readonly<Record<string, string>>): ResolvedColumns {
+// A column is found by its canonical header or any alias. Empty headers never match.
+export function resolveColumns(role: SpoolgenFileRole, headerRow: readonly string[]): ResolvedColumns {
   const headers = headerRow.map(normalizeHeader); const indexes = new Map<string, number>(); const missingRequired: string[] = []
   for (const column of SPOOLGEN_CONTRACT[role]) {
-    const mapped = columnMap?.[column.key] === undefined ? "" : normalizeHeader(columnMap[column.key]); const names = [normalizeHeader(column.canonicalHeader), ...column.aliases.map(normalizeHeader)]
-    const index = mapped !== "" && headers.includes(mapped) ? headers.indexOf(mapped) : headers.findIndex((header) => names.includes(header))
+    const names = [normalizeHeader(column.canonicalHeader), ...column.aliases.map(normalizeHeader)]
+    const index = headers.findIndex((header) => names.includes(header))
     if (index < 0) { if (column.required) missingRequired.push(column.key) } else indexes.set(column.key, index)
   }
   return { indexes, missingRequired, headers: [...headerRow] }
