@@ -47,6 +47,31 @@ export function buildTableSubmission(sources: readonly TableSource[], settings: 
   return { ...buildSubmissionFromSet(set, issues, missingFiles.length === 0 && columnsReady), missingColumns }
 }
 
+/** What one picked workbook gives: nothing to send without a weld sheet or with a required column missing, else the submission. */
+export type WorkbookReading =
+  | { kind: "noWeldSheet" }
+  | { kind: "missingColumns"; sheets: { sheet: SpoolgenFileRole; headers: string[] }[] }
+  | { kind: "ready"; submission: SpoolgenSubmission }
+
+/**
+ * One workbook upload: each role reads its own sheet, the weld sheet is required, and an optional sheet with no rows is
+ * left out as if it were not there. A missing required column is named by its template header, so the person can fix
+ * the file before anything is sent.
+ */
+export function readWorkbookUpload(fileName: string, sheets: Partial<Record<SpoolgenFileRole, { rows: readonly (readonly unknown[])[]; rowNumbers: readonly number[] }>>): WorkbookReading {
+  if ((sheets.weld?.rows.length ?? 0) === 0) return { kind: "noWeldSheet" }
+  const sources = SPOOLGEN_FILE_ROLES.flatMap((role): TableSource[] => {
+    const sheet = sheets[role]
+    return sheet === undefined || sheet.rows.length === 0 ? [] : [{ role, fileName, sheet: role, matrix: sheet.rows, rowNumbers: sheet.rowNumbers }]
+  })
+  const { missingColumns, ...submission } = buildTableSubmission(sources, { kind: "table", columns: {} })
+  const missing = SPOOLGEN_FILE_ROLES.flatMap((role) => {
+    const keys = new Set((missingColumns[role] ?? []).map((column) => column.key))
+    return keys.size === 0 ? [] : [{ sheet: role, headers: SPOOLGEN_CONTRACT[role].filter((column) => keys.has(column.key)).map((column) => column.canonicalHeader) }]
+  })
+  return missing.length > 0 ? { kind: "missingColumns", sheets: missing } : { kind: "ready", submission }
+}
+
 /**
  * A file picked for a role: it takes the role's slot, and `replaced` is the file it pushed out, so the loss can be shown.
  * A refused file (empty, over the size limit) takes nothing and replaces nothing. Files held by the other roles count

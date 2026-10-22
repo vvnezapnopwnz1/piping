@@ -7,7 +7,7 @@ import { SPOOLGEN_FILE_ROLES } from "../domain/spoolgen-file"
 import { parseDelimited } from "../domain/parsers/delimited"
 import { buildSpoolgenSubmission } from "./import-spooling"
 import type { TableTemplateSettings } from "../domain/import-template"
-import { applyColumnDrafts, buildTableSubmission, columnMapOf, describeTableColumns, hasMappedColumn, mergeColumnMaps, pickTableFile, withColumnChoice, type TableSource } from "./import-table"
+import { applyColumnDrafts, buildTableSubmission, columnMapOf, describeTableColumns, hasMappedColumn, mergeColumnMaps, pickTableFile, readWorkbookUpload, withColumnChoice, type TableSource } from "./import-table"
 
 const HEADERS = ["Изометрия", "Ревизия", "Зона", "Класс", "Катушка", "Шов", "Тип", "Диаметр"]
 const register: TableSource = { role: "weld", fileName: "register.xlsx", matrix: [HEADERS, ["ISO-1", "R0", "PDS-A", "SC-01", "SP-1", "W-1", "BW", 6]] }
@@ -135,6 +135,27 @@ test("a workbook sheet gives Excel's row numbers to records and issues, and the 
   assert.deepEqual(submission.issues.map((issue) => [issue.code, issue.rowNumber, issue.role]), [["MISSING_VALUE", 4, "weld"]])
   const welds = submission.rowSources.filter((_, index) => submission.rows[index].normalizedValues.entity_type === "weld_joint")
   assert.deepEqual(welds.map(([record]) => [record.lineNumber, record.sheet]), [[2, "weld"], [4, "weld"]])
+})
+
+const numbered = (rows: unknown[][]) => ({ rows, rowNumbers: rows.map((_, index) => index + 1) })
+const WELD_SHEET = [["ISO_NUMBER", "ISO_REVISION", "PDS_AREA", "SERVICE_CLASS", "SPOOL_NUMBER", "WELD_NUMBER", "WELD_TYPE", "DIAMETER_INCH"], ["ISO-1", "R0", "A", "C", "S-1", "W-1", "BW", 6]]
+
+test("a workbook without a weld sheet, or with an empty one, is not sent", () => {
+  assert.deepEqual(readWorkbookUpload("b.xlsx", { trace: numbered([["ISO_NUMBER", "SPOOL_NUMBER", "IDENT_CODE"], ["ISO-1", "S-1", "P"]]) }), { kind: "noWeldSheet" })
+  assert.deepEqual(readWorkbookUpload("b.xlsx", { weld: numbered([]) }), { kind: "noWeldSheet" })
+})
+
+test("a sheet without a required column names it by the template header", () => {
+  const noArea = WELD_SHEET.map((row) => row.filter((_, index) => index !== 2))
+  assert.deepEqual(readWorkbookUpload("b.xlsx", { weld: numbered(noArea) }), { kind: "missingColumns", sheets: [{ sheet: "weld", headers: ["PDS_AREA"] }] })
+  const noIdent = numbered([["ISO_NUMBER", "SPOOL_NUMBER"], ["ISO-1", "S-1"]])
+  assert.deepEqual(readWorkbookUpload("b.xlsx", { supp: numbered([["ISO_NUMBER"], ["ISO-1"]]), trace: noIdent, weld: numbered(noArea) }), { kind: "missingColumns", sheets: [{ sheet: "weld", headers: ["PDS_AREA"] }, { sheet: "trace", headers: ["IDENT_CODE"] }, { sheet: "supp", headers: ["SPOOL_NUMBER", "SUPPORT_NUMBER"] }] })
+})
+
+test("an optional sheet cleared to nothing is skipped, not an empty-file error", () => {
+  const reading = readWorkbookUpload("b.xlsx", { weld: numbered(WELD_SHEET), trace: numbered([]) })
+  assert.equal(reading.kind, "ready")
+  assert.deepEqual(reading.kind === "ready" ? reading.submission.issues : null, [])
 })
 
 test("a file picked for a role takes its slot and says which file it replaced", () => {
