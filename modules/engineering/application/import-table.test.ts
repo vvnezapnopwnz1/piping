@@ -78,6 +78,8 @@ const WELD_SHEET = [["ISO_NUMBER", "ISO_REVISION", "PDS_AREA", "SERVICE_CLASS", 
 test("a workbook without a weld sheet, or with an empty one, is not sent", () => {
   assert.deepEqual(readWorkbookUpload("b.xlsx", { trace: numbered([["ISO_NUMBER", "SPOOL_NUMBER", "IDENT_CODE"], ["ISO-1", "S-1", "P"]]) }), { kind: "noWeldSheet" })
   assert.deepEqual(readWorkbookUpload("b.xlsx", { weld: numbered([]) }), { kind: "noWeldSheet" })
+  // The template with its example row deleted: a header and nothing under it is an empty sheet, not a job.
+  assert.deepEqual(readWorkbookUpload("b.xlsx", { weld: numbered([WELD_SHEET[0]]) }), { kind: "noWeldSheet" })
 })
 
 test("a sheet without a required column names it by the template header", () => {

@@ -95,16 +95,19 @@ export function buildIssueEntries(submission: SpoolgenSubmission, stored: readon
   return order(merge(entries))
 }
 
-/** Entries with the same reason in the same place become one, their rows joined, sorted and each once. */
+/**
+ * Entries with the same reason in the same place become one, their rows joined, sorted and each once. The rows are
+ * gathered first and sorted once: a job of thousands of welds can give one entry per weld.
+ */
 function merge(entries: readonly IssueEntry[]): IssueEntry[] {
-  const merged = new Map<string, IssueEntry>()
+  const merged = new Map<string, { entry: IssueEntry; rows: Set<number> }>()
   for (const entry of entries) {
     const key = JSON.stringify([entry.severity, entry.code, entry.place.sheet, entry.place.file, entry.place.column, entry.args])
     const found = merged.get(key)
-    const rows = [...new Set([...(found?.place.rows ?? []), ...entry.place.rows])].sort((a, b) => a - b)
-    merged.set(key, { ...(found ?? entry), place: { ...(found ?? entry).place, rows } })
+    if (found) for (const row of entry.place.rows) found.rows.add(row)
+    else merged.set(key, { entry, rows: new Set(entry.place.rows) })
   }
-  return [...merged.values()]
+  return [...merged.values()].map(({ entry, rows }) => ({ ...entry, place: { ...entry.place, rows: [...rows].sort((a, b) => a - b) } }))
 }
 
 /** Errors, then overwrites, then warnings; within each, whole-upload entries first, then by sheet, file and first row. */

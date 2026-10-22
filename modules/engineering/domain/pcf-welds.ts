@@ -30,7 +30,7 @@ const withoutExtension = (fileName: string) => fileName.replace(/\.[^.]*$/, "")
  */
 export function pcfToWeldRecords(file: PcfFile, fileName: string, context: { pdsArea: string; settings: PcfTemplateSettings }): { records: SpoolgenRecord[]; issues: SpoolgenIssue[] } {
   const { settings } = context
-  const issue = (issueCode: SpoolgenIssueCode, row: number | null, column: string | null, severity: "blocker" | "warning" = "blocker") => spoolgenIssue(issueCode, row, column, { fileName, severity })
+  const issue = (issueCode: SpoolgenIssueCode, row: number | null, column: string | null, severity: "blocker" | "warning" = "blocker") => spoolgenIssue(issueCode, row, column, { fileName, severity, role: "weld" })
   if (file.boreUnit === null) return { records: [], issues: [issue("PCF_UNKNOWN_UNITS", null, null)] }
   const unit = file.boreUnit; const blocks = file.components; const points = blocks.map(endPoints)
   if (!blocks.some((block) => block.keyword === "WELD")) return { records: [], issues: [issue("PCF_NO_WELDS", null, null)] }

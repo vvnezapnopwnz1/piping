@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
+import { loadJobIssues } from "./supabase-engineering-repository"
 import { submitSpoolingImport } from "./submit-spooling-import"
 
 test("a submission creates one job, stores and registers each file under its role and place, then lets the server check it", async () => {
@@ -17,7 +18,7 @@ test("a submission creates one job, stores and registers each file under its rol
       return { data: replies[name], error: null }
     },
     storage: { from: () => ({ upload: async (path: string) => { steps.push(`upload ${path}`); return { error: null } } }) },
-    from: () => ({ select: () => ({ eq: () => ({ order: async () => ({ data: stored, error: null }) }) }) }),
+    from: () => { const page = { order: () => page, range: async (from: number) => ({ data: stored.slice(from), error: null }) }; return { select: () => ({ eq: () => page }) } },
   }
   const submission = { rows: [], rowSources: [], issues: [], summary: { blockerCount: 0, warningCount: 0 }, canSubmit: true }
   const uploads = [{ role: "weld" as const, file: new File(["a"], "register.xlsx") }, { role: "supp" as const, file: new File(["b"], "supports list.csv") }]
@@ -36,4 +37,14 @@ test("a submission creates one job, stores and registers each file under its rol
   assert.deepEqual(result.counts, { blockerCount: 1, warningCount: 2, unresolvedCount: 0 })
   assert.equal(result.jobId, "job-1")
   assert.deepEqual(result.issues.map((issue) => [issue.code, issue.fileName]), [["MISSING_VALUE", "register.xlsx"]])
+})
+
+test("every stored issue of a job is read, past the server's cap of 1000 rows a request", async () => {
+  const stored = Array.from({ length: 2500 }, (_, index) => ({ row_number: index + 1, column_name: "weld_number", severity: "warning", code: "SRV_WPS_MISSING", message: "m", file_name: null }))
+  const pages: string[] = []
+  const page = { order: () => page, range: async (from: number, to: number) => { pages.push(`${from}-${to}`); return { data: stored.slice(from, Math.min(to + 1, from + 1000)), error: null } } }
+  const client: any = { from: () => ({ select: () => ({ eq: () => page }) }) }
+  const issues = await loadJobIssues(client, "job-1")
+  assert.equal(issues.length, 2500)
+  assert.equal(issues.at(-1)?.rowNumber, 2500)
 })

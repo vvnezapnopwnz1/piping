@@ -24,7 +24,7 @@ const replaced = (from: string, to: string) => lines.map((line) => (line.trim() 
 const read = (text: string, settings: Partial<PcfTemplateSettings> = {}, fileName = "ISO-1001.pcf") =>
   pcfToWeldRecords(parsePcf(text), fileName, { pdsArea: "PDS-A", settings: { ...DEFAULT_PCF_SETTINGS, ...settings } })
 const at = (code: Parameters<typeof spoolgenIssue>[0], row: number | null, column: string | null, severity: "blocker" | "warning" = "blocker") =>
-  spoolgenIssue(code, row, column, { fileName: "ISO-1001.pcf", severity })
+  spoolgenIssue(code, row, column, { fileName: "ISO-1001.pcf", severity, role: "weld" })
 
 const { records, issues } = pcfToWeldRecords(parsePcf(sample), "ISO-1001.pcf", { pdsArea: "PDS-A", settings: DEFAULT_PCF_SETTINGS })
 assert.deepEqual(records[0].values, { iso_number: "ISO-1001", revision_number: "2", pds_area: "PDS-A", service_class: "CS150", line_number: "100-P-1001", sheet_number: "", spool_number: "100-P-1001-S01", spool_weight_kg: "", material_class: "", weld_number: "5", weld_type: "BW", weld_location: "shop", diameter_inch: "4", thickness_mm: "" })

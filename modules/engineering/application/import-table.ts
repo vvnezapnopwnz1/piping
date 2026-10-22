@@ -48,7 +48,8 @@ export type WorkbookReading =
  * the file before anything is sent.
  */
 export function readWorkbookUpload(fileName: string, sheets: Partial<Record<SpoolgenFileRole, { rows: readonly (readonly unknown[])[]; rowNumbers: readonly number[] }>>): WorkbookReading {
-  if ((sheets.weld?.rows.length ?? 0) === 0) return { kind: "noWeldSheet" }
+  // A header with nothing under it (the template with its example row deleted) is as empty as no sheet at all.
+  if ((sheets.weld?.rows.length ?? 0) <= 1) return { kind: "noWeldSheet" }
   const sources = SPOOLGEN_FILE_ROLES.flatMap((role): TableSource[] => {
     const sheet = sheets[role]
     return sheet === undefined || sheet.rows.length === 0 ? [] : [{ role, fileName, sheet: role, matrix: sheet.rows, rowNumbers: sheet.rowNumbers }]

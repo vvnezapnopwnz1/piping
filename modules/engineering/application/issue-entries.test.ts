@@ -1,9 +1,12 @@
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
 import test from "node:test"
 import type { StoredImportIssue } from "@/modules/imports/domain/stored-import-issue"
 import { buildWorkbook, readNumberedSheets } from "@/modules/imports/infrastructure/xlsx-workbook"
 import type { SpoolgenFileRole } from "../domain/spoolgen-file"
 import { spoolgenIssue } from "../domain/spoolgen-issue"
+import { DEFAULT_PCF_SETTINGS } from "../domain/import-template"
+import { buildPcfSubmission } from "./import-pcf"
 import { buildTableSubmission, readWorkbookUpload, type TableSource } from "./import-table"
 import { buildIssueEntries, countIssueEntries } from "./issue-entries"
 import type { SpoolgenSubmission } from "./import-spooling"
@@ -113,4 +116,24 @@ test("a SpoolGen text file is named in place of a sheet, and a whole-file issue 
     ["EMPTY_FILE", { sheet: null, file: "supp.txt", column: null, rows: [] }],
     ["MISSING_VALUE", { sheet: null, file: "weld.txt", column: "PDS_AREA", rows: [1] }],
   ])
+})
+
+test("a PCF issue names the field it misses, one entry per field", () => {
+  const text = readFileSync(new URL("../../../fixtures/import-samples/aveva/ISO-1001.pcf", import.meta.url), "utf8").replace(/^\s*PIPING-SPEC .*\r?\n/m, "")
+  const submission = buildPcfSubmission([{ fileName: "ISO-1001.pcf", text }], { pdsArea: "A-100", settings: DEFAULT_PCF_SETTINGS })
+  const entries = buildIssueEntries(submission, [])
+  assert.deepEqual(entries.map((entry) => [entry.code, entry.args, entry.place.file, entry.place.column]), [["MISSING_VALUE", { column: "SERVICE_CLASS" }, "ISO-1001.pcf", "SERVICE_CLASS"]])
+  assert.equal(entries[0].place.rows.length, 8)
+})
+
+test("seven and a half thousand welds with one error each are one entry, built without a pause", () => {
+  const rows = range(2, 7501).map((row) => [row, weld(`ISO-${Math.floor(row / 50)}`, "SP-1", `W-${row}`, { weldType: "XX" })] as const)
+  const submission = submit(sheet("weld", WELD_HEADER, rows))
+  const stored = submission.rows.filter((row) => row.normalizedValues.entity_type === "weld_joint").map((row) => ({ code: "SRV_WELD_TYPE_MISSING", rowNumber: row.rowNumber, columnName: "weld_type", severity: "blocker" as const, message: "m", fileName: null }))
+  const started = performance.now()
+  const entries = buildIssueEntries(submission, stored)
+  const elapsed = performance.now() - started
+  assert.deepEqual(entries.map((entry) => [entry.code, entry.place.rows.length]), [["SRV_WELD_TYPE_MISSING", 7500]])
+  // Merging row by row re-sorted the growing list each time: about 1.5 s here, a frozen screen at the joint limit.
+  assert.ok(elapsed < 400, `${Math.round(elapsed)} ms`)
 })

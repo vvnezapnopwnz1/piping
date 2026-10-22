@@ -16,7 +16,7 @@ assert.equal(removedWeld.decision, "cancelled")
 async function issuesKeepTheirFile() {
   const calls: { name: string; args: any }[] = []
   const stored = [{ row_number: 12, column_name: "spool_number", severity: "warning", code: "PCF_SPOOL_FROM_FILE_NAME", message: "PCF_SPOOL_FROM_FILE_NAME", file_name: "ISO-1001.pcf" }]
-  const client: any = { rpc: async (name: string, args: any) => { calls.push({ name, args }); return { data: { id: "j", project_id: "p", status: "validated" }, error: null } }, from: () => ({ select: () => ({ eq: () => ({ order: async () => ({ data: stored, error: null }) }) }) }) }
+  const client: any = { rpc: async (name: string, args: any) => { calls.push({ name, args }); return { data: { id: "j", project_id: "p", status: "validated" }, error: null } }, from: () => { const page = { order: () => page, range: async (from: number) => ({ data: stored.slice(from), error: null }) }; return { select: () => ({ eq: () => page }) } } }
   await recordSpoolingValidation(client, "j", [], [{ rowNumber: 12, columnName: "spool_number", severity: "warning", code: "X", message: "X", fileName: "ISO-1001.pcf" }, { rowNumber: 1, columnName: null, severity: "blocker", code: "Y", message: "Y", fileName: null }])
   assert.deepEqual(calls[0].args.parsed_issues.map((issue: any) => issue.file_name), ["ISO-1001.pcf", null])
   assert.equal((await loadJobIssues(client, "j"))[0].fileName, "ISO-1001.pcf")
