@@ -104,6 +104,45 @@
     "PCF_SPOOL_FROM_FILE_NAME": "В файле {file} нет SPOOL-IDENTIFIER: все его стыки отнесены к одной катушке, названной по имени файла.",
     "DUPLICATE_FILE": "Файл с именем {file} добавлен больше одного раза."
   },
+  "issueTitles": {
+    "EMPTY_FILE": "В файле нет ни одной строки.",
+    "MISSING_COLUMN": "Нет обязательной колонки {column}.",
+    "MISSING_VALUE": "Не заполнена обязательная колонка {column}.",
+    "INVALID_NUMBER": "«{value}» в колонке {column} — не число.",
+    "ORPHAN_SPOOL": "Катушки «{spool}» изометрии «{iso}» нет в списке стыков.",
+    "ISO_MIXED_SERVICE_CLASS": "У изометрии «{iso}» больше одного класса сервиса.",
+    "ISO_MIXED_LINE": "У изометрии «{iso}» больше одного номера линии.",
+    "ISO_MIXED_REVISION": "У изометрии «{iso}» больше одной ревизии.",
+    "FILE_EMPTY": "Файл пуст.",
+    "FILE_TOO_LARGE": "Файл больше допустимого размера.",
+    "MISSING_REQUIRED_FILE": "Нет обязательного файла стыков.",
+    "PCF_UNKNOWN_UNITS": "Файл не прочитан: UNITS-BORE не задан или не равен INCH, MM или INCH-SIXTEENTH.",
+    "PCF_NO_WELDS": "В файле нет ни одного блока WELD; стыки без блока WELD не читаются.",
+    "PCF_BORE_UNKNOWN": "Диаметр стыка в миллиметрах не входит в ряд стандартных DN, поэтому его нельзя перевести в дюймы.",
+    "PCF_SPOOL_FROM_FILE_NAME": "Нет SPOOL-IDENTIFIER: все стыки файла отнесены к одной катушке, названной по имени файла.",
+    "DUPLICATE_FILE": "Файл с этим именем добавлен больше одного раза.",
+    "SRV_PDS_MISSING": "Зоны PDS «{pdsArea}» нет в проекте.",
+    "SRV_SERVICE_CLASS_MISSING": "Класса сервиса «{serviceClass}» нет в проекте.",
+    "SRV_WELD_TYPE_MISSING": "Типа стыка «{weldType}» нет в проекте.",
+    "SRV_THICKNESS_MISSING": "При проверке не нашлось правила толщины для класса сервиса «{serviceClass}» и диаметра {diameter}″. Добавьте правило, если его нет, и загрузите файл снова.",
+    "SRV_NDE_MATRIX_MISSING": "Нет правила матрицы NDE для класса сервиса «{serviceClass}», типа стыка «{weldType}» и {location, select, field {монтажных стыков} assembly {стыков сборки} other {цеховых стыков}}.",
+    "SRV_WPS_MISSING": "Ни одна одобренная WPS не покрывает стыки диаметром {diameter}″{hasThickness, select, yes { и толщиной {thickness} мм} other {}}. Импорт можно продолжить.",
+    "SRV_ISO_MIXED_LINE": "У одной из изометрий больше одного номера линии.",
+    "SRV_ISO_MIXED_SERVICE_CLASS": "У одной из изометрий больше одного класса сервиса.",
+    "SRV_ORPHAN_SPOOL": "Катушки нет в списке стыков.",
+    "SRV_SPOOLING_SPINE_MISSING": "Нет ни одного стыка: изометрии и катушки создаются из строк стыков.",
+    "SRV_SPOOLING_JOB_TOO_LARGE": "{count, plural, one {# стык} few {# стыка} many {# стыков} other {# стыка}} — больше, чем принимает одно задание. Разделите файл по зонам PDS и загрузите части по очереди."
+  },
+  "issuePlace": {
+    "sheet": "Лист {sheet}",
+    "column": "колонка {column}",
+    "rows": "{several, select, yes {строки {list}} other {строка {list}}}",
+    "more": "{count, plural, one {и ещё # строка} few {и ещё # строки} many {и ещё # строк} other {и ещё # строки}}"
+  },
+  "issueSummary": {
+    "errors": "{count, plural, one {# ошибка} few {# ошибки} many {# ошибок} other {# ошибки}} — исправьте файл и загрузите его снова.",
+    "none": "Ошибок нет — проверьте изменения ниже и примените импорт."
+  },
   "importScreen": {
     "hint": "Загрузите выгрузку SpoolGen. Обязателен только weld.txt; размер каждого файла — не больше {limit} МБ.",
     "replace": "Заменить {file}",

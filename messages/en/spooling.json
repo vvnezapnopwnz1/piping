@@ -104,6 +104,45 @@
     "PCF_SPOOL_FROM_FILE_NAME": "{file} has no SPOOL-IDENTIFIER: all its welds are put in one spool named after the file.",
     "DUPLICATE_FILE": "A file named {file} was added more than once."
   },
+  "issueTitles": {
+    "EMPTY_FILE": "The file has no rows.",
+    "MISSING_COLUMN": "The required column {column} is missing.",
+    "MISSING_VALUE": "The required column {column} is empty.",
+    "INVALID_NUMBER": "\"{value}\" in {column} is not a number.",
+    "ORPHAN_SPOOL": "Spool \"{spool}\" of isometric \"{iso}\" is not in the weld list.",
+    "ISO_MIXED_SERVICE_CLASS": "Isometric \"{iso}\" has more than one service class.",
+    "ISO_MIXED_LINE": "Isometric \"{iso}\" has more than one line number.",
+    "ISO_MIXED_REVISION": "Isometric \"{iso}\" has more than one revision.",
+    "FILE_EMPTY": "The file is empty.",
+    "FILE_TOO_LARGE": "The file is over the size limit.",
+    "MISSING_REQUIRED_FILE": "The weld file is required.",
+    "PCF_UNKNOWN_UNITS": "The file was not read: UNITS-BORE is missing or is not INCH, MM or INCH-SIXTEENTH.",
+    "PCF_NO_WELDS": "The file has no WELD block; welds not written as a WELD block are not read.",
+    "PCF_BORE_UNKNOWN": "The weld's bore in millimetres is not a standard DN, so it has no size in inches.",
+    "PCF_SPOOL_FROM_FILE_NAME": "No SPOOL-IDENTIFIER: all welds of the file are put in one spool named after the file.",
+    "DUPLICATE_FILE": "A file with this name was added more than once.",
+    "SRV_PDS_MISSING": "PDS area \"{pdsArea}\" does not exist in the project.",
+    "SRV_SERVICE_CLASS_MISSING": "Service class \"{serviceClass}\" does not exist in the project.",
+    "SRV_WELD_TYPE_MISSING": "Weld type \"{weldType}\" does not exist in the project.",
+    "SRV_THICKNESS_MISSING": "The check found no thickness rule for service class \"{serviceClass}\" at {diameter}″. Add the rule if it is missing, and upload the file again.",
+    "SRV_NDE_MATRIX_MISSING": "No NDE matrix rule covers service class \"{serviceClass}\", weld type \"{weldType}\" and {location, select, field {field welds} assembly {assembly welds} other {shop welds}}.",
+    "SRV_WPS_MISSING": "No approved WPS covers welds of {diameter}″{hasThickness, select, yes { and {thickness} mm} other {}}. The import may still proceed.",
+    "SRV_ISO_MIXED_LINE": "An isometric has more than one line number.",
+    "SRV_ISO_MIXED_SERVICE_CLASS": "An isometric has more than one service class.",
+    "SRV_ORPHAN_SPOOL": "A spool is not in the weld list.",
+    "SRV_SPOOLING_SPINE_MISSING": "There are no welds: isometrics and spools are made from the weld rows.",
+    "SRV_SPOOLING_JOB_TOO_LARGE": "{count, plural, one {# weld is} other {# welds are}} more than one job takes. Split the file by PDS area and upload the parts one after another."
+  },
+  "issuePlace": {
+    "sheet": "Sheet {sheet}",
+    "column": "column {column}",
+    "rows": "{several, select, yes {rows {list}} other {row {list}}}",
+    "more": "{count, plural, one {and # more row} other {and # more rows}}"
+  },
+  "issueSummary": {
+    "errors": "{count, plural, one {# error} other {# errors}}: fix the file and upload it again.",
+    "none": "No errors: review the changes below and apply the import."
+  },
   "importScreen": {
     "hint": "Upload the SpoolGen export. Only weld.txt is required; each file is limited to {limit} MB.",
     "replace": "Replace {file}",

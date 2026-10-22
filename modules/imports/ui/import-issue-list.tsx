@@ -11,13 +11,13 @@ import { describeImportIssue, describeIssueLocation } from "./import-issue-text"
  * their tone here rather than going through the status map. The literal `red-100`/`amber-100`
  * surfaces they used to carry stayed light when the app went dark.
  */
-const SEVERITY_TONE: Record<ImportIssueSeverity, StatusTone> = {
+export const SEVERITY_TONE: Record<ImportIssueSeverity, StatusTone> = {
   blocker: "danger",
   conflict: "warning",
   warning: "neutral",
 }
 
-const SEVERITY_STYLE: Record<ImportIssueSeverity, string> = {
+export const SEVERITY_STYLE: Record<ImportIssueSeverity, string> = {
   blocker: "bg-danger-bg text-danger-fg border-danger-border",
   conflict: "bg-warning-bg text-warning-fg border-warning-border",
   warning: "bg-neutral-bg text-neutral-fg border-neutral-border",

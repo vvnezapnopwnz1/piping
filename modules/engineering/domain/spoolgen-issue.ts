@@ -22,6 +22,25 @@ export const SPOOLGEN_ISSUE_CODES = [
 ] as const
 export type SpoolgenIssueCode = (typeof SPOOLGEN_ISSUE_CODES)[number]
 
+/** Codes about a whole file, not a row of it. */
+export const FILE_CODES: ReadonlySet<string> = new Set(["EMPTY_FILE", "FILE_EMPTY", "FILE_TOO_LARGE", "MISSING_REQUIRED_FILE", "PCF_UNKNOWN_UNITS", "PCF_NO_WELDS", "PCF_SPOOL_FROM_FILE_NAME", "DUPLICATE_FILE"])
+
+/** The codes the server's spooling check can store; the screen has one sentence per code, in each language. */
+export const SPOOLING_SERVER_ISSUE_CODES = [
+  "SRV_PDS_MISSING",
+  "SRV_SERVICE_CLASS_MISSING",
+  "SRV_WELD_TYPE_MISSING",
+  "SRV_THICKNESS_MISSING",
+  "SRV_NDE_MATRIX_MISSING",
+  "SRV_WPS_MISSING",
+  "SRV_ISO_MIXED_LINE",
+  "SRV_ISO_MIXED_SERVICE_CLASS",
+  "SRV_ORPHAN_SPOOL",
+  "SRV_SPOOLING_SPINE_MISSING",
+  "SRV_SPOOLING_JOB_TOO_LARGE",
+] as const
+export type SpoolingServerIssueCode = (typeof SPOOLING_SERVER_ISSUE_CODES)[number]
+
 /**
  * Where the problem is and which code it is. It has the stored-issue shape (`code` + `message`) the
  * database and `scripts/` still read, but its text is the code: the sentence is chosen on screen, in
@@ -50,4 +69,8 @@ export function spoolgenIssue(
 
 export function isSpoolgenIssueCode(value: string): value is SpoolgenIssueCode {
   return (SPOOLGEN_ISSUE_CODES as readonly string[]).includes(value)
+}
+
+export function isSpoolingServerIssueCode(value: string): value is SpoolingServerIssueCode {
+  return (SPOOLING_SERVER_ISSUE_CODES as readonly string[]).includes(value)
 }
