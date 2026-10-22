@@ -47,6 +47,36 @@ export function readSheetMatrix(bytes: ArrayBuffer | Uint8Array, sheetName?: str
   return rows.map((row) => row.map((cell) => (cell instanceof Date ? dateCellToIso(cell) : cell)))
 }
 
+/** A sheet as Excel shows it: the rows that hold a value, and beside each the row number Excel prints on its left. */
+export interface NumberedSheet { rows: SheetMatrix; rowNumbers: readonly number[] }
+
+/**
+ * The sheets named in `names` (in any case, without padding), read once, each keyed by the name as asked; a sheet
+ * the workbook lacks is left out, never replaced by the first one. A blank row is dropped, but the next row keeps its
+ * own number, so a message can point at the row a person sees. Only a `header` other than 1 makes SheetJS mark each
+ * row with `__rowNum__`, hence `header: "A"` and the columns put back in order from the sheet's range.
+ */
+export function readNumberedSheets(bytes: ArrayBuffer | Uint8Array, names: readonly string[]): Partial<Record<string, NumberedSheet>> {
+  const workbook = XLSX.read(bytes, { type: "array", cellDates: true })
+  const read: Partial<Record<string, NumberedSheet>> = {}
+  for (const name of names) {
+    const wanted = name.trim().toLowerCase()
+    const found = workbook.SheetNames.find((sheet) => sheet.trim().toLowerCase() === wanted)
+    const worksheet = found === undefined ? undefined : workbook.Sheets[found]
+    if (worksheet === undefined) continue
+    const ref = worksheet["!ref"]
+    if (ref === undefined) { read[name] = { rows: [], rowNumbers: [] }; continue }
+    const range = XLSX.utils.decode_range(ref)
+    const columns = Array.from({ length: range.e.c - range.s.c + 1 }, (_, index) => XLSX.utils.encode_col(range.s.c + index))
+    const records = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet, { header: "A", blankrows: false, defval: "" })
+    read[name] = {
+      rows: records.map((record) => columns.map((column) => { const cell = record[column]; return cell instanceof Date ? dateCellToIso(cell) : cell })),
+      rowNumbers: records.map((record) => (record as { __rowNum__: number }).__rowNum__ + 1),
+    }
+  }
+  return read
+}
+
 export function readFirstSheetMatrix(bytes: ArrayBuffer | Uint8Array): SheetMatrix {
   return readSheetMatrix(bytes)
 }

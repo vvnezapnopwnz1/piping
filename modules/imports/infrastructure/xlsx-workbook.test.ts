@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
+import test from "node:test"
 import * as XLSX from "xlsx"
-import { buildTemplateWorkbook, buildWorkbook, readFirstSheetMatrix, readSheetMatrix, type WorkbookSheet } from "./xlsx-workbook"
+import { buildTemplateWorkbook, buildWorkbook, readFirstSheetMatrix, readNumberedSheets, readSheetMatrix, type WorkbookSheet } from "./xlsx-workbook"
 
 async function run() {
   const bytes = buildTemplateWorkbook("piping_material_list")
@@ -53,4 +54,27 @@ async function run() {
 run().catch((err) => {
   console.error(err)
   process.exit(1)
+})
+
+test("a blank row and a sheet that starts at C4 keep the row numbers Excel shows", () => {
+  const sheet = XLSX.utils.aoa_to_sheet([])
+  XLSX.utils.sheet_add_aoa(sheet, [["ISO_NUMBER", "WELD_NUMBER"], ["ISO-1", "W-1"], [], ["ISO-1", "W-2"]], { origin: "C4" })
+  const book = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(book, sheet, " Weld ")
+  const read = readNumberedSheets(XLSX.write(book, { bookType: "xlsx", type: "array" }) as Uint8Array, ["weld"])
+  assert.deepEqual(read.weld?.rowNumbers, [4, 5, 7])
+  assert.deepEqual(read.weld?.rows.map((row) => row.filter((cell) => cell !== "")), [["ISO_NUMBER", "WELD_NUMBER"], ["ISO-1", "W-1"], ["ISO-1", "W-2"]])
+})
+
+test("only the asked sheets are read, a missing one is left out, and dates read as the calendar day", () => {
+  const bytes = buildWorkbook([{ name: "weld", rows: [["ISO_NUMBER"], ["ISO-1"]] }, { name: "Help", rows: [["note"]] }])
+  const read = readNumberedSheets(bytes, ["weld", "trace"])
+  assert.deepEqual(Object.keys(read), ["weld"])
+  assert.deepEqual(read.weld, { rows: [["ISO_NUMBER"], ["ISO-1"]], rowNumbers: [1, 2] })
+
+  const sheet: XLSX.WorkSheet = { "!ref": "A1:A2", A1: { t: "s", v: "Approved On" }, A2: { t: "n", v: 46266, z: "yyyy-mm-dd" } }
+  const book = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(book, sheet, "weld")
+  const dated = readNumberedSheets(XLSX.write(book, { bookType: "xlsx", type: "array" }) as Uint8Array, ["weld"])
+  assert.deepEqual(dated.weld?.rows, [["Approved On"], ["2026-09-01"]])
 })
