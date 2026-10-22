@@ -20,7 +20,8 @@ function kicker(area: WorkspaceArea, name: NavName, t: HomeTranslator): string {
   };
   if (area.kind === "stage") return area.step ?? "";
   if (area.kind === "service") return t("kicker.serves", { areas: (area.serves ?? []).map(titleOf).join(" · ") });
-  return t("kicker.project");
+  // A project area sits under the section label that already names it.
+  return "";
 }
 
 function AreaCard({
@@ -108,15 +109,23 @@ export function ProcessMap({
   };
   const stages = workspaceAreas.filter((area) => area.kind === "stage");
   const ndeArea = workspaceAreas.find((area) => area.id === "nde");
-  const secondaryIds = ["tracking", "flange", "setup", "reports"];
+  // Project-wide rules and outputs (setup, reports) close the map as blocks of their own: they
+  // are where the project is configured and handed over, not steps of the process.
+  const projectAreas = workspaceAreas.filter((area) => area.kind === "project");
+  const secondaryIds = ["tracking", "flange"];
   const secondaryAreas = secondaryIds
     .map((id) => workspaceAreas.find((area) => area.id === id))
     .filter((area): area is WorkspaceArea => area !== undefined)
     .map((area) => {
       const open = visible.get(area.id);
-      return open ? { id: area.id, title: name(area.title), href: hrefFor(open) } : null;
+      return open
+        ? { id: area.id, title: name(area.title), href: hrefFor(open), Icon: area.icon }
+        : null;
     })
-    .filter((item): item is { id: string; title: string; href: string } => item !== null);
+    .filter(
+      (item): item is { id: string; title: string; href: string; Icon: WorkspaceArea["icon"] } =>
+        item !== null,
+    );
 
   return (
     <section className={styles.map} aria-labelledby="map-title" data-help="process-map">
@@ -143,21 +152,26 @@ export function ProcessMap({
         ) : null}
       </ul>
       {secondaryAreas.length > 0 ? (
-        <nav
-          className="mt-4 flex flex-wrap items-center justify-center gap-x-2 text-xs text-muted-foreground"
-          aria-label={t("secondaryAreas")}
-        >
-          {secondaryAreas.map((item, index) => (
-            <span key={item.id} className="inline-flex items-center gap-2">
-              {index > 0 ? (
-                <span className="inline-block size-1 rounded-full bg-muted-foreground/60" aria-hidden="true" />
-              ) : null}
-              <Link href={item.href} className="hover:text-foreground underline-offset-4 hover:underline">
-                {item.title}
-              </Link>
-            </span>
+        <nav className={styles.secondary} aria-label={t("secondaryAreas")}>
+          {secondaryAreas.map(({ id, title, href, Icon }) => (
+            <Link key={id} href={href} className={styles.secondaryLink}>
+              <Icon aria-hidden="true" className={styles.secondaryIcon} />
+              <span>{title}</span>
+            </Link>
           ))}
         </nav>
+      ) : null}
+      {projectAreas.length > 0 ? (
+        <section className={styles.projectBlock} aria-labelledby="project-title">
+          <h3 id="project-title" className={styles.sectionLabel}>
+            {name("sectionProject")}
+          </h3>
+          <ul className={styles.project}>
+            {projectAreas.map((area) => (
+              <li key={area.id}>{card(area)}</li>
+            ))}
+          </ul>
+        </section>
       ) : null}
     </section>
   );

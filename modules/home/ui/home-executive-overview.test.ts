@@ -26,6 +26,14 @@ test("Home overview uses live scoped summaries and opens modules through the sha
   assert.equal(source.includes("NDE batches active 4"), false)
 })
 
+test("the map closes with the project-wide blocks, so setup and reports stay on the overview", () => {
+  const map = readFileSync(new URL("./home-process-map.tsx", import.meta.url), "utf8")
+  // Both project areas (setup, reports) are drawn from the registry, not listed by hand.
+  assert.match(map, /area\.kind === "project"/)
+  assert.match(map, /<ul className=\{styles\.project\}>/)
+  assert.match(map, /name\("sectionProject"\)/)
+})
+
 test("the map's stage cards open each module where its work is done", () => {
   const homes = Object.fromEntries(getVisibleAreas(() => true).map((area) => [area.id, area.home]))
   // Fabrication and Erection open on their spool workbench; dashboards are the next tabs.

@@ -8,9 +8,14 @@
   },
   "process": "Process",
   "secondaryAreas": "Secondary areas",
+  "setup": {
+    "hint": "Project definition, referentials, access rights and imports"
+  },
+  "reports": {
+    "hint": "Weld log, NDE and punch registers, test pack summary"
+  },
   "locked": "Not part of your project access",
   "kicker": {
-    "project": "Project",
     "serves": "Serves {areas}"
   },
   "subject": {

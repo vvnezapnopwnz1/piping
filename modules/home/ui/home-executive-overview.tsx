@@ -287,6 +287,8 @@ function ProjectState({ access }: { access: AccessValue }) {
         empty={t("nde.empty")}
       />
     ),
+    setup: <p className={styles.cardSub}>{t("setup.hint")}</p>,
+    reports: <p className={styles.cardSub}>{t("reports.hint")}</p>,
   };
 
   const attention = new Set<string>();
