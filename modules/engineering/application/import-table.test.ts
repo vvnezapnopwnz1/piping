@@ -128,6 +128,15 @@ test("a source with a fixed contract can be sent with a column missing: the serv
   assert.equal(buildTableSubmission([], settings, { strictColumns: false }).canSubmit, false, "without a weld file nothing is sent in either mode")
 })
 
+test("a workbook sheet gives Excel's row numbers to records and issues, and the role to each issue", () => {
+  const header = ["ISO_NUMBER", "ISO_REVISION", "PDS_AREA", "SERVICE_CLASS", "SPOOL_NUMBER", "WELD_NUMBER", "WELD_TYPE", "DIAMETER_INCH"]
+  const sheet: TableSource = { role: "weld", fileName: "book.xlsx", sheet: "weld", matrix: [header, ["ISO-1", "R0", "A", "C", "S-1", "W-1", "BW", 6], ["ISO-1", "R0", "A", "C", "S-1", "", "BW", 6]], rowNumbers: [1, 2, 4] }
+  const submission = buildTableSubmission([sheet], { kind: "table", columns: {} })
+  assert.deepEqual(submission.issues.map((issue) => [issue.code, issue.rowNumber, issue.role]), [["MISSING_VALUE", 4, "weld"]])
+  const welds = submission.rowSources.filter((_, index) => submission.rows[index].normalizedValues.entity_type === "weld_joint")
+  assert.deepEqual(welds.map(([record]) => [record.lineNumber, record.sheet]), [[2, "weld"], [4, "weld"]])
+})
+
 test("a file picked for a role takes its slot and says which file it replaced", () => {
   const file = (name: string, size = 10) => ({ name, size })
   const first = pickTableFile("weld", undefined, file("a.csv"), 0)

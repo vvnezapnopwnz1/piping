@@ -3,7 +3,11 @@ import type { SpoolgenFileRole } from "../spoolgen-file"
 import { SPOOLGEN_CONTRACT, numericKeysFor, requiredKeysFor, resolveColumns, type SpoolgenColumn } from "../spoolgen-contract"
 import { parseDelimited } from "./delimited"
 
-export interface SpoolgenRecord { role: SpoolgenFileRole; lineNumber: number; fileName: string | null; values: Record<string, string> }
+export interface SpoolgenRecord {
+  role: SpoolgenFileRole; lineNumber: number; fileName: string | null; values: Record<string, string>
+  /** The workbook sheet the record was read from; absent for a text or PCF file. */
+  sheet?: string
+}
 export interface SpoolgenParseResult { records: SpoolgenRecord[]; issues: SpoolgenIssue[] }
 const WELD_LOCATIONS = new Map([["цех", "shop"], ["заводской", "shop"], ["shop", "shop"], ["s", "shop"], ["монтаж", "field"], ["монтажный", "field"], ["field", "field"], ["f", "field"], ["site", "field"], ["assembly", "assembly"]])
 const cellText = (cell: unknown): string => (cell === null || cell === undefined ? "" : String(cell).trim())

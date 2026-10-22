@@ -7,7 +7,7 @@ import type { SpoolgenSubmission } from "./import-spooling"
 import { applyCodeChoices, suggestCodesToMap } from "./pcf-unmapped"
 
 const row = (rowNumber: number, kind: string, values: Record<string, string>): StagingRow => ({ rowNumber, rawValues: values, normalizedValues: { entity_type: kind, ...values }, action: "create" })
-const submissionOf = (rows: StagingRow[]): SpoolgenSubmission => ({ rows, issues: [], summary: { blockerCount: 0, warningCount: 0 }, canSubmit: true })
+const submissionOf = (rows: StagingRow[]): SpoolgenSubmission => ({ rows, rowSources: rows.map(() => []), issues: [], summary: { blockerCount: 0, warningCount: 0 }, canSubmit: true })
 const references: ImportReferences = { pdsAreas: [], serviceClasses: ["SC-01"], weldTypes: ["BW"] }
 const none = { serviceClasses: {}, weldTypes: {} }
 

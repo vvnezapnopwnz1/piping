@@ -1,4 +1,5 @@
 import type { ImportIssueSeverity } from "@/modules/imports/domain/import-issue"
+import type { SpoolgenFileRole } from "./spoolgen-file"
 
 /** Every code the SpoolGen validation reports. The UI has one sentence per code, in each language. */
 export const SPOOLGEN_ISSUE_CODES = [
@@ -34,15 +35,17 @@ export interface SpoolgenIssue {
   message: SpoolgenIssueCode
   /** The file the problem is in, when the import has more than one of a kind (PCF, tables). */
   fileName: string | null
+  /** The file role of the record the issue points at: in one workbook a row number repeats on every sheet. */
+  role?: SpoolgenFileRole
 }
 
 export function spoolgenIssue(
   code: SpoolgenIssueCode,
   rowNumber: number | null,
   columnName: string | null,
-  options: { fileName?: string | null; severity?: ImportIssueSeverity } = {},
+  options: { fileName?: string | null; severity?: ImportIssueSeverity; role?: SpoolgenFileRole } = {},
 ): SpoolgenIssue {
-  return { rowNumber, columnName, severity: options.severity ?? "blocker", code, message: code, fileName: options.fileName ?? null }
+  return { rowNumber, columnName, severity: options.severity ?? "blocker", code, message: code, fileName: options.fileName ?? null, ...(options.role === undefined ? {} : { role: options.role }) }
 }
 
 export function isSpoolgenIssueCode(value: string): value is SpoolgenIssueCode {

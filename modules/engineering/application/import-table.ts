@@ -6,8 +6,11 @@ import { SPOOLGEN_FILE_ROLES, addPickedFiles, missingRequiredRoles, type Spoolge
 import { spoolgenIssue, type SpoolgenIssue } from "../domain/spoolgen-issue"
 import { buildSubmissionFromSet, type SpoolgenSubmission } from "./import-spooling"
 
-/** One table file as read in the browser: the first sheet of a workbook, or the rows of a CSV or text file. */
-export interface TableSource { role: SpoolgenFileRole; fileName: string; matrix: readonly (readonly unknown[])[] }
+/**
+ * One table file as read in the browser: a sheet of a workbook, or the rows of a text file. A workbook sheet names
+ * itself and carries the Excel row number of each matrix row, so records and issues point at the row a person sees.
+ */
+export interface TableSource { role: SpoolgenFileRole; fileName: string; matrix: readonly (readonly unknown[])[]; sheet?: string; rowNumbers?: readonly number[] }
 /** Per role, the required fields no column was found for, with the headers the file offers instead. */
 export type MissingColumns = Partial<Record<SpoolgenFileRole, { key: string; headers: string[] }[]>>
 export type TableSubmission = SpoolgenSubmission & { missingColumns: MissingColumns }
@@ -31,8 +34,10 @@ export function buildTableSubmission(sources: readonly TableSource[], settings: 
   for (const source of ordered) {
     const columnMap = settings.columns[source.role]
     const parsed = parseSpoolgenMatrix(source.role, source.matrix, columnMap)
-    set[source.role] = [...set[source.role], ...parsed.records.map((record) => ({ ...record, fileName: source.fileName }))]
-    issues.push(...parsed.issues.map((issue) => ({ ...issue, fileName: source.fileName })))
+    const line = (index: number) => source.rowNumbers?.[index] ?? index
+    const sheet = source.sheet === undefined ? {} : { sheet: source.sheet }
+    set[source.role] = [...set[source.role], ...parsed.records.map((record) => ({ ...record, ...sheet, lineNumber: line(record.lineNumber), fileName: source.fileName }))]
+    issues.push(...parsed.issues.map((issue) => ({ ...issue, rowNumber: issue.rowNumber === null ? null : line(issue.rowNumber), fileName: source.fileName, role: source.role })))
     const row = headerRow(source); const { missingRequired } = resolveColumns(source.role, row, columnMap)
     if (source.matrix.length > 0 && missingRequired.length > 0) missingColumns[source.role] = [...(missingColumns[source.role] ?? []), ...missingRequired.map((key) => ({ key, headers: offeredHeaders(row) }))]
   }

@@ -19,7 +19,7 @@ test("a submission creates one job, stores and registers each file under its rol
     storage: { from: () => ({ upload: async (path: string) => { steps.push(`upload ${path}`); return { error: null } } }) },
     from: () => ({ select: () => ({ eq: () => ({ order: async () => ({ data: stored, error: null }) }) }) }),
   }
-  const submission = { rows: [], issues: [], summary: { blockerCount: 0, warningCount: 0 }, canSubmit: true }
+  const submission = { rows: [], rowSources: [], issues: [], summary: { blockerCount: 0, warningCount: 0 }, canSubmit: true }
   const uploads = [{ role: "weld" as const, file: new File(["a"], "register.xlsx") }, { role: "supp" as const, file: new File(["b"], "supports list.csv") }]
 
   const result = await submitSpoolingImport(client, "p", submission, uploads)

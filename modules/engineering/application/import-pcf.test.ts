@@ -34,7 +34,7 @@ assert.deepEqual(twice.issues, [spoolgenIssue("DUPLICATE_FILE", null, null, { fi
 
 // One file with two lines (a weld on each) is an isometric with two line numbers
 const mixed = buildPcfSubmission([{ fileName: "ISO-M.pcf", text: pcf(pipeline("L-1", "1"), pipeline("L-2", "2")) }], context)
-assert.deepEqual(mixed.issues, [spoolgenIssue("ISO_MIXED_LINE", 9, "line_number", { fileName: "ISO-M.pcf" })])
+assert.deepEqual(mixed.issues, [spoolgenIssue("ISO_MIXED_LINE", 9, "line_number", { fileName: "ISO-M.pcf", role: "weld" })])
 assert.equal(mixed.canSubmit, true, "a blocker is shown after validation, it does not stop the submission")
 assert.equal(mixed.summary.blockerCount, 1)
 
