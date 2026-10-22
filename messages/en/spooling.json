@@ -263,7 +263,6 @@
     "loadFailed": "The project's templates could not be loaded.",
     "download": {
       "tableXlsx": "Download the Excel template",
-      "tableCsv": "Download the CSV template (welds)",
       "spoolgen": "Download the SpoolGen files",
       "pcf": "Download a sample PCF",
       "pcfReads": "This is a sample, not a form: a PCF is written by your CAD system. We read UNITS-BORE for the units, PIPELINE-REFERENCE, PIPING-SPEC, REVISION, SPOOL-IDENTIFIER, and WELD blocks with SKEY, CATEGORY, REPEAT-WELD-IDENTIFIER and WELD-TYPE.",

@@ -263,7 +263,6 @@
     "loadFailed": "Не удалось загрузить шаблоны проекта.",
     "download": {
       "tableXlsx": "Скачать шаблон Excel",
-      "tableCsv": "Скачать шаблон CSV (стыки)",
       "spoolgen": "Скачать файлы SpoolGen",
       "pcf": "Скачать образец PCF",
       "pcfReads": "Это образец, а не бланк: PCF выгружает система проектирования. Мы читаем UNITS-BORE — единицы, PIPELINE-REFERENCE, PIPING-SPEC, REVISION, SPOOL-IDENTIFIER и блоки WELD с SKEY, CATEGORY, REPEAT-WELD-IDENTIFIER и WELD-TYPE.",

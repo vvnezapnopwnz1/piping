@@ -2,12 +2,10 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
 
-import { DEFAULT_PCF_SETTINGS, type TableTemplateSettings } from "../domain/import-template"
-import { parseDelimited } from "../domain/parsers/delimited"
+import { DEFAULT_PCF_SETTINGS } from "../domain/import-template"
 import { decodeText } from "../infrastructure/spoolgen-file-reader"
 import { buildPcfSubmission, type PcfSource } from "./import-pcf"
 import type { SpoolgenSubmission } from "./import-spooling"
-import { buildTableSubmission, describeTableColumns, type TableSource } from "./import-table"
 
 // The samples in fixtures/import-samples are hand-made and synthetic; their README says what each one imitates. This test
 // runs them through the same builders the import screen uses and pins every derived value, so a change of a derivation
@@ -161,69 +159,4 @@ test("a template changes what the same files give: a class mapped from the spec,
     ["4-NG-1002-CS150", "0", PDS_AREA, "SC-01", "4-NG-1002-CS150", ""],
   ])
   assert.deepEqual(submission.issues.map((issue) => issue.code), ["PCF_SPOOL_FROM_FILE_NAME"])
-})
-
-const REGISTER_HEADERS = ["Изометрия", "Ревизия", "Зона PDS", "Класс трубопровода", "Линия", "Катушка", "Стык", "Тип стыка", "Место сварки", "Примечание", "Диаметр, дюйм", "Толщина стенки, мм"]
-// The README gives this mapping: the headers the import cannot match by name, never the diameter from a Russian header.
-const REGISTER_SETTINGS: TableTemplateSettings = { kind: "table", columns: { weld: { pds_area: "Зона PDS", service_class: "Класс трубопровода", diameter_inch: "Диаметр, дюйм", thickness_mm: "Толщина стенки, мм" } } }
-const register = () => {
-  const bytes = bytesOf("table/weld-register-cp1251.csv")
-  const { text, encoding } = decodeText(bytes)
-  const source: TableSource = { role: "weld", fileName: "weld-register-cp1251.csv", matrix: parseDelimited(text) }
-  return { bytes, text, encoding, source }
-}
-
-test("CSV: the register is Windows-1251, not UTF-8, and reads back as Russian text", () => {
-  const { bytes, text, encoding } = register()
-  assert.equal(encoding, "windows-1251")
-  assert.throws(() => new TextDecoder("utf-8", { fatal: true }).decode(bytes), "the bytes are not valid UTF-8")
-  assert.ok(text.startsWith("Изометрия;Ревизия;"))
-  assert.ok(text.includes("\r\n"), "an Excel export ends its lines with CRLF")
-  assert.ok(text.includes('"Контроль 100%; РК"'))
-})
-
-test("CSV: semicolons, a quoted cell holding a semicolon, and a decimal comma are read as one table of twelve columns", () => {
-  const { source } = register()
-  assert.equal(source.matrix.length, 8)
-  assert.ok(source.matrix.every((row) => row.length === 12), "the semicolon inside the quotes does not split a cell")
-  assert.deepEqual(source.matrix[0], REGISTER_HEADERS)
-  assert.equal(source.matrix[2][9], "Контроль 100%; РК")
-  assert.equal(source.matrix[2][10], "4", "the column after the quoted cell is not shifted")
-  assert.equal(source.matrix[1][11], "6,02", "the parser keeps the text; the point comes in the next step")
-})
-
-test("CSV: without a mapping the Russian headers leave three required fields without a column, and nothing can be sent", () => {
-  const { source } = register()
-  const submission = buildTableSubmission([source], { kind: "table", columns: {} })
-  assert.equal(submission.canSubmit, false)
-  assert.deepEqual(submission.missingColumns.weld?.map((column) => column.key), ["pds_area", "service_class", "diameter_inch"])
-  assert.ok(submission.missingColumns.weld?.every((column) => column.headers.join("|") === REGISTER_HEADERS.join("|")))
-  assert.deepEqual(submission.issues.map((issue) => [issue.code, issue.columnName, issue.fileName]), ["pds_area", "service_class", "diameter_inch"].map((key) => ["MISSING_COLUMN", key, "weld-register-cp1251.csv"]))
-})
-
-test("CSV: with the mapping from the README it gives seven welds and no issue, a decimal point in the numbers", () => {
-  const { source } = register()
-  const described = describeTableColumns(source, REGISTER_SETTINGS.columns.weld)
-  assert.ok(described.columns.filter((column) => column.required).every((column) => column.header !== null), "every required field has a column")
-  assert.deepEqual(described.headers, REGISTER_HEADERS)
-  const submission = buildTableSubmission([source], REGISTER_SETTINGS)
-  assert.deepEqual(submission.issues, [])
-  assert.deepEqual(submission.missingColumns, {})
-  assert.equal(submission.canSubmit, true)
-  const welds = rowsOf(submission, "weld_joint")
-  assert.deepEqual(welds.map((v) => [v.iso_number, v.spool_number, v.weld_number, v.weld_type, v.weld_location, v.diameter_inch, v.thickness_mm]), [
-    ["ISO-4001", "ISO-4001-S1", "4001-S1-W01", "BW", "shop", "4", "6.02"],
-    ["ISO-4001", "ISO-4001-S1", "4001-S1-W02", "BW", "shop", "4", "6.02"],
-    ["ISO-4001", "ISO-4001-S1", "4001-S1-W03", "SW", "shop", "2", "3.91"],
-    ["ISO-4001", "ISO-4001-S2", "4001-S2-W01", "BW", "field", "4", "6.02"],
-    ["ISO-4001", "ISO-4001-S2", "4001-S2-W02", "BW", "shop", "4", "6.02"],
-    ["ISO-4002", "ISO-4002-S1", "4002-S1-W01", "SW", "shop", "1.5", "3.68"],
-    ["ISO-4002", "ISO-4002-S1", "4002-S1-W02", "SW", "shop", "2", "3.91"],
-  ])
-  assert.ok(welds.every((v) => v.service_class === "CS150" && /^\d+(\.\d+)?$/.test(v.diameter_inch) && /^\d+\.\d+$/.test(v.thickness_mm)))
-  assert.deepEqual(isometricTable(submission), [
-    ["ISO-4001", "R0", PDS_AREA, "CS150", "4-NG-4001-CS150", ""],
-    ["ISO-4002", "R0", PDS_AREA, "CS150", "2-NG-4002-CS150", ""],
-  ])
-  assert.deepEqual(rowsOf(submission, "spool").map((v) => v.spool_number), ["ISO-4001-S1", "ISO-4001-S2", "ISO-4002-S1"])
 })

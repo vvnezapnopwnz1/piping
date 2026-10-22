@@ -4,20 +4,17 @@ import { createTranslator } from "next-intl"
 import { messagesFor } from "@/i18n/messages"
 import { buildWorkbook, readNumberedSheets } from "@/modules/imports/infrastructure/xlsx-workbook"
 import { DEFAULT_PCF_SETTINGS, type ImportReferences } from "../domain/import-template"
-import { parseDelimited } from "../domain/parsers/delimited"
 import { SPOOLGEN_FILE_ROLES, type SpoolgenFileRole } from "../domain/spoolgen-file"
-import { buildTemplateCsv, buildTemplateText, templateRowsFor } from "../infrastructure/import-template-files"
+import { buildTemplateText } from "../infrastructure/import-template-files"
 import { PCF_SAMPLE, PCF_SAMPLE_FILE_NAME } from "../infrastructure/pcf-sample"
-import { decodeText } from "../infrastructure/spoolgen-file-reader"
 import { tableTemplateSheets } from "../ui/import-template-sheets"
 import { buildPcfSubmission } from "./import-pcf"
 import { buildSpoolgenSubmission, type SpoolgenSubmission } from "./import-spooling"
-import { buildTableSubmission, readWorkbookUpload } from "./import-table"
+import { readWorkbookUpload } from "./import-table"
 
 // What the tiles hand out is what the import reads. Every file below is built by the screen's own code, then run
 // through the readers and builders the upload uses: a column renamed, a note row left in a data sheet, a sheet name
 // translated, or a sample that stops being read fails here, before a person ever downloads it.
-const NO_MAPPING = { kind: "table", columns: {} } as const
 // The codes the sheet lists are not read back; an empty project is enough to prove the sheets are ignored.
 const REFERENCES: ImportReferences = { pdsAreas: ["A-100"], serviceClasses: ["CS150"], weldTypes: ["BW", "SW"] }
 const translatorFor = (locale: "en" | "ru") => createTranslator({ locale, messages: messagesFor(locale), namespace: "spooling" })
@@ -49,15 +46,6 @@ test("the help and the codes sheets are never read as data", () => {
   assert.deepEqual(Object.keys(read).sort(), [...SPOOLGEN_FILE_ROLES].sort())
   // A note inside a data sheet would be read as a data row: each role sheet holds the header and one example row.
   for (const role of SPOOLGEN_FILE_ROLES) assert.deepEqual(read[role]?.rowNumbers, [1, 2], role)
-})
-
-test("the CSV template uploads into the weld role with no mapping and no issue", () => {
-  const { text, encoding } = decodeText(new TextEncoder().encode(buildTemplateCsv(templateRowsFor("weld"))))
-  assert.equal(encoding, "utf-8")
-  const submission = buildTableSubmission([{ role: "weld", fileName: "weld-template.csv", matrix: parseDelimited(text) }], NO_MAPPING)
-  assert.deepEqual(submission.issues, [])
-  assert.equal(submission.canSubmit, true)
-  assert.deepEqual(rowsOf(submission, "weld_joint").map((v) => [v.iso_number, v.spool_number, v.weld_number, v.weld_type, v.weld_location, v.diameter_inch, v.thickness_mm]), [WELD])
 })
 
 test("the four SpoolGen files upload together with no issue", () => {

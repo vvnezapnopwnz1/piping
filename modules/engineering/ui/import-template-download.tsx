@@ -8,16 +8,16 @@ import { downloadBlob } from "@/lib/download-blob"
 import { buildWorkbook } from "@/modules/imports/infrastructure/xlsx-workbook"
 import { templateKindOf, type ImportReferences, type ImportSourceId } from "../domain/import-template"
 import { SPOOLGEN_FILE_ROLES } from "../domain/spoolgen-file"
-import { buildTemplateCsv, buildTemplateText, templateRowsFor } from "../infrastructure/import-template-files"
+import { buildTemplateText } from "../infrastructure/import-template-files"
 import { PCF_SAMPLE, PCF_SAMPLE_FILE_NAME } from "../infrastructure/pcf-sample"
 import { tableTemplateSheets } from "./import-template-sheets"
 
 const XLSX_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 /**
- * What a tile hands out before anything is picked: for Excel/CSV the workbook (a sheet per role, the help and the
- * project's codes) and a CSV of the weld table; for SpoolGen the four tab-separated files; for a CAD source the sample
- * PCF and the keywords we read. Every file is built from the same data the import reads, so the two cannot drift.
+ * What a tile hands out before anything is picked: for Excel the workbook (a sheet per role, the help and the project's
+ * codes); for SpoolGen the four tab-separated files; for a CAD source the sample PCF and the keywords we read. Every
+ * file is built from the same data the import reads, so the two cannot drift.
  */
 export function ImportTemplateDownload({ source, references, disabled }: {
   source: ImportSourceId
@@ -58,13 +58,8 @@ export function ImportTemplateDownload({ source, references, disabled }: {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <Button type="button" variant="outline" size="sm" disabled={disabled} onClick={() => downloadBlob(new Blob([buildWorkbook(tableTemplateSheets(t, references))], { type: XLSX_TYPE }), "spooling-template.xlsx")}>
-        <Download />{t("templates.download.tableXlsx")}
-      </Button>
-      <Button type="button" variant="outline" size="sm" disabled={disabled} onClick={() => downloadBlob(new Blob([buildTemplateCsv(templateRowsFor("weld"))], { type: "text/csv;charset=utf-8" }), "weld-template.csv")}>
-        <Download />{t("templates.download.tableCsv")}
-      </Button>
-    </div>
+    <Button type="button" variant="outline" size="sm" disabled={disabled} onClick={() => downloadBlob(new Blob([buildWorkbook(tableTemplateSheets(t, references))], { type: XLSX_TYPE }), "spooling-template.xlsx")}>
+      <Download />{t("templates.download.tableXlsx")}
+    </Button>
   )
 }
