@@ -27,7 +27,7 @@ export const DEFAULT_PCF_SETTINGS: PcfTemplateSettings = {
   defaultRevision: null,
 }
 
-/** The tiles of the import screen, in order: three PCF sources, an Excel/CSV table, and the four fixed SpoolGen files. */
+/** The tiles of the import screen, in order: three PCF sources, an Excel workbook, and the four fixed SpoolGen files. */
 export const IMPORT_SOURCE_IDS = ["aveva", "hexagon", "plant3d", "table", "spoolgen"] as const
 export type ImportSourceId = (typeof IMPORT_SOURCE_IDS)[number]
 
@@ -84,7 +84,7 @@ export const BUILT_IN_TEMPLATES: readonly ImportTemplate[] = deepFreeze([
   { id: null, source: "aveva", name: "AVEVA E3D / PDMS", settings: pcfPreset() },
   { id: null, source: "hexagon", name: "Smart 3D / CADWorx", settings: pcfPreset() },
   { id: null, source: "plant3d", name: "Plant 3D", settings: pcfPreset() },
-  { id: null, source: "table", name: "Excel / CSV", settings: { kind: "table", columns: {} } },
+  { id: null, source: "table", name: "Excel", settings: { kind: "table", columns: {} } },
   { id: null, source: "spoolgen", name: "SpoolGen", settings: { kind: "table", columns: {} } },
 ] satisfies ImportTemplate[])
 

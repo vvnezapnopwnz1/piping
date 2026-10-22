@@ -143,6 +143,12 @@
     "errors": "{count, plural, one {# error} other {# errors}}: fix the file and upload it again.",
     "none": "No errors: review the changes below and apply the import."
   },
+  "excel": {
+    "hint": "Download the template, move your data into it and upload it back. The weld sheet is required; trace, bolt and supp are optional. The file is limited to {limit} MB.",
+    "upload": "Upload the filled-in template",
+    "noWeldSheet": "The workbook has no weld sheet, or it is empty. Download the template and move your data into it.",
+    "missingColumns": "The {sheet} sheet {count, plural, one {has no required column} other {has no required columns}} {columns}. Download the template and move your data into it."
+  },
   "importScreen": {
     "hint": "Upload the SpoolGen export. Only weld.txt is required; each file is limited to {limit} MB.",
     "replace": "Replace {file}",
@@ -166,7 +172,7 @@
       "hint": "PCF files from AutoCAD Plant 3D, one per isometric."
     },
     "table": {
-      "hint": "A weld register in Excel or CSV, with materials, flange joints and supports in files of their own. Match the columns once and save them as a template."
+      "hint": "Welds, materials, flange joints and supports in our Excel template: download it, fill it in and upload it back."
     },
     "spoolgen": {
       "hint": "The four SpoolGen text files: weld.txt is required, trace.txt, bolt.txt and supp.txt are optional."

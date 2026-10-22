@@ -25,7 +25,7 @@ const SILENT_CALLS = new Set([
 ])
 
 /** Product names that read the same in every language. */
-const NAMES = new Set(["PipeQC", "SpoolGen", "AVEVA E3D / PDMS", "Smart 3D / CADWorx", "Plant 3D", "Excel / CSV"])
+const NAMES = new Set(["PipeQC", "SpoolGen", "AVEVA E3D / PDMS", "Smart 3D / CADWorx", "Plant 3D", "Excel"])
 
 /** A Tailwind-like token: lowercase, digits and the punctuation class names use. */
 const CSS_TOKEN = /^[!a-z0-9[\]&>_:/.%()=,'#*+-]+$/

@@ -56,7 +56,7 @@ export function codesSheet(t: SpoolingTranslator, references: ImportReferences |
   return { name: t("templates.download.codes.sheet"), rows }
 }
 
-/** The workbook the Excel/CSV tile hands out: a sheet per role, then the help and the project's codes. */
+/** The workbook the Excel tile hands out: a sheet per role, then the help and the project's codes. */
 export function tableTemplateSheets(t: SpoolingTranslator, references: ImportReferences | null): WorkbookSheet[] {
   return [
     ...SPOOLGEN_FILE_ROLES.map((role) => ({ name: roleSheetName(role), rows: templateRowsFor(role) })),

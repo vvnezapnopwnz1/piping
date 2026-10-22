@@ -136,3 +136,14 @@ test("the table hint names the sheet a workbook is read from, the role's own", (
     for (const role of ["weld", "trace", "bolt", "supp"]) assert.ok(hint.includes(role), `${locale}: ${role}`)
   }
 })
+
+test("the Excel panel tells to download the template when the weld sheet or a column is missing", () => {
+  for (const locale of ["en", "ru"] as const) {
+    const t = createTranslator({ locale, messages: messagesFor(locale), namespace: "spooling" })
+    assert.ok(t("excel.noWeldSheet").includes("weld"), locale)
+    const missing = t("excel.missingColumns", { sheet: "weld", count: 2, columns: "PDS_AREA, WELD_TYPE" })
+    assert.ok(missing.includes("weld") && missing.includes("PDS_AREA, WELD_TYPE"), `${locale}: ${missing}`)
+    const hint = t("excel.hint", { limit: 4 })
+    for (const role of ["weld", "trace", "bolt", "supp"]) assert.ok(hint.includes(role), `${locale}: ${role}`)
+  }
+})

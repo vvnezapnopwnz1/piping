@@ -1,24 +1,26 @@
 "use client"
 
 import { useTranslations } from "next-intl"
-import { useCallback, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { errorDetail } from "@/i18n/format"
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 import type { StoredImportIssue } from "@/modules/imports/domain/stored-import-issue"
-import { ImportIssueList } from "@/modules/imports/ui/import-issue-list"
 import type { SpoolgenSubmission } from "../application/import-spooling"
+import { buildIssueEntries, countIssueEntries } from "../application/issue-entries"
 import type { ImportSourceId } from "../domain/import-template"
 import { submitSpoolingImport, type SpoolingUpload } from "../infrastructure/submit-spooling-import"
+import { ExcelImportPanel } from "./excel-import-panel"
 import { ImportSourcePicker } from "./import-source-picker"
+import { IssueEntryList } from "./issue-entry-list"
 import { PcfImportPanel } from "./pcf-import-panel"
-import { describeSpoolgenIssue } from "./spoolgen-issue-text"
-import { TableImportPanel } from "./table-import-panel"
+import { SpoolgenImportPanel } from "./spoolgen-import-panel"
 
 /**
- * The import screen: the source tiles, the chosen source's upload, and after validation what the server found. Every
- * panel hands its rows and files to the same submit, so a job looks the same whatever the source.
+ * The import screen: the source tiles, the chosen source's upload, and after validation what the browser and the server
+ * found, one entry per reason. Every panel hands its rows and files to the same submit, so a job looks the same whatever
+ * the source; what was sent is kept beside the server's issues, so an entry can name the rows a person sees.
  */
 export function SpoolingImport({ projectId, canManage, onJobChange }: {
   projectId: string
@@ -29,18 +31,21 @@ export function SpoolingImport({ projectId, canManage, onJobChange }: {
   const t = useTranslations("spooling")
   const [source, setSource] = useState<ImportSourceId | null>(null)
   const [busy, setBusy] = useState(false)
-  const [issues, setIssues] = useState<StoredImportIssue[] | null>(null)
+  const [checked, setChecked] = useState<{ submission: SpoolgenSubmission; stored: StoredImportIssue[] } | null>(null)
+  const entries = useMemo(() => (checked ? buildIssueEntries(checked.submission, checked.stored) : null), [checked])
   // An edit drops the issues and the job they belong to, so decisions about an earlier upload never sit beside new files.
-  const clearIssues = useCallback(() => { setIssues(null); onJobChange(null) }, [onJobChange])
+  const clearIssues = useCallback(() => { setChecked(null); onJobChange(null) }, [onJobChange])
 
   const submit = useCallback(async (submission: SpoolgenSubmission, uploads: readonly SpoolingUpload[]) => {
     if (!canManage || busy) return
     setBusy(true)
     try {
       const result = await submitSpoolingImport(getSupabaseBrowserClient(), projectId, submission, uploads)
-      setIssues(result.issues)
+      setChecked({ submission, stored: result.issues })
       onJobChange(result.jobId)
-      toast.success(t("importScreen.validated", { rows: submission.rows.length, errors: result.counts.blockerCount, warnings: result.counts.warningCount }))
+      // The toast counts what the list shows, so the two never disagree.
+      const { errors, warnings } = countIssueEntries(buildIssueEntries(submission, result.issues))
+      toast.success(t("importScreen.validated", { rows: submission.rows.length, errors, warnings }))
     } catch (error) {
       toast.error(t("importScreen.failed"), { description: errorDetail(error) })
     } finally {
@@ -55,18 +60,16 @@ export function SpoolingImport({ projectId, canManage, onJobChange }: {
       </CardHeader>
       <CardContent className="space-y-6">
         <ImportSourcePicker value={source} disabled={busy} onChange={(next) => { setSource(next); clearIssues() }} />
-        {source === "table" || source === "spoolgen" ? (
-          <TableImportPanel key={source} projectId={projectId} source={source} canManage={canManage} busy={busy} onEdit={clearIssues} onSubmit={(submission, uploads) => void submit(submission, uploads)} />
+        {source === "table" ? (
+          <ExcelImportPanel key="table" projectId={projectId} canManage={canManage} busy={busy} onEdit={clearIssues} onSubmit={(submission, uploads) => void submit(submission, uploads)} />
+        ) : null}
+        {source === "spoolgen" ? (
+          <SpoolgenImportPanel key="spoolgen" canManage={canManage} busy={busy} onEdit={clearIssues} onSubmit={(submission, uploads) => void submit(submission, uploads)} />
         ) : null}
         {source === "aveva" || source === "hexagon" || source === "plant3d" ? (
-          <PcfImportPanel key={source} projectId={projectId} source={source} canManage={canManage} busy={busy} validated={issues !== null} onEdit={clearIssues} onSubmit={(submission, uploads) => void submit(submission, uploads)} />
+          <PcfImportPanel key={source} projectId={projectId} source={source} canManage={canManage} busy={busy} validated={checked !== null} onEdit={clearIssues} onSubmit={(submission, uploads) => void submit(submission, uploads)} />
         ) : null}
-        {issues ? (
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">{t("importScreen.jobCreated")}</p>
-            <ImportIssueList issues={issues.map((issue) => ({ ...issue, message: describeSpoolgenIssue(t, issue) }))} />
-          </div>
-        ) : null}
+        {entries ? <IssueEntryList entries={entries} /> : null}
       </CardContent>
     </Card>
   )
