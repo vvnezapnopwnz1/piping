@@ -38,6 +38,7 @@ function argsFor(code: string, values: Readonly<Record<string, string>>, key: st
     case "SRV_WPS_MISSING": return { diameter: value(values, "diameter_inch"), thickness: value(values, "thickness_mm"), hasThickness: value(values, "thickness_mm") === "" ? "no" : "yes" }
     case "ORPHAN_SPOOL": return { iso: value(values, "iso_number"), spool: value(values, "spool_number") }
     case "ISO_MIXED_LINE": case "ISO_MIXED_SERVICE_CLASS": case "ISO_MIXED_REVISION": return { iso: value(values, "iso_number") }
+    case "WELD_DUPLICATE": case "WELD_DUPLICATE_SAME": return { weld: value(values, "weld_number") }
     case "MISSING_VALUE": case "MISSING_COLUMN": return { column: column ?? "" }
     case "INVALID_NUMBER": return { column: column ?? "", value: key === null ? "" : value(values, key) }
     // The limit is the server's; the screen names how many welds this upload sent, the number the server compares.

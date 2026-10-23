@@ -137,3 +137,22 @@ test("seven and a half thousand welds with one error each are one entry, built w
   // Merging row by row re-sorted the growing list each time: about 1.5 s here, a frozen screen at the joint limit.
   assert.ok(elapsed < 400, `${Math.round(elapsed)} ms`)
 })
+
+test("a weld number used again in an isometric is one error entry naming the number, a same-data repeat a warning", () => {
+  const entries = buildIssueEntries(
+    submit(sheet("weld", WELD_HEADER, [
+      [2, weld("ISO-1", "S-1", "W-1")],
+      [3, weld("ISO-1", "S-1", "W-1")],
+      [4, weld("ISO-1", "S-2", "W-1")],
+      [5, weld("ISO-1", "S-1", "W-2")],
+    ])),
+    [],
+  )
+  const duplicates = entries.filter((entry) => entry.code.startsWith("WELD_DUPLICATE"))
+  assert.deepEqual(duplicates.map((entry) => [entry.severity, entry.code, entry.args, entry.place.rows]), [
+    ["blocker", "WELD_DUPLICATE", { weld: "W-1" }, [4]],
+    ["warning", "WELD_DUPLICATE_SAME", { weld: "W-1" }, [3]],
+  ])
+  assert.equal(duplicates[0].place.sheet, "weld")
+  assert.equal(duplicates[0].place.column, "WELD_NUMBER")
+})
