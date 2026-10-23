@@ -71,4 +71,11 @@ assert.ok(
   "creating a project must reload access so the new project reaches the project selector",
 )
 
+// A new project can start from the referentials of one the user already sees; the copy is a server command that
+// takes the two project ids, and a failed copy leaves the created project in place.
+assert.ok(
+  /copyProjectReferences\(\s*getSupabaseBrowserClient\(\),\s*copyFrom,\s*created\.id/.test(createProjectDialog),
+  "the Create Project dialog must hand the chosen source and the new project's id to copyProjectReferences",
+)
+
 console.log("All admin-page-capability-wiring.test.ts assertions passed!")

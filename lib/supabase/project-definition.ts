@@ -92,6 +92,20 @@ export async function createProjectDefinition(
   return { id: row.id, ...toProjectDefinition(row) }
 }
 
+/** Copies the referentials of `sourceProjectId` into the empty `targetProjectId`; returns the rows copied. */
+export async function copyProjectReferences(
+  client: SupabaseClient<Database>,
+  sourceProjectId: string,
+  targetProjectId: string,
+): Promise<number> {
+  const response = await client.rpc("copy_project_references", {
+    source_project_id: sourceProjectId,
+    target_project_id: targetProjectId,
+  })
+  if (response.error) throw new Error(response.error.message)
+  return response.data ?? 0
+}
+
 function toCreationError(error: { code?: string; message?: string }): Error {
   switch (error.code) {
     case "23505":

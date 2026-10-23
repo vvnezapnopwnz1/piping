@@ -11336,6 +11336,10 @@ export type Database = {
         }
         Returns: number
       }
+      copy_project_references: {
+        Args: { source_project_id: string; target_project_id: string }
+        Returns: number
+      }
       correct_construction_progress: {
         Args: {
           correction_reason: string

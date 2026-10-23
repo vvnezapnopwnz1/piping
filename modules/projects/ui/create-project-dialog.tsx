@@ -15,12 +15,14 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useSupabaseAuth } from "@/contexts/supabase-auth-context"
 import {
   type ProjectCreationInput,
   validateProjectCreation,
 } from "@/lib/project-definition"
 import {
+  copyProjectReferences,
   createProjectDefinition,
   type CreatedProject,
 } from "@/lib/supabase/project-definition"
@@ -29,6 +31,8 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/browser-client"
 type ProjectCreationForm = Omit<ProjectCreationInput, "maxTransitTimeDays"> & {
   maxTransitTimeDays: string
 }
+
+const NO_COPY = "none"
 
 const emptyCreationForm: ProjectCreationForm = {
   activityCode: "",
@@ -53,12 +57,14 @@ export function CreateProjectDialog({
   onCreated?: (project: CreatedProject) => void
 }) {
   const t = useTranslations("projectSetup.projectDefinition")
-  const { user, reloadAccess, selectProject } = useSupabaseAuth()
+  const { user, reloadAccess, selectProject, projectAccesses } = useSupabaseAuth()
   const [form, setForm] = React.useState<ProjectCreationForm>(emptyCreationForm)
   const [errors, setErrors] = React.useState<
     Partial<Record<keyof ProjectCreationInput, string>>
   >({})
   const [isCreating, setIsCreating] = React.useState(false)
+  // The project whose referentials the new one starts from; "none" leaves it empty.
+  const [copyFrom, setCopyFrom] = React.useState<string>(NO_COPY)
 
   const update = (patch: Partial<ProjectCreationForm>) =>
     setForm((current) => ({ ...current, ...patch }))
@@ -87,11 +93,21 @@ export function CreateProjectDialog({
       // The creator's Project Admin membership is written by the
       // `projects_add_creator_as_admin` trigger, so the new project only becomes selectable
       // after access is reloaded.
+      toast.success(t("created", { title: created.activityCode }))
+      if (copyFrom !== NO_COPY) {
+        try {
+          const rows = await copyProjectReferences(getSupabaseBrowserClient(), copyFrom, created.id)
+          toast.success(t("referencesCopied", { count: rows }))
+        } catch (copyError) {
+          // The project exists and can be filled by hand, so this is a warning, not a failed creation.
+          toast.warning(t("copyFailed"), { description: copyError instanceof Error ? copyError.message : undefined })
+        }
+      }
       reloadAccess()
       selectProject(created.id)
       onOpenChange(false)
       setForm(emptyCreationForm)
-      toast.success(t("created", { title: created.activityCode }))
+      setCopyFrom(NO_COPY)
       onCreated?.(created)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t("unableToCreate"))
@@ -162,6 +178,23 @@ export function CreateProjectDialog({
               disabled={isCreating}
               onChange={(value) => update({ maxTransitTimeDays: value })}
             />
+            <div className="grid gap-1.5">
+              <Label htmlFor="cp-copy">{t("copyReferences")}</Label>
+              <Select value={copyFrom} onValueChange={setCopyFrom} disabled={isCreating}>
+                <SelectTrigger id="cp-copy">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_COPY}>{t("copyNone")}</SelectItem>
+                  {projectAccesses.map((project) => (
+                    <SelectItem key={project.projectId} value={project.projectId}>
+                      {project.activityCode} — {project.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">{t("copyHint")}</p>
+            </div>
           </div>
           <DialogFooter>
             <Button
