@@ -358,6 +358,14 @@ export const SHOWCASE_PROJECT_CODE = "SHOWCASE-1"
  */
 export const EXEMPT_FROM_EMPTY_AT_DEMO_START = [SHOWCASE_PROJECT_CODE] as const
 
+/**
+ * Example projects (scripts/upg, scripts/nps, scripts/pcf) are loaded after `demo:prepare`, like the
+ * showcase, and carry their own data and memberships. The preflight does not read them: it neither
+ * requires them (the local stand holds UPG-1 only, the public demo all three) nor lets them count as
+ * unexpected projects or memberships. Their code is the one thing a person may add to a stand.
+ */
+export const EXAMPLE_PROJECT_CODES = ["UPG-1", "NPS-1", "PCF-1"] as const
+
 export const EMPTY_AT_DEMO_START = [
   "import_jobs",
   "isometrics",

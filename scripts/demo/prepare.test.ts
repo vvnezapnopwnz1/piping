@@ -1953,6 +1953,45 @@ test("readSnapshot combines all current core sections with observed references, 
   ])
 })
 
+test("readSnapshot leaves out the example projects and the memberships in them, but not other projects", async () => {
+  const gateway = configuredReferenceGateway()
+  const core = await preparedReferenceCore(gateway)
+  const example = (id: string, activityCode: string): DemoProjectRecord => ({
+    ...projectRecord("showcase", id),
+    activityCode,
+    title: `Example ${activityCode}`,
+  })
+  gateway.projects = [
+    ...gateway.projects,
+    example("project-upg", "UPG-1"),
+    example("project-nps", "NPS-1"),
+    example("project-stray", "STRAY-1"),
+  ]
+  const before = gateway.memberships.length
+  gateway.memberships = [
+    ...gateway.memberships,
+    { id: "m-upg", projectId: "project-upg", userId: "platform-id", accessRoleCode: "system_admin", legacyRole: "system_admin", isActive: true },
+    { id: "m-nps", projectId: "project-nps", userId: "platform-id", accessRoleCode: "system_admin", legacyRole: "system_admin", isActive: true },
+    { id: "m-stray", projectId: "project-stray", userId: "platform-id", accessRoleCode: "system_admin", legacyRole: "system_admin", isActive: true },
+  ]
+
+  const snapshot = await core.readSnapshot()
+
+  assert.deepEqual(
+    snapshot.projects.map((project) => project.activityCode),
+    ["SHOWCASE-1", "STRAY-1", "TRACK01-A", "TRACK01-B"],
+    "UPG-1 and NPS-1 are not observed, a project nobody listed still is",
+  )
+  const platform = snapshot.users.find((user) => user.email === DEMO_MANIFEST.users[0].email)
+  assert.ok(platform)
+  assert.deepEqual(
+    platform.memberships.map((membership) => membership.projectCode).filter((code) => !code.startsWith("TRACK") && code !== "SHOWCASE-1"),
+    ["STRAY-1"],
+    "memberships in example projects are dropped, the stray one is kept",
+  )
+  assert.equal(before + 3, gateway.memberships.length)
+})
+
 test("readSnapshot uses the injected observed SpoolGen package instead of the strict manifest", async () => {
   const gateway = configuredReferenceGateway()
   const observed = buildObservedDemoSpoolgenSnapshot({})

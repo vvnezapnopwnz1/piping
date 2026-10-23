@@ -6,6 +6,7 @@ import {
   DEMO_WELDER_EXPIRY_OFFSET_DAYS,
   DEMO_WPS_APPROVAL_OFFSET_DAYS,
   EMPTY_AT_DEMO_START,
+  EXAMPLE_PROJECT_CODES,
   EXEMPT_FROM_EMPTY_AT_DEMO_START,
   SHOWCASE_PROJECT_CODE,
   addUtcDays,
@@ -1076,4 +1077,12 @@ test("resolves dates from UTC preparation day without local timezone drift", () 
     approvedOn: "2026-02-11",
     welderExpiresOn: "2027-08-10",
   })
+})
+
+test("example project codes never name a project the manifest itself prepares", () => {
+  const manifestCodes: readonly string[] = Object.values(DEMO_MANIFEST.projects).map((project) => project.activityCode)
+  for (const code of EXAMPLE_PROJECT_CODES) {
+    assert.equal(manifestCodes.includes(code), false, `${code} is a manifest project`)
+  }
+  assert.equal(new Set(EXAMPLE_PROJECT_CODES).size, EXAMPLE_PROJECT_CODES.length)
 })

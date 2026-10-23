@@ -53,6 +53,11 @@ npm run demo:showcase   # seeds SHOWCASE-1; demo:check stays green afterwards
 
 `npm run demo:check` is unaffected and stays green either way.
 
+Example projects (`UPG-1`, `NPS-1`, `PCF-1`; specs in `scripts/upg`, `scripts/nps`, `scripts/pcf`) are loaded after
+`demo:prepare` with `demo:project-load -- --dataset X`. `EXAMPLE_PROJECT_CODES` in `scripts/demo/manifest.ts` makes
+`demo:check` ignore them and the memberships in them: it neither requires them nor counts them as unexpected. Any other
+extra project still fails the check.
+
 The hosted stand is separate and holds curated acceptance data. Never re-seed it unprompted.
 
 Since 2026-10-17 the hosted stand is the self-hosted Supabase on the KZ server (hoster.kz, `ssh mextech`):

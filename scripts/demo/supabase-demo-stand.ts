@@ -16,6 +16,7 @@ import {
 import {
   DEMO_MANIFEST,
   EMPTY_AT_DEMO_START,
+  EXAMPLE_PROJECT_CODES,
   EXEMPT_FROM_EMPTY_AT_DEMO_START,
   SHOWCASE_PROJECT_CODE,
   type DemoMembership,
@@ -3097,7 +3098,7 @@ export class SupabaseDemoStandCore {
       "projects",
       () => this.gateway.listProjects(),
     )
-    const memberships = await safely(
+    const allMemberships = await safely(
       "Reading demo snapshot",
       "project_memberships",
       () => this.gateway.readMemberships(),
@@ -3118,9 +3119,21 @@ export class SupabaseDemoStandCore {
       () => this.gateway.readPdsAreaScopes(),
     )
 
-    const observedProjects = [...projectRecords].sort((left, right) =>
-      compareText(left.activityCode, right.activityCode),
+    // Example projects are not part of the manifest the preflight compares against (EXAMPLE_PROJECT_CODES),
+    // so neither they nor the memberships in them are observed.
+    const isExample = (code: string) =>
+      (EXAMPLE_PROJECT_CODES as readonly string[]).includes(code)
+    const exampleProjectIds = new Set(
+      projectRecords
+        .filter((project) => isExample(project.activityCode))
+        .map((project) => project.id),
     )
+    const memberships = allMemberships.filter(
+      (membership) => !exampleProjectIds.has(membership.projectId),
+    )
+    const observedProjects = projectRecords
+      .filter((project) => !isExample(project.activityCode))
+      .sort((left, right) => compareText(left.activityCode, right.activityCode))
     const goldenProject = observedProjects.find(
       (project) =>
         project.activityCode ===
