@@ -140,6 +140,7 @@
     "SRV_ISO_MIXED_LINE": "An isometric has more than one line number.",
     "SRV_ISO_MIXED_SERVICE_CLASS": "An isometric has more than one service class.",
     "SRV_ORPHAN_SPOOL": "A spool is not in the weld list.",
+    "SRV_NUMBER_IN_OTHER_ISO": "A number is already used in another isometric of this project.",
     "SRV_SPOOLING_SPINE_MISSING": "There are no welds: isometrics and spools are made from the weld rows.",
     "SRV_SPOOLING_JOB_TOO_LARGE": "{count, plural, one {# weld is} other {# welds are}} more than one job takes. Split the file by PDS area and upload the parts one after another."
   },

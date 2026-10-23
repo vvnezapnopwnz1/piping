@@ -181,3 +181,9 @@ test("an isometric with two PDS areas is one entry naming the isometric, at ever
   )
   assert.deepEqual(entries.filter((entry) => entry.code === "ISO_MIXED_PDS_AREA").map((entry) => [entry.args, entry.place.rows]), [[{ iso: "ISO-1" }, [2, 3]]])
 })
+
+test("a number the project already holds under another isometric is listed as the same reason, with the number and its place", () => {
+  const submission = submit(sheet("weld", WELD_HEADER, [[2, weld("ISO-B", "S-1", "W-1")], [3, weld("ISO-B", "S-1", "W-2")]]))
+  const entries = buildIssueEntries(submission, [stored("SRV_NUMBER_IN_OTHER_ISO", stagingRow(submission, "weld_joint", "weld_number", "W-1"), "weld_number")])
+  assert.deepEqual(entries.map((entry) => [entry.code, entry.args, entry.place.column, entry.place.rows]), [["NUMBER_IN_OTHER_ISO", { kind: "weld", number: "W-1" }, "WELD_NUMBER", [2]]])
+})

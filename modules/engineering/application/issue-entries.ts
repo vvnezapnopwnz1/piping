@@ -16,8 +16,8 @@ export interface IssueEntry { severity: ImportIssueSeverity; code: string; args:
 
 type Issue = Pick<StoredImportIssue, "rowNumber" | "columnName" | "severity" | "code" | "message" | "fileName"> & { role?: SpoolgenFileRole }
 
-/** A server check that repeats one the browser makes, under the browser's code. Both group the welds by isometric. */
-const TWINS: Readonly<Record<string, string>> = { SRV_ORPHAN_SPOOL: "ORPHAN_SPOOL", SRV_ISO_MIXED_LINE: "ISO_MIXED_LINE", SRV_ISO_MIXED_SERVICE_CLASS: "ISO_MIXED_SERVICE_CLASS" }
+/** A server check that repeats one the browser makes, under the browser's code: the same sentence fits, whether the number clashes inside the upload or with what the project already holds. */
+const TWINS: Readonly<Record<string, string>> = { SRV_ORPHAN_SPOOL: "ORPHAN_SPOOL", SRV_ISO_MIXED_LINE: "ISO_MIXED_LINE", SRV_ISO_MIXED_SERVICE_CLASS: "ISO_MIXED_SERVICE_CLASS", SRV_NUMBER_IN_OTHER_ISO: "NUMBER_IN_OTHER_ISO" }
 const ISO_CODES = new Set(["ISO_MIXED_LINE", "ISO_MIXED_SERVICE_CLASS", "ISO_MIXED_PDS_AREA", "ISO_MIXED_REVISION"])
 const SEVERITY_ORDER: Record<ImportIssueSeverity, number> = { blocker: 0, conflict: 1, warning: 2 }
 

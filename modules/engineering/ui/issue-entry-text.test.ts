@@ -51,10 +51,11 @@ test("every server code reaches the screen in Russian, through the entries", () 
   const raisedOn: Record<SpoolingServerIssueCode, number | null> = {
     SRV_PDS_MISSING: rowOf("isometric"), SRV_SERVICE_CLASS_MISSING: rowOf("isometric"),
     SRV_WELD_TYPE_MISSING: rowOf("weld_joint"), SRV_THICKNESS_MISSING: rowOf("weld_joint"), SRV_NDE_MATRIX_MISSING: rowOf("weld_joint"), SRV_WPS_MISSING: rowOf("weld_joint"),
-    SRV_ORPHAN_SPOOL: rowOf("material"), SRV_ISO_MIXED_LINE: null, SRV_ISO_MIXED_SERVICE_CLASS: null, SRV_SPOOLING_SPINE_MISSING: null, SRV_SPOOLING_JOB_TOO_LARGE: null,
+    SRV_ORPHAN_SPOOL: rowOf("material"), SRV_NUMBER_IN_OTHER_ISO: rowOf("weld_joint"), SRV_ISO_MIXED_LINE: null, SRV_ISO_MIXED_SERVICE_CLASS: null, SRV_SPOOLING_SPINE_MISSING: null, SRV_SPOOLING_JOB_TOO_LARGE: null,
   }
   for (const code of SPOOLING_SERVER_ISSUE_CODES) {
-    const issue: StoredImportIssue = { code, rowNumber: raisedOn[code], columnName: null, severity: "blocker", message: "English server sentence", fileName: null }
+    // The server names the column of a number it refuses (weld_number, spool_number...), and the sentence names the number from it.
+    const issue: StoredImportIssue = { code, rowNumber: raisedOn[code], columnName: code === "SRV_NUMBER_IN_OTHER_ISO" ? "weld_number" : null, severity: "blocker", message: "English server sentence", fileName: null }
     for (const entry of buildIssueEntries(submission, [issue])) {
       const ru = describeIssueEntry(translatorFor("ru"), entry)
       assert.notEqual(ru, describeIssueEntry(translatorFor("en"), entry), code)
