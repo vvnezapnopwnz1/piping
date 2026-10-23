@@ -155,7 +155,13 @@
     "validate": "Validate files",
     "validated": "Validated {rows, plural, one {# row} other {# rows}}: {errors, plural, one {# error} other {# errors}}, {warnings, plural, one {# warning} other {# warnings}}.",
     "failed": "The import could not be validated.",
-    "tooMany": "{count, plural, one {# file was} other {# files were}} not added: one import takes at most {limit} files."
+    "tooMany": "{count, plural, one {# file was} other {# files were}} not added: one import takes at most {limit} files.",
+    "done": {
+      "title": "Import applied",
+      "body": "{count, plural, one {# definition row was} other {# definition rows were}} applied to the project.",
+      "browse": "Open spools and welds",
+      "again": "Choose new files above to import another set."
+    }
   },
   "sources": {
     "title": "Import spools and welds",

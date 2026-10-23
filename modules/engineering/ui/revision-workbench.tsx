@@ -30,7 +30,7 @@ export function RevisionWorkbench({
 }: {
   jobId: string | null;
   canManage: boolean;
-  onApplied: () => void;
+  onApplied: (result: { rows: number }) => void;
 }) {
   const t = useTranslations("spooling");
   const [items, setItems] = useState<PreviewChangeItem[]>([]);
@@ -114,7 +114,7 @@ export function RevisionWorkbench({
       } catch (carryError) {
         toast.warning(t("revision.carryOverFailed"), { description: errorDetail(carryError) });
       }
-      onApplied();
+      onApplied({ rows: job.appliedRowCount });
     } catch (e) {
       toast.error(t("revision.applyFailed"), { description: errorDetail(e) });
     } finally {
