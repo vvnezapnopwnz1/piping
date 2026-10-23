@@ -2,12 +2,9 @@
 
 import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
-import { BUILT_IN_TEMPLATES, templateKindOf, type ImportSourceId } from "../domain/import-template"
+import { BUILT_IN_TEMPLATES, type ImportSourceId } from "../domain/import-template"
 
-/**
- * One tile per source, in the order of the built-in templates: the product name, which files it needs, and for PCF the
- * note that the preset was set up from documentation only.
- */
+/** One tile per source, in the order of the built-in templates: the product name and which files it needs. */
 export function ImportSourcePicker({ value, disabled, onChange }: { value: ImportSourceId | null; disabled: boolean; onChange: (source: ImportSourceId) => void }) {
   const t = useTranslations("spooling.sources")
   return (
@@ -26,7 +23,6 @@ export function ImportSourcePicker({ value, disabled, onChange }: { value: Impor
         >
           <span className="font-medium">{name}</span>
           <span className="text-xs text-muted-foreground">{t(`${source}.hint`)}</span>
-          {templateKindOf(source) === "pcf" ? <span className="text-xs text-warning-fg">{t("unverified")}</span> : null}
         </button>
       ))}
     </div>

@@ -160,7 +160,6 @@
   "sources": {
     "title": "Import spools and welds",
     "choose": "Choose where the files come from.",
-    "unverified": "Set up from the documentation; not yet checked on a customer's file.",
     "aveva": {
       "hint": "PCF files from AVEVA E3D or PDMS, one per isometric."
     },
