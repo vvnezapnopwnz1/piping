@@ -27,6 +27,8 @@ export const PCF_SPEC: ProjectSpec = {
   lineServices: [
     { code: "PROCESS", description: "Нефть (технологическая среда)" },
     { code: "WATER", description: "Техническая вода" },
+    // The manifest's RAL codes and paint rules name AIR too; a project without it fails on its references.
+    { code: "AIR", description: "Сжатый воздух" },
   ],
   pdsAreaCode: "PROCESS",
   serviceClasses: {

@@ -3,6 +3,8 @@ import test from "node:test"
 
 import { DEMO_MANIFEST } from "../demo/manifest"
 import { buildDemoReferencePlan } from "../demo/supabase-demo-stand"
+import { NPS_SPEC } from "../nps/dataset"
+import { PCF_SPEC } from "../pcf/dataset"
 import { UPG_SPEC } from "./dataset"
 import { IMPORTED_FAMILIES, referencesFor } from "./references"
 
@@ -69,4 +71,12 @@ test("without the fourth argument the plan is unchanged", () => {
     buildDemoReferencePlan(ids, preparedOn),
     buildDemoReferencePlan(ids, preparedOn, ids.goldenProjectId, DEMO_MANIFEST.references),
   )
+})
+
+test("every demo project keeps the line services its RAL codes and paint rules name", () => {
+  const used = new Set(DEMO_MANIFEST.references.ralCodes.map((row) => row.lineServiceCode))
+  for (const spec of [UPG_SPEC, NPS_SPEC, PCF_SPEC]) {
+    const have = new Set(spec.lineServices.map((service) => service.code))
+    for (const code of used) assert.ok(have.has(code), `${spec.id}: line service ${code} is missing`)
+  }
 })
