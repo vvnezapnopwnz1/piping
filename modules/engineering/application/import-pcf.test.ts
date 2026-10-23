@@ -20,7 +20,7 @@ assert.deepEqual(buildPcfSubmission([b, a], context), forward)
 assert.deepEqual(forward.rows.map((row) => [row.normalizedValues.entity_type, row.normalizedValues.iso_number, row.normalizedValues.spool_number ?? "", row.normalizedValues.weld_number ?? ""]), [
   ["isometric", "ISO-A", "", ""], ["isometric", "ISO-B", "", ""],
   ["spool", "ISO-A", "L-A-S1", ""], ["spool", "ISO-B", "L-B-S1", ""],
-  ["weld_joint", "ISO-A", "L-A-S1", "1"], ["weld_joint", "ISO-A", "L-A-S1", "2"], ["weld_joint", "ISO-B", "L-B-S1", "1"],
+  ["weld_joint", "ISO-A", "L-A-S1", "ISO-A-1"], ["weld_joint", "ISO-A", "L-A-S1", "ISO-A-2"], ["weld_joint", "ISO-B", "L-B-S1", "ISO-B-1"],
 ])
 assert.equal(forward.rows[0].normalizedValues.pds_area, "PDS-A")
 assert.equal(forward.canSubmit, true)

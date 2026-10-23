@@ -27,7 +27,7 @@ const at = (code: Parameters<typeof spoolgenIssue>[0], row: number | null, colum
   spoolgenIssue(code, row, column, { fileName: "ISO-1001.pcf", severity, role: "weld" })
 
 const { records, issues } = pcfToWeldRecords(parsePcf(sample), "ISO-1001.pcf", { pdsArea: "PDS-A", settings: DEFAULT_PCF_SETTINGS })
-assert.deepEqual(records[0].values, { iso_number: "ISO-1001", revision_number: "2", pds_area: "PDS-A", service_class: "CS150", line_number: "100-P-1001", sheet_number: "", spool_number: "100-P-1001-S01", spool_weight_kg: "", material_class: "", weld_number: "5", weld_type: "BW", weld_location: "shop", diameter_inch: "4", thickness_mm: "" })
+assert.deepEqual(records[0].values, { iso_number: "ISO-1001", revision_number: "2", pds_area: "PDS-A", service_class: "CS150", line_number: "100-P-1001", sheet_number: "", spool_number: "100-P-1001-S01", spool_weight_kg: "", material_class: "", weld_number: "ISO-1001-5", weld_type: "BW", weld_location: "shop", diameter_inch: "4", thickness_mm: "" })
 assert.equal(records[0].lineNumber, 12); assert.equal(records[0].fileName, "ISO-1001.pcf"); assert.equal(issues.length, 0)
 assert.equal(records[0].role, "weld"); assert.equal(records.length, 1)
 
@@ -94,9 +94,9 @@ const derived = pcfToWeldRecords(parts, "ISO-9.pcf", { pdsArea: "PDS-A", setting
 assert.deepEqual(derived.issues, [])
 const pick = (keys: string[]) => derived.records.map((record) => keys.map((key) => record.values[key]))
 assert.deepEqual(pick(["weld_number", "weld_type", "spool_number", "service_class", "line_number", "revision_number", "weld_location", "diameter_inch"]), [
-  ["F1", "SW", "S-1", "AS1", "L-1", "0", "field", "2"],
-  ["2", "BW", "S-9", "CS150", "L-1", "0", "shop", "6"],
-  ["3", "SW", "S-2", "SS1", "L-2", "3", "shop", "3"],
+  ["ISO-9-F1", "SW", "S-1", "AS1", "L-1", "0", "field", "2"],
+  ["ISO-9-2", "BW", "S-9", "CS150", "L-1", "0", "shop", "6"],
+  ["ISO-9-3", "SW", "S-2", "SS1", "L-2", "3", "shop", "3"],
 ])
 assert.deepEqual(derived.records.map((record) => record.lineNumber), [5, 22, 33])
 // The master component wins over the neighbour, and a part with no SPOOL-IDENTIFIER hands over to the nearest one before it
@@ -139,5 +139,11 @@ const reducer = read([
   "WELD", "    END-POINT 300 0 0", "    SKEY WW", "    REPEAT-WELD-IDENTIFIER 1",
   "WELD", "    END-POINT 200 0 0", "    SKEY WW", "    REPEAT-WELD-IDENTIFIER 2",
 ].join("\n"))
-assert.deepEqual(reducer.records.map((record) => [record.values.weld_number, record.values.weld_type, record.values.diameter_inch]), [["1", "BW", ""], ["2", "BW", "2"]])
+assert.deepEqual(reducer.records.map((record) => [record.values.weld_number, record.values.weld_type, record.values.diameter_inch]), [["ISO-1001-1", "BW", ""], ["ISO-1001-2", "BW", "2"]])
 assert.deepEqual(reducer.issues, [at("MISSING_VALUE", 10, "diameter_inch")])
+
+// REPEAT-WELD-IDENTIFIER numbers the welds of one isometric, a weld number is one weld of the project: the isometric number goes in front
+const numbered = (fileName: string, settings: typeof DEFAULT_PCF_SETTINGS = DEFAULT_PCF_SETTINGS) => pcfToWeldRecords(parsePcf(["UNITS-BORE MM", "PIPELINE-REFERENCE L-7", "PIPE", "    END-POINT 0 0 0 100 BW", "    END-POINT 100 0 0 100 BW", "    SPOOL-IDENTIFIER S-1", "WELD", "    END-POINT 100 0 0 100", "    SKEY WW", "    REPEAT-WELD-IDENTIFIER 1"].join("\n")), fileName, { pdsArea: "PDS-A", settings }).records.map((record) => record.values.weld_number)
+assert.deepEqual(numbered("A.pcf"), ["A-1"], "the isometric number is the file name by default")
+assert.deepEqual(numbered("B.pcf"), ["B-1"], "so the same identifier in another file is another weld")
+assert.deepEqual(numbered("A.pcf", { ...DEFAULT_PCF_SETTINGS, isoNumberFrom: "pipelineReference" }), ["L-7-1"], "or the pipeline reference, when the template says so")

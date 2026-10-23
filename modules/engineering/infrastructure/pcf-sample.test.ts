@@ -19,9 +19,9 @@ test("the sample PCF reads as one isometric, two spools and three welds, with no
   assert.deepEqual(rowsOf(submission, "isometric").map((v) => [v.iso_number, v.revision_number, v.pds_area, v.service_class, v.line_number]), [["ISO-5001", "B", "A-100", "CS150", "4-NG-5001-CS150"]])
   assert.deepEqual(rowsOf(submission, "spool").map((v) => [v.spool_number, v.sequence_number]), [["5001-S1", "1"], ["5001-S2", "2"]])
   assert.deepEqual(rowsOf(submission, "weld_joint").map((v) => [v.spool_number, v.weld_number, v.weld_type, v.weld_location, v.diameter_inch]), [
-    ["5001-S1", "1", "BW", "shop", "4"],
-    ["5001-S1", "2", "BW", "field", "4"],
-    ["5001-S2", "3", "BW", "shop", "4"],
+    ["5001-S1", "ISO-5001-1", "BW", "shop", "4"],
+    ["5001-S1", "ISO-5001-2", "BW", "field", "4"],
+    ["5001-S2", "ISO-5001-3", "BW", "shop", "4"],
   ])
   assert.equal(submission.rows.length, 6)
 })

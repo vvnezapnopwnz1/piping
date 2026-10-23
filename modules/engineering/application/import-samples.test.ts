@@ -31,21 +31,21 @@ const isometricTable = (submission: SpoolgenSubmission) => rowsOf(submission, "i
 const issueTable = (submission: SpoolgenSubmission) => submission.issues.map((issue) => [issue.code, issue.severity, issue.fileName, issue.rowNumber, issue.columnName])
 
 const ISO_1001: WeldTuple[] = [
-  ["ISO-1001", "1001-SP01", "1", "BW", "shop", "6"], ["ISO-1001", "1001-SP01", "2", "BW", "shop", "6"], ["ISO-1001", "1001-SP01", "3", "BW", "field", "6"],
-  ["ISO-1001", "1001-SP02", "4", "BW", "shop", "6"], ["ISO-1001", "1001-SP02", "5", "BW", "shop", "4"], ["ISO-1001", "1001-SP02", "6", "BW", "field", "4"],
-  ["ISO-1001", "1001-SP03", "7", "BW", "shop", "4"], ["ISO-1001", "1001-SP03", "8", "BW", "shop", "4"],
+  ["ISO-1001", "1001-SP01", "ISO-1001-1", "BW", "shop", "6"], ["ISO-1001", "1001-SP01", "ISO-1001-2", "BW", "shop", "6"], ["ISO-1001", "1001-SP01", "ISO-1001-3", "BW", "field", "6"],
+  ["ISO-1001", "1001-SP02", "ISO-1001-4", "BW", "shop", "6"], ["ISO-1001", "1001-SP02", "ISO-1001-5", "BW", "shop", "4"], ["ISO-1001", "1001-SP02", "ISO-1001-6", "BW", "field", "4"],
+  ["ISO-1001", "1001-SP03", "ISO-1001-7", "BW", "shop", "4"], ["ISO-1001", "1001-SP03", "ISO-1001-8", "BW", "shop", "4"],
 ]
 const ISO_1002: WeldTuple[] = [
-  ["ISO-1002", "ISO-1002", "1", "BW", "shop", "4"], ["ISO-1002", "ISO-1002", "2", "BW", "field", "4"],
-  ["ISO-1002", "ISO-1002", "3", "BW", "shop", "4"], ["ISO-1002", "ISO-1002", "4", "BW", "shop", "2"],
+  ["ISO-1002", "ISO-1002", "ISO-1002-1", "BW", "shop", "4"], ["ISO-1002", "ISO-1002", "ISO-1002-2", "BW", "field", "4"],
+  ["ISO-1002", "ISO-1002", "ISO-1002-3", "BW", "shop", "4"], ["ISO-1002", "ISO-1002", "ISO-1002-4", "BW", "shop", "2"],
 ]
 const ISO_2001: WeldTuple[] = [
-  ["ISO-2001", "2001-S1", "1", "BW", "shop", "2"], ["ISO-2001", "2001-S1", "2", "SW", "shop", "2"], ["ISO-2001", "2001-S1", "3", "SW", "field", "2"],
-  ["ISO-2001", "2001-S2", "4", "SW", "shop", "2"], ["ISO-2001", "2001-S2", "5", "SW", "shop", "0.75"],
+  ["ISO-2001", "2001-S1", "ISO-2001-1", "BW", "shop", "2"], ["ISO-2001", "2001-S1", "ISO-2001-2", "SW", "shop", "2"], ["ISO-2001", "2001-S1", "ISO-2001-3", "SW", "field", "2"],
+  ["ISO-2001", "2001-S2", "ISO-2001-4", "SW", "shop", "2"], ["ISO-2001", "2001-S2", "ISO-2001-5", "SW", "shop", "0.75"],
 ]
 const ISO_3001: WeldTuple[] = [
-  ["ISO-3001", "3001-1", "1", "BW", "shop", "6"], ["ISO-3001", "3001-1", "2", "BW", "shop", "6"], ["ISO-3001", "3001-1", "3", "BW", "field", "6"],
-  ["ISO-3001", "3001-2", "4", "BW", "shop", "6"], ["ISO-3001", "3001-2", "5", "BW", "shop", "4"], ["ISO-3001", "3001-2", "6", "BW", "shop", "4"],
+  ["ISO-3001", "3001-1", "ISO-3001-1", "BW", "shop", "6"], ["ISO-3001", "3001-1", "ISO-3001-2", "BW", "shop", "6"], ["ISO-3001", "3001-1", "ISO-3001-3", "BW", "field", "6"],
+  ["ISO-3001", "3001-2", "ISO-3001-4", "BW", "shop", "6"], ["ISO-3001", "3001-2", "ISO-3001-5", "BW", "shop", "4"], ["ISO-3001", "3001-2", "ISO-3001-6", "BW", "shop", "4"],
 ]
 
 test("each sample keeps the dialect it was written to exercise", () => {
@@ -126,13 +126,13 @@ test("the samples are sensitive to the rules they are there for", () => {
     return before.flatMap((row, index) => (row.join("|") === after[index].join("|") ? [] : [[row[2], ...after[index].slice(1)]]))
   }
   // MASTER-COMPONENT-IDENTIFIER: weld 3 is written after the pipe of the next spool, and only its master keeps it in the elbow's spool
-  assert.deepEqual(differences(aveva[0], /^ {4}MASTER-COMPONENT-IDENTIFIER .*\n/gm), [["3", "1001-SP02", "3", "BW", "field", "6"]])
+  assert.deepEqual(differences(aveva[0], /^ {4}MASTER-COMPONENT-IDENTIFIER .*\n/gm), [["ISO-1001-3", "1001-SP02", "ISO-1001-3", "BW", "field", "6"]])
   // WELD-TYPE: a weld next to a plain pipe end would otherwise read PL, the end type of that pipe
-  assert.deepEqual(differences(hexagon[0], /^ {4}WELD-TYPE .*\n/gm), [["2", "2001-S1", "2", "PL", "shop", "2"], ["4", "2001-S2", "4", "PL", "shop", "2"]])
+  assert.deepEqual(differences(hexagon[0], /^ {4}WELD-TYPE .*\n/gm), [["ISO-2001-2", "2001-S1", "ISO-2001-2", "PL", "shop", "2"], ["ISO-2001-4", "2001-S2", "ISO-2001-4", "PL", "shop", "2"]])
   // CATEGORY: these welds have no SKEY, so the place of a weld is missing without it
   assert.deepEqual(read(hexagon[0], /^ {4}CATEGORY .*\n/gm).issues.map((issue) => [issue.code, issue.columnName]), Array(5).fill(["MISSING_VALUE", "weld_location"]))
   // The template's code map: the flange welds of the Plant 3D file end in WN and become BW only through it
-  assert.deepEqual(differences(plant3d[0], undefined, { ...DEFAULT_PCF_SETTINGS, weldTypeByCode: {} }), [["1", "3001-1", "1", "WN", "shop", "6"], ["6", "3001-2", "6", "WN", "shop", "4"]])
+  assert.deepEqual(differences(plant3d[0], undefined, { ...DEFAULT_PCF_SETTINGS, weldTypeByCode: {} }), [["ISO-3001-1", "3001-1", "ISO-3001-1", "WN", "shop", "6"], ["ISO-3001-6", "3001-2", "ISO-3001-6", "WN", "shop", "4"]])
   // The SKEY of the part gives the type where the file has no end type: without it every Plant 3D weld has none
   assert.deepEqual(read(plant3d[0], /^\tSKEY (FL|EL|RC)\w+\r\n/gm).issues.map((issue) => [issue.code, issue.columnName]), Array(6).fill(["MISSING_VALUE", "weld_type"]))
 })

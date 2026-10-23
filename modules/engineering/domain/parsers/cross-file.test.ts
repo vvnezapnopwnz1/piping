@@ -33,6 +33,11 @@ assert.deepEqual(checkWeldDuplicates([weld(1), weld(2), weld(3, { diameter_inch:
 assert.deepEqual(checkWeldDuplicates([weld(1, { weld_number: "" }), weld(2, { weld_number: "" })]), [])
 // The issue names the file and role of the later record
 assert.deepEqual(checkWeldDuplicates([filed(weld(5), "a.pcf"), filed(weld(9, { diameter_inch: "4" }), "b.pcf")]).map((issue) => [issue.rowNumber, issue.fileName, issue.role]), [[9, "b.pcf", "weld"]])
-// The same number in another isometric is another weld (PCF numbers welds from 1 in every isometric): not reported here
-assert.deepEqual(checkWeldDuplicates([weld(1), weld(2, { iso_number: "ISO-B" })]), [])
-assert.deepEqual(checkWeldDuplicates([weld(1), weld(2, { iso_number: "ISO-B", diameter_inch: "4" })]), [])
+// The same number in another isometric is one weld of the project to the database, so it is an error whatever else the row says
+for (const change of <Record<string, string>[]>[{ iso_number: "ISO-B" }, { iso_number: "ISO-B", diameter_inch: "4" }]) {
+  assert.deepEqual(checkWeldDuplicates([weld(1), weld(2, change)]).map((issue) => [issue.rowNumber, issue.code, issue.severity]), [[2, "WELD_NUMBER_IN_OTHER_ISO", "blocker"]], JSON.stringify(change))
+}
+// A prefixed number is another weld: ISO-A-1 and ISO-B-1 are fine
+assert.deepEqual(checkWeldDuplicates([weld(1, { weld_number: "ISO-A-1" }), weld(2, { iso_number: "ISO-B", weld_number: "ISO-B-1" })]), [])
+// Reported once per row: a third row in the second isometric repeats a number its own isometric already has
+assert.deepEqual(checkWeldDuplicates([weld(1), weld(2, { iso_number: "ISO-B" }), weld(3, { iso_number: "ISO-B" })]).map((issue) => [issue.rowNumber, issue.code]), [[2, "WELD_NUMBER_IN_OTHER_ISO"], [3, "WELD_DUPLICATE_SAME"]])

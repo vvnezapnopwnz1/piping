@@ -27,6 +27,8 @@ const withoutExtension = (fileName: string) => fileName.replace(/\.[^.]*$/, "")
  * MESSAGE-SQUARE or SUPPORT is skipped). A spool is looked for the same way; a file with none takes its own name.
  * Implied welds (two components with no WELD between them) are not read in this version. Values the file does not give
  * are missing values at the weld's line; a weld without REPEAT-WELD-IDENTIFIER gives no record, its number is never invented.
+ * REPEAT-WELD-IDENTIFIER numbers the welds of one isometric (every file starts from 1), while a weld number is one weld of the
+ * whole project, so the number of the record is the isometric number and the identifier: `ISO-A-1`.
  */
 export function pcfToWeldRecords(file: PcfFile, fileName: string, context: { pdsArea: string; settings: PcfTemplateSettings }): { records: SpoolgenRecord[]; issues: SpoolgenIssue[] } {
   const { settings } = context
@@ -58,11 +60,13 @@ export function pcfToWeldRecords(file: PcfFile, fileName: string, context: { pds
     const spool = spoolInFile ? read(weld, "SPOOL-IDENTIFIER") ?? read(part, "SPOOL-IDENTIFIER") ?? read(blockAt(nearest(at, hasSpool)), "SPOOL-IDENTIFIER") ?? "" : withoutExtension(fileName)
     // With no bore on the weld, the part's end at the weld gives it; a part whose ends differ (a reducer) gives none rather than its first end.
     const partBores = new Set(partPoints.map((point) => point.bore)); const bore = weldPoint?.bore ?? partEnd?.bore ?? (partBores.size === 1 ? [...partBores][0] : null); const inch = bore === null ? null : boreToInch(bore, unit)
+    const isoNumber = settings.isoNumberFrom === "pipelineReference" ? pipeline?.value ?? "" : withoutExtension(fileName)
+    const identifier = read(weld, "REPEAT-WELD-IDENTIFIER")
     const values: Record<string, string> = {
-      iso_number: settings.isoNumberFrom === "pipelineReference" ? pipeline?.value ?? "" : withoutExtension(fileName),
+      iso_number: isoNumber,
       revision_number: read(pipeline, "REVISION") ?? settings.defaultRevision ?? "", pds_area: context.pdsArea,
       service_class: spec === null ? "" : mapped(settings.serviceClassBySpec, spec) ?? spec, line_number: pipeline?.value ?? "", sheet_number: "",
-      spool_number: spool, spool_weight_kg: "", material_class: "", weld_number: read(weld, "REPEAT-WELD-IDENTIFIER") ?? "",
+      spool_number: spool, spool_weight_kg: "", material_class: "", weld_number: identifier === null ? "" : isoNumber === "" ? identifier : `${isoNumber}-${identifier}`,
       weld_type: rawType === null ? "" : mapped(settings.weldTypeByCode, rawType) ?? rawType,
       weld_location: mapped(settings.weldLocationBySkey, code(weld, "SKEY")) ?? mapped(LOCATION_BY_CATEGORY, code(weld, "CATEGORY")) ?? "",
       diameter_inch: inch === null ? "" : String(inch), thickness_mm: "",

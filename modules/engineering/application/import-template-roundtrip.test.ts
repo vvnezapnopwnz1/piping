@@ -69,8 +69,8 @@ test("the sample PCF reads with no issue", () => {
   assert.deepEqual(submission.issues, [])
   assert.equal(submission.canSubmit, true)
   assert.deepEqual(rowsOf(submission, "weld_joint").map((v) => [v.spool_number, v.weld_number, v.weld_type, v.weld_location, v.diameter_inch]), [
-    ["5001-S1", "1", "BW", "shop", "4"],
-    ["5001-S1", "2", "BW", "field", "4"],
-    ["5001-S2", "3", "BW", "shop", "4"],
+    ["5001-S1", "ISO-5001-1", "BW", "shop", "4"],
+    ["5001-S1", "ISO-5001-2", "BW", "field", "4"],
+    ["5001-S2", "ISO-5001-3", "BW", "shop", "4"],
   ])
 })

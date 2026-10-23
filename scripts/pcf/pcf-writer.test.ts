@@ -9,7 +9,7 @@ import { NPS_SPEC } from "../nps/dataset"
 import { isosOf } from "../upg/builders"
 import { UPG_SPEC } from "../upg/dataset"
 import { PCF_SPEC } from "./dataset"
-import { dnOfInch, pcfFileName, pcfFiles, pcfText } from "./pcf-writer"
+import { dnOfInch, pcfFileName, pcfFiles, pcfText, weldIdentifier } from "./pcf-writer"
 
 test("(а) each ISO builds a valid submission with exact welds matching specification", () => {
   for (const spec of [PCF_SPEC, UPG_SPEC, NPS_SPEC]) {
@@ -36,7 +36,7 @@ test("(а) each ISO builds a valid submission with exact welds matching specific
       const expectedTuples = iso.spools.flatMap((spool) =>
         spool.welds.map(
           (weld) =>
-            `${iso.isoNumber}|${spool.spoolNumber}|${weld.weldNumber}|${weld.location}|${weld.weldType}|${weld.diameterInch}`,
+            `${iso.isoNumber}|${spool.spoolNumber}|${iso.isoNumber}-${weldIdentifier(iso, weld.weldNumber)}|${weld.location}|${weld.weldType}|${weld.diameterInch}`,
         ),
       )
 
@@ -93,7 +93,7 @@ test("(а) all PCF_SPEC files submitted together yield matching isometric, spool
     iso.spools.flatMap((spool) =>
       spool.welds.map(
         (weld) =>
-          `${iso.isoNumber}|${spool.spoolNumber}|${weld.weldNumber}|${weld.location}|${weld.weldType}|${weld.diameterInch}`,
+          `${iso.isoNumber}|${spool.spoolNumber}|${iso.isoNumber}-${weldIdentifier(iso, weld.weldNumber)}|${weld.location}|${weld.weldType}|${weld.diameterInch}`,
       ),
     ),
   )
@@ -176,4 +176,16 @@ test("(д) pcfText is deterministic, contains no tabs, and ends with newline", (
     assert.doesNotMatch(text1, /\t/)
     assert.ok(text1.endsWith("\n"))
   }
+})
+
+test("the identifiers are the welds' places in the isometric, from 1, so no two files share a project-wide number", () => {
+  const ids = (text: string) => [...text.matchAll(/REPEAT-WELD-IDENTIFIER (\d+)/g)].map((m) => Number(m[1]))
+  for (const file of pcfFiles(PCF_SPEC)) {
+    const found = ids(file.text)
+    assert.deepEqual([...found].sort((a, b) => a - b), found.map((_, index) => index + 1), `${file.fileName}: 1..n, each once`)
+  }
+  const submission = buildPcfSubmission(pcfFiles(PCF_SPEC), { pdsArea: "A-100", settings: DEFAULT_PCF_SETTINGS })
+  const numbers = submission.rows.filter((row) => row.normalizedValues.entity_type === "weld_joint").map((row) => row.normalizedValues.weld_number)
+  assert.equal(new Set(numbers).size, numbers.length, "unique over the whole upload")
+  assert.deepEqual(submission.issues.filter((issue) => issue.severity === "blocker"), [])
 })

@@ -104,6 +104,16 @@ export function pcfFiles(spec: ProjectSpec): { fileName: string; text: string }[
 
 type PartKind = "FLANGE" | "PIPE" | "ELBOW" | "TEE"
 
+/**
+ * What the PCF writes as REPEAT-WELD-IDENTIFIER: the weld's place in its isometric, from 1, as a CAD system numbers
+ * the welds of a drawing. The import reads the weld number as the isometric number and this, e.g. `PCF-100-1001-3`.
+ */
+export function weldIdentifier(iso: UpgIso, weldNumber: string): number {
+  const index = iso.spools.flatMap((spool) => spool.welds).findIndex((weld) => weld.weldNumber === weldNumber)
+  if (index < 0) throw new Error(`${weldNumber} is not a weld of ${iso.isoNumber}.`)
+  return index + 1
+}
+
 export function pcfText(iso: UpgIso): string {
   const lines: string[] = [
     "ISOGEN-FILES ISOGEN.FLS",
@@ -295,7 +305,7 @@ export function pcfText(iso: UpgIso): string {
         lines.push(`    MASTER-COMPONENT-IDENTIFIER ${teeId}`)
         lines.push(`    END-POINT ${fmt(end)} ${dnOfInch(bwWeld.diameterInch)}`)
         lines.push(`    SKEY WW`)
-        lines.push(`    REPEAT-WELD-IDENTIFIER ${bwWeld.weldNumber}`)
+        lines.push(`    REPEAT-WELD-IDENTIFIER ${weldIdentifier(iso, bwWeld.weldNumber)}`)
 
         // Branch SW weld and nipple pipe
         const branchWeldId = componentId++
@@ -305,7 +315,7 @@ export function pcfText(iso: UpgIso): string {
         lines.push(`    MASTER-COMPONENT-IDENTIFIER ${nipplePipeId}`)
         lines.push(`    END-POINT ${fmt(branchPoint)} ${branchDN}`)
         lines.push(`    SKEY WW`)
-        lines.push(`    REPEAT-WELD-IDENTIFIER ${swWeld!.weldNumber}`)
+        lines.push(`    REPEAT-WELD-IDENTIFIER ${weldIdentifier(iso, swWeld!.weldNumber)}`)
 
         const nippleEnd: Point3D = {
           x: branchPoint.x + 150 * branchDir.x,
@@ -329,7 +339,7 @@ export function pcfText(iso: UpgIso): string {
         lines.push(`    MASTER-COMPONENT-IDENTIFIER ${lastMainPartId}`)
         lines.push(`    END-POINT ${fmt(currentPoint)} ${dnOfInch(bwWeld.diameterInch)}`)
         lines.push(`    SKEY WW`)
-        lines.push(`    REPEAT-WELD-IDENTIFIER ${bwWeld.weldNumber}`)
+        lines.push(`    REPEAT-WELD-IDENTIFIER ${weldIdentifier(iso, bwWeld.weldNumber)}`)
       }
     }
 
@@ -340,7 +350,7 @@ export function pcfText(iso: UpgIso): string {
     lines.push(`    MASTER-COMPONENT-IDENTIFIER ${lastMainPartId}`)
     lines.push(`    END-POINT ${fmt(currentPoint)} ${dnOfInch(fieldWeld.diameterInch)}`)
     lines.push(`    SKEY WS`)
-    lines.push(`    REPEAT-WELD-IDENTIFIER ${fieldWeld.weldNumber}`)
+    lines.push(`    REPEAT-WELD-IDENTIFIER ${weldIdentifier(iso, fieldWeld.weldNumber)}`)
   }
 
   lines.push("MATERIALS")
