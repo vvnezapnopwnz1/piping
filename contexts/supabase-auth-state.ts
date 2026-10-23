@@ -2,6 +2,7 @@ export type SupabaseAccessState =
   | "loading"
   | "unauthenticated"
   | "no_membership"
+  | "choose_project"
   | "authorized"
 
 export interface SupabaseAccessUser {
@@ -25,13 +26,18 @@ export interface SupabaseProjectAccessDisplay extends MembershipProjectDisplay {
 
 export function deriveSupabaseAccessState(
   user: SupabaseAccessUser | null,
-  access: SupabaseProjectAccess | null
+  access: SupabaseProjectAccess | null,
+  projectCount = 0
 ): Exclude<SupabaseAccessState, "loading"> {
   if (!user) {
     return "unauthenticated"
   }
 
-  return access ? "authorized" : "no_membership"
+  if (access) {
+    return "authorized"
+  }
+
+  return projectCount > 0 ? "choose_project" : "no_membership"
 }
 
 export function synchronizeProjectAccessDisplay<
@@ -64,14 +70,17 @@ export function sortProjectAccessesForDisplay<Access extends SupabaseProjectAcce
   )
 }
 
+/**
+ * The project a fresh load opens: the one the address names or this browser remembers, or the
+ * only one the user has. With several and none of them named, nothing opens and the user picks
+ * one from the catalog, instead of landing in whichever project happens to be the oldest.
+ */
 export function resolveActiveProjectAccess<Access extends SupabaseProjectAccessDisplay>(
   accesses: readonly Access[],
   preferredProjectId: string | null,
 ): Access | null {
-  const sorted = sortProjectAccessesForDisplay(accesses)
-  return sorted.find((access) => access.projectId === preferredProjectId)
-    ?? sorted[0]
-    ?? null
+  return accesses.find((access) => access.projectId === preferredProjectId)
+    ?? (accesses.length === 1 ? accesses[0] : null)
 }
 
 /**

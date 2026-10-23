@@ -117,7 +117,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
       setProjectAccesses(sortProjectAccessesForDisplay(projectAccesses))
       setAccess(activeAccess)
       setAccessState(
-        deriveSupabaseAccessState(sessionUser, activeAccess)
+        deriveSupabaseAccessState(sessionUser, activeAccess, projectAccesses.length)
       )
       safelyWriteOrRemoveLocalStorage(
         storageKey,
@@ -177,6 +177,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
         if (!next) return currentProjectAccesses
 
         setAccess(next)
+        setAccessState("authorized")
         safelyWriteOrRemoveLocalStorage(
           activeProjectStorageKey(user.id),
           next.projectId

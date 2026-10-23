@@ -68,7 +68,8 @@ function LoadingScreen() {
 // Demo stand: the shared platform admin starts with no project, so land on the catalog where it can create one.
 const IS_DEMO_STAND = Boolean(process.env.NEXT_PUBLIC_DEMO_AUTOLOGIN_EMAIL)
 
-function DemoCatalogRedirect() {
+/** The catalog, for a user with no project open: one to create, or several to pick from. */
+function CatalogRedirect() {
   const router = useRouter()
   React.useEffect(() => {
     router.replace("/projects")
@@ -89,10 +90,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       return <LoginScreen />
     case "access_pending":
       return IS_DEMO_STAND ? (
-        <DemoCatalogRedirect />
+        <CatalogRedirect />
       ) : (
         <AccessPendingScreen email={user?.email} onSignOut={signOut} />
       )
+    case "choose_project":
+      return <CatalogRedirect />
     case "catalog":
       return <ProjectCatalogShell>{children}</ProjectCatalogShell>
     case "shell":

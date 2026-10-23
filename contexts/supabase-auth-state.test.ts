@@ -14,6 +14,7 @@ import {
 
 assert.equal(deriveSupabaseAccessState(null, null), "unauthenticated")
 assert.equal(deriveSupabaseAccessState({ id: "user" }, null), "no_membership")
+assert.equal(deriveSupabaseAccessState({ id: "user" }, null, 2), "choose_project")
 assert.equal(
   deriveSupabaseAccessState(
     { id: "user" },
@@ -76,8 +77,11 @@ const accesses = [
 ]
 
 assert.equal(resolveActiveProjectAccess(accesses, "project-b")?.projectId, "project-b")
-assert.equal(resolveActiveProjectAccess(accesses, "missing-project")?.projectId, "project-a")
-assert.equal(resolveActiveProjectAccess(accesses, null)?.projectId, "project-a")
+// Several projects and none named: nothing opens, the user picks one from the catalog.
+assert.equal(resolveActiveProjectAccess(accesses, "missing-project"), null)
+assert.equal(resolveActiveProjectAccess(accesses, null), null)
+// The only project opens without a detour through the catalog.
+assert.equal(resolveActiveProjectAccess([accesses[0]], null)?.projectId, "project-b")
 assert.equal(resolveActiveProjectAccess([], "project-a"), null)
 assert.equal(activeProjectStorageKey("user-1"), "pipeqc.active-project:user-1")
 
@@ -103,9 +107,9 @@ assert.deepEqual(
 )
 assert.equal(accesses[0].projectId, "project-b")
 
-// Regression: an alphabetically-later activity_code created earlier must
-// still win the default pick over an alphabetically-earlier one created
-// later (e.g. TRACK01-A predates SHOWCASE-1 but "S" < "T").
+// Regression: an alphabetically-later activity_code created earlier still
+// lists first, ahead of an alphabetically-earlier one created later
+// (e.g. TRACK01-A predates SHOWCASE-1 but "S" < "T").
 const createdAtOrderAccesses = [
   {
     membershipId: "membership-showcase",
@@ -129,7 +133,7 @@ const createdAtOrderAccesses = [
   },
 ]
 assert.equal(
-  resolveActiveProjectAccess(createdAtOrderAccesses, null)?.projectId,
+  sortProjectAccessesForDisplay(createdAtOrderAccesses)[0].projectId,
   "project-track01",
 )
 
