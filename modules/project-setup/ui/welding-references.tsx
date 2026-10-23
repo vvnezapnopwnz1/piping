@@ -586,17 +586,26 @@ export function WeldingReferences({
         prev
           ? {
               ...prev,
-              ndeMatrixRules: [...prev.ndeMatrixRules, newRule],
+              // The insert returns ids only; the codes shown in the table come from the lists already loaded.
+              ndeMatrixRules: [
+                ...prev.ndeMatrixRules,
+                {
+                  ...newRule,
+                  serviceClassCode: prev.serviceClasses.find((sc) => sc.id === newRule.serviceClassId)?.code,
+                  weldTypeCode: prev.weldTypes.find((wt) => wt.id === newRule.weldTypeId)?.code,
+                },
+              ],
             }
           : null
       )
       if (!addAnother) setIsAddNdeOpen(false)
-      setNdeRt("")
-      setNdeUt("")
-      setNdeMt("")
-      setNdePt("")
-      setNdePmi("")
-      setNdeHt("")
+      // The form's own starting values, so the next rule begins where the first one did.
+      setNdeRt("100")
+      setNdeUt("0")
+      setNdeMt("0")
+      setNdePt("0")
+      setNdePmi("0")
+      setNdeHt("0")
       setNdePwhtThick("")
       if (!addAnother) {
         setNdeScId("")
