@@ -42,3 +42,19 @@ assert.ok(parseSpoolgenMatrix("weld", [["ISO_NUMBER", "DIAMETER_INCH"], ["ISO-A"
 const location = (value: string) => parseSpoolgenMatrix("weld", [[...matrixHeader, "WELD_LOCATION"], ["ISO-A", "R0", "PDS-A", "SC-A", "SP-1", "W-1", "BW", "6", "8", value]]).records[0].values.weld_location
 for (const [input, expected] of [["цех", "shop"], ["Заводской", "shop"], ["SHOP", "shop"], ["s", "shop"], ["монтаж", "field"], ["Монтажный", "field"], ["Field", "field"], ["F", "field"], ["site", "field"], ["Assembly", "assembly"], ["unknown", "unknown"], ["", ""]])
   assert.equal(location(input), expected, input)
+
+// The manual (19.1): a size in fractions is written 2.1/2 and read as 2.5; 1/2 and 2 1/2 are read the same way, a zero denominator is no number
+const sized = (size: string) => parseSpoolgenFile("weld", `${header}\nISO-A\tR0\tPDS-A\tSC-A\tSP-1\tW-1\tBW\t${size}\t8.2`)
+assert.equal(sized("2.1/2").records[0].values.diameter_inch, "2.5")
+assert.equal(sized("1/2").records[0].values.diameter_inch, "0.5")
+assert.equal(sized("2 1/2").records[0].values.diameter_inch, "2.5")
+assert.equal(sized("3.3/4").records[0].values.diameter_inch, "3.75")
+assert.deepEqual(sized("2.1/2").issues, [])
+assert.equal(sized("1/0").issues.find((issue) => issue.code === "INVALID_NUMBER")?.columnName, "diameter_inch")
+// A size, a thickness and a count are above zero; the message says so, not "not a number"
+for (const bad of ["0", "-4", "-0.5"]) assert.deepEqual(sized(bad).issues.map((issue) => [issue.code, issue.columnName, issue.rowNumber]), [["NOT_POSITIVE_NUMBER", "diameter_inch", 1]], bad)
+assert.deepEqual(parseSpoolgenFile("weld", `${header}\nISO-A\tR0\tPDS-A\tSC-A\tSP-1\tW-1\tBW\t6\t-8.2`).issues.map((issue) => [issue.code, issue.columnName]), [["NOT_POSITIVE_NUMBER", "thickness_mm"]])
+assert.deepEqual(parseSpoolgenFile("bolt", "ISO_NUMBER\tSPOOL_NUMBER\tFLANGE_NUMBER\tBOLT_QUANTITY\nISO-A\tSP-1\tBT01\t0").issues.map((issue) => [issue.code, issue.columnName]), [["NOT_POSITIVE_NUMBER", "bolt_quantity"]])
+assert.deepEqual(parseSpoolgenFile("supp", "ISO_NUMBER\tSPOOL_NUMBER\tSUPPORT_NUMBER\tQUANTITY\nISO-A\tSP-1\tSU-1\t-1").issues.map((issue) => [issue.code, issue.columnName]), [["NOT_POSITIVE_NUMBER", "quantity"]])
+// A weight may be left at 0, and a blank is blank
+assert.deepEqual(parseSpoolgenFile("weld", `ISO_NUMBER\tISO_REVISION\tPDS_AREA\tSERVICE_CLASS\tSPOOL_NUMBER\tWELD_NUMBER\tWELD_TYPE\tDIAMETER_INCH\tSPOOL_WEIGHT_KG\nISO-A\tR0\tP\tS\tSP-1\tW-1\tBW\t6\t0`).issues, [])

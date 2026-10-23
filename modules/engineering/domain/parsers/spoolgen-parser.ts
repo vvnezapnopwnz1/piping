@@ -10,9 +10,18 @@ export interface SpoolgenRecord {
 }
 export interface SpoolgenParseResult { records: SpoolgenRecord[]; issues: SpoolgenIssue[] }
 const WELD_LOCATIONS = new Map([["цех", "shop"], ["заводской", "shop"], ["shop", "shop"], ["s", "shop"], ["монтаж", "field"], ["монтажный", "field"], ["field", "field"], ["f", "field"], ["site", "field"], ["assembly", "assembly"]])
+/** A size, a thickness and a count of things are above zero; a weight may be left at 0. */
+const POSITIVE_KEYS: ReadonlySet<string> = new Set(["diameter_inch", "thickness_mm", "quantity", "bolt_quantity"])
 const cellText = (cell: unknown): string => (cell === null || cell === undefined ? "" : String(cell).trim())
 // A decimal comma becomes a point in numeric columns; a weld location is spelled the way the server stores it. Anything else passes through for the server to judge.
+/** The manual (19.1): a size in fractions is written 2.1/2 and read as 2.5; plain 1/2 and 2 1/2 are read the same way. */
+function fractionToDecimal(value: string): string | null {
+  const match = /^(?:(\d+)[. ])?(\d+)\/(\d+)$/.exec(value)
+  if (match === null || Number(match[3]) === 0) return null
+  return String(Number(match[1] ?? 0) + Number(match[2]) / Number(match[3]))
+}
 function normalizeCell(column: SpoolgenColumn, value: string): string {
+  if (column.key === "diameter_inch") { const fraction = fractionToDecimal(value); if (fraction !== null) return fraction }
   if (column.numeric && /^-?\d+,\d+$/.test(value)) return value.replace(",", ".")
   if (column.key === "weld_location") return WELD_LOCATIONS.get(value.toLowerCase()) ?? value
   return value
@@ -27,7 +36,11 @@ export function parseSpoolgenMatrix(role: SpoolgenFileRole, matrix: readonly (re
     const values: Record<string, string> = {}; for (const column of SPOOLGEN_CONTRACT[role]) values[column.key] = indexes.get(column.key) === undefined ? "" : normalizeCell(column, cellText(matrix[line][indexes.get(column.key)!]))
     if (Object.values(values).every((value) => value === "")) continue
     for (const key of requiredKeysFor(role)) if (values[key] === "") issues.push(spoolgenIssue("MISSING_VALUE", line, key))
-    for (const key of numericKeysFor(role)) if (values[key] !== "" && !Number.isFinite(Number(values[key]))) issues.push(spoolgenIssue("INVALID_NUMBER", line, key))
+    for (const key of numericKeysFor(role)) {
+      if (values[key] === "") continue
+      if (!Number.isFinite(Number(values[key]))) issues.push(spoolgenIssue("INVALID_NUMBER", line, key))
+      else if (POSITIVE_KEYS.has(key) && Number(values[key]) <= 0) issues.push(spoolgenIssue("NOT_POSITIVE_NUMBER", line, key))
+    }
     records.push({ role, lineNumber: line, fileName: null, values })
   }
   return { records, issues }

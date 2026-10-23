@@ -1,5 +1,5 @@
 import { buildStagingEntries, type StagingRow } from "../domain/definition"
-import { checkCrossFileConsistency, checkIsoUniformity, checkWeldDuplicates, emptyFileSet, type SpoolgenFileSet } from "../domain/parsers/cross-file"
+import { checkCrossFileConsistency, checkIsoUniformity, checkNumberUniqueness, emptyFileSet, type SpoolgenFileSet } from "../domain/parsers/cross-file"
 import { parseSpoolgenFile, type SpoolgenRecord } from "../domain/parsers/spoolgen-parser"
 import { spoolgenIssue, type SpoolgenIssue } from "../domain/spoolgen-issue"
 import { SPOOLGEN_FILE_ROLES, missingRequiredRoles, type SpoolgenFileRole } from "../domain/spoolgen-file"
@@ -8,7 +8,7 @@ import { SPOOLGEN_FILE_ROLES, missingRequiredRoles, type SpoolgenFileRole } from
 export interface SpoolgenSubmission { rows: StagingRow[]; rowSources: readonly (readonly SpoolgenRecord[])[]; issues: SpoolgenIssue[]; summary: { blockerCount: number; warningCount: number }; canSubmit: boolean }
 // Every source ends here: the records of one upload, the issues found while reading them, and whether the upload can be sent at all.
 export function buildSubmissionFromSet(set: SpoolgenFileSet, issues: readonly SpoolgenIssue[], canSubmit: boolean): SpoolgenSubmission {
-  const all = [...issues, ...checkIsoUniformity(set.weld), ...checkWeldDuplicates(set.weld), ...checkCrossFileConsistency(set)]
+  const all = [...issues, ...checkIsoUniformity(set.weld), ...checkNumberUniqueness(set), ...checkCrossFileConsistency(set)]
   const blockerCount = all.filter((issue) => issue.severity === "blocker").length
   const warningCount = all.filter((issue) => issue.severity === "warning").length
   const entries = buildStagingEntries(set)

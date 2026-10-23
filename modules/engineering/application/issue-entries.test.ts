@@ -36,7 +36,7 @@ test("a server error on an isometric points at every weld row of it, in Excel's 
 })
 
 test("two isometrics with the same unknown area are one entry with the rows of both", () => {
-  const submission = submit(sheet("weld", WELD_HEADER, [[2, weld("ISO-A", "SP-1", "W-1")], [3, weld("ISO-A", "SP-1", "W-2")], [4, weld("ISO-B", "SP-1", "W-3")], [5, weld("ISO-B", "SP-1", "W-4")]]))
+  const submission = submit(sheet("weld", WELD_HEADER, [[2, weld("ISO-A", "SP-1", "W-1")], [3, weld("ISO-A", "SP-1", "W-2")], [4, weld("ISO-B", "SP-2", "W-3")], [5, weld("ISO-B", "SP-2", "W-4")]]))
   const entries = buildIssueEntries(submission, [stored("SRV_PDS_MISSING", stagingRow(submission, "isometric", "iso_number", "ISO-A"), "pds_area"), stored("SRV_PDS_MISSING", stagingRow(submission, "isometric", "iso_number", "ISO-B"), "pds_area")])
   assert.deepEqual(entries.map((entry) => [entry.code, entry.args, entry.place.rows]), [["SRV_PDS_MISSING", { pdsArea: "Z-999" }, [2, 3, 4, 5]]])
 })
@@ -127,7 +127,7 @@ test("a PCF issue names the field it misses, one entry per field", () => {
 })
 
 test("seven and a half thousand welds with one error each are one entry, built without a pause", () => {
-  const rows = range(2, 7501).map((row) => [row, weld(`ISO-${Math.floor(row / 50)}`, "SP-1", `W-${row}`, { weldType: "XX" })] as const)
+  const rows = range(2, 7501).map((row) => [row, weld(`ISO-${Math.floor(row / 50)}`, `SP-${Math.floor(row / 50)}`, `W-${row}`, { weldType: "XX" })] as const)
   const submission = submit(sheet("weld", WELD_HEADER, rows))
   const stored = submission.rows.filter((row) => row.normalizedValues.entity_type === "weld_joint").map((row) => ({ code: "SRV_WELD_TYPE_MISSING", rowNumber: row.rowNumber, columnName: "weld_type", severity: "blocker" as const, message: "m", fileName: null }))
   const started = performance.now()
@@ -148,11 +148,36 @@ test("a weld number used again in an isometric is one error entry naming the num
     ])),
     [],
   )
-  const duplicates = entries.filter((entry) => entry.code.startsWith("WELD_DUPLICATE"))
+  const duplicates = entries.filter((entry) => entry.code.startsWith("NUMBER_DUPLICATE"))
   assert.deepEqual(duplicates.map((entry) => [entry.severity, entry.code, entry.args, entry.place.rows]), [
-    ["blocker", "WELD_DUPLICATE", { weld: "W-1" }, [4]],
-    ["warning", "WELD_DUPLICATE_SAME", { weld: "W-1" }, [3]],
+    ["blocker", "NUMBER_DUPLICATE", { kind: "weld", number: "W-1" }, [4]],
+    ["warning", "NUMBER_DUPLICATE_SAME", { kind: "weld", number: "W-1" }, [3]],
   ])
   assert.equal(duplicates[0].place.sheet, "weld")
   assert.equal(duplicates[0].place.column, "WELD_NUMBER")
+})
+
+test("one weld number in two isometrics, and one spool number in two isometrics, are errors that name what is repeated", () => {
+  const entries = buildIssueEntries(
+    submit(sheet("weld", WELD_HEADER, [
+      [2, weld("ISO-1", "S-1", "W-1")],
+      [3, weld("ISO-2", "S-1", "W-1")],
+    ])),
+    [],
+  )
+  assert.deepEqual(
+    entries.filter((entry) => entry.code === "NUMBER_IN_OTHER_ISO").map((entry) => [entry.args, entry.place.column, entry.place.rows]),
+    [[{ kind: "weld", number: "W-1" }, "WELD_NUMBER", [3]], [{ kind: "spool", number: "S-1" }, "SPOOL_NUMBER", [3]]],
+  )
+})
+
+test("an isometric with two PDS areas is one entry naming the isometric, at every row of it", () => {
+  const entries = buildIssueEntries(
+    submit(sheet("weld", WELD_HEADER, [
+      [2, weld("ISO-1", "S-1", "W-1", { pds: "A-1" })],
+      [3, weld("ISO-1", "S-1", "W-2", { pds: "A-2" })],
+    ])),
+    [],
+  )
+  assert.deepEqual(entries.filter((entry) => entry.code === "ISO_MIXED_PDS_AREA").map((entry) => [entry.args, entry.place.rows]), [[{ iso: "ISO-1" }, [2, 3]]])
 })

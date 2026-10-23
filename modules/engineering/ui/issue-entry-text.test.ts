@@ -10,7 +10,7 @@ import { describeIssueEntry, describeIssuePlace, formatRowRanges } from "./issue
 
 const translatorFor = (locale: "en" | "ru") => createTranslator({ locale, messages: messagesFor(locale), namespace: "spooling" })
 const range = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, index) => from + index)
-const SAMPLE_ARGS = { pdsArea: "A", serviceClass: "C", weldType: "BW", diameter: "4", thickness: "6", hasThickness: "yes", location: "shop", iso: "ISO-1", spool: "S-1", weld: "W-1", column: "PDS_AREA", value: "x", count: 8000 }
+const SAMPLE_ARGS = { pdsArea: "A", serviceClass: "C", weldType: "BW", diameter: "4", thickness: "6", hasThickness: "yes", location: "shop", iso: "ISO-1", spool: "S-1", weld: "W-1", kind: "weld", number: "W-1", column: "PDS_AREA", value: "x", count: 8000 }
 const EMPTY_PLACE: IssuePlace = { sheet: null, file: null, column: null, rows: [] }
 
 test("rows read as ranges, at most ten of them", () => {

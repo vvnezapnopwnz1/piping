@@ -18,11 +18,13 @@ type Issue = Pick<StoredImportIssue, "rowNumber" | "columnName" | "severity" | "
 
 /** A server check that repeats one the browser makes, under the browser's code. Both group the welds by isometric. */
 const TWINS: Readonly<Record<string, string>> = { SRV_ORPHAN_SPOOL: "ORPHAN_SPOOL", SRV_ISO_MIXED_LINE: "ISO_MIXED_LINE", SRV_ISO_MIXED_SERVICE_CLASS: "ISO_MIXED_SERVICE_CLASS" }
-const ISO_CODES = new Set(["ISO_MIXED_LINE", "ISO_MIXED_SERVICE_CLASS", "ISO_MIXED_REVISION"])
+const ISO_CODES = new Set(["ISO_MIXED_LINE", "ISO_MIXED_SERVICE_CLASS", "ISO_MIXED_PDS_AREA", "ISO_MIXED_REVISION"])
 const SEVERITY_ORDER: Record<ImportIssueSeverity, number> = { blocker: 0, conflict: 1, warning: 2 }
 
 const recordKey = (role: string | undefined, fileName: string | null, line: number | null) => `${role ?? ""}|${fileName ?? ""}|${line ?? ""}`
 const value = (values: Readonly<Record<string, string>>, key: string) => values[key] ?? ""
+/** What a repeated number names, by the column it is in: the sentence says weld, spool, flange joint or support. */
+const NUMBER_KIND: Readonly<Record<string, string>> = { weld_number: "weld", spool_number: "spool", flange_number: "flange", support_number: "support" }
 /** The header the template gives a field, so the place names the column a person sees. */
 const headerOf = (role: SpoolgenFileRole, key: string | null) => (key === null ? null : SPOOLGEN_CONTRACT[role].find((column) => column.key === key)?.canonicalHeader ?? key)
 
@@ -37,10 +39,10 @@ function argsFor(code: string, values: Readonly<Record<string, string>>, key: st
     // The thickness the server took from a rule is not in the sent row; then the sentence names the diameter alone.
     case "SRV_WPS_MISSING": return { diameter: value(values, "diameter_inch"), thickness: value(values, "thickness_mm"), hasThickness: value(values, "thickness_mm") === "" ? "no" : "yes" }
     case "ORPHAN_SPOOL": return { iso: value(values, "iso_number"), spool: value(values, "spool_number") }
-    case "ISO_MIXED_LINE": case "ISO_MIXED_SERVICE_CLASS": case "ISO_MIXED_REVISION": return { iso: value(values, "iso_number") }
-    case "WELD_DUPLICATE": case "WELD_DUPLICATE_SAME": case "WELD_NUMBER_IN_OTHER_ISO": return { weld: value(values, "weld_number") }
+    case "ISO_MIXED_LINE": case "ISO_MIXED_SERVICE_CLASS": case "ISO_MIXED_PDS_AREA": case "ISO_MIXED_REVISION": return { iso: value(values, "iso_number") }
+    case "NUMBER_DUPLICATE": case "NUMBER_DUPLICATE_SAME": case "NUMBER_IN_OTHER_ISO": return { kind: NUMBER_KIND[key ?? ""] ?? "", number: key === null ? "" : value(values, key) }
     case "MISSING_VALUE": case "MISSING_COLUMN": return { column: column ?? "" }
-    case "INVALID_NUMBER": return { column: column ?? "", value: key === null ? "" : value(values, key) }
+    case "NOT_POSITIVE_NUMBER": case "INVALID_NUMBER": return { column: column ?? "", value: key === null ? "" : value(values, key) }
     // The limit is the server's; the screen names how many welds this upload sent, the number the server compares.
     case "SRV_SPOOLING_JOB_TOO_LARGE": return { count: weldCount }
     default: return {}
