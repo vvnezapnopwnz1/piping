@@ -19,7 +19,6 @@ import {
   FlaskConical,
   Bolt,
   Inbox,
-  GitBranch,
 } from 'lucide-react'
 import type { Messages } from '@/i18n/messages'
 import type { Capability } from '@/modules/access/domain/capability'
@@ -88,9 +87,13 @@ export const workspaceAreas: readonly WorkspaceArea[] = [
     href: '/spooling',
     icon: Box,
     children: [
-      { title: 'browse', href: '/spooling/browse', icon: FolderTree },
+      {
+        title: 'browse',
+        href: '/spooling/browse',
+        icon: FolderTree,
+        aliases: [{ title: 'revisionHistory', href: '/spooling/revisions' }],
+      },
       { title: 'spoolGenImport', href: '/spooling/import', icon: Inbox },
-      { title: 'revisionHistory', href: '/spooling/revisions', icon: GitBranch },
     ],
   },
   {

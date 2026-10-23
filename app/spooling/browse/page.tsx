@@ -16,10 +16,5 @@ export default function SpoolingBrowsePage() {
     )
   }
 
-  return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold">{t("browse")}</h2>
-      <EngineeringBrowser projectId={projectId} refreshToken={0} />
-    </div>
-  )
+  return <EngineeringBrowser projectId={projectId} />
 }

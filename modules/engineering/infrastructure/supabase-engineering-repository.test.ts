@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { SPOOLING_BUCKET, SPOOLING_BUCKET_MEDIA_TYPES, loadJobIssues, recordSpoolingValidation, spoolingObjectPath, toPreviewChangeItem, uploadSpoolgenFile } from "./supabase-engineering-repository"
+import { SPOOLING_BUCKET, SPOOLING_BUCKET_MEDIA_TYPES, loadJobIssues, recordSpoolingValidation, spoolingObjectPath, toIsometricRow, toPreviewChangeItem, toSpoolDetail, uploadSpoolgenFile } from "./supabase-engineering-repository"
 
 assert.equal(SPOOLING_BUCKET, "project-spooling")
 // One folder per role; the index keeps many files of one role apart and the name is made safe for a storage key.
@@ -36,3 +36,38 @@ async function uploadTypeIsOneTheBucketTakes() {
   assert.ok(SPOOLING_BUCKET_MEDIA_TYPES.includes(xlsx))
 }
 void uploadTypeIsOneTheBucketTakes()
+
+// The list shows the accepted revision and counts only what that revision still holds.
+const listed = toIsometricRow({ id: "i1", iso_number: "ISO-1", isometric_revisions: [
+  { id: "r0", revision_number: "R0", revision_ordinal: 0, status: "superseded", spool_revisions: [{ is_removed: false, weld_joint_revisions: [{ is_removed: false }] }] },
+  { id: "r1", revision_number: "R1", revision_ordinal: 1, status: "accepted", spool_revisions: [
+    { is_removed: false, weld_joint_revisions: [{ is_removed: false }, { is_removed: true }, { is_removed: false }] },
+    { is_removed: true, weld_joint_revisions: [{ is_removed: false }] },
+  ] },
+] })
+assert.deepEqual(listed, { id: "i1", isoNumber: "ISO-1", revisionId: "r1", revisionNumber: "R1", revisionStatus: "accepted", spoolCount: 1, weldCount: 2 })
+// An isometric with only a draft still lists, at its latest revision.
+const draftOnly = toIsometricRow({ id: "i2", iso_number: "ISO-2", isometric_revisions: [
+  { id: "d0", revision_number: "A", revision_ordinal: 0, status: "draft", spool_revisions: [] },
+  { id: "d1", revision_number: "B", revision_ordinal: 1, status: "draft", spool_revisions: [] },
+] })
+assert.equal(draftOnly.revisionId, "d1")
+assert.equal(draftOnly.revisionStatus, "draft")
+assert.deepEqual(toIsometricRow({ id: "i3", iso_number: "ISO-3", isometric_revisions: [] }), { id: "i3", isoNumber: "ISO-3", revisionId: null, revisionNumber: null, revisionStatus: null, spoolCount: 0, weldCount: 0 })
+
+// A spool keeps removed items (the pane marks them) and lists everything in natural number order.
+const detail = toSpoolDetail({ id: "sr1", is_removed: false, weight_kg: 124.5, material_class: "CS150", spools: { spool_number: "S1" },
+  weld_joint_revisions: [
+    { id: "w10", weld_location: "field", diameter_inch: 8, thickness_mm: 6.35, is_removed: false, weld_joints: { weld_number: "W10" }, project_weld_types: { code: "BW" } },
+    { id: "w2", weld_location: "shop", diameter_inch: 8, thickness_mm: null, is_removed: true, weld_joints: { weld_number: "W2" }, project_weld_types: null },
+  ],
+  support_revisions: [{ id: "s1", support_type: null, quantity: 1, is_removed: false, supports: { support_number: "SUP1" } }],
+  flange_joint_revisions: [{ id: "f1", flange_rating: "150#", diameter_inch: 8, is_removed: false, flange_joints: { flange_number: "F1" } }],
+  spool_revision_materials: [{ id: "m2", ident_code: "PIPE-8", description: "Pipe 8\"", quantity: 6, unit: "m" }, { id: "m1", ident_code: "ELB-8", description: null, quantity: 2, unit: null }],
+})
+assert.deepEqual(detail.welds.map((weld) => [weld.weldNumber, weld.location, weld.typeCode, weld.isRemoved]), [["W2", "shop", null, true], ["W10", "field", "BW", false]])
+assert.deepEqual(detail.materials.map((material) => material.identCode), ["ELB-8", "PIPE-8"])
+assert.equal(detail.spoolNumber, "S1")
+assert.equal(detail.weightKg, 124.5)
+assert.equal(detail.supports[0].supportNumber, "SUP1")
+assert.equal(detail.flanges[0].rating, "150#")
