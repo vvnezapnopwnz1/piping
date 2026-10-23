@@ -6,6 +6,7 @@ import type { StoredImportIssue } from "@/modules/imports/domain/stored-import-i
 import { SPOOLGEN_ISSUE_CODES, SPOOLING_SERVER_ISSUE_CODES, type SpoolingServerIssueCode } from "../domain/spoolgen-issue"
 import { buildTableSubmission, type TableSource } from "../application/import-table"
 import { buildIssueEntries, type IssuePlace } from "../application/issue-entries"
+import { issueEntriesRows } from "./issue-entries-export"
 import { describeIssueEntry, describeIssuePlace, formatRowRanges } from "./issue-entry-text"
 
 const translatorFor = (locale: "en" | "ru") => createTranslator({ locale, messages: messagesFor(locale), namespace: "spooling" })
@@ -76,4 +77,23 @@ test("the summary counts errors in Russian plurals and says what to do", () => {
   assert.equal(ru("issueSummary.errors", { count: 5 }), "5 ошибок — исправьте файл и загрузите его снова.")
   assert.equal(ru("issueSummary.none"), "Ошибок нет — проверьте изменения ниже и примените импорт.")
   assert.equal(translatorFor("en")("issueSummary.errors", { count: 1 }), "1 error: fix the file and upload it again.")
+})
+
+test("the error list exported to a workbook has one row per entry, in the person's language, with every row written out", () => {
+  const entries: Parameters<typeof issueEntriesRows>[1] = [
+    { severity: "blocker", code: "NUMBER_IN_OTHER_ISO", args: { kind: "weld", number: "W-1" }, message: "m", place: { sheet: "weld", file: null, column: "WELD_NUMBER", rows: [3] } },
+    { severity: "warning", code: "ISO_MIXED_LINE", args: { iso: "ISO-1" }, message: "m", place: { sheet: null, file: "weld.txt", column: "LINE_NUMBER", rows: range(2, 41).filter((row) => row % 2 === 0) } },
+  ]
+  const en = issueEntriesRows(translatorFor("en"), entries)
+  assert.deepEqual(en[0], ["Type", "What is wrong", "Sheet or file", "Column", "Rows"])
+  assert.equal(en.length, 3)
+  assert.deepEqual(en[1].slice(0, 1).concat(en[1].slice(2)), ["Error", "Sheet weld", "WELD_NUMBER", "3"])
+  assert.match(String(en[1][1]), /Weld number "W-1" is already used in another isometric/)
+  assert.deepEqual([en[2][0], en[2][2], en[2][3]], ["Warning", "weld.txt", "LINE_NUMBER"])
+  // The screen stops at ten ranges; the file lists them all (here 20 single rows)
+  assert.equal(String(en[2][4]).split(", ").length, 20)
+  const ru = issueEntriesRows(translatorFor("ru"), entries)
+  assert.deepEqual(ru[0], ["Тип", "Что не так", "Лист или файл", "Колонка", "Строки"])
+  assert.match(String(ru[1][1]), /Номер стыка «W-1» уже используется в другой изометрии/)
+  assert.equal(ru[1][0], "Ошибка")
 })

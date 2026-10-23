@@ -18,8 +18,13 @@ import type { SpoolingUpload } from "../infrastructure/submit-spooling-import"
 import { ImportTemplateDownload } from "./import-template-download"
 import { describeSpoolgenIssue } from "./spoolgen-issue-text"
 
-/** Why a picked workbook was not sent: no weld sheet, or a sheet without a required column. */
-type Refusal = Exclude<WorkbookReading, { kind: "ready" }>
+/**
+ * Why a picked workbook was not sent: no weld sheet, a sheet without a required column, or a file that is not a readable
+ * workbook at all. It stays on screen until the next pick (a toast is gone in seconds, and the person is left to guess).
+ */
+type Refusal = Exclude<WorkbookReading, { kind: "ready" }> | { kind: "notWorkbook"; file: string } | { kind: "unreadable"; file: string; detail: string | undefined }
+/** An .xlsx is a ZIP archive, which starts with "PK"; anything else was renamed, not saved from Excel. */
+const isZip = (bytes: Uint8Array) => bytes.length >= 4 && bytes[0] === 0x50 && bytes[1] === 0x4b
 
 /**
  * The Excel tile: download our template, upload it filled in. The workbook is read whole as soon as it is picked, each
@@ -58,12 +63,14 @@ export function ExcelImportPanel({ projectId, canManage, busy, onEdit, onSubmit 
     const ticket = tickets.issue("weld")
     setReading(file.name)
     try {
-      const read = readWorkbookUpload(file.name, readNumberedSheets(await file.arrayBuffer(), SPOOLGEN_FILE_ROLES))
+      const bytes = await file.arrayBuffer()
       if (!tickets.isCurrent("weld", ticket)) return
+      if (!isZip(new Uint8Array(bytes))) { setRefusal({ kind: "notWorkbook", file: file.name }); return }
+      const read = readWorkbookUpload(file.name, readNumberedSheets(bytes, SPOOLGEN_FILE_ROLES))
       if (read.kind === "ready") onSubmit(read.submission, [{ role: "weld", file }])
       else setRefusal(read)
     } catch (error) {
-      if (tickets.isCurrent("weld", ticket)) toast.error(t("table.readFailed", { file: file.name }), { description: errorDetail(error) })
+      if (tickets.isCurrent("weld", ticket)) setRefusal({ kind: "unreadable", file: file.name, detail: errorDetail(error) })
     } finally {
       if (tickets.isCurrent("weld", ticket)) setReading(null)
     }
@@ -89,9 +96,10 @@ export function ExcelImportPanel({ projectId, canManage, busy, onEdit, onSubmit 
       </div>
       {refusal ? (
         <div role="alert" className="space-y-1 text-sm text-danger-fg">
-          {refusal.kind === "noWeldSheet"
-            ? <p>{t("excel.noWeldSheet")}</p>
-            : refusal.sheets.map(({ sheet, headers }) => <p key={sheet}>{t("excel.missingColumns", { sheet, count: headers.length, columns: headers.join(", ") })}</p>)}
+          {refusal.kind === "noWeldSheet" ? <p>{t("excel.noWeldSheet")}</p> : null}
+          {refusal.kind === "missingColumns" ? refusal.sheets.map(({ sheet, headers }) => <p key={sheet}>{t("excel.missingColumns", { sheet, count: headers.length, columns: headers.join(", ") })}</p>) : null}
+          {refusal.kind === "notWorkbook" ? <p>{t("excel.notWorkbook", { file: refusal.file })}</p> : null}
+          {refusal.kind === "unreadable" ? <><p>{t("excel.unreadable", { file: refusal.file })}</p>{refusal.detail ? <p className="text-xs text-muted-foreground">{refusal.detail}</p> : null}</> : null}
         </div>
       ) : null}
     </div>

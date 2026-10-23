@@ -63,7 +63,7 @@ export function SpoolingImport({ projectId, canManage, onJobChange }: {
           <ExcelImportPanel key="table" projectId={projectId} canManage={canManage} busy={busy} onEdit={clearIssues} onSubmit={(submission, uploads) => void submit(submission, uploads)} />
         ) : null}
         {source === "spoolgen" ? (
-          <SpoolgenImportPanel key="spoolgen" canManage={canManage} busy={busy} onEdit={clearIssues} onSubmit={(submission, uploads) => void submit(submission, uploads)} />
+          <SpoolgenImportPanel key="spoolgen" canManage={canManage} busy={busy} validated={entries !== null} onEdit={clearIssues} onSubmit={(submission, uploads) => void submit(submission, uploads)} />
         ) : null}
         {source === "aveva" || source === "hexagon" || source === "plant3d" ? (
           <PcfImportPanel key={source} projectId={projectId} source={source} canManage={canManage} busy={busy} validated={entries !== null} onEdit={clearIssues} onSubmit={(submission, uploads) => void submit(submission, uploads)} />

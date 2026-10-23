@@ -149,6 +149,15 @@
     "rows": "{several, select, yes {rows {list}} other {row {list}}}",
     "more": "{count, plural, one {and # more row} other {and # more rows}}"
   },
+  "issueExport": {
+    "button": "Download the error list",
+    "sheet": "Issues",
+    "severity": "Type",
+    "problem": "What is wrong",
+    "place": "Sheet or file",
+    "column": "Column",
+    "rows": "Rows"
+  },
   "issueSummary": {
     "errors": "{count, plural, one {# error} other {# errors}}: fix the file and upload it again.",
     "none": "No errors: review the changes below and apply the import."
@@ -157,6 +166,8 @@
     "hint": "Download the template, move your data into it and upload it back. The weld sheet is required; trace, bolt and supp are optional. The file is limited to {limit} MB.",
     "upload": "Upload the filled-in template",
     "noWeldSheet": "The workbook has no weld sheet, or it is empty. Download the template and move your data into it.",
+    "notWorkbook": "{file} is not an Excel workbook: it was not saved as .xlsx. Open it in Excel, save it as .xlsx and upload it again.",
+    "unreadable": "{file} could not be read: the workbook is damaged or incomplete. Save it again from Excel and upload it again.",
     "missingColumns": "The {sheet} sheet {count, plural, one {has no required column} other {has no required columns}} {columns}. Download the template and move your data into it."
   },
   "importScreen": {

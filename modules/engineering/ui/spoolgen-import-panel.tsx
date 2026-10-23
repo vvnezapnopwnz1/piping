@@ -12,6 +12,7 @@ import type { SpoolgenSubmission } from "../application/import-spooling"
 import { buildTableSubmission, pickTableFile, type TableSource } from "../application/import-table"
 import { createPickTickets } from "../application/pick-tickets"
 import { parseDelimited } from "../domain/parsers/delimited"
+import { SPOOLGEN_CONTRACT } from "../domain/spoolgen-contract"
 import { SPOOLGEN_FILE_ROLES, SPOOLGEN_MAX_FILE_BYTES, SPOOLING_MAX_FILES, type SpoolgenFileRole } from "../domain/spoolgen-file"
 import { readSourceFile } from "../infrastructure/spoolgen-file-reader"
 import type { SpoolingUpload } from "../infrastructure/submit-spooling-import"
@@ -26,9 +27,11 @@ const without = <T,>(record: Partial<Record<Role, T>>, role: Role): Partial<Reco
  * The four SpoolGen files, one per role, weld required, read by their fixed contract. Each file is read as soon as it is
  * picked (the newest pick of a role wins); a missing column is listed under the files and left to the server to report.
  */
-export function SpoolgenImportPanel({ canManage, busy, onEdit, onSubmit }: {
+export function SpoolgenImportPanel({ canManage, busy, validated, onEdit, onSubmit }: {
   canManage: boolean
   busy: boolean
+  /** True once a check has run: the list below the form then holds the missing columns too, so this one steps aside. */
+  validated: boolean
   onEdit: () => void
   onSubmit: (submission: SpoolgenSubmission, uploads: readonly SpoolingUpload[]) => void
 }) {
@@ -111,8 +114,12 @@ export function SpoolgenImportPanel({ canManage, busy, onEdit, onSubmit }: {
         </Button>
         {reason ? <span className="text-sm text-muted-foreground">{reason}</span> : null}
       </div>
-      {unmatched ? (
-        <ImportIssueList issues={submission.issues.filter((issue) => issue.code === "MISSING_COLUMN").map((issue) => ({ ...issue, message: describeSpoolgenIssue(t, issue) }))} />
+      {unmatched && !validated ? (
+        <ImportIssueList issues={submission.issues.filter((issue) => issue.code === "MISSING_COLUMN").map((issue) => {
+          // The column is named as the template names it (WELD_NUMBER), not by the key the code uses.
+          const header = issue.role === undefined || issue.columnName === null ? issue.columnName : SPOOLGEN_CONTRACT[issue.role].find((column) => column.key === issue.columnName)?.canonicalHeader ?? issue.columnName
+          return { ...issue, columnName: header, message: describeSpoolgenIssue(t, { ...issue, columnName: header }) }
+        })} />
       ) : null}
     </div>
   )

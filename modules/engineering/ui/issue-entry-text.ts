@@ -6,15 +6,15 @@ import { isSpoolgenIssueCode, isSpoolingServerIssueCode } from "../domain/spoolg
 const MAX_RANGES = 10
 
 /** Rows as ranges, `2–41, 45`; past ten ranges, `more` is how many rows were left unwritten. */
-export function formatRowRanges(rows: readonly number[]): { text: string; more: number } {
+export function formatRowRanges(rows: readonly number[], maxRanges: number = MAX_RANGES): { text: string; more: number } {
   const ranges: [number, number][] = []
   for (const row of [...new Set(rows)].sort((a, b) => a - b)) {
     const last = ranges.at(-1)
     if (last !== undefined && row === last[1] + 1) last[1] = row
     else ranges.push([row, row])
   }
-  const more = ranges.slice(MAX_RANGES).reduce((sum, [from, to]) => sum + to - from + 1, 0)
-  return { text: ranges.slice(0, MAX_RANGES).map(([from, to]) => (from === to ? String(from) : `${from}–${to}`)).join(", "), more }
+  const more = ranges.slice(maxRanges).reduce((sum, [from, to]) => sum + to - from + 1, 0)
+  return { text: ranges.slice(0, maxRanges).map(([from, to]) => (from === to ? String(from) : `${from}–${to}`)).join(", "), more }
 }
 
 /** The entry's sentence. A code the app does not know comes from the server and keeps its own sentence. */
