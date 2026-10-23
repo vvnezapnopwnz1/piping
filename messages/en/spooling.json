@@ -306,7 +306,6 @@
   },
   "revision": {
     "title": "Revision decisions",
-    "empty": "Validate a SpoolGen file set to see what it changes.",
     "noChanges": "This import changes nothing.",
     "apply": "Apply import",
     "summary": {

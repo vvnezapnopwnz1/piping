@@ -122,19 +122,8 @@ export function RevisionWorkbench({
     }
   }, [gate.allowed, jobId, onApplied, t]);
   const summary = useMemo(() => summarizeChanges(items), [items]);
-  if (!jobId)
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("revision.title")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            {t("revision.empty")}
-          </p>
-        </CardContent>
-      </Card>
-    );
+  // Nothing to decide before a validation: the form's own hint names that step, whatever the source.
+  if (!jobId) return null;
   return (
     <Card>
       <CardHeader>
