@@ -1,11 +1,13 @@
 // scripts/upg/dataset-arg.ts
 import { NPS_SPEC } from "../nps/dataset"
+import { PCF_SPEC } from "../pcf/dataset"
 import { UPG_SPEC } from "./dataset"
 import type { ProjectSpec } from "./spec"
 
 const SPECS: Record<string, ProjectSpec> = {
   upg: UPG_SPEC,
   nps: NPS_SPEC,
+  pcf: PCF_SPEC,
 }
 
 /**
@@ -16,7 +18,7 @@ export function specFromArgv(argv: readonly string[]): ProjectSpec {
   const index = argv.indexOf("--dataset")
   if (index < 0) return UPG_SPEC
   const name = argv[index + 1]
-  if (name === undefined) throw new Error("Use --dataset upg|nps.")
-  if (!Object.hasOwn(SPECS, name)) throw new Error(`Unknown dataset "${name}"; use upg|nps.`)
+  if (name === undefined) throw new Error("Use --dataset upg|nps|pcf.")
+  if (!Object.hasOwn(SPECS, name)) throw new Error(`Unknown dataset "${name}"; use upg|nps|pcf.`)
   return SPECS[name]
 }

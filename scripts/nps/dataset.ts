@@ -29,6 +29,7 @@ const fullCycle = (testPack: string, punches: readonly { iso: string; descriptio
 export const NPS_SPEC: ProjectSpec = {
   id: "nps",
   fixtureDir: "fixtures/demo-project-nps",
+  spooling: "text",
   project: {
     activityCode: "NPS-1",
     projectTitle: "Насосная станция НПС-1, обвязка",

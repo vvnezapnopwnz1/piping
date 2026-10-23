@@ -2,7 +2,7 @@
 /**
  * demo:week — one construction week of UPG-1.
  *
- *   npm run demo:week -- [--dataset upg|nps] --project UPG-1 --week 3 [--include-manual | --manual-kinds flange,tracking]
+ *   npm run demo:week -- [--dataset upg|nps]  (not pcf: PCF-1 has no weeks) --project UPG-1 --week 3 [--include-manual | --manual-kinds flange,tracking]
  *
  * Manual actions (the thread, TP-100-01, the revision import) are listed for the walkthrough,
  * not executed, unless --include-manual (the stage A dry run). Exit code 1 only when a refusal
@@ -25,6 +25,7 @@ function argument(name: string): string | undefined {
 
 async function main(): Promise<number> {
   const spec = specFromArgv(process.argv)
+  if (spec.spooling === "pcf") throw new Error(`${spec.project.activityCode} has no weeks: it holds the spooling imported from PCF and no plan of work.`)
   const week = Number(argument("--week"))
   if (!Number.isInteger(week) || week < 1 || week > UPG_WEEK_COUNT) throw new Error(`Use --week 1…${UPG_WEEK_COUNT}.`)
   const includeManual = process.argv.includes("--include-manual")

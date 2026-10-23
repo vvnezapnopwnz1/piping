@@ -175,16 +175,33 @@ export function readmeLines(spec: ProjectSpec): string[] {
     const classes = [...new Set(spec.pwhtFormRules.map((rule) => rule.serviceClass))].join(", ")
     steps.push(`Справочники проекта → NDE-матрица: ввести руками ${words} правила ${classes} с PWHT (лист «Ввести вручную»).`)
   }
-  const errorPart = errorIso(spec) !== null ? "сначала error/weld.txt (ожидаем блокер), затем " : ""
-  steps.push(`Спулинг → Импорт: ${errorPart}spooling/weld, trace, bolt, supp.`)
+  if (spec.spooling === "pcf") {
+    steps.push(`Спулинг → Импорт → источник PCF: все файлы pcf/*.pcf сразу, PDS-зона ${pdsAreaOfPcf(spec)}, настройки по умолчанию.`)
+  } else {
+    const errorPart = errorIso(spec) !== null ? "сначала error/weld.txt (ожидаем блокер), затем " : ""
+    steps.push(`Спулинг → Импорт: ${errorPart}spooling/weld, trace, bolt, supp.`)
+  }
   steps.push("Test Packs → Импорт состава: imports/06-test-packs.xlsx.")
   if (spec.special.revision) {
     steps.push("Неделя 3: Спулинг → Импорт revision/*.txt и решения по ревизии.")
   }
-  return [
-    `Демо-проект ${code} — порядок загрузки`,
-    ...steps.map((text, i) => `${i + 1}. ${text}`),
-  ]
+  const numbered = steps.map((text, i) => `${i + 1}. ${text}`)
+  const notes = spec.spooling === "pcf"
+    ? [
+        "",
+        "PCF переносит только стыки: номер, место (цех/поле), тип, диаметр, катушку, класс, ревизию и ISO.",
+        "Трубного материала, опор и болтов в PCF нет, поэтому у катушек этого проекта их не будет; толщину стенки по правилу из imports/04-thickness.xlsx подставляет сервер.",
+        "Недели (demo:week) для этого проекта не выполняются.",
+      ]
+    : []
+  return [`Демо-проект ${code} — порядок загрузки`, ...numbered, ...notes]
+}
+
+/** The one PDS area a PCF upload names for all its files; a project with several cannot be loaded from PCF. */
+export function pdsAreaOfPcf(spec: ProjectSpec): string {
+  const areas = [...new Set(spec.isoGroups.map((group) => group.pdsArea))]
+  if (areas.length !== 1) throw new Error(`${spec.project.activityCode}: a PCF upload takes one PDS area, the ISOs have ${areas.length}.`)
+  return areas[0]
 }
 
 export function workbookFileName(spec: ProjectSpec): string {

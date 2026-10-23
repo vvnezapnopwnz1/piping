@@ -147,6 +147,12 @@ export interface ProjectSpec {
   readonly id: string
   /** Repo-relative directory of the generated files, e.g. "fixtures/demo-project". */
   readonly fixtureDir: string
+  /**
+   * Where the spooling comes from. "text": four SpoolGen texts (spooling/*.txt) and the master workbook, loaded by
+   * `--spooling text|workbook`. "pcf": one PCF file per ISO (pcf/*.pcf), loaded through the PCF import with the one PDS
+   * area of the project; there are no texts, no workbook, no revision or error set, and no weeks.
+   */
+  readonly spooling: "text" | "pcf"
   readonly project: {
     readonly activityCode: string
     readonly projectTitle: string

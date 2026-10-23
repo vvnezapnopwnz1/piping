@@ -28,6 +28,7 @@ const fullCycle = (testPack: string, punches: readonly { iso: string; descriptio
 export const UPG_SPEC: ProjectSpec = {
   id: "upg",
   fixtureDir: "fixtures/demo-project",
+  spooling: "text",
   project: {
     activityCode: "UPG-1",
     projectTitle: "Установка подготовки газа УПГ-1",

@@ -1,5 +1,5 @@
 /**
- * Writes fixtures/demo-project. Keeps the start date of an existing manifest.json so that
+ * Writes the fixtures of one dataset (--dataset upg|nps|pcf; fixtures/demo-project by default). Keeps the start date of an existing manifest.json so that
  * regenerating mid-walkthrough never moves the project's past; pass --new-start to move it.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
@@ -8,6 +8,7 @@ import * as XLSX from "xlsx"
 
 import { isosOf } from "./builders"
 import { specFromArgv } from "./dataset-arg"
+import { pcfFiles } from "../pcf/pcf-writer"
 import { errorFiles, importSheets, readmeLines, resolveStartDate, revisionFiles, spoolgenFiles, workbookFileName, workbookSheets, type Cell } from "./files"
 
 function writeWorkbook(path: string, sheets: { name: string; matrix: Cell[][] }[]): void {
@@ -32,15 +33,20 @@ function main(): void {
   const startDate = resolveStartDate(existing, today, process.argv.includes("--new-start"))
 
   mkdirSync(join(dir, "imports"), { recursive: true })
-  writeTexts(join(dir, "spooling"), spoolgenFiles(spec, isosOf(spec)))
-  const revision = revisionFiles(spec)
-  if (revision) writeTexts(join(dir, "revision"), revision)
-  const error = errorFiles(spec)
-  if (error) writeTexts(join(dir, "error"), error)
+  if (spec.spooling === "text") {
+    writeTexts(join(dir, "spooling"), spoolgenFiles(spec, isosOf(spec)))
+    const revision = revisionFiles(spec)
+    if (revision) writeTexts(join(dir, "revision"), revision)
+    const error = errorFiles(spec)
+    if (error) writeTexts(join(dir, "error"), error)
+  } else {
+    mkdirSync(join(dir, "pcf"), { recursive: true })
+    for (const file of pcfFiles(spec)) writeFileSync(join(dir, "pcf", file.fileName), file.text)
+  }
   for (const sheet of importSheets(spec, startDate)) {
     writeWorkbook(join(dir, "imports", sheet.fileName), [{ name: sheet.title, matrix: sheet.matrix }])
   }
-  writeWorkbook(join(dir, workbookFileName(spec)), workbookSheets(spec, startDate))
+  if (spec.spooling === "text") writeWorkbook(join(dir, workbookFileName(spec)), workbookSheets(spec, startDate))
   const lines = readmeLines(spec)
   writeFileSync(join(dir, "README.md"), `# ${lines[0]}\n\n${lines.slice(1).join("\n")}\n\nНачало проекта: ${startDate}.\n`)
   writeFileSync(manifestPath, JSON.stringify({ generatedOn: existing && !process.argv.includes("--new-start") ? (existing as { generatedOn?: string }).generatedOn ?? today : today, startDate }, null, 2) + "\n")

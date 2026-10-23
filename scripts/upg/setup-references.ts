@@ -1,7 +1,7 @@
 /**
  * demo:project-setup — the referentials of an existing UPG-1 project.
  *
- *   [--dataset upg|nps] --phase references    referentials without an Excel import (run after the project is created)
+ *   [--dataset upg|nps|pcf] --phase references    referentials without an Excel import (run after the project is created)
  *
  * The WPS and welder dates are columns of 02-wps.xlsx and 03-welders.xlsx (files.ts), taken from the
  * project start date: the server no longer invents them, and nothing sets them back afterwards.
