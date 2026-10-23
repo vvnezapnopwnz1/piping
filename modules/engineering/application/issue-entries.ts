@@ -18,6 +18,8 @@ type Issue = Pick<StoredImportIssue, "rowNumber" | "columnName" | "severity" | "
 
 /** A server check that repeats one the browser makes, under the browser's code: the same sentence fits, whether the number clashes inside the upload or with what the project already holds. */
 const TWINS: Readonly<Record<string, string>> = { SRV_ORPHAN_SPOOL: "ORPHAN_SPOOL", SRV_ISO_MIXED_LINE: "ISO_MIXED_LINE", SRV_ISO_MIXED_SERVICE_CLASS: "ISO_MIXED_SERVICE_CLASS", SRV_NUMBER_IN_OTHER_ISO: "NUMBER_IN_OTHER_ISO" }
+/** Server findings that only echo a size the browser already called wrong. */
+const SIZE_ECHOES = new Set(["SRV_THICKNESS_MISSING", "SRV_WPS_MISSING"])
 const ISO_CODES = new Set(["ISO_MIXED_LINE", "ISO_MIXED_SERVICE_CLASS", "ISO_MIXED_PDS_AREA", "ISO_MIXED_REVISION"])
 const SEVERITY_ORDER: Record<ImportIssueSeverity, number> = { blocker: 0, conflict: 1, warning: 2 }
 
@@ -62,6 +64,9 @@ export function buildIssueEntries(submission: SpoolgenSubmission, stored: readon
   const sentRows = new Map(submission.rows.map((row, index) => [row.rowNumber, index]))
   const weldCount = submission.rows.filter((row) => row.normalizedValues.entity_type === "weld_joint").length
   const browserCodes = new Set<string>(submission.issues.map((issue) => issue.code))
+  // A size that is no number, or not above zero, is the whole story of its row: the server then also finds "no thickness rule
+  // for diameter -4" and "no WPS for diameter -4", which only repeat it.
+  const badSize = new Set(submission.issues.filter((issue) => (issue.code === "INVALID_NUMBER" || issue.code === "NOT_POSITIVE_NUMBER") && issue.columnName === "diameter_inch").map((issue) => recordKey(issue.role, issue.fileName, issue.rowNumber)))
   const entries: IssueEntry[] = []
 
   const add = (issue: Issue, code: string, sources: readonly SpoolgenRecord[], values: Readonly<Record<string, string>>) => {
@@ -93,7 +98,9 @@ export function buildIssueEntries(submission: SpoolgenSubmission, stored: readon
       addUnplaced(issue, issue.code, { sheet: null, file: null, column: null, rows: [] })
       continue
     }
-    add(issue, twin ?? issue.code, submission.rowSources[index] ?? [], submission.rows[index].normalizedValues)
+    const sources = submission.rowSources[index] ?? []
+    if (SIZE_ECHOES.has(issue.code) && sources.some((record) => badSize.has(recordKey(record.role, record.fileName, record.lineNumber)))) continue
+    add(issue, twin ?? issue.code, sources, submission.rows[index].normalizedValues)
   }
   return order(merge(entries))
 }

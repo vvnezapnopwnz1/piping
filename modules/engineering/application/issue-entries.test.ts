@@ -187,3 +187,14 @@ test("a number the project already holds under another isometric is listed as th
   const entries = buildIssueEntries(submission, [stored("SRV_NUMBER_IN_OTHER_ISO", stagingRow(submission, "weld_joint", "weld_number", "W-1"), "weld_number")])
   assert.deepEqual(entries.map((entry) => [entry.code, entry.args, entry.place.column, entry.place.rows]), [["NUMBER_IN_OTHER_ISO", { kind: "weld", number: "W-1" }, "WELD_NUMBER", [2]]])
 })
+
+test("a size that is not above zero is listed once: the server's echoes about its thickness and WPS are left out", () => {
+  const header = ["ISO_NUMBER", "ISO_REVISION", "PDS_AREA", "SERVICE_CLASS", "SPOOL_NUMBER", "WELD_NUMBER", "WELD_TYPE", "DIAMETER_INCH"]
+  const submission = submit(sheet("weld", header, [[2, ["ISO-1", "R0", "Z-1", "CS150", "S-1", "W-1", "BW", -4]], [3, ["ISO-1", "R0", "Z-1", "CS150", "S-1", "W-2", "BW", 14]]]))
+  const rowOf = (weldNumber: string) => stagingRow(submission, "weld_joint", "weld_number", weldNumber)
+  const entries = buildIssueEntries(submission, [
+    stored("SRV_THICKNESS_MISSING", rowOf("W-1"), "thickness_mm"), stored("SRV_WPS_MISSING", rowOf("W-1"), "weld_number", "warning"),
+    stored("SRV_THICKNESS_MISSING", rowOf("W-2"), "thickness_mm"),
+  ])
+  assert.deepEqual(entries.map((entry) => [entry.code, entry.place.rows]), [["NOT_POSITIVE_NUMBER", [2]], ["SRV_THICKNESS_MISSING", [3]]])
+})
