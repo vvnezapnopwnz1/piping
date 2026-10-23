@@ -156,7 +156,8 @@ export function IsometricPane({ iso, revisionId, onRevisionChange, spoolRevision
             ) : (
               <span className="text-muted-foreground text-sm font-normal">{t("browser.revision", { number: revisionNumber ?? "—" })}</span>
             )}
-            {status && status !== "accepted" ? <StatusBadge status={status} /> : null}
+            {/* The switcher's own value already carries the status. */}
+            {status && status !== "accepted" && history.length <= 1 ? <StatusBadge status={status} /> : null}
           </h2>
           {current && facts.length > 0 ? <p className="text-muted-foreground text-sm">{facts.join(" · ")}</p> : null}
           {current?.comment ? <p className="text-muted-foreground text-sm">{current.comment}</p> : null}
