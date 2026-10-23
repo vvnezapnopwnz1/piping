@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
+import { NPS_SPEC } from "../nps/dataset"
 import { UPG_SPEC } from "./dataset"
 import { specFromArgv } from "./dataset-arg"
 
@@ -12,8 +13,8 @@ test("explicit upg selects UPG_SPEC", () => {
   assert.equal(specFromArgv(["--dataset", "upg"]), UPG_SPEC)
 })
 
-test("nps throws not described yet", () => {
-  assert.throws(() => specFromArgv(["--dataset", "nps"]), /ещё не описан/)
+test("explicit nps selects NPS_SPEC", () => {
+  assert.equal(specFromArgv(["--dataset", "nps"]), NPS_SPEC)
 })
 
 test("unknown dataset is refused", () => {

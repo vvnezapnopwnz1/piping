@@ -109,7 +109,7 @@ test("exactly one field weld falls outside every field WPS range", () => {
         .filter((weld) => weld.location === "field")
         .filter((weld) => {
           const wps = UPG_SPEC.weldingProcedures.find(
-            (procedure) => procedure.code === UPG_SPEC.wpsByMaterial[UPG_SPEC.serviceClasses[iso.serviceClass].materialTypeCode].field,
+            (procedure) => procedure.code === UPG_SPEC.wpsByMaterial[UPG_SPEC.serviceClasses[iso.serviceClass].materialTypeCode]!.field,
           )!
           return weld.diameterInch < wps.diameterFrom || weld.diameterInch > wps.diameterTo
         })

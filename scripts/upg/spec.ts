@@ -171,7 +171,8 @@ export interface ProjectSpec {
    */
   readonly isoGroups: readonly IsoGroup[]
   readonly weldingProcedures: readonly WeldingProcedureSpec[]
-  readonly wpsByMaterial: Readonly<Record<MaterialTypeCode, { readonly shop: string; readonly field: string }>>
+  /** Only the materials the project welds: a carbon-steel-only project has no SS316 entry. */
+  readonly wpsByMaterial: Readonly<Partial<Record<MaterialTypeCode, { readonly shop: string; readonly field: string }>>>
   readonly welders: readonly WelderSpec[]
   /** Rows of the NDE matrix Excel import. A class with PWHT is absent: see pwhtFormRules. */
   readonly ndeImportRules: readonly NdeRuleSpec[]

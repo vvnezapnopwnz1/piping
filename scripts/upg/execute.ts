@@ -81,7 +81,9 @@ async function weld(ctx: RunContext, action: Extract<UpgAction, { kind: "weld" }
   const material = ctx.spec.serviceClasses[found.iso.serviceClass].materialTypeCode
   const field = action.phase === "erection"
   const subcontractor = field ? ctx.spec.fieldSubcontractor : ctx.spec.shopSubcontractor
-  const wpsCode = field ? ctx.spec.wpsByMaterial[material].field : ctx.spec.wpsByMaterial[material].shop
+  const procedures = ctx.spec.wpsByMaterial[material]
+  if (!procedures) throw new Error(`The project has no WPS for ${material}.`)
+  const wpsCode = field ? procedures.field : procedures.shop
   const pool = ctx.ids.welders(subcontractor, wpsCode)
   if (pool.length < 2) throw new Error(`Fewer than two welders qualified for ${wpsCode}.`)
   const ordinal = Number(action.weld.replace(/.*-(W|FW)/, "")) || 0

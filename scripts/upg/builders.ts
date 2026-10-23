@@ -17,6 +17,8 @@ import type {
 
 const BOLT_SIZE: Readonly<Record<number, string>> = {
   2: '5/8"', 3: '5/8"', 4: '5/8"', 6: '3/4"', 8: '3/4"', 10: '7/8"', 12: '7/8"', 14: '1"',
+  // 16–24" are used by 300# classes only (NPS-1). The table does not follow the rating: the sizes above are 150# values.
+  16: '1-1/4"', 20: '1-1/4"', 24: '1-1/2"', // оценка: from memory of the B16.5 300# table, not re-checked
 }
 const SUPPORT_TYPES = ["SHOE", "GUIDE", "ANCHOR"] as const
 
